@@ -10,10 +10,13 @@ CREATE TABLE IF NOT EXISTS members (
   name TEXT NOT NULL,
   nickname TEXT NOT NULL,
   birthday DATE,
+  height TEXT,
   bio TEXT,
   avatar_url TEXT,
   ig_handle TEXT,
   x_handle TEXT,
+  weibo_handle TEXT,
+  xhs_handle TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -128,9 +131,9 @@ CREATE INDEX IF NOT EXISTS idx_schedule_event_date ON schedule(event_date DESC);
 -- Uncomment below to insert sample members
 
 /*
-INSERT INTO members (name, nickname, birthday, bio, avatar_url, ig_handle, x_handle) VALUES
-('Lookmhee', 'Lookmhee', '2003-05-15', 'Thai actress known for her role in Affair', null, '@lookmhee', '@lookmhee_official'),
-('Sonya', 'Sonya', '2003-08-22', 'Thai actress known for her role in Affair', null, '@sonya', '@sonya_official');
+INSERT INTO members (name, nickname, birthday, height, bio, avatar_url, ig_handle, x_handle, weibo_handle, xhs_handle) VALUES
+('Lookmhee', 'Lookmhee', '2003-05-15', '165cm', 'Thai actress known for her role in Affair', null, '@lookmhee', '@lookmhee_official', '@lookmhee_weibo', '@lookmhee_xhs'),
+('Sonya', 'Sonya', '2003-08-22', '168cm', 'Thai actress known for her role in Affair', null, '@sonya', '@sonya_official', '@sonya_weibo', '@sonya_xhs');
 */
 
 -- Storage buckets setup
@@ -139,3 +142,10 @@ INSERT INTO members (name, nickname, birthday, bio, avatar_url, ig_handle, x_han
 -- 2. Create bucket named "project-covers" (public)
 -- 3. Create bucket named "gallery" (public)
 -- 4. Create bucket named "assets" (public)
+
+-- ============================================
+-- MIGRATION: Add new columns to existing members table
+-- If you already have the members table created, run this ALTER TABLE statement:
+-- ============================================
+
+-- ALTER TABLE members ADD COLUMN IF NOT EXISTS height TEXT, ADD COLUMN IF NOT EXISTS weibo_handle TEXT, ADD COLUMN IF NOT EXISTS xhs_handle TEXT;

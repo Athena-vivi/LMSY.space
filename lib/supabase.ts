@@ -11,10 +11,13 @@ export interface Member {
   name: string;
   nickname: string;
   birthday: string | null;
+  height: string | null;
   bio: string | null;
   avatar_url: string | null;
   ig_handle: string | null;
   x_handle: string | null;
+  weibo_handle: string | null;
+  xhs_handle: string | null;
   created_at: string;
 }
 

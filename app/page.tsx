@@ -1,18 +1,28 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useRef } from 'react';
 
 export default function HomePage() {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start start', 'end start']
+  });
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
   return (
     <div className="relative">
       {/* Hero Section - Digital Cover Style */}
-      <section className="relative min-h-screen overflow-hidden">
-        {/* Background Text Decoration */}
+      <section ref={ref} className="relative min-h-screen overflow-hidden">
+        {/* Background Text Decoration with Parallax */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
           <motion.h1
+            style={{ y, opacity }}
             className="font-serif text-[20vw] leading-none text-primary/5 select-none"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -24,38 +34,45 @@ export default function HomePage() {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative min-h-screen py-20">
-            {/* Asymmetric Image Layout */}
+            {/* Asymmetric Image Layout - Enhanced Overlapping */}
             <div className="relative h-full">
-              {/* Lookmhee - Left Bottom */}
+              {/* Lookmhee - Left Bottom (Larger) */}
               <motion.div
-                className="absolute bottom-20 left-0 z-20 w-[65%] max-w-md"
-                initial={{ opacity: 0, x: -100, y: 100 }}
+                className="absolute bottom-16 left-0 z-20 w-[70%] max-w-md md:max-w-lg lg:max-w-xl"
+                initial={{ opacity: 0, x: -120, y: 120 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
-                transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ duration: 1.2, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                whileHover={{ scale: 1.02 }}
               >
                 <div className="relative aspect-[3/4] overflow-hidden rounded-sm magazine-shadow-lg">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10" />
                   {/* Placeholder for Lookmhee's image */}
-                  <div className="h-full w-full bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/30 dark:to-rose-950/30" />
-                  <div className="absolute bottom-4 left-4 z-20">
-                    <p className="text-white text-sm font-medium">LOOKMHEE</p>
+                  <div className="h-full w-full bg-gradient-to-br from-rose-200 via-rose-100 to-pink-50 dark:from-rose-900/40 dark:via-rose-800/30 dark:to-rose-950/20" />
+                  {/* Decorative border */}
+                  <div className="absolute inset-0 border-2 border-white/20 rounded-sm" />
+                  <div className="absolute bottom-5 left-5 z-20">
+                    <p className="text-white text-sm font-medium tracking-wider drop-shadow-lg">LOOKMHEE</p>
+                    <p className="text-white/70 text-xs tracking-widest mt-1">AFFAIR</p>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Sonya - Right Top */}
+              {/* Sonya - Right Top (Smaller, Overlapping) */}
               <motion.div
-                className="absolute top-20 right-0 z-10 w-[55%] max-w-sm"
-                initial={{ opacity: 0, x: 100, y: -100 }}
+                className="absolute top-24 right-0 z-10 w-[50%] max-w-xs md:max-w-sm lg:max-w-md"
+                initial={{ opacity: 0, x: 120, y: -120 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
-                transition={{ duration: 1, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ duration: 1.2, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+                whileHover={{ scale: 1.03 }}
               >
                 <div className="relative aspect-[3/4] overflow-hidden rounded-sm magazine-shadow">
                   {/* Placeholder for Sonya's image */}
-                  <div className="h-full w-full bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-950/30" />
-                </div>
-                <div className="absolute -bottom-6 -right-6">
-                  <p className="text-6xl font-serif text-primary/20">S</p>
+                  <div className="h-full w-full bg-gradient-to-br from-amber-200 via-amber-100 to-yellow-50 dark:from-amber-900/40 dark:via-amber-800/30 dark:to-amber-950/20" />
+                  {/* Decorative border */}
+                  <div className="absolute inset-0 border-2 border-white/20 rounded-sm" />
+                  <div className="absolute -bottom-8 -right-8 z-20">
+                    <p className="text-7xl md:text-8xl font-serif text-primary/10">S</p>
+                  </div>
                 </div>
               </motion.div>
 
@@ -115,7 +132,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Latest News / Updates */}
+      {/* Latest News / Updates - Enhanced with Glassmorphism */}
       <section className="py-20 md:py-32 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -124,7 +141,7 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h3 className="font-serif text-3xl md:text-4xl">Latest Updates</h3>
+            <h3 className="font-serif text-3xl md:text-4xl tracking-tight">Latest Updates</h3>
             <Link href="/schedule">
               <Button variant="ghost" className="gap-2">
                 View All
@@ -135,21 +152,27 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { title: 'New Photoshoot', category: 'Gallery', date: 'Dec 2024' },
-              { title: 'Affair Season 2', category: 'Series', date: 'Coming Soon' },
-              { title: 'Fan Meet Event', category: 'Schedule', date: 'Jan 2025' },
+              { title: 'New Photoshoot', category: 'Gallery', date: 'Dec 2024', gradient: 'from-rose-200 to-pink-100 dark:from-rose-900/30 dark:to-pink-950/20' },
+              { title: 'Affair Season 2', category: 'Series', date: 'Coming Soon', gradient: 'from-amber-200 to-orange-100 dark:from-amber-900/30 dark:to-orange-950/20' },
+              { title: 'Fan Meet Event', category: 'Schedule', date: 'Jan 2025', gradient: 'from-purple-200 to-violet-100 dark:from-purple-900/30 dark:to-violet-950/20' },
             ].map((item, index) => (
               <motion.div
                 key={index}
-                className="group relative aspect-[4/3] overflow-hidden rounded-sm bg-card magazine-shadow hover:shadow-xl transition-all duration-300"
+                className="group relative aspect-[4/3] overflow-hidden rounded-sm bg-card"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ scale: 1.02 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Image placeholder */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} transition-transform duration-500 group-hover:scale-105`} />
+
+                {/* Glassmorphism border effect */}
+                <div className="absolute inset-0 rounded-sm border border-white/20 group-hover:border-white/40 transition-colors duration-300" />
+                <div className="absolute inset-0 rounded-sm bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                {/* Content */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                   <span className="text-xs text-champagne font-medium tracking-widest">
                     {item.category.toUpperCase()}
@@ -176,7 +199,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="max-w-2xl mx-auto"
           >
-            <h3 className="font-serif text-4xl md:text-5xl lg:text-6xl mb-6">
+            <h3 className="font-serif text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight">
               Explore Their Story
             </h3>
             <p className="text-lg text-muted-foreground mb-8">

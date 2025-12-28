@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Instagram, Twitter, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, Ruler } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useParams } from 'next/navigation';
@@ -14,10 +14,13 @@ const membersData: Record<string, any> = {
     name: 'Lookmhee',
     nickname: 'Lookmhee',
     birthday: '2003-05-15',
+    height: '165cm',
     bio: 'Thai actress known for her captivating role in the Affair series. Her portrayal of a complex character won hearts across Southeast Asia.',
     avatar_url: null,
     ig_handle: '@lookmhee',
     x_handle: '@lookmhee_official',
+    weibo_handle: '@lookmhee_weibo',
+    xhs_handle: '@lookmhee_xhs',
     works: [
       { title: 'Affair', year: '2024', role: 'Lead' },
       { title: 'The Promise', year: '2023', role: 'Supporting' },
@@ -28,10 +31,13 @@ const membersData: Record<string, any> = {
     name: 'Sonya',
     nickname: 'Sonya',
     birthday: '2003-08-22',
+    height: '168cm',
     bio: 'Talented actress who brought depth and authenticity to her character in Affair. Her on-screen chemistry with Lookmhee created a memorable duo.',
     avatar_url: null,
     ig_handle: '@sonya',
     x_handle: '@sonya_official',
+    weibo_handle: '@sonya_weibo',
+    xhs_handle: '@sonya_xhs',
     works: [
       { title: 'Affair', year: '2024', role: 'Lead' },
       { title: 'Secret Love', year: '2023', role: 'Guest' },
@@ -113,7 +119,7 @@ export default function ProfileDetailPage() {
             </div>
 
             {/* Social Links */}
-            <motion.div variants={item} className="mt-6 flex gap-4">
+            <motion.div variants={item} className="mt-6 flex flex-wrap gap-4">
               {member.ig_handle && (
                 <a
                   href={`https://instagram.com/${member.ig_handle.replace('@', '')}`}
@@ -121,7 +127,11 @@ export default function ProfileDetailPage() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  <Instagram className="h-5 w-5" />
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                  </svg>
                   Instagram
                 </a>
               )}
@@ -132,8 +142,36 @@ export default function ProfileDetailPage() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  <Twitter className="h-5 w-5" />
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
                   Twitter
+                </a>
+              )}
+              {member.weibo_handle && (
+                <a
+                  href={`https://weibo.com/${member.weibo_handle.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10.98 17.55c-3.47.55-6.48-1.22-6.72-3.96-.24-2.75 2.38-5.44 5.85-6 3.47-.55 6.48 1.22 6.72 3.97.24 2.74-2.38 5.43-5.85 5.99zm5.95-9.22c-.66-.21-1.11-.46-1.11-.46s1.59-.66 1.59-2.87c0-2.54-2.96-4.05-6.65-4.05H5.35v14.13h7.34c4.16 0 7.34-2.05 7.34-5.22 0-2.1-1.39-3.39-3.1-4.03v-.5zm-10.1-1.07h3.59c1.38 0 2.5.63 2.5 1.78s-1.12 1.78-2.5 1.78H6.83v-3.56zm4.06 8.66H6.83v-3.72h4.06c1.54 0 2.79.72 2.79 1.86s-1.25 1.86-2.79 1.86zm11.63-7.43c-2.32-.5-2.82-1.45-2.82-2.38 0-1.39 1.14-2.32 3.27-2.32 2.13 0 3.05 1.16 3.14 2.55h2.7c-.11-2.78-2.37-4.87-5.84-4.87-3.29 0-5.95 1.77-5.95 4.56 0 2.43 1.39 3.84 4.56 4.53 2.56.56 3.12 1.57 3.12 2.62 0 1.45-1.3 2.5-3.5 2.5-2.47 0-3.55-1.28-3.69-2.87h-2.73c.14 3.05 2.57 5.06 6.42 5.06 3.47 0 6.25-1.77 6.25-4.71 0-2.61-1.66-4.1-4.93-4.67z"/>
+                  </svg>
+                  Weibo
+                </a>
+              )}
+              {member.xhs_handle && (
+                <a
+                  href={`https://xiaohongshu.com/user/profile/${member.xhs_handle.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  Xiaohongshu
                 </a>
               )}
             </motion.div>
@@ -166,6 +204,19 @@ export default function ProfileDetailPage() {
                 <span className="text-muted-foreground">({age} years old)</span>
               </div>
             </motion.div>
+
+            {/* Height */}
+            {member.height && (
+              <motion.div variants={item}>
+                <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-3">
+                  HEIGHT
+                </h3>
+                <div className="flex items-center gap-2">
+                  <Ruler className="h-5 w-5 text-primary" />
+                  <span>{member.height}</span>
+                </div>
+              </motion.div>
+            )}
 
             {/* Filmography */}
             <motion.div variants={item}>
