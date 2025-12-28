@@ -1,0 +1,57 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Database types
+export interface Member {
+  id: string;
+  name: string;
+  nickname: string;
+  birthday: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  ig_handle: string | null;
+  x_handle: string | null;
+  created_at: string;
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  category: 'series' | 'music' | 'magazine';
+  release_date: string | null;
+  description: string | null;
+  cover_url: string | null;
+  watch_url: string | null;
+  created_at: string;
+}
+
+export interface GalleryItem {
+  id: string;
+  image_url: string;
+  caption: string | null;
+  tag: string | null;
+  is_featured: boolean;
+  created_at: string;
+}
+
+export interface Schedule {
+  id: string;
+  title: string;
+  event_date: string;
+  location: string | null;
+  link: string | null;
+  created_at: string;
+}
+
+// Helper function to get public URL from Supabase Storage
+export function getPublicUrl(bucket: string, path: string) {
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(path);
+
+  return data.publicUrl;
+}
