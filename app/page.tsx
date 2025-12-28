@@ -4,6 +4,8 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 import { useRef } from 'react';
 
 export default function HomePage() {
@@ -14,6 +16,13 @@ export default function HomePage() {
   });
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const { language } = useLanguage();
+
+  const updatesData = [
+    { titleKey: 'updates.photoshoot', categoryKey: 'updates.gallery', dateKey: 'updates.dec2024', gradient: 'from-rose-200 to-pink-100 dark:from-rose-900/30 dark:to-pink-950/20' },
+    { titleKey: 'updates.season2', categoryKey: 'updates.series', dateKey: 'updates.comingSoon', gradient: 'from-amber-200 to-orange-100 dark:from-amber-900/30 dark:to-orange-950/20' },
+    { titleKey: 'updates.fanmeet', categoryKey: 'updates.schedule', dateKey: 'updates.jan2025', gradient: 'from-purple-200 to-violet-100 dark:from-purple-900/30 dark:to-violet-950/20' },
+  ];
 
   return (
     <div className="relative">
@@ -51,7 +60,7 @@ export default function HomePage() {
                   {/* Decorative border */}
                   <div className="absolute inset-0 border-2 border-white/20 rounded-sm" />
                   <div className="absolute bottom-5 left-5 z-20">
-                    <p className="text-white text-sm font-medium tracking-wider drop-shadow-lg">LOOKMHEE</p>
+                    <p className="text-white text-sm font-medium tracking-wider drop-shadow-lg">{t(language, 'hero.lookmhee')}</p>
                     <p className="text-white/70 text-xs tracking-widest mt-1">AFFAIR</p>
                   </div>
                 </div>
@@ -84,10 +93,10 @@ export default function HomePage() {
                 transition={{ duration: 0.8, delay: 0.8 }}
               >
                 <h2 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground mb-4">
-                  LMSY
+                  {t(language, 'hero.lmsy')}
                 </h2>
                 <p className="text-sm md:text-base text-muted-foreground tracking-[0.3em] uppercase">
-                  Lookmhee & Sonya
+                  {t(language, 'hero.subtitle')}
                 </p>
               </motion.div>
 
@@ -99,7 +108,7 @@ export default function HomePage() {
                 transition={{ duration: 1, delay: 1.5 }}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-muted-foreground tracking-widest">SCROLL</span>
+                  <span className="text-xs text-muted-foreground tracking-widest">{t(language, 'hero.scroll')}</span>
                   <motion.div
                     className="w-px h-12 bg-gradient-to-b from-primary to-transparent"
                     animate={{ scaleY: [1, 1.5, 1] }}
@@ -123,10 +132,10 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
           >
             <blockquote className="font-serif text-3xl md:text-5xl lg:text-6xl leading-tight text-foreground">
-              &quot;Some feelings are impossible to hide, no matter how hard you try...&quot;
+              {t(language, 'quote.text')}
             </blockquote>
             <cite className="mt-8 block text-sm text-muted-foreground tracking-widest not-italic">
-              — AFFAIR SERIES
+              {t(language, 'quote.source')}
             </cite>
           </motion.div>
         </div>
@@ -141,21 +150,17 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h3 className="font-serif text-3xl md:text-4xl tracking-tight">Latest Updates</h3>
+            <h3 className="font-serif text-3xl md:text-4xl tracking-tight">{t(language, 'updates.title')}</h3>
             <Link href="/schedule">
               <Button variant="ghost" className="gap-2">
-                View All
+                {t(language, 'nav.viewAll')}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { title: 'New Photoshoot', category: 'Gallery', date: 'Dec 2024', gradient: 'from-rose-200 to-pink-100 dark:from-rose-900/30 dark:to-pink-950/20' },
-              { title: 'Affair Season 2', category: 'Series', date: 'Coming Soon', gradient: 'from-amber-200 to-orange-100 dark:from-amber-900/30 dark:to-orange-950/20' },
-              { title: 'Fan Meet Event', category: 'Schedule', date: 'Jan 2025', gradient: 'from-purple-200 to-violet-100 dark:from-purple-900/30 dark:to-violet-950/20' },
-            ].map((item, index) => (
+            {updatesData.map((item, index) => (
               <motion.div
                 key={index}
                 className="group relative aspect-[4/3] overflow-hidden rounded-sm bg-card"
@@ -175,13 +180,13 @@ export default function HomePage() {
                 {/* Content */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                   <span className="text-xs text-champagne font-medium tracking-widest">
-                    {item.category.toUpperCase()}
+                    {t(language, item.categoryKey as any).toUpperCase()}
                   </span>
                   <h4 className="mt-2 font-serif text-xl text-card-foreground group-hover:text-white transition-colors">
-                    {item.title}
+                    {t(language, item.titleKey as any)}
                   </h4>
                   <p className="mt-1 text-sm text-muted-foreground group-hover:text-white/80 transition-colors">
-                    {item.date}
+                    {t(language, item.dateKey as any)}
                   </p>
                 </div>
               </motion.div>
@@ -200,20 +205,20 @@ export default function HomePage() {
             className="max-w-2xl mx-auto"
           >
             <h3 className="font-serif text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight">
-              Explore Their Story
+              {t(language, 'cta.title')}
             </h3>
             <p className="text-lg text-muted-foreground mb-8">
-              Discover the journey of Lookmhee and Sonya through their projects, gallery, and upcoming events.
+              {t(language, 'cta.description')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/profiles">
                 <Button size="lg" className="w-full sm:w-auto min-w-[160px]">
-                  Meet The Duo
+                  {t(language, 'cta.meetDuo')}
                 </Button>
               </Link>
               <Link href="/gallery">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto min-w-[160px]">
-                  View Gallery
+                  {t(language, 'cta.viewGallery')}
                 </Button>
               </Link>
             </div>

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { ExternalLink, Play, BookOpen, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 // Sample projects data - will be replaced with Supabase data
 const projects = [
@@ -68,6 +70,8 @@ const categoryColors = {
 };
 
 export default function ProjectsPage() {
+  const { language } = useLanguage();
+
   // Sort by release date (newest first)
   const sortedProjects = [...projects].sort((a, b) =>
     new Date(b.release_date).getTime() - new Date(a.release_date).getTime()
@@ -84,10 +88,10 @@ export default function ProjectsPage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6">
-              Projects
+              {t(language, 'projects.title')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Explore the complete filmography and magazine features of Lookmhee and Sonya.
+              {t(language, 'projects.description')}
             </p>
           </motion.div>
         </div>
@@ -128,7 +132,7 @@ export default function ProjectsPage() {
                         {/* Content */}
                         <div className={`p-6 md:p-10 flex flex-col justify-center ${isEven ? 'md:order-2' : 'md:order-1'}`}>
                           <time className="text-sm text-muted-foreground mb-2">
-                            {new Date(project.release_date).toLocaleDateString('en-US', {
+                            {new Date(project.release_date).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',
@@ -143,7 +147,7 @@ export default function ProjectsPage() {
                           {project.watch_url && project.watch_url !== '#' && (
                             <Link href={project.watch_url} target="_blank">
                               <Button variant="outline" className="gap-2 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-colors">
-                                Watch Now
+                                {t(language, 'schedule.watchNow')}
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
                             </Link>

@@ -6,6 +6,8 @@ import { ArrowLeft, Calendar, Ruler } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useParams } from 'next/navigation';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 // Sample data - will be replaced with Supabase data fetch
 const membersData: Record<string, any> = {
@@ -62,6 +64,7 @@ const item = {
 
 export default function ProfileDetailPage() {
   const params = useParams();
+  const { language } = useLanguage();
   const member = membersData[params.id as string];
 
   if (!member) {
@@ -70,7 +73,7 @@ export default function ProfileDetailPage() {
         <div className="text-center">
           <h1 className="font-serif text-3xl mb-4">Member not found</h1>
           <Link href="/profiles">
-            <Button>Back to Profiles</Button>
+            <Button>{t(language, 'profiles.back')}</Button>
           </Link>
         </div>
       </div>
@@ -80,6 +83,15 @@ export default function ProfileDetailPage() {
   const birthDate = new Date(member.birthday);
   const age = new Date().getFullYear() - birthDate.getFullYear();
 
+  // Role translations mapping
+  const roleTranslationKey = (role: string) => {
+    const roleLower = role.toLowerCase();
+    if (roleLower === 'lead') return 'profile.lead';
+    if (roleLower === 'supporting') return 'profile.supporting';
+    if (roleLower === 'guest') return 'profile.guest';
+    return role;
+  };
+
   return (
     <div className="min-h-screen">
       {/* Back Button */}
@@ -87,7 +99,7 @@ export default function ProfileDetailPage() {
         <Link href="/profiles">
           <Button variant="ghost" className="gap-2 mb-8">
             <ArrowLeft className="h-4 w-4" />
-            Back to Profiles
+            {t(language, 'profiles.back')}
           </Button>
         </Link>
       </div>
@@ -188,7 +200,7 @@ export default function ProfileDetailPage() {
             {/* Bio */}
             <motion.div variants={item}>
               <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-3">
-                BIOGRAPHY
+                {t(language, 'profile.biography')}
               </h3>
               <p className="text-lg leading-relaxed">{member.bio}</p>
             </motion.div>
@@ -196,12 +208,12 @@ export default function ProfileDetailPage() {
             {/* Birthday */}
             <motion.div variants={item}>
               <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-3">
-                BORN
+                {t(language, 'profile.born')}
               </h3>
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
-                <span>{birthDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                <span className="text-muted-foreground">({age} years old)</span>
+                <span>{birthDate.toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <span className="text-muted-foreground">({t(language, 'profile.yearsOld', { age })})</span>
               </div>
             </motion.div>
 
@@ -209,7 +221,7 @@ export default function ProfileDetailPage() {
             {member.height && (
               <motion.div variants={item}>
                 <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-3">
-                  HEIGHT
+                  {t(language, 'profile.height')}
                 </h3>
                 <div className="flex items-center gap-2">
                   <Ruler className="h-5 w-5 text-primary" />
@@ -221,7 +233,7 @@ export default function ProfileDetailPage() {
             {/* Filmography */}
             <motion.div variants={item}>
               <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-4">
-                WORKS
+                {t(language, 'profile.works')}
               </h3>
               <div className="space-y-4">
                 {member.works.map((work: any, index: number) => (
@@ -232,7 +244,7 @@ export default function ProfileDetailPage() {
                       </h4>
                       <span className="text-sm text-muted-foreground">{work.year}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{work.role}</p>
+                    <p className="text-sm text-muted-foreground">{t(language, roleTranslationKey(work.role) as any)}</p>
                     {index < member.works.length - 1 && <Separator className="mt-4" />}
                   </div>
                 ))}
@@ -245,7 +257,7 @@ export default function ProfileDetailPage() {
               className="pt-8 border-t border-border"
             >
               <blockquote className="font-serif text-2xl md:text-3xl leading-relaxed text-foreground/80">
-                &quot;Grateful for every opportunity to share stories that touch hearts.&quot;
+                {t(language, 'profile.quote')}
               </blockquote>
               <cite className="mt-4 block text-sm text-muted-foreground not-italic">
                 — {member.nickname}

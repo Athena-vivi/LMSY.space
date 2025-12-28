@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRight, Instagram } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 // Sample data - will be replaced with Supabase data
 const members = [
@@ -28,6 +29,8 @@ const members = [
 ];
 
 export default function ProfilesPage() {
+  const { language } = useLanguage();
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -39,10 +42,10 @@ export default function ProfilesPage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6">
-              Profiles
+              {t(language, 'profiles.title')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Get to know Lookmhee and Sonya - the talented duo behind the Affair series.
+              {t(language, 'profiles.description')}
             </p>
           </motion.div>
         </div>
@@ -82,7 +85,7 @@ export default function ProfilesPage() {
                           {member.bio}
                         </p>
                         <div className="flex items-center text-primary font-medium">
-                          View Profile
+                          {t(language, 'profiles.viewProfile')}
                           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>

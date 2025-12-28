@@ -8,8 +8,8 @@ import {
   DialogContent,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 // Sample gallery data - will be replaced with Supabase data
 const galleryItems = [
@@ -24,7 +24,6 @@ const galleryItems = [
   { id: '9', image_url: '', caption: 'Style moments', tag: 'Fashion', is_featured: false },
 ];
 
-const tags = ['All', 'Fashion', 'BehindTheScene', 'Affair', 'Magazine'];
 const gradients = [
   'from-rose-100 to-rose-200',
   'from-amber-100 to-amber-200',
@@ -35,7 +34,15 @@ const gradients = [
 
 export default function GalleryPage() {
   const [selectedTag, setSelectedTag] = useState('All');
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const { language } = useLanguage();
+
+  const tags = [
+    { key: 'gallery.tagAll', value: 'All' },
+    { key: 'gallery.tagFashion', value: 'Fashion' },
+    { key: 'gallery.tagBehindTheScene', value: 'BehindTheScene' },
+    { key: 'gallery.tagAffair', value: 'Affair' },
+    { key: 'gallery.tagMagazine', value: 'Magazine' },
+  ];
 
   const filteredItems = selectedTag === 'All'
     ? galleryItems
@@ -52,10 +59,10 @@ export default function GalleryPage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6">
-              Gallery
+              {t(language, 'gallery.title')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              A visual journey through moments captured in time.
+              {t(language, 'gallery.description')}
             </p>
           </motion.div>
         </div>
@@ -72,15 +79,15 @@ export default function GalleryPage() {
           >
             {tags.map((tag) => (
               <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
+                key={tag.value}
+                onClick={() => setSelectedTag(tag.value)}
                 className={`px-4 py-2 text-sm font-medium transition-all duration-300 ${
-                  selectedTag === tag
+                  selectedTag === tag.value
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 }`}
               >
-                #{tag}
+                #{t(language, tag.key as any)}
               </button>
             ))}
           </motion.div>
@@ -162,7 +169,7 @@ export default function GalleryPage() {
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <p className="text-muted-foreground">No images found for this tag.</p>
+              <p className="text-muted-foreground">{t(language, 'gallery.noImages')}</p>
             </motion.div>
           )}
         </div>

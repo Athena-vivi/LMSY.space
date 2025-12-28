@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/components/language-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -39,11 +40,13 @@ export default function RootLayout({
         className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}
       >
         <ThemeProvider defaultTheme="light" storageKey="lmsy-theme">
-          <div className="flex min-h-screen flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
+          <LanguageProvider defaultLanguage="en">
+            <div className="flex min-h-screen flex-col">
+              <SiteHeader />
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
+            </div>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

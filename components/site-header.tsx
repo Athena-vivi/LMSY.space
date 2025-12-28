@@ -9,19 +9,23 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/components/theme-provider';
+import { useLanguage } from '@/components/language-provider';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { t } from '@/lib/languages';
 
 const navItems = [
-  { name: 'Home', href: '/' },
-  { name: 'Profiles', href: '/profiles' },
-  { name: 'Gallery', href: '/gallery' },
-  { name: 'Projects', href: '/projects' },
-  { name: 'Schedule', href: '/schedule' },
+  { key: 'nav.home', href: '/' },
+  { key: 'nav.profiles', href: '/profiles' },
+  { key: 'nav.gallery', href: '/gallery' },
+  { key: 'nav.projects', href: '/projects' },
+  { key: 'nav.schedule', href: '/schedule' },
 ];
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { language } = useLanguage();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -46,13 +50,14 @@ export function SiteHeader() {
                     : 'text-muted-foreground'
                 }`}
               >
-                {item.name}
+                {t(language, item.key as any)}
               </Link>
             ))}
           </nav>
 
-          {/* Theme Toggle & Mobile Menu */}
+          {/* Theme Toggle, Language Switcher & Mobile Menu */}
           <div className="flex items-center space-x-2">
+            <LanguageSwitcher />
             <Button
               variant="ghost"
               size="icon"
@@ -92,14 +97,18 @@ export function SiteHeader() {
                               : 'text-muted-foreground'
                           }`}
                         >
-                          {item.name}
+                          {t(language, item.key as any)}
                         </Link>
                         {index < navItems.length - 1 && <Separator className="mt-2" />}
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </nav>
-                <div className="mt-8">
+                <div className="mt-8 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <LanguageSwitcher />
+                    <span className="text-sm text-muted-foreground">Language</span>
+                  </div>
                   <Button
                     variant="outline"
                     className="w-full justify-start"
@@ -107,7 +116,7 @@ export function SiteHeader() {
                   >
                     <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                     <Moon className="mr-2 h-4 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    Toggle Theme
+                    {t(language, 'nav.toggleTheme')}
                   </Button>
                 </div>
               </SheetContent>

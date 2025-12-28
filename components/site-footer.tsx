@@ -1,10 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, Instagram, Twitter } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 export function SiteFooter() {
+  const { language } = useLanguage();
+
   return (
     <footer className="border-t bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,32 +18,32 @@ export function SiteFooter() {
             <div>
               <h3 className="font-serif text-2xl font-bold text-primary mb-4">LMSY</h3>
               <p className="text-sm text-muted-foreground">
-                Official fan website dedicated to Lookmhee and Sonya. Made with love by fans, for fans.
+                {t(language, 'footer.tagline')}
               </p>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="font-medium mb-4">Quick Links</h4>
+              <h4 className="font-medium mb-4">{t(language, 'footer.quickLinks')}</h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/profiles" className="text-muted-foreground hover:text-primary transition-colors">
-                    Profiles
+                    {t(language, 'nav.profiles')}
                   </Link>
                 </li>
                 <li>
                   <Link href="/gallery" className="text-muted-foreground hover:text-primary transition-colors">
-                    Gallery
+                    {t(language, 'nav.gallery')}
                   </Link>
                 </li>
                 <li>
                   <Link href="/projects" className="text-muted-foreground hover:text-primary transition-colors">
-                    Projects
+                    {t(language, 'nav.projects')}
                   </Link>
                 </li>
                 <li>
                   <Link href="/schedule" className="text-muted-foreground hover:text-primary transition-colors">
-                    Schedule
+                    {t(language, 'nav.schedule')}
                   </Link>
                 </li>
               </ul>
@@ -47,25 +51,31 @@ export function SiteFooter() {
 
             {/* Social Links */}
             <div>
-              <h4 className="font-medium mb-4">Follow Us</h4>
+              <h4 className="font-medium mb-4">{t(language, 'footer.followUs')}</h4>
               <div className="flex gap-4">
                 <a
                   href="https://instagram.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                 >
-                  <Instagram className="h-5 w-5" />
-                  <span className="sr-only">Instagram</span>
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                  </svg>
+                  <span className="sr-only">{t(language, 'footer.instagram')}</span>
                 </a>
                 <a
                   href="https://twitter.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                 >
-                  <Twitter className="h-5 w-5" />
-                  <span className="sr-only">Twitter</span>
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                  <span className="sr-only">{t(language, 'footer.twitter')}</span>
                 </a>
               </div>
             </div>
@@ -75,10 +85,10 @@ export function SiteFooter() {
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} LMSY Fan Site. All rights reserved.
+              {t(language, 'footer.copyright', { year: new Date().getFullYear() })}
             </p>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
-              Made with <Heart className="h-4 w-4 fill-primary text-primary" /> by fans
+              {t(language, 'footer.madeWith')} <Heart className="h-4 w-4 fill-primary text-primary" />
             </p>
           </div>
         </div>

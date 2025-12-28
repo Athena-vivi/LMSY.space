@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { MapPin, Calendar, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 // Sample schedule data - will be replaced with Supabase data
 const scheduleItems = [
@@ -69,9 +71,9 @@ function isEventPast(dateString: string): boolean {
   return new Date(dateString) < now;
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString: string, locale: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(locale === 'th' ? 'th-TH' : locale === 'zh' ? 'zh-CN' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -79,15 +81,21 @@ function formatDate(dateString: string): string {
   });
 }
 
-function formatTime(dateString: string): string {
+function formatTime(dateString: string, locale: string): string {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
+  return date.toLocaleTimeString(locale === 'th' ? 'th-TH' : locale === 'zh' ? 'zh-CN' : 'en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
 }
 
+function formatMonth(dateString: string, locale: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(locale === 'th' ? 'th-TH' : locale === 'zh' ? 'zh-CN' : 'en-US', { month: 'short' });
+}
+
 export default function SchedulePage() {
+  const { language } = useLanguage();
   const upcomingEvents = scheduleItems.filter(item => !isEventPast(item.event_date));
   const pastEventsSorted = [...pastEvents].sort((a, b) =>
     new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
@@ -104,10 +112,10 @@ export default function SchedulePage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6">
-              Schedule
+              {t(language, 'schedule.title')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Stay updated with upcoming events, appearances, and activities.
+              {t(language, 'schedule.description')}
             </p>
           </motion.div>
         </div>
@@ -122,7 +130,7 @@ export default function SchedulePage() {
             viewport={{ once: true }}
             className="font-serif text-3xl md:text-4xl mb-12"
           >
-            Upcoming Events
+            {t(language, 'schedule.upcoming')}
           </motion.h2>
 
           {upcomingEvents.length === 0 ? (
@@ -131,7 +139,7 @@ export default function SchedulePage() {
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <p className="text-muted-foreground">No upcoming events scheduled.</p>
+              <p className="text-muted-foreground">{t(language, 'schedule.noEvents')}</p>
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
@@ -153,7 +161,7 @@ export default function SchedulePage() {
                               {new Date(event.event_date).getDate()}
                             </span>
                             <span className="text-xs uppercase">
-                              {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                              {formatMonth(event.event_date, language)}
                             </span>
                           </div>
                         </div>
@@ -167,14 +175,14 @@ export default function SchedulePage() {
                           <div className="flex flex-wrap gap-x-6 gap-y-2 text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4" />
-                              <span className="text-sm">{formatDate(event.event_date)}</span>
+                              <span className="text-sm">{formatDate(event.event_date, language)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <MapPin className="h-4 w-4" />
                               <span className="text-sm">{event.location}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm">{formatTime(event.event_date)}</span>
+                              <span className="text-sm">{formatTime(event.event_date, language)}</span>
                             </div>
                           </div>
                         </div>
@@ -207,7 +215,7 @@ export default function SchedulePage() {
               viewport={{ once: true }}
               className="font-serif text-3xl md:text-4xl mb-12"
             >
-              Past Events
+              {t(language, 'schedule.past')}
             </motion.h2>
 
             <div className="grid grid-cols-1 gap-6">
@@ -229,7 +237,7 @@ export default function SchedulePage() {
                               {new Date(event.event_date).getDate()}
                             </span>
                             <span className="text-xs uppercase">
-                              {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                              {formatMonth(event.event_date, language)}
                             </span>
                           </div>
                         </div>
@@ -243,7 +251,7 @@ export default function SchedulePage() {
                           <div className="flex flex-wrap gap-x-6 gap-y-2 text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4" />
-                              <span className="text-sm">{formatDate(event.event_date)}</span>
+                              <span className="text-sm">{formatDate(event.event_date, language)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <MapPin className="h-4 w-4" />
