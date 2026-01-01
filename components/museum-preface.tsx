@@ -2,7 +2,7 @@
 
 import { motion, Variants } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useLanguage } from '@/components/language-provider';
 import { useTheme } from '@/components/theme-provider';
 
@@ -11,7 +11,42 @@ export function MuseumPreface() {
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const { language } = useLanguage();
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Handle client-side mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Debug logging
+  useEffect(() => {
+    if (mounted) {
+      console.log('[MuseumPreface] language:', language, 'theme:', theme, 'isDark:', isDark);
+    }
+  }, [language, theme, isDark, mounted]);
+
+  // Resolve system theme to actual dark/light value
+  useEffect(() => {
+    if (!mounted) return;
+
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setIsDark(systemTheme);
+    } else {
+      setIsDark(theme === 'dark');
+    }
+  }, [theme, mounted]);
+
+  // Listen for system theme changes when using system theme
+  useEffect(() => {
+    if (!mounted || theme !== 'system') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, [theme, mounted]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -115,7 +150,7 @@ export function MuseumPreface() {
         <div
           className="absolute inset-0 transition-transform duration-[20s] ease-in-out animate-gradient-shift"
           style={{
-            background: isDark
+            backgroundImage: isDark
               ? 'radial-gradient(circle at 20% 50%, rgba(251, 191, 36, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(56, 189, 248, 0.1) 0%, transparent 50%)'
               : 'radial-gradient(circle at 20% 50%, rgba(251, 191, 36, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(56, 189, 248, 0.15) 0%, transparent 50%)',
             backgroundSize: '200% 200%',
