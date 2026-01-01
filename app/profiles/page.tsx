@@ -17,6 +17,7 @@ const members = [
     bio: 'Thai actress known for her captivating role in the Affair series.',
     avatar_url: null,
     ig_handle: 'lookmhee',
+    themeColor: 'lmsy-yellow', // Lookmhee's color
   },
   {
     id: 'sonya',
@@ -25,6 +26,7 @@ const members = [
     bio: 'Talented actress who brought the character to life in Affair.',
     avatar_url: null,
     ig_handle: 'sonya',
+    themeColor: 'lmsy-blue', // Sonya's color
   },
 ];
 
@@ -63,28 +65,44 @@ export default function ProfilesPage() {
                 transition={{ delay: index * 0.2, duration: 0.6 }}
               >
                 <Link href={`/profiles/${member.id}`}>
-                  <Card className="group overflow-hidden border-0 magazine-shadow hover:shadow-xl transition-all duration-300">
+                  <Card className={`group overflow-hidden border-2 magazine-shadow hover:shadow-xl transition-all duration-300 ${
+                    member.themeColor === 'lmsy-yellow'
+                      ? 'hover:shadow-lmsy-yellow/20 hover:border-lmsy-yellow'
+                      : 'hover:shadow-lmsy-blue/20 hover:border-lmsy-blue'
+                  }`}>
                     <CardContent className="p-0">
-                      <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/30 dark:to-rose-950/30">
+                      <div className={`relative aspect-[3/4] overflow-hidden bg-gradient-to-br ${
+                        member.themeColor === 'lmsy-yellow'
+                          ? 'from-lmsy-yellow/20 to-lmsy-yellow/5 dark:from-lmsy-yellow/30 dark:to-lmsy-yellow/10'
+                          : 'from-lmsy-blue/20 to-lmsy-blue/5 dark:from-lmsy-blue/30 dark:to-lmsy-blue/10'
+                      }`}>
                         {/* Placeholder gradient for member image */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Avatar className="h-32 w-32 md:h-48 md:w-48">
                             <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
-                            <AvatarFallback className="text-3xl md:text-4xl bg-primary/10 text-primary">
+                            <AvatarFallback className={`text-3xl md:text-4xl ${
+                              member.themeColor === 'lmsy-yellow'
+                                ? 'bg-lmsy-yellow/20 text-lmsy-yellow'
+                                : 'bg-lmsy-blue/20 text-lmsy-blue'
+                            }`}>
                               {member.name[0]}
                             </AvatarFallback>
                           </Avatar>
                         </div>
                       </div>
                       <div className="p-6 md:p-8">
-                        <h3 className="font-serif text-2xl md:text-3xl mb-2 group-hover:text-primary transition-colors">
+                        <h3 className={`font-serif text-2xl md:text-3xl mb-2 group-hover:text-${
+                          member.themeColor
+                        } transition-colors`}>
                           {member.name}
                         </h3>
                         <p className="text-muted-foreground mb-4 line-clamp-2">
                           {member.bio}
                         </p>
-                        <div className="flex items-center text-primary font-medium">
+                        <div className={`flex items-center font-medium text-${
+                          member.themeColor
+                        }`}>
                           {t(language, 'profiles.viewProfile')}
                           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </div>

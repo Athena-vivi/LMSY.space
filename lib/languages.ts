@@ -48,7 +48,7 @@ export const translations = {
     // CTA
     'cta.title': 'Explore Their Story',
     'cta.description': 'Discover the journey of Lookmhee and Sonya through their projects, gallery, and upcoming events.',
-    'cta.meetDuo': 'Meet The Duo',
+    'cta.meetDuo': 'Join the Journey, Besties',
     'cta.viewGallery': 'View Gallery',
 
     // Profiles
@@ -91,13 +91,16 @@ export const translations = {
     'schedule.watchNow': 'Watch Now',
 
     // Footer
-    'footer.tagline': 'Official fan website dedicated to Lookmhee and Sonya. Made with love by fans, for fans.',
+    'footer.tagline': 'A dedicated space for LMSY and their Besties.',
     'footer.quickLinks': 'Quick Links',
     'footer.followUs': 'Follow Us',
     'footer.copyright': '© {year} LMSY Fan Site. All rights reserved.',
-    'footer.madeWith': 'Made with love by fans',
+    'footer.madeWith': 'Crafted with 💛 & 💙 by a Bestie, for all Besties',
     'footer.instagram': 'Instagram',
     'footer.twitter': 'Twitter',
+
+    // Hero
+    'hero.besties': 'A dedicated space for LMSY and their Besties.',
   },
   zh: {
     // Navigation
@@ -116,6 +119,7 @@ export const translations = {
     'hero.scroll': '滚动',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
+    'hero.besties': '属于 LMSY 和她们的 Besties 专属空间。',
 
     // Quote
     'quote.text': '"有些情感是无法隐藏的，无论你多么努力..."',
@@ -136,7 +140,7 @@ export const translations = {
     // CTA
     'cta.title': '探索她们的故事',
     'cta.description': '通过作品、相册和即将到来的活动，了解 Lookmhee 和 Sonya 的旅程。',
-    'cta.meetDuo': '认识她们',
+    'cta.meetDuo': '加入旅程吧，Besties',
     'cta.viewGallery': '查看相册',
 
     // Profiles
@@ -179,11 +183,11 @@ export const translations = {
     'schedule.watchNow': '立即观看',
 
     // Footer
-    'footer.tagline': 'Lookmhee 和 Sonya 官方粉丝网站。由粉丝倾心打造，献给粉丝。',
+    'footer.tagline': '属于 LMSY 和她们的 Besties 专属空间。',
     'footer.quickLinks': '快速链接',
     'footer.followUs': '关注我们',
     'footer.copyright': '© {year} LMSY 粉丝网站。版权所有。',
-    'footer.madeWith': '由粉丝倾心打造',
+    'footer.madeWith': '由一位 Bestie 用 💛 & 💙 为所有 Besties 打造',
     'footer.instagram': 'Instagram',
     'footer.twitter': 'Twitter',
   },
@@ -204,6 +208,7 @@ export const translations = {
     'hero.scroll': 'เลื่อน',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
+    'hero.besties': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
 
     // Quote
     'quote.text': '"บางความรู้สึกไม่อาจซ่อนไว้ได้ ไม่ว่าคุณจะพยายามเพียงใด..."',
@@ -224,7 +229,7 @@ export const translations = {
     // CTA
     'cta.title': 'สำรวจเรื่องราวของพวกเธอ',
     'cta.description': 'ค้นพบการเดินทางของ Lookmhee และ Sonya ผ่านผลงาน แกลเลอรี่ และกิจกรรมที่กำลังจะเกิดขึ้น',
-    'cta.meetDuo': 'พบกับคู่หู',
+    'cta.meetDuo': 'ร่วมการเดินทางด้วยกันนะ Besties',
     'cta.viewGallery': 'ดูแกลเลอรี่',
 
     // Profiles
@@ -267,11 +272,11 @@ export const translations = {
     'schedule.watchNow': 'รับชมเลย',
 
     // Footer
-    'footer.tagline': 'เว็บไซต์แฟนคลับอย่างเป็นทางการของ Lookmhee และ Sonya สร้างด้วยความรักโดยแฟนคลับ เพื่อแฟนคลับ',
+    'footer.tagline': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
     'footer.quickLinks': 'ลิงก์ด่วน',
     'footer.followUs': 'ติดตามเรา',
     'footer.copyright': '© {year} LMSY Fan Site. สงวนลิขสิทธิ์',
-    'footer.madeWith': 'สร้างด้วยความรักโดยแฟนคลับ',
+    'footer.madeWith': 'สร้างสรรค์ด้วย 💛 & 💙 โดย Bestie คนหนึ่ง สำหรับ Besties ทุกคน',
     'footer.instagram': 'Instagram',
     'footer.twitter': 'Twitter',
   },

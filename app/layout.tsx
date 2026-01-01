@@ -27,6 +27,17 @@ export const metadata: Metadata = {
   title: "LMSY | Lookmhee & Sonya Official Fan Site",
   description: "Official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Affair series stars",
   keywords: ["LMSY", "Lookmhee", "Sonya", "Affair", "Thai GL", "Girl's Love"],
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

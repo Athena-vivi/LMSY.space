@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -26,16 +27,46 @@ export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { language } = useLanguage();
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-serif text-2xl font-bold tracking-tight text-primary">
-              LMSY
-            </span>
+          <Link
+            href="/"
+            className="flex items-center gap-3"
+            onMouseEnter={() => setIsLogoHovered(true)}
+            onMouseLeave={() => setIsLogoHovered(false)}
+          >
+            <div className="relative h-8 w-8 md:h-9 md:w-9">
+              <Image
+                src="/lmsy-logo.png"
+                alt="LMSY Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+            <div className="relative">
+              <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                LMSY
+              </span>
+              <AnimatePresence>
+                {isLogoHovered && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-medium"
+                  >
+                    Hello, Besties! 💛💙
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -44,9 +75,9 @@ export function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
+                className={`text-sm font-medium transition-all duration-300 hover:text-transparent hover:bg-gradient-to-r hover:from-lmsy-yellow hover:to-lmsy-blue hover:bg-clip-text ${
                   pathname === item.href
-                    ? 'text-primary border-b-2 border-primary pb-0.5'
+                    ? 'text-transparent bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text border-b-2 border-lmsy-yellow pb-0.5'
                     : 'text-muted-foreground'
                 }`}
               >

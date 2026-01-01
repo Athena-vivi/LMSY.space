@@ -58,6 +58,20 @@ ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gallery ENABLE ROW LEVEL SECURITY;
 ALTER TABLE schedule ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Allow public read access on members" ON members;
+DROP POLICY IF EXISTS "Allow public read access on projects" ON projects;
+DROP POLICY IF EXISTS "Allow public read access on gallery" ON gallery;
+DROP POLICY IF EXISTS "Allow public read access on schedule" ON schedule;
+DROP POLICY IF EXISTS "Allow authenticated insert on members" ON members;
+DROP POLICY IF EXISTS "Allow authenticated update on members" ON members;
+DROP POLICY IF EXISTS "Allow authenticated insert on projects" ON projects;
+DROP POLICY IF EXISTS "Allow authenticated update on projects" ON projects;
+DROP POLICY IF EXISTS "Allow authenticated insert on gallery" ON gallery;
+DROP POLICY IF EXISTS "Allow authenticated update on gallery" ON gallery;
+DROP POLICY IF EXISTS "Allow authenticated insert on schedule" ON schedule;
+DROP POLICY IF EXISTS "Allow authenticated update on schedule" ON schedule;
+
 -- Create policies for public read access
 CREATE POLICY "Allow public read access on members"
   ON members FOR SELECT
