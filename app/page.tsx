@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { useRef } from 'react';
+import Image from 'next/image';
 
 export default function HomePage() {
   const ref = useRef(null);
@@ -60,29 +61,44 @@ export default function HomePage() {
                   className="relative"
                   // Initial state and entrance animation
                   initial={{ opacity: 0, scale: 0.9, filter: 'blur(8px)', y: 20 }}
-                  // Entrance: fade in, scale up, remove blur
+                  // Entrance: fade in, scale up, remove blur, then float
                   animate={{
                     opacity: 1,
                     scale: 1,
                     filter: 'blur(0px)',
-                    y: 0,
+                    // Floating animation - very slow and subtle space-like drift
+                    y: [20, 10, 20],
                   }}
                   transition={{
-                    duration: 1,
-                    ease: [0.25, 0.46, 0.45, 0.94],
+                    opacity: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
+                    scale: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
+                    filter: { duration: 1 },
+                    y: {
+                      duration: 6, // Very slow - 6 seconds for full cycle
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: 1, // Start floating after entrance animation
+                    },
                   }}
                 >
                   {/* Photo Container - 3:4 Aspect Ratio */}
                   <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-gradient-to-br from-muted/50 to-muted border border-border">
-                    {/* Placeholder for actual photo */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <p className="text-muted-foreground/50 text-sm tracking-widest uppercase">Photo Coming Soon</p>
-                        <p className="text-muted-foreground/30 text-xs mt-2">Lookmhee & Sonya</p>
-                      </div>
-                    </div>
+                    {/* Main photo of Lookmhee & Sonya */}
+                    <Image
+                      src="/lmsy-001.jpg"
+                      alt="Lookmhee & Sonya"
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+
                     {/* Subtle inner glow */}
                     <div className="absolute inset-0 bg-gradient-radial from-lmsy-blue/10 via-transparent to-transparent" />
+
+                    {/* Fade mask on left side - seamless blend with text area */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
+                    </div>
                   </div>
 
                   {/* Ambient glow behind photo */}
