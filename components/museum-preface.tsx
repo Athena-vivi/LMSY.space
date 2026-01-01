@@ -2,51 +2,18 @@
 
 import { motion, Variants } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { useLanguage } from '@/components/language-provider';
-import { useTheme } from '@/components/theme-provider';
 
 export function MuseumPreface() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const { language } = useLanguage();
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  // Handle client-side mount
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Debug logging
-  useEffect(() => {
-    if (mounted) {
-      console.log('[MuseumPreface] language:', language, 'theme:', theme, 'isDark:', isDark);
-    }
-  }, [language, theme, isDark, mounted]);
-
-  // Resolve system theme to actual dark/light value
-  useEffect(() => {
-    if (!mounted) return;
-
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDark(systemTheme);
-    } else {
-      setIsDark(theme === 'dark');
-    }
-  }, [theme, mounted]);
-
-  // Listen for system theme changes when using system theme
-  useEffect(() => {
-    if (!mounted || theme !== 'system') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, [theme, mounted]);
+  // Simply check if document has dark class (works with ThemeProvider)
+  const isDark = typeof document !== 'undefined'
+    ? document.documentElement.classList.contains('dark')
+    : false;
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
