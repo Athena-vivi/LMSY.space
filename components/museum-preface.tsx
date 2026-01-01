@@ -2,18 +2,39 @@
 
 import { motion, Variants } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useLanguage } from '@/components/language-provider';
+import { useTheme } from '@/components/theme-provider';
 
 export function MuseumPreface() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const { language } = useLanguage();
+  const { theme } = useTheme();
+  const [isDark, setIsDark] = useState(false);
 
-  // Simply check if document has dark class (works with ThemeProvider)
-  const isDark = typeof document !== 'undefined'
-    ? document.documentElement.classList.contains('dark')
-    : false;
+  // Update isDark when theme changes
+  useEffect(() => {
+    const updateDark = () => {
+      if (theme === 'dark') {
+        setIsDark(true);
+      } else if (theme === 'light') {
+        setIsDark(false);
+      } else {
+        // system theme
+        setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      }
+    };
+
+    updateDark();
+
+    // If system theme, listen for changes
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      mediaQuery.addEventListener('change', updateDark);
+      return () => mediaQuery.removeEventListener('change', updateDark);
+    }
+  }, [theme]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
