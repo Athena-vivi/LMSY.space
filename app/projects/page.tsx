@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ExternalLink, Play, BookOpen, Camera } from 'lucide-react';
@@ -7,55 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-
-// Sample projects data - will be replaced with Supabase data
-const projects = [
-  {
-    id: '1',
-    title: 'Affair',
-    category: 'series' as const,
-    release_date: '2024-01-15',
-    description: 'A compelling Thai GL series that explores complex emotions and forbidden relationships. The story follows two women whose lives intertwine in unexpected ways.',
-    cover_url: '',
-    watch_url: '#',
-  },
-  {
-    id: '2',
-    title: 'The Promise',
-    category: 'series' as const,
-    release_date: '2023-08-20',
-    description: 'A heartfelt drama about keeping promises and the enduring power of love across time and circumstances.',
-    cover_url: '',
-    watch_url: '#',
-  },
-  {
-    id: '3',
-    title: 'Secret Love',
-    category: 'series' as const,
-    release_date: '2023-05-10',
-    description: 'A romantic series exploring the nuances of hidden affection and the courage to reveal one\'s true feelings.',
-    cover_url: '',
-    watch_url: '#',
-  },
-  {
-    id: '4',
-    title: 'VOGUE Thailand',
-    category: 'magazine' as const,
-    release_date: '2024-03-01',
-    description: 'Exclusive fashion spread showcasing elegance and contemporary style.',
-    cover_url: '',
-    watch_url: '#',
-  },
-  {
-    id: '5',
-    title: 'L\'Officiel Thailand',
-    category: 'magazine' as const,
-    release_date: '2024-06-15',
-    description: 'A stunning editorial capturing the essence of modern Thai beauty and fashion.',
-    cover_url: '',
-    watch_url: '#',
-  },
-];
+import { supabase, type Project } from '@/lib/supabase';
+import { CompactCatalogNumber } from '@/components/catalog-number';
 
 const categoryIcons = {
   series: Play,
@@ -71,11 +25,32 @@ const categoryColors = {
 
 export default function ProjectsPage() {
   const { language } = useLanguage();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sort by release date (newest first)
-  const sortedProjects = [...projects].sort((a, b) =>
-    new Date(b.release_date).getTime() - new Date(a.release_date).getTime()
-  );
+  useEffect(() => {
+    async function fetchProjects() {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('release_date', { ascending: false });
+
+      if (!error && data) {
+        setProjects(data);
+      }
+      setLoading(false);
+    }
+
+    fetchProjects();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-muted border-t-foreground"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -101,7 +76,7 @@ export default function ProjectsPage() {
       <section className="pb-24 md:pb-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-12">
-            {sortedProjects.map((project, index) => {
+            {projects.map((project, index) => {
               const Icon = categoryIcons[project.category];
               const isEven = index % 2 === 0;
 
@@ -127,31 +102,64 @@ export default function ProjectsPage() {
                               {project.category.toUpperCase()}
                             </span>
                           </div>
+
+                          {/* Catalog Number */}
+                          <div className="absolute bottom-3 right-3">
+                            <CompactCatalogNumber
+                              id={project.id}
+                              createdAt={project.created_at}
+                              index={index}
+                            />
+                          </div>
                         </div>
 
                         {/* Content */}
                         <div className={`p-6 md:p-10 flex flex-col justify-center ${isEven ? 'md:order-2' : 'md:order-1'}`}>
-                          <time className="text-sm text-muted-foreground mb-2">
-                            {new Date(project.release_date).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            })}
-                          </time>
-                          <h3 className="font-serif text-3xl md:text-4xl mb-4 group-hover:text-primary transition-colors">
+                          {project.release_date && (
+                            <time className="text-sm text-muted-foreground mb-2">
+                              {new Date(project.release_date).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })}
+                            </time>
+                          )}
+
+                          <h3 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
                             {project.title}
                           </h3>
-                          <p className="text-muted-foreground leading-relaxed mb-6">
-                            {project.description}
-                          </p>
-                          {project.watch_url && project.watch_url !== '#' && (
-                            <Link href={project.watch_url} target="_blank">
-                              <Button variant="outline" className="gap-2 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-colors">
-                                {t(language, 'schedule.watchNow')}
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-                            </Link>
+
+                          {project.description && (
+                            <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-6">
+                              {project.description}
+                            </p>
                           )}
+
+                          <div className="flex gap-3">
+                            <Button
+                              asChild
+                              size="lg"
+                              className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-foreground hover:opacity-90"
+                            >
+                              <Link href={`/projects/${project.id}`}>
+                                View Details
+                              </Link>
+                            </Button>
+
+                            {project.watch_url && (
+                              <Button
+                                asChild
+                                size="lg"
+                                variant="outline"
+                                className="border-lmsy-blue text-lmsy-blue hover:bg-lmsy-blue hover:text-foreground"
+                              >
+                                <a href={project.watch_url} target="_blank" rel="noopener noreferrer">
+                                  <ExternalLink className="mr-2 h-4 w-4" />
+                                  Watch
+                                </a>
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -160,6 +168,16 @@ export default function ProjectsPage() {
               );
             })}
           </div>
+
+          {projects.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <p className="text-muted-foreground text-lg">No projects found</p>
+            </motion.div>
+          )}
         </div>
       </section>
     </div>

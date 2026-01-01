@@ -1,13 +1,32 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, Archive } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
+import { supabase } from '@/lib/supabase';
 
 export function SiteFooter() {
   const { language } = useLanguage();
+  const [artifactCount, setArtifactCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchStats() {
+      // Count total artifacts across all collections
+      const [galleryCount, projectCount, scheduleCount] = await Promise.all([
+        supabase.from('gallery').select('*', { count: 'exact', head: true }),
+        supabase.from('projects').select('*', { count: 'exact', head: true }),
+        supabase.from('schedule').select('*', { count: 'exact', head: true }),
+      ]);
+
+      const total = (galleryCount.count || 0) + (projectCount.count || 0) + (scheduleCount.count || 0);
+      setArtifactCount(total);
+    }
+
+    fetchStats();
+  }, []);
 
   return (
     <footer className="border-t bg-muted/30">
@@ -82,6 +101,16 @@ export function SiteFooter() {
           </div>
 
           <Separator className="my-8" />
+
+          {/* Museum Stats */}
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-mono text-muted-foreground/60 tracking-wide">
+              <Archive className="h-4 w-4" />
+              <span>Currently Preserving</span>
+              <span className="font-bold text-foreground/80">{artifactCount}</span>
+              <span>Artifacts of LMSY</span>
+            </div>
+          </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">

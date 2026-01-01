@@ -8,6 +8,7 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { supabase, type GalleryItem } from '@/lib/supabase';
 import Lightbox from './lightbox';
+import { CompactCatalogNumber } from '@/components/catalog-number';
 
 const gradients = [
   'from-lmsy-yellow/20 to-lmsy-yellow/5',
@@ -177,6 +178,15 @@ export default function GalleryPage() {
 
                         {/* Hover Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                        {/* Catalog Number - Always Visible */}
+                        <div className="absolute bottom-2 right-2 opacity-60 hover:opacity-100 transition-opacity">
+                          <CompactCatalogNumber
+                            id={item.id}
+                            createdAt={item.created_at}
+                            index={index}
+                          />
+                        </div>
 
                         {/* Tag Badge */}
                         {item.tag && (
