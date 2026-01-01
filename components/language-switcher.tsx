@@ -31,14 +31,13 @@ export function LanguageSwitcher() {
         >
           {languageLabels[lang]}
           {/* Underline animation for non-active languages on hover */}
-          {language !== lang && (
-            <motion.span
-              className="absolute bottom-0 left-0 right-0 h-px bg-foreground origin-left"
-              initial={{ scaleX: 0 }}
-              whileHover={{ scaleX: 1 }}
-              transition={{ duration: 0.3 }}
-            />
-          )}
+          <motion.span
+            className="absolute bottom-0 left-0 right-0 h-px bg-foreground origin-left"
+            initial={{ scaleX: 0 }}
+            whileHover={{ scaleX: 1 }}
+            transition={{ duration: 0.3 }}
+            style={{ display: language === lang ? 'none' : 'block' }}
+          />
         </motion.button>
       ))}
     </div>

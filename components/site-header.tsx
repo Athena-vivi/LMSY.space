@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Moon, Sun } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/components/theme-provider';
 import { useLanguage } from '@/components/language-provider';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { t } from '@/lib/languages';
 
 const navItems = [
@@ -88,17 +89,11 @@ export function SiteHeader() {
 
           {/* Theme Toggle, Language Switcher & Mobile Menu */}
           <div className="flex items-center space-x-2">
-            <LanguageSwitcher />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="hidden md:flex"
-            >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
+            <div className="hidden md:flex items-center gap-6">
+              <LanguageSwitcher />
+              <span className="text-muted-foreground/40 text-xs">|</span>
+              <ThemeSwitcher />
+            </div>
 
             {/* Mobile Navigation */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -135,20 +130,15 @@ export function SiteHeader() {
                     ))}
                   </AnimatePresence>
                 </nav>
-                <div className="mt-8 space-y-3">
+                <div className="mt-8 space-y-4">
                   <div className="flex items-center gap-2">
                     <LanguageSwitcher />
                     <span className="text-sm text-muted-foreground">Language</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  >
-                    <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="mr-2 h-4 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    {t(language, 'nav.toggleTheme')}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <ThemeSwitcher />
+                    <span className="text-sm text-muted-foreground">Theme</span>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

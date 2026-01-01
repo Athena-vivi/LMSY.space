@@ -1,0 +1,13 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow specific paths if any
+# Disallow: /api/
+# Disallow: /_next/
+
+# Sitemap
+Sitemap: https://lookmheesonya-forever.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
