@@ -63,24 +63,24 @@
 
 :root {
   --radius: 0.625rem;
-  /* LMSY Theme - Light Mode */
-  --background: #FAF9F6; /* Cream paper texture */
-  --foreground: #1A1A1A; /* Charcoal */
-  --card: #FFFFFF;
+  /* LMSY Theme - Light Mode: "Day Museum" */
+  --background: #FAF9F6; /* Cream paper - warm gallery walls */
+  --foreground: #1A1A1A; /* Charcoal text - museum signage */
+  --card: #FFFFFF; /* Pure white - archival paper */
   --card-foreground: #1A1A1A;
   --popover: #FFFFFF;
   --popover-foreground: #1A1A1A;
-  --primary: #FBBF24; /* LMSY Yellow */
+  --primary: #FBBF24; /* LMSY Yellow - gallery spotlight */
   --primary-foreground: #1A1A1A;
-  --secondary: #38BDF8; /* LMSY Blue */
+  --secondary: #38BDF8; /* LMSY Blue - cool accent */
   --secondary-foreground: #1A1A1A;
-  --muted: #F5F5F0;
-  --muted-foreground: #6B7280;
+  --muted: #F5F5F0; /* Soft warm gray */
+  --muted-foreground: #8B8680; /* Warm taupe - aged paper */
   --accent: #FBBF24;
   --accent-foreground: #1A1A1A;
   --destructive: #DC2626;
-  --border: #E5E5E0;
-  --input: #E5E5E0;
+  --border: #E8E8E0; /* Subtle border - museum frame */
+  --input: #E8E8E0;
   --ring: #FBBF24;
   --chart-1: #FBBF24;
   --chart-2: #38BDF8;
@@ -93,42 +93,42 @@
   --sidebar-primary-foreground: #1A1A1A;
   --sidebar-accent: #F5F5F0;
   --sidebar-accent-foreground: #1A1A1A;
-  --sidebar-border: #E5E5E0;
+  --sidebar-border: #E8E8E0;
   --sidebar-ring: #FBBF24;
 }
 
 .dark {
-  /* LMSY Theme - Dark Mode */
-  --background: #0F0F0F; /* Deep dark background */
-  --foreground: #FAF9F6;
-  --card: #1A1A1A;
+  /* LMSY Theme - Dark Mode: "Midnight Star Gallery" */
+  --background: #0A0A0A; /* Deep space black */
+  --foreground: #FAF9F6; /* Warm cream - starlight */
+  --card: #141414; /* Dark charcoal - exhibition walls */
   --card-foreground: #FAF9F6;
-  --popover: #1A1A1A;
+  --popover: #141414;
   --popover-foreground: #FAF9F6;
-  --primary: #FBBF24; /* LMSY Yellow */
-  --primary-foreground: #1A1A1A;
-  --secondary: #38BDF8; /* LMSY Blue */
-  --secondary-foreground: #0F0F0F;
-  --muted: #1F1F1F;
-  --muted-foreground: #9CA3AF;
+  --primary: #FBBF24; /* LMSY Yellow - glowing warm light */
+  --primary-foreground: #0A0A0A;
+  --secondary: #38BDF8; /* LMSY Blue - cool neon */
+  --secondary-foreground: #0A0A0A;
+  --muted: #1A1A1A; /* Dark gray - shadowed displays */
+  --muted-foreground: #9CA3AF; /* Soft silver - moonlit */
   --accent: #FBBF24;
-  --accent-foreground: #1A1A1A;
+  --accent-foreground: #0A0A0A;
   --destructive: #EF4444;
-  --border: #2A2A2A;
-  --input: #2A2A2A;
+  --border: #262626; /* Subtle border - glass frame */
+  --input: #262626;
   --ring: #FBBF24;
   --chart-1: #FBBF24;
   --chart-2: #38BDF8;
   --chart-3: #8B5CF6;
   --chart-4: #EC4899;
   --chart-5: #14B8A6;
-  --sidebar: #1A1A1A;
+  --sidebar: #141414;
   --sidebar-foreground: #FAF9F6;
   --sidebar-primary: #FBBF24;
-  --sidebar-primary-foreground: #1A1A1A;
-  --sidebar-accent: #1F1F1F;
+  --sidebar-primary-foreground: #0A0A0A;
+  --sidebar-accent: #1A1A1A;
   --sidebar-accent-foreground: #FAF9F6;
-  --sidebar-border: #2A2A2A;
+  --sidebar-border: #262626;
   --sidebar-ring: #FBBF24;
 }
 

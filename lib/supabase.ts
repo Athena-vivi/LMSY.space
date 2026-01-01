@@ -38,6 +38,9 @@ export interface GalleryItem {
   caption: string | null;
   tag: string | null;
   is_featured: boolean;
+  catalog_id: string | null;  // LMSY-2026-XXX
+  is_editorial: boolean;  // Curatorial special feature
+  curator_note: string | null;  // Markdown-formatted note
   created_at: string;
 }
 

@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS gallery (
   caption TEXT,
   tag TEXT,
   is_featured BOOLEAN DEFAULT FALSE,
+  catalog_id TEXT UNIQUE,  -- LMSY-2026-XXX format
+  is_editorial BOOLEAN DEFAULT FALSE,  -- Curatorial special feature
+  curator_note TEXT,  -- Markdown-formatted curator's note
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -139,7 +142,35 @@ CREATE INDEX IF NOT EXISTS idx_projects_category ON projects(category);
 CREATE INDEX IF NOT EXISTS idx_projects_release_date ON projects(release_date DESC);
 CREATE INDEX IF NOT EXISTS idx_gallery_tag ON gallery(tag);
 CREATE INDEX IF NOT EXISTS idx_gallery_is_featured ON gallery(is_featured);
+CREATE INDEX IF NOT EXISTS idx_gallery_is_editorial ON gallery(is_editorial);
+CREATE INDEX IF NOT EXISTS idx_gallery_catalog_id ON gallery(catalog_id);
 CREATE INDEX IF NOT EXISTS idx_schedule_event_date ON schedule(event_date DESC);
+
+-- Migration script for existing gallery table
+-- Run this in Supabase SQL Editor if gallery table already exists:
+ALTER TABLE gallery ADD COLUMN IF NOT EXISTS catalog_id TEXT UNIQUE;
+ALTER TABLE gallery ADD COLUMN IF NOT EXISTS is_editorial BOOLEAN DEFAULT FALSE;
+ALTER TABLE gallery ADD COLUMN IF NOT EXISTS curator_note TEXT;
+
+-- Function to generate catalog ID
+CREATE OR REPLACE FUNCTION generate_catalog_id()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.catalog_id IS NULL THEN
+    NEW.catalog_id := 'LMSY-' || EXTRACT(YEAR FROM NOW())::TEXT || '-' || LPAD(nextval('gallery_seq')::TEXT, 3, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create sequence if not exists
+CREATE SEQUENCE IF NOT EXISTS gallery_seq START 1;
+
+-- Trigger to auto-generate catalog_id
+CREATE TRIGGER set_catalog_id
+  BEFORE INSERT ON gallery
+  FOR EACH ROW
+  EXECUTE FUNCTION generate_catalog_id();
 
 -- Sample data insertion (optional)
 -- Uncomment below to insert sample members

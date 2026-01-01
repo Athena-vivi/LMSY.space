@@ -122,7 +122,25 @@ export default function AdminLayout({
           isCollapsed ? 'ml-20' : 'ml-64'
         )}
       >
-        {children}
+        {/* Welcome Header */}
+        <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+          <div className="container mx-auto px-6 py-4">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <p className="text-sm md:text-base">
+                Welcome back, <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-semibold">Curator Aster</span>. The archive is ready for your selection.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Page Content */}
+        <div className="container mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

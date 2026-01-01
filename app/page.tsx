@@ -8,6 +8,7 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { useRef } from 'react';
 import Image from 'next/image';
+import { MuseumPreface } from '@/components/museum-preface';
 
 export default function HomePage() {
   const ref = useRef(null);
@@ -140,6 +141,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Museum Preface - About Section */}
+      <MuseumPreface />
 
       {/* Interactive Quote Section */}
       <section className="relative py-32 md:py-48 overflow-hidden">

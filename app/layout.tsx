@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { ServiceWorkerProvider } from "@/components/service-worker-provider";
+import { ArchiveLoading } from "@/components/archive-loading";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -32,9 +33,9 @@ export const metadata: Metadata = {
   },
   description: "Welcome to the official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, projects, and schedule updates.",
   keywords: ["LMSY", "Lookmhee", "Sonya", "Affair", "Thai GL", "Girl's Love", "Lookmhee Sonya", "Affair Series", "Thai Drama", "GL Series"],
-  authors: [{ name: "LMSY Fan Site" }],
-  creator: "LMSY Fan Site",
-  publisher: "LMSY Fan Site",
+  authors: [{ name: "Aster", url: "https://lmsy.space" }],
+  creator: "Aster",
+  publisher: "lmsy.space",
   alternates: {
     canonical: '/',
     languages: {
@@ -104,6 +105,7 @@ export default function RootLayout({
       <body
         className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}
       >
+        <ArchiveLoading />
         <ServiceWorkerProvider />
         <ThemeProvider defaultTheme="light" storageKey="lmsy-theme">
           <LanguageProvider defaultLanguage="en">
