@@ -13,6 +13,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useLanguage } from '@/components/language-provider';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { SearchCommand } from '@/components/search-command';
 import { t } from '@/lib/languages';
 
 const navItems = [
@@ -89,6 +90,7 @@ export function SiteHeader() {
 
           {/* Theme Toggle, Language Switcher & Mobile Menu */}
           <div className="flex items-center space-x-2">
+            <SearchCommand />
             <div className="hidden md:flex items-center gap-6">
               <LanguageSwitcher />
               <span className="text-muted-foreground/40 text-xs">|</span>
