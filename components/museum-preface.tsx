@@ -104,7 +104,7 @@ export function MuseumPreface() {
     <section
       key={theme}
       ref={ref}
-      className="relative py-32 md:py-48 overflow-hidden transition-colors duration-500 bg-gradient-to-br from-background via-background dark:to-muted/30 via-yellow-50/30 dark:via-background to-blue-50/20 dark:to-muted/30"
+      className="!bg-background relative py-32 md:py-48 overflow-hidden transition-colors duration-500 dark:!bg-[#0A0A0A]"
     >
       {/* Animated gradient background */}
       <div className="absolute inset-0 opacity-30">
