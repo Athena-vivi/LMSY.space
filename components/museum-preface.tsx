@@ -4,11 +4,13 @@ import { motion, Variants } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { useLanguage } from '@/components/language-provider';
+import { useTheme } from '@/components/theme-provider';
 
 export function MuseumPreface() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const { language } = useLanguage();
+  const { theme } = useTheme();
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -100,6 +102,7 @@ export function MuseumPreface() {
 
   return (
     <section
+      key={theme}
       ref={ref}
       className="relative py-32 md:py-48 overflow-hidden transition-colors duration-500 bg-gradient-to-br from-background via-background dark:to-muted/30 via-yellow-50/30 dark:via-background to-blue-50/20 dark:to-muted/30"
     >
