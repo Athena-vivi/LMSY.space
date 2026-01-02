@@ -2,39 +2,13 @@
 
 import { motion, Variants } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { useLanguage } from '@/components/language-provider';
-import { useTheme } from '@/components/theme-provider';
 
 export function MuseumPreface() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const { language } = useLanguage();
-  const { theme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-
-  // Update isDark when theme changes
-  useEffect(() => {
-    const updateDark = () => {
-      if (theme === 'dark') {
-        setIsDark(true);
-      } else if (theme === 'light') {
-        setIsDark(false);
-      } else {
-        // system theme
-        setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-      }
-    };
-
-    updateDark();
-
-    // If system theme, listen for changes
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', updateDark);
-      return () => mediaQuery.removeEventListener('change', updateDark);
-    }
-  }, [theme]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -127,20 +101,14 @@ export function MuseumPreface() {
   return (
     <section
       ref={ref}
-      className={`relative py-32 md:py-48 overflow-hidden transition-colors duration-500 ${
-        isDark
-          ? 'bg-gradient-to-br from-background via-background to-muted/30'
-          : 'bg-gradient-to-br from-background via-yellow-50/30 to-blue-50/20'
-      }`}
+      className="relative py-32 md:py-48 overflow-hidden transition-colors duration-500 bg-gradient-to-br from-background via-background dark:to-muted/30 via-yellow-50/30 dark:via-background to-blue-50/20 dark:to-muted/30"
     >
       {/* Animated gradient background */}
       <div className="absolute inset-0 opacity-30">
         <div
-          className="absolute inset-0 transition-transform duration-[20s] ease-in-out animate-gradient-shift"
+          className="absolute inset-0 transition-transform duration-[20s] ease-in-out animate-gradient-shift dark:opacity-20"
           style={{
-            backgroundImage: isDark
-              ? 'radial-gradient(circle at 20% 50%, rgba(251, 191, 36, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(56, 189, 248, 0.1) 0%, transparent 50%)'
-              : 'radial-gradient(circle at 20% 50%, rgba(251, 191, 36, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(56, 189, 248, 0.15) 0%, transparent 50%)',
+            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(251, 191, 36, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(56, 189, 248, 0.15) 0%, transparent 50%)',
             backgroundSize: '200% 200%',
           }}
         />
@@ -158,6 +126,7 @@ export function MuseumPreface() {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
+          key={language}
           className="max-w-3xl mx-auto"
           variants={containerVariants}
           initial="hidden"
