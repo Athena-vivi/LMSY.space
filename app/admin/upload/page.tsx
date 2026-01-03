@@ -2,11 +2,19 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images } from 'lucide-react';
+import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { SocialPreview } from '@/components/social-preview';
+import { generateArchiveNumber, getTypeName, parseArchiveNumber } from '@/lib/archive-number';
 import type { Project } from '@/lib/supabase';
+
+interface Member {
+  id: string;
+  name: string;
+  name_th: string;
+}
 
 export default function AdminUploadPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -14,22 +22,43 @@ export default function AdminUploadPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
 
-  // Fetch existing projects and tags
+  // 新增字段
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [archiveNumber, setArchiveNumber] = useState('');
+  const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // 生成自动编号
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    const generated = generateArchiveNumber({
+      type: 'G', // Gallery
+      year,
+      sequence: 1, // 实际应该从数据库获取
+    });
+    setArchiveNumber(generated);
+  }, []);
+
+  // Fetch existing projects, members, and tags
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      const [projectsData, galleryData] = await Promise.all([
+      const [projectsData, membersData, galleryData] = await Promise.all([
         supabase.from('projects').select('*').order('title'),
+        supabase.from('profiles').select('*'),
         supabase.from('gallery').select('tag'),
       ]);
 
       if (projectsData.data) setProjects(projectsData.data);
+      if (membersData.data) setMembers(membersData.data as Member[]);
 
       // Extract unique tags
       const tags = [...new Set((galleryData.data || []).map(item => item.tag).filter(Boolean))];
@@ -63,6 +92,12 @@ export default function AdminUploadPage() {
       files.map(file => URL.createObjectURL(file))
     );
     setPreviews(prev => [...prev, ...newPreviews]);
+
+    // 如果是第一张图片，自动生成标题
+    if (files.length > 0 && !title) {
+      const fileName = files[0].name.split('.')[0];
+      setTitle(fileName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+    }
   };
 
   const removeFile = (index: number) => {
@@ -90,10 +125,12 @@ export default function AdminUploadPage() {
     setIsUploading(true);
 
     try {
-      for (const file of uploadedFiles) {
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const file = uploadedFiles[i];
+
         // Upload image to Supabase Storage
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = `${archiveNumber}-${i + 1}.${fileExt}`;
         const filePath = `gallery/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
@@ -112,9 +149,15 @@ export default function AdminUploadPage() {
           .from('gallery')
           .insert({
             image_url: publicUrl,
-            tag: selectedTags[0] || null, // Primary tag
+            title: i === 0 ? title : `${title} (${i + 1})`,
+            description,
+            tag: selectedTags[0] || null,
             caption: '',
-            is_featured: false,
+            is_featured: i === 0,
+            archive_number: i === 0 ? archiveNumber : undefined,
+            event_date: eventDate,
+            project_id: selectedProject,
+            member_id: selectedMember,
           });
 
         if (insertError) throw insertError;
@@ -125,6 +168,10 @@ export default function AdminUploadPage() {
       setPreviews([]);
       setSelectedTags([]);
       setSelectedProject(null);
+      setSelectedMember(null);
+      setTitle('');
+      setDescription('');
+      setArchiveNumber(generateArchiveNumber({ type: 'G', sequence: 1 }));
 
       alert('Successfully uploaded all images!');
     } catch (error) {
@@ -139,16 +186,40 @@ export default function AdminUploadPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="mb-8">
         <h1 className="font-serif text-4xl font-bold text-foreground mb-2">
-          Bulk Upload
+          Curated Upload
         </h1>
         <p className="text-muted-foreground">
-          Upload multiple images with auto-tagging and project association
+          Upload with automatic archive numbering, project/member linking, and social media preview
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Left Panel - Upload & Configure */}
-        <div className="space-y-6">
+        <div className="xl:col-span-2 space-y-6">
+          {/* Archive Number Display */}
+          <div className="border-2 border-lmsy-yellow/30 bg-lmsy-yellow/5 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <label className="font-medium text-foreground flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Archive Number
+              </label>
+              <span className="text-xs text-muted-foreground">Auto-generated</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <input
+                type="text"
+                value={archiveNumber}
+                onChange={(e) => setArchiveNumber(e.target.value)}
+                className="flex-1 px-4 py-3 bg-background border-2 border-lmsy-yellow rounded-lg font-mono text-lg text-lmsy-yellow focus:outline-none focus:border-lmsy-yellow"
+                placeholder="LMSY-G-2024-001"
+              />
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">Type</div>
+                <div className="font-mono text-sm">Gallery</div>
+              </div>
+            </div>
+          </div>
+
           {/* Upload Zone */}
           <motion.div
             onDrop={handleDrop}
@@ -192,7 +263,7 @@ export default function AdminUploadPage() {
                 </h3>
 
                 {/* File Grid */}
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
                   {uploadedFiles.map((file, index) => (
                     <motion.div
                       key={index}
@@ -213,12 +284,54 @@ export default function AdminUploadPage() {
                       >
                         <X className="h-3 w-3 text-white" />
                       </button>
+                      {index === 0 && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-lmsy-yellow text-black text-[10px] font-bold text-center py-0.5">
+                          PRIMARY
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Title & Description */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="font-medium text-foreground">Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Christmas Photoshoot 2024"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-yellow"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="font-medium text-foreground flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Event Date
+              </label>
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-yellow"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="font-medium text-foreground">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Curator's note about this collection..."
+              rows={3}
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-yellow resize-none"
+            />
+          </div>
 
           {/* Tag Input */}
           <div className="space-y-3">
@@ -288,7 +401,7 @@ export default function AdminUploadPage() {
 
             {/* Quick Tags */}
             <div className="flex flex-wrap gap-2">
-              {['Fashion', 'BehindTheScene', 'Affair', 'Magazine'].map(tag => (
+              {['Fashion', 'BehindTheScene', 'Affair', 'Magazine', 'Event'].map(tag => (
                 <button
                   key={tag}
                   onClick={() => addTag(tag)}
@@ -300,25 +413,47 @@ export default function AdminUploadPage() {
             </div>
           </div>
 
-          {/* Project Association */}
-          <div className="space-y-3">
-            <label className="font-medium text-foreground flex items-center gap-2">
-              <Link2 className="h-4 w-4" />
-              Link to Project (Optional)
-            </label>
+          {/* Project & Member Association */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Project */}
+            <div className="space-y-2">
+              <label className="font-medium text-foreground flex items-center gap-2">
+                <Link2 className="h-4 w-4" />
+                Link to Project
+              </label>
+              <select
+                value={selectedProject || ''}
+                onChange={(e) => setSelectedProject(e.target.value || null)}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-blue"
+              >
+                <option value="">No project linked</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.title} ({project.category})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              value={selectedProject || ''}
-              onChange={(e) => setSelectedProject(e.target.value || null)}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-blue"
-            >
-              <option value="">No project linked</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.title} ({project.category})
-                </option>
-              ))}
-            </select>
+            {/* Member */}
+            <div className="space-y-2">
+              <label className="font-medium text-foreground flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Feature Member
+              </label>
+              <select
+                value={selectedMember || ''}
+                onChange={(e) => setSelectedMember(e.target.value || null)}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-blue"
+              >
+                <option value="">No specific member</option>
+                {members.map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} ({member.name_th})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -351,7 +486,7 @@ export default function AdminUploadPage() {
           </div>
         </div>
 
-        {/* Right Panel - Live Preview */}
+        {/* Right Panel - Social Media Preview */}
         <AnimatePresence>
           {showPreview && (
             <motion.div
@@ -360,78 +495,37 @@ export default function AdminUploadPage() {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-foreground">Live Preview</h3>
-                <span className="text-xs text-muted-foreground">Frontend Preview</span>
-              </div>
+              <SocialPreview
+                archiveNumber={archiveNumber}
+                title={title || 'Untitled Collection'}
+                description={description || 'No description provided.'}
+                tags={selectedTags}
+                project={projects.find(p => p.id === selectedProject)?.title}
+              />
 
               {/* Gallery Preview */}
-              <div className="border-2 border-border rounded-lg p-6 bg-card">
-                <h4 className="font-serif text-2xl font-bold mb-4">Gallery</h4>
-                <div className="columns-2 gap-3 space-y-3">
-                  {previews.slice(0, 6).map((preview, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-[3/4] rounded-lg overflow-hidden border-2 border-border"
-                    >
-                      <Image
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity">
-                        {selectedTags[0] && (
-                          <span className="absolute top-2 left-2 px-2 py-1 bg-lmsy-yellow text-black text-xs rounded-full font-medium">
-                            #{selectedTags[0]}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tag Preview */}
-              {selectedTags.length > 0 && (
-                <div className="border-2 border-border rounded-lg p-6 bg-card">
-                  <h4 className="font-medium mb-3">Active Filters</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['All', ...selectedTags].map(tag => (
-                      <button
-                        key={tag}
-                        className={`px-4 py-2 text-sm rounded-full border transition-all ${
-                          tag === 'All'
-                            ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-foreground border-transparent'
-                            : 'bg-muted text-muted-foreground border-border hover:border-lmsy-blue'
-                        }`}
-                      >
-                        #{tag}
-                      </button>
-                    ))}
+              {previews.length > 0 && (
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <div className="px-4 py-3 bg-muted/30 border-b border-border">
+                    <h4 className="font-medium text-sm">Gallery Preview</h4>
                   </div>
-                </div>
-              )}
-
-              {/* Project Link Preview */}
-              {selectedProject && (
-                <div className="border-2 border-border rounded-lg p-6 bg-card">
-                  <h4 className="font-medium mb-3">Linked Project</h4>
-                  {projects.find(p => p.id === selectedProject) && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                        <Plus className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {projects.find(p => p.id === selectedProject)?.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {projects.find(p => p.id === selectedProject)?.category}
-                        </p>
-                      </div>
+                  <div className="p-4 bg-card">
+                    <div className="columns-2 gap-2 space-y-2">
+                      {previews.slice(0, 6).map((preview, index) => (
+                        <div
+                          key={index}
+                          className="relative aspect-[3/4] rounded-lg overflow-hidden border border-border"
+                        >
+                          <Image
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </motion.div>
