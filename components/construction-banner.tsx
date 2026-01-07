@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { useState, useEffect, createContext, useContext, useRef } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/components/language-provider';
 
 // Create context to control banner globally
@@ -31,25 +31,21 @@ const bannerContent = {
 export function ConstructionBanner() {
   const { language } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
-  const showBannerRef = useRef<(() => void) | null>(null);
 
-  // Function to show banner manually
-  const showBanner = () => {
-    console.log('showBanner called, setting isVisible to true');
+  // Function to show banner manually - using useCallback to maintain stable reference
+  const showBanner = useCallback(() => {
     setIsVisible(true);
-  };
+  }, []);
 
-  // Keep ref updated
-  showBannerRef.current = showBanner;
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({ showBanner }), [showBanner]);
 
   useEffect(() => {
     // Check if user has dismissed the banner
     const dismissed = localStorage.getItem('construction-banner-dismissed');
-    console.log('dismissed:', dismissed);
     if (!dismissed) {
       // Show banner after a short delay for elegance
       const timer = setTimeout(() => {
-        console.log('Auto-showing banner');
         setIsVisible(true);
       }, 800);
       return () => clearTimeout(timer);
@@ -57,7 +53,6 @@ export function ConstructionBanner() {
   }, []);
 
   const handleDismiss = () => {
-    console.log('Banner dismissed');
     setIsVisible(false);
     // Remember dismissal for 7 days
     const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
@@ -66,10 +61,8 @@ export function ConstructionBanner() {
 
   const content = bannerContent[language as keyof typeof bannerContent] || bannerContent.en;
 
-  console.log('ConstructionBanner rendering, isVisible:', isVisible);
-
   return (
-    <BannerContext.Provider value={{ showBanner }}>
+    <BannerContext.Provider value={contextValue}>
       <AnimatePresence>
         {isVisible && (
           <motion.div

@@ -51,6 +51,29 @@ export default function HomePage() {
                 <p className="text-sm md:text-base bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-medium mb-8">
                   {t(language, 'hero.besties')}
                 </p>
+
+                {/* Universe Expansion Message - Breathing Animation */}
+                <motion.div
+                  className="mt-12 mb-8 space-y-4"
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: [0.6, 1, 0.6],
+                  }}
+                  transition={{
+                    duration: 4, // 4 seconds for full breathing cycle
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: 1.5, // Start after initial animations
+                  }}
+                >
+                  <h3 className="font-serif font-light text-2xl md:text-3xl text-foreground/80 tracking-wide">
+                    {t(language, 'hero.universeTitle')}
+                  </h3>
+                  <p className="font-serif text-sm md:text-base text-foreground/70 leading-relaxed max-w-md mx-auto lg:mx-0 italic">
+                    {t(language, 'hero.universeSubtitle')}
+                  </p>
+                </motion.div>
+
                 <p className="text-sm md:text-base text-muted-foreground/70 leading-relaxed max-w-md mx-auto lg:mx-0">
                   {t(language, 'quote.text')}
                 </p>

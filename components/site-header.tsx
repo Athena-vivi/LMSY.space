@@ -31,7 +31,6 @@ export function SiteHeader() {
   const { showBanner } = useBanner();
 
   const handleLogoClick = () => {
-    console.log('Logo clicked, pathname:', pathname);
     showBanner();
   };
 

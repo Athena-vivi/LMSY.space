@@ -28,6 +28,9 @@ export const translations = {
     'hero.scroll': 'SCROLL',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
+    'hero.universeTitle': 'The Universe is Expanding.',
+    'hero.universeSubtitle': 'Welcome to this starry sky that belongs to them, dear Bestie. Astra is carefully collecting, making this place shine brighter, bit by bit.',
+    'hero.besties': 'A dedicated space for LMSY and their Besties.',
 
     // Quote
     'quote.text': '"Some feelings are impossible to hide, no matter how hard you try..."',
@@ -119,6 +122,8 @@ export const translations = {
     'hero.scroll': '滚动',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
+    'hero.universeTitle': 'The Universe is Expanding.',
+    'hero.universeSubtitle': '欢迎来到这片专属于她们的星空，亲爱的 Bestie。Astra 正在细心采集，这里正一点点变得璀璨。',
     'hero.besties': '属于 LMSY 和她们的 Besties 专属空间。',
 
     // Quote
@@ -208,6 +213,8 @@ export const translations = {
     'hero.scroll': 'เลื่อน',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
+    'hero.universeTitle': 'The Universe is Expanding.',
+    'hero.universeSubtitle': 'ยินดีต้อนรับสู่ท้องฟ้าที่เป็นของพวกเธอ เบสตี้ที่รัก แอสตรากำลังรวบรวมอย่างประณีต ที่นี่กำลังค่อยๆ เรืองแสงยิ่งขึ้น',
     'hero.besties': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
 
     // Quote
