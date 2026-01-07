@@ -61,7 +61,7 @@ export default function AdminLayout({
       {/* Main Content */}
       <main
         className={cn(
-          'transition-all duration-300',
+          'transition-all duration-300 bg-black',
           // Desktop: account for sidebar
           'md:ml-48 md:collapsed:ml-20',
           // Mobile: account for top header and bottom nav

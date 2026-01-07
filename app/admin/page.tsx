@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen bg-black">
       {/* Scanline Effect */}
       <div
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.02]"

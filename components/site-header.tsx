@@ -93,23 +93,89 @@ export function SiteHeader() {
                         transition={{ duration: 0.2 }}
                         className="absolute top-full left-1/2 -translate-x-1/2 pt-4"
                       >
-                        <div className="relative min-w-[200px] bg-background/90 backdrop-blur-xl rounded-xl border border-border/50 shadow-2xl overflow-hidden">
-                          {/* Dropdown arrow */}
-                          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-2 h-2 bg-background/90 backdrop-blur-xl border-l border-t border-border/50 transform rotate-45" />
-
+                        <div
+                          className="relative min-w-[240px] backdrop-blur-xl rounded-lg overflow-hidden"
+                          style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                          }}
+                        >
                           <div className="py-2">
-                            {dualitySubItems.map((subItem, index) => (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className="block px-6 py-3 font-serif text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
-                                style={{
-                                  transitionDelay: `${index * 50}ms`,
-                                }}
-                              >
-                                {t(language, subItem.key as any)}
-                              </Link>
-                            ))}
+                            {dualitySubItems.map((subItem, index) => {
+                              const isLMSY = subItem.key === 'nav.lmsy';
+                              const isLookmhee = subItem.key === 'nav.lookmhee';
+                              const isSonya = subItem.key === 'nav.sonya';
+
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className="group relative flex items-center gap-3 px-5 py-3 font-serif text-xs uppercase tracking-[0.2em] text-white/70 hover:text-white/90 transition-all duration-300"
+                                  style={{
+                                    transitionDelay: `${index * 50}ms`,
+                                  }}
+                                >
+                                  {/* Color indicator dot */}
+                                  {isLookmhee && (
+                                    <div
+                                      className="h-1 w-1 rounded-full flex-shrink-0"
+                                      style={{
+                                        backgroundColor: 'rgba(251, 191, 36, 0.9)',
+                                        boxShadow: '0 0 8px rgba(251, 191, 36, 0.5)',
+                                      }}
+                                    />
+                                  )}
+                                  {isSonya && (
+                                    <div
+                                      className="h-1 w-1 rounded-full flex-shrink-0"
+                                      style={{
+                                        backgroundColor: 'rgba(56, 189, 248, 0.9)',
+                                        boxShadow: '0 0 8px rgba(56, 189, 248, 0.5)',
+                                      }}
+                                    />
+                                  )}
+
+                                  {/* Text with hover color change */}
+                                  <span
+                                    className="flex-1"
+                                    style={{
+                                      ...(isLookmhee && {
+                                        color: 'rgba(251, 191, 36, 0.8)',
+                                      }),
+                                      ...(isSonya && {
+                                        color: 'rgba(56, 189, 248, 0.8)',
+                                      }),
+                                    }}
+                                  >
+                                    {t(language, subItem.key as any)}
+                                  </span>
+
+                                  {/* Hover gradient background for LMSY */}
+                                  {isLMSY && (
+                                    <motion.div
+                                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                      style={{
+                                        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)',
+                                      }}
+                                      initial={false}
+                                    />
+                                  )}
+
+                                  {/* Hover glow for individual members */}
+                                  {(isLookmhee || isSonya) && (
+                                    <motion.div
+                                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                      style={{
+                                        background: isLookmhee
+                                          ? 'linear-gradient(90deg, rgba(251, 191, 36, 0.15) 0%, transparent 100%)'
+                                          : 'linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, transparent 100%)',
+                                      }}
+                                      initial={false}
+                                    />
+                                  )}
+                                </Link>
+                              );
+                            })}
                           </div>
                         </div>
                       </motion.div>
