@@ -97,6 +97,37 @@ export const translations = {
     'banner.message': 'Welcome to this unfinished universe of love, dear Bestie. This place is becoming complete, little by little.',
     'banner.status': 'UNDER CONSTRUCTION',
 
+    // Hero Section
+    'hero.preface': 'Some encounters are written in the stars.',
+    'hero.curator': 'Curated by Astra',
+    'hero.portalsTitle': 'Portals',
+    'hero.portalsSubtitle': 'Enter different dimensions of their story',
+
+    // Portals
+    'portal.drama': 'Drama',
+    'portal.dramaDesc': 'Characters that became reality',
+    'portal.live': 'Live Events',
+    'portal.liveDesc': 'Moments shared in time',
+    'portal.journey': 'Journey',
+    'portal.journeyDesc': 'Paths walked together',
+    'portal.daily': 'Daily',
+    'portal.dailyDesc': 'Beautiful ordinary days',
+
+    // Longform
+    'longform.title': 'Chronicle',
+    'longform.subtitle': 'Featured Interview',
+    'longform.excerpt': '"Every role is a piece of my heart. When I portray a character, I pour my soul into making them breathe, into making them real. Lookmhee teaches me that every day—how to be vulnerable, how to be brave enough to show the world who we truly are."',
+    'longform.source': '— Sonya, Vogue Thailand Interview 2024',
+    'longform.readMore': 'Read Full Story',
+
+    // Micro-Chronicle
+    'chronicle.title': 'Milestones',
+    'chronicle.2022': 'First Meeting',
+    'chronicle.2023': 'Affair Series',
+    'chronicle.2024': 'Fan Meet Tour',
+    'chronicle.2025': 'New Chapter',
+    'chronicle.ongoing': 'Story Continues',
+
     // Footer
     'footer.tagline': 'A dedicated space for LMSY and their Besties.',
     'footer.quickLinks': 'Quick Links',
@@ -192,6 +223,37 @@ export const translations = {
     'banner.message': '欢迎来到这个尚未完工的爱的宇宙，亲爱的 Bestie。这里正在一点点变得完整。',
     'banner.status': '施工中',
 
+    // Hero Section
+    'hero.preface': '有些相遇，早已写在星空中。',
+    'hero.curator': 'Astra 策展',
+    'hero.portalsTitle': '多维入口',
+    'hero.portalsSubtitle': '走进她们故事的不同维度',
+
+    // Portals
+    'portal.drama': '戏剧',
+    'portal.dramaDesc': '角色照进现实',
+    'portal.live': '现场',
+    'portal.liveDesc': '时光共享的瞬间',
+    'portal.journey': '旅途',
+    'portal.journeyDesc': '同行相伴的足迹',
+    'portal.daily': '日常',
+    'portal.dailyDesc': '美好的平凡岁月',
+
+    // Longform
+    'longform.title': '纪事',
+    'longform.subtitle': '精选访谈',
+    'longform.excerpt': '"每个角色都是我心的一部分。当我塑造一个角色时，我将灵魂倾注其中，让她们呼吸、让她们真实。Lookmhee 每天都在教会我——如何脆弱，如何勇敢地向世界展示真实的我们。"',
+    'longform.source': '— Sonya，《Vogue Thailand》访谈 2024',
+    'longform.readMore': '阅读全文',
+
+    // Micro-Chronicle
+    'chronicle.title': '里程碑',
+    'chronicle.2022': '初次相遇',
+    'chronicle.2023': 'Affair 剧集',
+    'chronicle.2024': '粉丝见面会',
+    'chronicle.2025': '新篇章',
+    'chronicle.ongoing': '故事继续',
+
     // Footer
     'footer.tagline': '属于 LMSY 和她们的 Besties 专属空间。',
     'footer.quickLinks': '快速链接',
@@ -286,6 +348,37 @@ export const translations = {
     // Construction Banner
     'banner.message': 'ยินดีต้อนรับสู่จักรวาลแห่งความรักที่ยังสร้างไม่เสร็จ เบสตี้ที่รัก ที่นี่กำลังค่อยๆ สมบูรณ์ขึ้น',
     'banner.status': 'กำลังก่อสร้าง',
+
+    // Hero Section
+    'hero.preface': 'การพบกันบางครั้งถูกเขียนไว้บนดาว',
+    'hero.curator': 'จัดทำโดย Astra',
+    'hero.portalsTitle': 'ประตูมิติ',
+    'hero.portalsSubtitle': 'เดินทางเข้าสู่มิติต่างๆ ของเรื่องราวพวกเธอ',
+
+    // Portals
+    'portal.drama': 'ละคร',
+    'portal.dramaDesc': 'ตัวละครที่กลายเป็นความจริง',
+    'portal.live': 'อีเวนต์',
+    'portal.liveDesc': 'ช่วงเวลาที่แบ่งปันด้วยกัน',
+    'portal.journey': 'การเดินทาง',
+    'portal.journeyDesc': 'เส้นทางที่เดินตามร่วมกัน',
+    'portal.daily': 'ชีวิตประจำวัน',
+    'portal.dailyDesc': 'วันธรรมดาที่งดงาม',
+
+    // Longform
+    'longform.title': 'บันทึก',
+    'longform.subtitle': 'บทสัมภาษณ์พิเศษ',
+    'longform.excerpt': '"ทุกบทบาทคือส่วนหนึ่งของหัวใจฉัน เมื่อฉันสร้างตัวละคร ฉันเทใจชีวิตให้พวกเธอหายใจ ให้พวกเธอเป็นจริง Lookmhee สอนฉันทุกวัน — วิธีที่จะอ่อนแอ วิธีที่จงมีความกล้าพอที่จะแสดงให้โลกเห็นว่าเราคือใคร"',
+    'longform.source': '— Sonya, บทสัมภาษณ์ Vogue Thailand 2024',
+    'longform.readMore': 'อ่านต่อ',
+
+    // Micro-Chronicle
+    'chronicle.title': 'ช่วงเวลาสำคัญ',
+    'chronicle.2022': 'การพบกันครั้งแรก',
+    'chronicle.2023': 'ซีรีส์ Affair',
+    'chronicle.2024': 'ทัวร์พบแฟนคลับ',
+    'chronicle.2025': 'บทใหม่',
+    'chronicle.ongoing': 'เรื่องราวต่อไป',
 
     // Footer
     'footer.tagline': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
