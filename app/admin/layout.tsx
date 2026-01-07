@@ -131,7 +131,7 @@ export default function AdminLayout({
               transition={{ duration: 0.5 }}
             >
               <p className="text-sm md:text-base">
-                Welcome back, <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-semibold">Curator Aster</span>. The archive is ready for your selection.
+                Welcome back, <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-semibold">Curator Astra</span>. The archive is ready for your selection.
               </p>
             </motion.div>
           </div>

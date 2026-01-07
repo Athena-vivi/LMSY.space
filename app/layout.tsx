@@ -33,8 +33,8 @@ export const metadata: Metadata = {
   },
   description: "Welcome to the official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, projects, and schedule updates.",
   keywords: ["LMSY", "Lookmhee", "Sonya", "Affair", "Thai GL", "Girl's Love", "Lookmhee Sonya", "Affair Series", "Thai Drama", "GL Series"],
-  authors: [{ name: "Aster", url: "https://lmsy.space" }],
-  creator: "Aster",
+  authors: [{ name: "Astra", url: "https://lmsy.space" }],
+  creator: "Astra",
   publisher: "lmsy.space",
   alternates: {
     canonical: '/',

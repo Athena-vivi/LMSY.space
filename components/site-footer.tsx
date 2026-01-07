@@ -46,7 +46,7 @@ export function SiteFooter() {
           {/* Credits */}
           <div className="text-center space-y-2">
             <p className="text-xs text-muted-foreground/60">
-              © 2025 lmsy.space | <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-medium">Curated by Aster</span>. Made with love for LMSY & Besties.
+              © 2025 lmsy.space | <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-medium">Curated by Astra</span>. Made with love for LMSY & Besties.
             </p>
           </div>
         </div>

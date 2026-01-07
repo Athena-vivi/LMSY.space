@@ -53,7 +53,7 @@ export function MuseumPreface() {
       siteName: 'This is lmsy.space.',
       siteDesc: 'It is a vessel for past moments and a witness to eternal future.',
       curatorTitle: 'CURATOR & ARCHIVIST',
-      curatorSignature: '— Aster',
+      curatorSignature: '— Astra',
       date: '2025.12.31',
     },
     zh: {
@@ -73,7 +73,7 @@ export function MuseumPreface() {
       siteName: '这里是 lmsy.space。',
       siteDesc: '它是过去时光的容器，也是未来永恒的见证。',
       curatorTitle: 'CURATOR & ARCHIVIST',
-      curatorSignature: '—— Aster',
+      curatorSignature: '—— Astra',
       date: '2025.12.31',
     },
     th: {
@@ -93,7 +93,7 @@ export function MuseumPreface() {
       siteName: 'นี่คือ lmsy.space',
       siteDesc: 'มันเป็นบริสุทธิ์ของช่วงเวลาที่ผ่านมาและพยานถาวีของอนาคต',
       curatorTitle: 'ผู้ดูแล & จัดเก็บ',
-      curatorSignature: '— Aster',
+      curatorSignature: '— Astra',
       date: '2025.12.31',
     },
   };
