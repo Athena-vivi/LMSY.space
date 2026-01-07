@@ -81,7 +81,7 @@ export function ServiceWorkerProvider() {
 
     // Force reload after a short delay
     setTimeout(() => {
-      window.location.reload(true);
+      window.location.reload();
     }, 1000);
   };
 
