@@ -157,26 +157,13 @@ export function SearchCommand() {
 
   return (
     <>
-      {/* Trigger Button */}
+      {/* Trigger Button - Icon only */}
       <button
         onClick={() => setIsOpen(true)}
-        className="hidden md:flex items-center gap-2 px-4 py-2 w-64 bg-muted/50 hover:bg-muted border border-border rounded-full transition-all duration-300 group"
+        className="p-2 hover:bg-muted rounded-full transition-colors group"
+        aria-label="Search"
       >
-        <Search className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-        <span className="text-sm text-muted-foreground flex-1 text-left">
-          Search...
-        </span>
-        <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-muted-foreground bg-background border border-border rounded">
-          ⌘K
-        </kbd>
-      </button>
-
-      {/* Mobile Search Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="md:hidden p-2 hover:bg-muted rounded-full transition-colors"
-      >
-        <Search className="h-5 w-5" />
+        <Search className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
       </button>
 
       {/* Spotlight-style Modal */}

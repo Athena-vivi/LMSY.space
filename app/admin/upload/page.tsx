@@ -6,6 +6,7 @@ import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Ca
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { uploadToR2 } from '@/lib/r2-client';
 import { SocialPreview } from '@/components/social-preview';
 import { generateArchiveNumber, getTypeName, parseArchiveNumber } from '@/lib/archive-number';
 import type { Project } from '@/lib/supabase';
@@ -128,27 +129,23 @@ export default function AdminUploadPage() {
       for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
 
-        // Upload image to Supabase Storage
+        // Generate file path
         const fileExt = file.name.split('.').pop();
         const fileName = `${archiveNumber}-${i + 1}.${fileExt}`;
         const filePath = `gallery/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('images')
-          .upload(filePath, file);
+        // Upload to Cloudflare R2
+        const uploadResult = await uploadToR2(file, filePath);
 
-        if (uploadError) throw uploadError;
+        if (!uploadResult.success || !uploadResult.path) {
+          throw new Error(uploadResult.error || 'Upload failed');
+        }
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('images')
-          .getPublicUrl(filePath);
-
-        // Insert into gallery table
+        // Store only relative path in database
         const { error: insertError } = await supabase
           .from('gallery')
           .insert({
-            image_url: publicUrl,
+            image_url: uploadResult.path, // Store relative path only
             title: i === 0 ? title : `${title} (${i + 1})`,
             description,
             tag: selectedTags[0] || null,
@@ -173,7 +170,7 @@ export default function AdminUploadPage() {
       setDescription('');
       setArchiveNumber(generateArchiveNumber({ type: 'G', sequence: 1 }));
 
-      alert('Successfully uploaded all images!');
+      alert('Successfully uploaded all images to R2!');
     } catch (error) {
       console.error('Upload error:', error);
       alert('Error uploading images. Please try again.');
