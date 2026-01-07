@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Calendar } from 'lucide-react';
+import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Calendar, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -194,6 +194,26 @@ export default function AdminUploadPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Copyright Notice */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="xl:col-span-3 mb-2"
+        >
+          <div className="bg-gradient-to-r from-lmsy-yellow/10 via-lmsy-blue/10 to-lmsy-yellow/10 rounded-lg p-4 border border-lmsy-yellow/30 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-lmsy-yellow flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground mb-1">
+                版权提醒 / Copyright Reminder
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                请确保保留原作者水印，尊重每一份快门下的心血。/ Please ensure to preserve original watermarks and respect every shutter&#39;s effort. /
+                กรุณาตรวจสอบให้แน่ใจว่ารักษาลายน้ำต้นฉบับไว้ เพื่อเคารพความพยายามในทุกการถ่ายภาพ
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Left Panel - Upload & Configure */}
         <div className="xl:col-span-2 space-y-6">
           {/* Archive Number Display */}

@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import { Archive } from 'lucide-react';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 export function SiteFooter() {
+  const { language } = useLanguage();
 
   return (
     <footer className="border-t bg-background">
@@ -29,24 +32,31 @@ export function SiteFooter() {
 
           {/* Quick Links */}
           <nav className="flex flex-wrap justify-center gap-8 mb-12">
+            <Link href="/chronicle" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              {t(language, 'nav.chronicle')}
+            </Link>
+            <Link href="/exhibitions" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              {t(language, 'nav.exhibitions')}
+            </Link>
+            <Link href="/editorial" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              {t(language, 'nav.editorial')}
+            </Link>
             <Link href="/profiles" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Profiles
+              {t(language, 'nav.duality')}
             </Link>
-            <Link href="/gallery" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Gallery
-            </Link>
-            <Link href="/projects" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Projects
-            </Link>
-            <Link href="/schedule" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Schedule
+            <Link href="/copyright" className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4 decoration-lmsy-yellow/50 hover:decoration-lmsy-yellow">
+              Copyright
             </Link>
           </nav>
 
-          {/* Credits */}
-          <div className="text-center space-y-2">
+          {/* Credits & Disclaimer */}
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
             <p className="text-xs text-muted-foreground/60">
               © 2025 lmsy.space | <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-medium">Curated by Astra</span>. Made with love for LMSY & Besties.
+            </p>
+            <div className="w-16 h-px bg-gradient-to-r from-transparent via-lmsy-yellow/30 to-transparent mx-auto" />
+            <p className="text-xs text-muted-foreground/50 leading-relaxed px-4">
+              {t(language, 'footer.disclaimer')}
             </p>
           </div>
         </div>
