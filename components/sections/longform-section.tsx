@@ -33,8 +33,9 @@ export function LongformSection() {
             transition={{ duration: 0.8 }}
           >
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-muted/30">
+              {/* Temporary: Image commented out due to missing file causing 404s */}
               {/* Image with Fade-in */}
-              <div className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+              {/* <div className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
                 <Image
                   src="/lmsy-interview-001.jpg"
                   alt="Interview Feature"
@@ -42,12 +43,12 @@ export function LongformSection() {
                   className="object-cover"
                   onLoad={() => setImageLoaded(true)}
                 />
-              </div>
+              </div> */}
 
-              {/* Loading Placeholder */}
-              {!imageLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/70 animate-pulse" />
-              )}
+              {/* Loading Placeholder - Now used as primary background */}
+              {/* {!imageLoaded && ( */}
+                <div className="absolute inset-0 bg-gradient-to-br from-lmsy-yellow/20 via-lmsy-blue/20 to-lmsy-yellow/20 animate-pulse" />
+              {/* )} */}
 
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
