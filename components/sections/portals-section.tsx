@@ -20,6 +20,7 @@ interface PortalCardProps {
 function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalCardProps) {
   const { language } = useLanguage();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   return (
     <motion.div
@@ -35,19 +36,28 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-110`} />
 
           {/* Image with Fade-in Effect */}
-          <div className={`absolute inset-0 transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
-            <Image
-              src={image}
-              alt={t(language, titleKey as any)}
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-              onLoad={() => setImageLoaded(true)}
-            />
-          </div>
+          {!imageError && (
+            <div className={`absolute inset-0 transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+              <Image
+                src={image}
+                alt={t(language, titleKey as any)}
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                onLoad={() => setImageLoaded(true)}
+                onError={() => {
+                  setImageError(true);
+                  setImageLoaded(false);
+                }}
+              />
+            </div>
+          )}
 
-          {/* Loading Placeholder */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/70 animate-pulse" />
+          {/* Loading Placeholder or Error Fallback */}
+          {(!imageLoaded || imageError) && (
+            <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/70">
+              {/* Animated gradient pattern for missing images */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${gradient} animate-pulse opacity-50`} />
+            </div>
           )}
 
           {/* Gradient Overlay */}

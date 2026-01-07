@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Archive } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
@@ -7,6 +9,29 @@ import { t } from '@/lib/languages';
 
 export function SiteFooter() {
   const { language } = useLanguage();
+  const router = useRouter();
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+
+  const handleCopyrightClick = useCallback(() => {
+    const now = Date.now();
+    const timeDiff = now - lastClickTime;
+
+    // Reset count if more than 2 seconds between clicks
+    if (timeDiff > 2000) {
+      setClickCount(1);
+    } else {
+      setClickCount(prev => prev + 1);
+    }
+
+    setLastClickTime(now);
+
+    // Navigate to admin after 3 clicks within 2 seconds
+    if (clickCount + 1 === 3) {
+      setClickCount(0);
+      router.push('/admin');
+    }
+  }, [clickCount, lastClickTime, router]);
 
   return (
     <footer className="border-t bg-background">
@@ -51,9 +76,13 @@ export function SiteFooter() {
 
           {/* Credits & Disclaimer */}
           <div className="text-center space-y-3 max-w-3xl mx-auto">
-            <p className="text-xs text-muted-foreground/60">
+            <button
+              onClick={handleCopyrightClick}
+              className="text-xs text-muted-foreground/60 hover:text-muted-foreground/80 transition-colors cursor-pointer"
+              aria-label="Copyright information"
+            >
               © 2025 lmsy.space | <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-medium">Curated by Astra</span>. Made with love for LMSY & Besties.
-            </p>
+            </button>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-lmsy-yellow/30 to-transparent mx-auto" />
             <p className="text-xs text-muted-foreground/50 leading-relaxed px-4">
               {t(language, 'footer.disclaimer')}
