@@ -80,20 +80,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      console.log('[Auth] Attempting server-side sign in for:', email);
+
+      // Call API route instead of direct Supabase call
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('[Auth] Login API error:', result.error);
+        throw new Error(result.error || 'Login failed');
       }
 
-      setUser(data.user);
+      console.log('[Auth] Login successful, fetching session...');
 
-      // Check if user is admin
-      const adminCheck = isAdmin(data.user?.email);
-      setIsAdminUser(adminCheck);
+      // Wait a bit for session to be set in cookies
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Fetch the session after server-side login
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        console.log('[Auth] Session retrieved:', session.user.email);
+        setUser(session.user);
+
+        // Check if user is admin
+        const adminCheck = isAdmin(session.user.email);
+        setIsAdminUser(adminCheck);
+        console.log('[Auth] Admin check:', adminCheck);
+      } else {
+        throw new Error('Session not found after login');
+      }
+    } catch (error: any) {
+      console.error('[Auth] Sign in error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }

@@ -3,15 +3,34 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const _supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Debug: Log environment variables (only in browser)
+if (typeof window !== 'undefined') {
+  console.log('[Supabase] Environment check:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey,
+    url: supabaseUrl?.substring(0, 30) + '...',
+  });
+}
 
-// Export a non-null asserted version for backward compatibility
-// Note: This will throw at runtime if env vars are missing
-export const supabase: SupabaseClient = _supabase ?? (() => {
+if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase client is not initialized. Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.');
-})();
+}
+
+// Create Supabase client with additional options for better browser compatibility
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce', // Use PKCE flow for better security
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'lmsy-space-admin',
+    },
+  },
+});
 
 // Database types
 export interface Member {
