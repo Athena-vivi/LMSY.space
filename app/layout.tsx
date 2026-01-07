@@ -95,6 +95,9 @@ export const metadata: Metadata = {
   category: 'entertainment',
 };
 
+// Force dynamic rendering to prevent caching on custom domains
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
