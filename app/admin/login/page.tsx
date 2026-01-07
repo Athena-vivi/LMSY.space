@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Lock, Mail, AlertCircle, Shield, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
@@ -9,7 +8,6 @@ import { useAuth } from '@/components/auth-provider';
 
 export default function AdminLoginPage() {
   const { signIn, loading } = useAuth();
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,8 +21,8 @@ export default function AdminLoginPage() {
 
     try {
       await signIn(email, password);
-      // Redirect will be handled by middleware
-      router.push('/admin/upload');
+      // Force redirect to admin dashboard after successful login
+      window.location.href = '/admin';
     } catch (err: any) {
       setError(err.message || 'Failed to sign in. Please check your credentials.');
     } finally {

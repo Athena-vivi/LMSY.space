@@ -3,15 +3,6 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Debug: Log environment variables (only in browser)
-if (typeof window !== 'undefined') {
-  console.log('[Supabase] Environment check:', {
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseAnonKey,
-    url: supabaseUrl?.substring(0, 30) + '...',
-  });
-}
-
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase client is not initialized. Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.');
 }

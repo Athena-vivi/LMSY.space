@@ -36,7 +36,7 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-110`} />
 
           {/* Image with Fade-in Effect */}
-          {!imageError && (
+          {!imageError && image && (
             <div className={`absolute inset-0 transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
               <Image
                 src={image}
@@ -119,28 +119,28 @@ export function PortalsSection() {
     {
       titleKey: 'portal.drama',
       descKey: 'portal.dramaDesc',
-      image: '/lmsy-002.jpg',
+      image: '', // Temporarily disabled - using gradient background instead
       href: '/gallery?tag=drama',
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
       titleKey: 'portal.live',
       descKey: 'portal.liveDesc',
-      image: '/lmsy-003.jpg',
+      image: '', // Temporarily disabled - using gradient background instead
       href: '/schedule',
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
     {
       titleKey: 'portal.journey',
       descKey: 'portal.journeyDesc',
-      image: '/lmsy-004.jpg',
+      image: '', // Temporarily disabled - using gradient background instead
       href: '/gallery?tag=journey',
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
       titleKey: 'portal.daily',
       descKey: 'portal.dailyDesc',
-      image: '/lmsy-005.jpg',
+      image: '', // Temporarily disabled - using gradient background instead
       href: '/gallery?tag=daily',
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },

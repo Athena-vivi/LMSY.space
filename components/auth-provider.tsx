@@ -80,8 +80,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      console.log('[Auth] Attempting server-side sign in for:', email);
-
       // Call API route instead of direct Supabase call
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -94,8 +92,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const result = await response.json();
 
       if (!response.ok) {
-        console.error('[Auth] Login API error:', result.error);
-        console.error('[Auth] Login API details:', result);
         // 构造详细的错误消息
         const errorMessage = result.error
           ? `${result.error}${result.name ? ` (${result.name})` : ''}${result.status ? ` [Status: ${result.status}]` : ''}`
@@ -103,46 +99,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(errorMessage);
       }
 
-      console.log('[Auth] Login API successful, received session data');
-
       // 🔥 手动设置 session 到客户端 Supabase
       if (result.session) {
-        console.log('[Auth] Setting session manually from API response');
         const { error: setSessionError } = await supabase.auth.setSession(result.session);
 
         if (setSessionError) {
-          console.error('[Auth] Failed to set session:', setSessionError);
           throw new Error('Failed to set session: ' + setSessionError.message);
         }
 
-        console.log('[Auth] Session set successfully, user:', result.session.user.email);
         setUser(result.session.user);
 
         // Check if user is admin
         const adminCheck = isAdmin(result.session.user.email);
         setIsAdminUser(adminCheck);
-        console.log('[Auth] Admin check:', adminCheck);
       } else {
         // Fallback: try to get session from cookies
-        console.log('[Auth] No session in response, trying to fetch from cookies...');
         await new Promise(resolve => setTimeout(resolve, 500));
 
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
-          console.log('[Auth] Session retrieved from cookies:', session.user.email);
           setUser(session.user);
 
           // Check if user is admin
           const adminCheck = isAdmin(session.user.email);
           setIsAdminUser(adminCheck);
-          console.log('[Auth] Admin check:', adminCheck);
         } else {
           throw new Error('Session not found after login - neither from API response nor from cookies');
         }
       }
     } catch (error: any) {
-      console.error('[Auth] Sign in error:', error);
       throw error;
     } finally {
       setLoading(false);

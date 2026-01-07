@@ -146,6 +146,10 @@ export const translations = {
     'editorial.noIssues': 'No issues available yet.',
     'editorial.comingSoon': 'More issues coming soon...',
 
+    // Exhibitions
+    'exhibitions.title': 'Exhibitions',
+    'exhibitions.subtitle': 'Curated collections of visual stories',
+
     // Footer
     'footer.tagline': 'A dedicated space for LMSY and their Besties.',
     'footer.quickLinks': 'Quick Links',
@@ -310,6 +314,10 @@ export const translations = {
     'editorial.noIssues': '暂无杂志内容。',
     'editorial.comingSoon': '更多内容即将推出...',
 
+    // Exhibitions
+    'exhibitions.title': '主题展',
+    'exhibitions.subtitle': '精心策划的视觉故事集',
+
     // Footer
     'footer.tagline': '属于 LMSY 和她们的 Besties 专属空间。',
     'footer.quickLinks': '快速链接',
@@ -473,6 +481,10 @@ export const translations = {
     'editorial.backToGallery': 'กลับสู่แกลเลอรี่',
     'editorial.noIssues': 'ยังไม่มีนิตยสาร',
     'editorial.comingSoon': 'นิตยสารเพิ่มเติมจะมาเร็วๆ นี้...',
+
+    // Exhibitions
+    'exhibitions.title': 'นิทรรศการ',
+    'exhibitions.subtitle': 'งานสะสมเรื่องราวภาพที่จัดแสดงอย่างประณีต',
 
     // Footer
     'footer.tagline': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
