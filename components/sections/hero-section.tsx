@@ -1,10 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, ExternalLink } from 'lucide-react';
 
 export function HeroSection() {
   const { language } = useLanguage();
@@ -87,59 +88,77 @@ export function HeroSection() {
           </motion.div>
 
           {/* Right - Hero Image */}
-          <motion.div
-            className="order-1 lg:order-2 relative"
-            initial={{ opacity: 0, scale: 0.9, filter: 'blur(8px)', y: 20 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              filter: 'blur(0px)',
-              y: [20, 10, 20],
-            }}
-            transition={{
-              opacity: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
-              scale: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
-              filter: { duration: 1 },
-              y: {
-                duration: 6,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: 1,
-              },
-            }}
-          >
-            {/* Main Photo Container */}
-            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-muted/50 to-muted border border-border/50 shadow-2xl">
-              <Image
-                src="/lmsy-001.jpg"
-                alt="Lookmhee & Sonya"
-                fill
-                className="object-cover"
-                priority
-              />
-
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-radial from-lmsy-blue/10 via-transparent to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-background/40 via-transparent to-transparent" />
-            </div>
-
-            {/* Ambient Glow Behind */}
+          <Link href="/editorial" className="order-1 lg:order-2 relative block">
             <motion.div
-              className="absolute inset-4 -z-10 rounded-full blur-3xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%)',
-              }}
+              initial={{ opacity: 0, scale: 0.9, filter: 'blur(8px)', y: 20 }}
               animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.5, 0.8, 0.5],
+                opacity: 1,
+                scale: 1,
+                filter: 'blur(0px)',
+                y: [20, 10, 20],
               }}
               transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: 'easeInOut',
+                opacity: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
+                scale: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
+                filter: { duration: 1 },
+                y: {
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 1,
+                },
               }}
-            />
-          </motion.div>
+              className="relative"
+            >
+              {/* Main Photo Container */}
+              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-muted/50 to-muted border border-border/50 shadow-2xl group cursor-pointer">
+                <Image
+                  src="/lmsy-001.jpg"
+                  alt="Lookmhee & Sonya"
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  priority
+                />
+
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-radial from-lmsy-blue/10 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-background/40 via-transparent to-transparent" />
+
+                {/* Editorial Badge - Shown on Hover */}
+                <motion.div
+                  className="absolute top-4 right-4 px-4 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-lmsy-yellow/30 flex items-center gap-2"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileHover={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ExternalLink className="w-4 h-4 text-lmsy-yellow" />
+                  <span className="text-xs font-medium text-white">
+                    {t(language, 'editorial.title')}
+                  </span>
+                </motion.div>
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-lmsy-blue/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+
+              {/* Ambient Glow Behind */}
+              <motion.div
+                className="absolute inset-4 -z-10 rounded-full blur-3xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%)',
+                }}
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: [0.5, 0.8, 0.5],
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+            </motion.div>
+          </Link>
         </div>
       </div>
 

@@ -14,6 +14,10 @@ export const translations = {
   en: {
     // Navigation
     'nav.home': 'Home',
+    'nav.chronicle': 'Chronicle',
+    'nav.exhibitions': 'Exhibitions',
+    'nav.editorial': 'Editorial',
+    'nav.duality': 'Duality',
     'nav.profiles': 'Profiles',
     'nav.gallery': 'Gallery',
     'nav.projects': 'Projects',
@@ -21,6 +25,9 @@ export const translations = {
     'nav.toggleTheme': 'Toggle theme',
     'nav.toggleMenu': 'Toggle menu',
     'nav.viewAll': 'View All',
+    'nav.lmsy': 'LMSY',
+    'nav.lookmhee': 'Lookmhee',
+    'nav.sonya': 'Sonya',
 
     // Hero
     'hero.lmsy': 'LMSY',
@@ -128,6 +135,17 @@ export const translations = {
     'chronicle.2025': 'New Chapter',
     'chronicle.ongoing': 'Story Continues',
 
+    // Editorial
+    'editorial.title': 'Editorial',
+    'editorial.subtitle': 'Magazine & Publications',
+    'editorial.viewIssue': 'View Issue',
+    'editorial.photographer': 'Photographer',
+    'editorial.stylist': 'Stylist',
+    'editorial.published': 'Published',
+    'editorial.backToGallery': 'Back to Gallery',
+    'editorial.noIssues': 'No issues available yet.',
+    'editorial.comingSoon': 'More issues coming soon...',
+
     // Footer
     'footer.tagline': 'A dedicated space for LMSY and their Besties.',
     'footer.quickLinks': 'Quick Links',
@@ -140,6 +158,10 @@ export const translations = {
   zh: {
     // Navigation
     'nav.home': '首页',
+    'nav.chronicle': '编年史',
+    'nav.exhibitions': '主题展',
+    'nav.editorial': '杂志特辑',
+    'nav.duality': '双生侧写',
     'nav.profiles': '成员资料',
     'nav.gallery': '相册',
     'nav.projects': '作品',
@@ -147,6 +169,9 @@ export const translations = {
     'nav.toggleTheme': '切换主题',
     'nav.toggleMenu': '切换菜单',
     'nav.viewAll': '查看全部',
+    'nav.lmsy': 'LMSY',
+    'nav.lookmhee': 'Lookmhee',
+    'nav.sonya': 'Sonya',
 
     // Hero
     'hero.lmsy': 'LMSY',
@@ -254,6 +279,17 @@ export const translations = {
     'chronicle.2025': '新篇章',
     'chronicle.ongoing': '故事继续',
 
+    // Editorial
+    'editorial.title': '杂志特辑',
+    'editorial.subtitle': '杂志与出版物',
+    'editorial.viewIssue': '查看本期',
+    'editorial.photographer': '摄影师',
+    'editorial.stylist': '造型师',
+    'editorial.published': '出版日期',
+    'editorial.backToGallery': '返回画廊',
+    'editorial.noIssues': '暂无杂志内容。',
+    'editorial.comingSoon': '更多内容即将推出...',
+
     // Footer
     'footer.tagline': '属于 LMSY 和她们的 Besties 专属空间。',
     'footer.quickLinks': '快速链接',
@@ -266,6 +302,10 @@ export const translations = {
   th: {
     // Navigation
     'nav.home': 'หน้าแรก',
+    'nav.chronicle': 'บันทึก',
+    'nav.exhibitions': 'นิทรรศการ',
+    'nav.editorial': 'นิตยสาร',
+    'nav.duality': 'ความคู่',
     'nav.profiles': 'โปรไฟล์',
     'nav.gallery': 'แกลเลอรี่',
     'nav.projects': 'ผลงาน',
@@ -273,6 +313,9 @@ export const translations = {
     'nav.toggleTheme': 'สลับธีม',
     'nav.toggleMenu': 'สลับเมนู',
     'nav.viewAll': 'ดูทั้งหมด',
+    'nav.lmsy': 'LMSY',
+    'nav.lookmhee': 'Lookmhee',
+    'nav.sonya': 'Sonya',
 
     // Hero
     'hero.lmsy': 'LMSY',
@@ -379,6 +422,17 @@ export const translations = {
     'chronicle.2024': 'ทัวร์พบแฟนคลับ',
     'chronicle.2025': 'บทใหม่',
     'chronicle.ongoing': 'เรื่องราวต่อไป',
+
+    // Editorial
+    'editorial.title': 'นิตยสาร',
+    'editorial.subtitle': 'นิตยสารและผลงานพิมพ์',
+    'editorial.viewIssue': 'ดูฉบับ',
+    'editorial.photographer': 'ช่างภาพ',
+    'editorial.stylist': 'สไตลิสต์',
+    'editorial.published': 'วันที่เผยแพร่',
+    'editorial.backToGallery': 'กลับสู่แกลเลอรี่',
+    'editorial.noIssues': 'ยังไม่มีนิตยสาร',
+    'editorial.comingSoon': 'นิตยสารเพิ่มเติมจะมาเร็วๆ นี้...',
 
     // Footer
     'footer.tagline': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
