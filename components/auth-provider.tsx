@@ -95,7 +95,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (!response.ok) {
         console.error('[Auth] Login API error:', result.error);
-        throw new Error(result.error || 'Login failed');
+        console.error('[Auth] Login API details:', result);
+        // 构造详细的错误消息
+        const errorMessage = result.error
+          ? `${result.error}${result.name ? ` (${result.name})` : ''}${result.status ? ` [Status: ${result.status}]` : ''}`
+          : 'Login failed';
+        throw new Error(errorMessage);
       }
 
       console.log('[Auth] Login successful, fetching session...');
