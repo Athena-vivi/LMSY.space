@@ -21,11 +21,16 @@ export default function AdminLoginPage() {
 
     try {
       await signIn(email, password);
-      // Force redirect to admin dashboard after successful login
-      window.location.href = '/admin';
+
+      // Visual feedback before redirect
+      setIsSubmitting(true);
+
+      // Give cookies time to be set, then force redirect
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 500);
     } catch (err: any) {
       setError(err.message || 'Failed to sign in. Please check your credentials.');
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -148,7 +153,7 @@ export default function AdminLoginPage() {
                 {isSubmitting || loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-foreground/30 border-t-transparent rounded-full animate-spin" />
-                    Signing in...
+                    {isSubmitting && !error ? 'Entering Orbit...' : 'Signing in...'}
                   </>
                 ) : (
                   <>
