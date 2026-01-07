@@ -93,6 +93,10 @@ export const translations = {
     'schedule.noEvents': 'No upcoming events scheduled.',
     'schedule.watchNow': 'Watch Now',
 
+    // Construction Banner
+    'banner.message': 'Welcome to this unfinished universe of love, dear Bestie. This place is becoming complete, little by little.',
+    'banner.status': 'UNDER CONSTRUCTION',
+
     // Footer
     'footer.tagline': 'A dedicated space for LMSY and their Besties.',
     'footer.quickLinks': 'Quick Links',
@@ -184,6 +188,10 @@ export const translations = {
     'schedule.noEvents': '暂无安排的活动。',
     'schedule.watchNow': '立即观看',
 
+    // Construction Banner
+    'banner.message': '欢迎来到这个尚未完工的爱的宇宙，亲爱的 Bestie。这里正在一点点变得完整。',
+    'banner.status': '施工中',
+
     // Footer
     'footer.tagline': '属于 LMSY 和她们的 Besties 专属空间。',
     'footer.quickLinks': '快速链接',
@@ -274,6 +282,10 @@ export const translations = {
     'schedule.past': 'กิจกรรมที่ผ่านมา',
     'schedule.noEvents': 'ไม่มีกิจกรรมที่กำหนดไว้',
     'schedule.watchNow': 'รับชมเลย',
+
+    // Construction Banner
+    'banner.message': 'ยินดีต้อนรับสู่จักรวาลแห่งความรักที่ยังสร้างไม่เสร็จ เบสตี้ที่รัก ที่นี่กำลังค่อยๆ สมบูรณ์ขึ้น',
+    'banner.status': 'กำลังก่อสร้าง',
 
     // Footer
     'footer.tagline': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',

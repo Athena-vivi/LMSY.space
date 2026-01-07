@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 // Create context to control banner globally
 interface BannerContextType {
@@ -15,18 +16,6 @@ const BannerContext = createContext<BannerContextType>({
 });
 
 export const useBanner = () => useContext(BannerContext);
-
-const bannerContent = {
-  en: {
-    message: 'Welcome to this unfinished universe of love, dear Bestie. This place is becoming complete, little by little.',
-  },
-  zh: {
-    message: '欢迎来到这个尚未完工的爱的宇宙，亲爱的 Bestie。这里正在一点点变得完整。',
-  },
-  th: {
-    message: 'ยินดีต้อนรับสู่จักรวาลแห่งความรักที่ยังสร้างไม่เสร็จ เบสตี้ที่รัก ที่นี่กำลังค่อยๆ สมบูรณ์ขึ้น',
-  },
-};
 
 export function ConstructionBanner() {
   const { language } = useLanguage();
@@ -58,8 +47,6 @@ export function ConstructionBanner() {
     const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
     localStorage.setItem('construction-banner-dismissed', expiry.toString());
   };
-
-  const content = bannerContent[language as keyof typeof bannerContent] || bannerContent.en;
 
   return (
     <BannerContext.Provider value={contextValue}>
@@ -146,10 +133,10 @@ export function ConstructionBanner() {
                       {/* Text */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm md:text-base text-foreground/90 leading-relaxed font-serif">
-                          {content.message}
+                          {t(language, 'banner.message')}
                         </p>
                         <p className="text-xs text-muted-foreground/60 mt-2 font-mono tracking-wider">
-                          UNDER CONSTRUCTION
+                          {t(language, 'banner.status')}
                         </p>
                       </div>
 
