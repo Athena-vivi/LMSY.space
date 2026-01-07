@@ -81,7 +81,7 @@ export default async function ChroniclePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <p className="font-mono text-xs text-muted-foreground/60 tracking-widest">
-              ARCHIVE CURATED BY <span className="text-lmsy-yellow">ASTER</span> © 2025
+              ARCHIVE CURATED BY <span className="text-lmsy-yellow">ASTRA</span> © 2025
             </p>
           </div>
         </div>

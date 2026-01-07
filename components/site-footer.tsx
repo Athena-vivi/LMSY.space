@@ -20,7 +20,7 @@ export function SiteFooter() {
             </p>
 
             <div className="font-mono text-xs md:text-sm text-muted-foreground/60 tracking-widest">
-              CURATOR & ARCHIVIST: ASTER
+              CURATOR & ARCHIVIST: ASTRA
             </div>
           </div>
 

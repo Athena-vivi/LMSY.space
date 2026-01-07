@@ -128,7 +128,7 @@ export function EditorialArticle({ article }: EditorialArticleProps) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-4xl mx-auto text-center">
             <p className="font-mono text-xs text-muted-foreground/60 tracking-widest mb-4">
-              CURATED WITH LOVE BY <span className="text-lmsy-yellow">ASTER</span>
+              CURATED WITH LOVE BY <span className="text-lmsy-yellow">ASTRA</span>
             </p>
             <Link
               href="/editorial"
