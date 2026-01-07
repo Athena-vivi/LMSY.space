@@ -132,182 +132,116 @@ export function VinylPlayer() {
         muted={isMuted}
       />
 
-      {/* 左下角固定位置 */}
-      <div className="fixed bottom-6 left-6 z-40">
+      {/* 左下角固定位置 - 空间化设计 */}
+      <div className="fixed bottom-6 left-6 z-40 flex items-center gap-6">
         <AnimatePresence mode="wait">
           {!isExpanded ? (
-            /* 收起状态：黑胶唱片 */
+            /* 收起状态：双环光环 */
             <motion.div
               key="collapsed"
-              initial={{ scale: 0, rotate: -180 }}
+              initial={{ scale: 0, rotate: -90 }}
               animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0, rotate: 180 }}
-              transition={{ duration: 0.5, type: 'spring' }}
+              exit={{ scale: 0, rotate: 90 }}
+              transition={{ duration: 0.8, type: 'spring', stiffness: 200, damping: 25 }}
               className="relative cursor-pointer group"
-              onClick={() => setIsExpanded(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+              onDoubleClick={() => setIsExpanded(true)}
             >
-              {/* 外发光效果 */}
+              {/* 外环 - 黄色 */}
               <motion.div
-                className="absolute inset-0 rounded-full blur-xl"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
                 style={{
-                  background: 'radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, rgba(56, 189, 248, 0.3) 50%, transparent 70%)',
+                  width: '80px',
+                  height: '80px',
+                  border: '1px solid rgba(251, 191, 36, 0.6)',
+                  boxShadow: '0 0 20px rgba(251, 191, 36, 0.3), inset 0 0 20px rgba(251, 191, 36, 0.1)',
                 }}
-                animate={{
-                  scale: isPlaying ? [1, 1.2, 1] : 1,
-                  opacity: isPlaying ? [0.5, 0.8, 0.5] : 0.3,
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
+                animate={
+                  isPlaying
+                    ? {
+                        rotate: 360,
+                        borderColor: ['rgba(251, 191, 36, 0.6)', 'rgba(251, 191, 36, 0.8)', 'rgba(251, 191, 36, 0.6)'],
+                      }
+                    : {
+                        opacity: [0.3, 0.6, 0.3],
+                        scale: [1, 1.02, 1],
+                      }
+                }
+                transition={
+                  isPlaying
+                    ? {
+                        duration: 20,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }
+                    : {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }
+                }
               />
 
-              {/* 黑胶唱片主体 */}
-              <div
-                className={cn(
-                  'relative w-24 h-24 md:w-32 md:h-32 rounded-full border-2 overflow-hidden',
-                  'bg-gradient-to-br from-gray-900 to-black shadow-2xl'
-                )}
-                style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+              {/* 内环 - 蓝色 */}
+              <motion.div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  border: '1px solid rgba(56, 189, 248, 0.6)',
+                  boxShadow: '0 0 15px rgba(56, 189, 248, 0.3), inset 0 0 15px rgba(56, 189, 248, 0.1)',
+                }}
+                animate={
+                  isPlaying
+                    ? {
+                        rotate: -360,
+                        borderColor: ['rgba(56, 189, 248, 0.6)', 'rgba(56, 189, 248, 0.8)', 'rgba(56, 189, 248, 0.6)'],
+                      }
+                    : {
+                        opacity: [0.4, 0.7, 0.4],
+                        scale: [1, 1.03, 1],
+                      }
+                }
+                transition={
+                  isPlaying
+                    ? {
+                        duration: 15,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }
+                    : {
+                        duration: 2.5,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                        delay: 0.2,
+                      }
+                }
+              />
+
+              {/* Hover Tooltip - 磨砂玻璃质感 */}
+              <motion.div
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                initial={{ y: 10, opacity: 0 }}
+                whileHover={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3 }}
               >
-                {/* 旋转的黑胶纹理 */}
-                <motion.div
-                  className="absolute inset-0"
-                  animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: 'linear',
+                <div
+                  className="relative px-6 py-4 rounded-xl backdrop-blur-xl border"
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
                   }}
                 >
-                  {/* 黑胶纹路 */}
-                  <div className="absolute inset-0">
-                    {[...Array(8)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute rounded-full border border-gray-800/50"
-                        style={{
-                          width: `${100 - i * 10}%`,
-                          height: `${100 - i * 10}%`,
-                          top: `${i * 5}%`,
-                          left: `${i * 5}%`,
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* 专辑封面 */}
-                  <div className="absolute inset-[30%] rounded-full overflow-hidden border-4 border-gray-900">
-                    {currentTrack.cover ? (
-                      <Image
-                        src={currentTrack.cover}
-                        alt={currentTrack.title}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
-                    ) : (
-                      /* 占位符 */
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20">
-                        <div className="text-center">
-                          <p className="font-serif text-2xl font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                            {currentTrack.artist[0]}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 中心孔 */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gray-900 border border-gray-700" />
-                </motion.div>
-              </div>
-
-              {/* 播放状态指示器 */}
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-lmsy-yellow rounded-full flex items-center justify-center shadow-lg">
-                <AnimatePresence mode="wait">
-                  {isPlaying ? (
-                    <motion.div
-                      key="pause-indicator"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="flex gap-[2px]"
-                    >
-                      <motion.div
-                        className="w-0.5 h-2 bg-black rounded-full"
-                        animate={{ scaleY: [1, 0.5, 1] }}
-                        transition={{ duration: 0.8, repeat: Infinity }}
-                      />
-                      <motion.div
-                        className="w-0.5 h-2 bg-black rounded-full"
-                        animate={{ scaleY: [1, 0.5, 1] }}
-                        transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="play-indicator"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                    >
-                      <Play className="h-3 w-3 text-black fill-black" strokeWidth={2} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* 悬停提示 */}
-              <div className="absolute bottom-full left-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="bg-black/90 backdrop-blur-xl rounded-lg px-3 py-2 border border-white/10 whitespace-nowrap">
-                  <p className="text-xs font-medium text-white/90">{currentTrack.title}</p>
-                  <p className="text-[10px] text-white/50">{currentTrack.artist}</p>
-                </div>
-              </div>
-            </motion.div>
-          ) : (
-            /* 展开状态：完整播放器 */
-            <motion.div
-              key="expanded"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.3 }}
-              className="relative"
-            >
-              <div
-                className="bg-black/95 backdrop-blur-xl rounded-2xl border overflow-hidden"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-              >
-                {/* 头部：关闭按钮 */}
-                <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-lmsy-yellow animate-pulse" />
-                    <p className="text-xs font-mono text-white/40">NOW PLAYING</p>
-                  </div>
-                  <button
-                    onClick={() => setIsExpanded(false)}
-                    className="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white/60"
-                  >
-                    <X className="h-4 w-4" strokeWidth={1.5} />
-                  </button>
-                </div>
-
-                <div className="p-4 space-y-4 w-[320px]">
-                  {/* 专辑信息和进度 */}
-                  <div className="flex items-center gap-4">
-                    {/* 小专辑封面 */}
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-                      <motion.div
-                        className="absolute inset-0"
-                        animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          ease: 'linear',
-                        }}
+                  {/* 曲目信息 */}
+                  <div className="space-y-3">
+                    {/* 封面缩略图 */}
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden border"
+                        style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                       >
                         {currentTrack.cover ? (
                           <Image
@@ -324,10 +258,103 @@ export function VinylPlayer() {
                             </p>
                           </div>
                         )}
-                      </motion.div>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-serif text-sm text-white/90 truncate">{currentTrack.title}</p>
+                        <p className="text-xs text-white/50 truncate">{currentTrack.artist}</p>
+                      </div>
                     </div>
 
-                    {/* 歌曲信息 */}
+                    {/* 进度条 */}
+                    <div className="space-y-1">
+                      <div
+                        className="h-0.5 bg-white/10 rounded-full overflow-hidden"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (audioRef.current) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const percentage = (x / rect.width) * 100;
+                            audioRef.current.currentTime = (percentage / 100) * (audioRef.current.duration || 1);
+                            setProgress(percentage);
+                          }
+                        }}
+                      >
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${progress}%`,
+                            background: 'linear-gradient(90deg, rgba(251, 191, 36, 0.8) 0%, rgba(56, 189, 248, 0.8) 100%)',
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[8px] font-mono text-white/30">
+                        <span>{formatTime((progress / 100) * (audioRef.current?.duration || 0))}</span>
+                        <span>{formatTime(audioRef.current?.duration || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : (
+            /* 展开状态：极简播放器 */
+            <motion.div
+              key="expanded"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.4 }}
+              className="relative"
+            >
+              <div
+                className="backdrop-blur-xl rounded-2xl overflow-hidden"
+                style={{
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                }}
+              >
+                {/* 头部 */}
+                <div className="flex items-center justify-between px-5 py-3 border-b"
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-lmsy-yellow animate-pulse" />
+                    <p className="text-[10px] font-mono text-white/40 tracking-wider uppercase">Now Playing</p>
+                  </div>
+                  <button
+                    onClick={() => setIsExpanded(false)}
+                    className="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-white/30 hover:text-white/60"
+                  >
+                    <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-5 w-[280px]">
+                  {/* 专辑信息 */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-14 h-14 rounded-lg overflow-hidden border flex-shrink-0"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    >
+                      {currentTrack.cover ? (
+                        <Image
+                          src={currentTrack.cover}
+                          alt={currentTrack.title}
+                          fill
+                          className="object-cover"
+                          sizes="56px"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20">
+                          <p className="font-serif text-lg font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                            {currentTrack.artist[0]}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex-1 min-w-0">
                       <h4 className="font-serif text-sm text-white/90 truncate">{currentTrack.title}</h4>
                       <p className="text-xs text-white/40 truncate">{currentTrack.artist}</p>
@@ -337,7 +364,7 @@ export function VinylPlayer() {
                   {/* 进度条 */}
                   <div className="space-y-2">
                     <div
-                      className="h-1 bg-white/10 rounded-full overflow-hidden cursor-pointer"
+                      className="h-0.5 bg-white/10 rounded-full overflow-hidden cursor-pointer"
                       onClick={(e) => {
                         if (audioRef.current) {
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -356,7 +383,7 @@ export function VinylPlayer() {
                         }}
                       />
                     </div>
-                    <div className="flex justify-between text-[10px] font-mono text-white/30">
+                    <div className="flex justify-between text-[8px] font-mono text-white/30">
                       <span>{formatTime((progress / 100) * (audioRef.current?.duration || 0))}</span>
                       <span>{formatTime(audioRef.current?.duration || 0)}</span>
                     </div>
@@ -368,29 +395,29 @@ export function VinylPlayer() {
                       onClick={playPrevious}
                       className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white/60"
                     >
-                      <SkipBack className="h-4 w-4" strokeWidth={1.5} />
+                      <SkipBack className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
 
                     <motion.button
                       onClick={togglePlay}
-                      className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+                      className="w-11 h-11 rounded-full flex items-center justify-center"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)',
+                        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%)',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                       }}
-                      whileHover={{
-                        boxShadow: '0 0 20px rgba(251, 191, 36, 0.3), 0 0 40px rgba(56, 189, 248, 0.2)',
-                      }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <AnimatePresence mode="wait">
+                      <AnimatePresence mode="wait" initial={false}>
                         {isPlaying ? (
                           <motion.div
                             key="pause"
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0 }}
+                            transition={{ duration: 0.1 }}
                           >
-                            <Pause className="h-5 w-5 text-white" strokeWidth={1.5} />
+                            <Pause className="h-4.5 w-4.5 text-white" strokeWidth={1.5} />
                           </motion.div>
                         ) : (
                           <motion.div
@@ -398,8 +425,9 @@ export function VinylPlayer() {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0 }}
+                            transition={{ duration: 0.1 }}
                           >
-                            <Play className="h-5 w-5 text-white ml-0.5" strokeWidth={1.5} />
+                            <Play className="h-4.5 w-4.5 text-white ml-0.5" strokeWidth={1.5} fill="currentColor" />
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -409,25 +437,26 @@ export function VinylPlayer() {
                       onClick={playNext}
                       className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white/60"
                     >
-                      <SkipForward className="h-4 w-4" strokeWidth={1.5} />
+                      <SkipForward className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
 
-                    {/* 音量控制 */}
                     <button
                       onClick={() => setIsMuted(!isMuted)}
                       className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white/60"
                     >
                       {isMuted ? (
-                        <VolumeX className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        <VolumeX className="h-3 w-3" strokeWidth={1.5} />
                       ) : (
-                        <Volume2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        <Volume2 className="h-3 w-3" strokeWidth={1.5} />
                       )}
                     </button>
                   </div>
 
                   {/* 播放列表预览 */}
-                  <div className="pt-3 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-                    <p className="text-[10px] font-mono text-white/30 mb-2">UP NEXT</p>
+                  <div className="pt-4 border-t"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
+                  >
+                    <p className="text-[8px] font-mono text-white/30 mb-2 tracking-wider uppercase">Up Next</p>
                     <div className="space-y-1">
                       {playlist.slice(currentTrackIndex + 1, currentTrackIndex + 3).map((track) => (
                         <div
@@ -435,9 +464,11 @@ export function VinylPlayer() {
                           onClick={() => {
                             setCurrentTrackIndex(playlist.findIndex(t => t.id === track.id));
                           }}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group"
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group/track"
                         >
-                          <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                          <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 border"
+                            style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                          >
                             {track.cover ? (
                               <Image src={track.cover} alt={track.title} fill className="object-cover" sizes="32px" />
                             ) : (
@@ -450,7 +481,7 @@ export function VinylPlayer() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-white/60 truncate">{track.title}</p>
-                            <p className="text-[10px] text-white/30 truncate">{track.artist}</p>
+                            <p className="text-[9px] text-white/30 truncate">{track.artist}</p>
                           </div>
                         </div>
                       ))}
@@ -461,6 +492,19 @@ export function VinylPlayer() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Text label - only show when not expanded */}
+        {!isExpanded && (
+          <motion.p
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.5 }}
+            className="font-mono text-[8px] text-white/20 tracking-[0.25em] uppercase pointer-events-none select-none"
+          >
+            Listen To The Resonance
+          </motion.p>
+        )}
       </div>
     </>
   );

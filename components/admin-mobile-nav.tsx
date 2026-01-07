@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Upload, Images, FolderKanban, FileText, PenTool } from 'lucide-react';
+import { LayoutDashboard, Upload, Images, FolderKanban, FileText, PenTool, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const mobileNavItems = [
@@ -12,6 +12,7 @@ const mobileNavItems = [
   { icon: FolderKanban, label: 'Projects', href: '/admin/projects' },
   { icon: FileText, label: 'Chronicle', href: '/admin/chronicle' },
   { icon: PenTool, label: 'Editorial', href: '/admin/editorial' },
+  { icon: MessageSquare, label: 'Messages', href: '/admin/messages' },
 ];
 
 export function AdminMobileNav() {

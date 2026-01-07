@@ -15,6 +15,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,12 @@ const navSections = [
     items: [
       { icon: FileText, label: 'Chronicle', href: '/admin/chronicle' },
       { icon: PenTool, label: 'Editorial', href: '/admin/editorial' },
+    ],
+  },
+  {
+    title: 'COMMUNITY 互动',
+    items: [
+      { icon: MessageSquare, label: 'Messages', href: '/admin/messages' },
     ],
   },
 ];

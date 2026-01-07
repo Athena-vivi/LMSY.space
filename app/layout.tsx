@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AuthProvider } from "@/components/auth-provider";
 import { VinylPlayer } from "@/components/vinyl-player";
+import { WhisperFloatingButton } from "@/components/whisper-floating-button";
 
 const sans = Inter({
   variable: "--font-geist-sans",
@@ -122,6 +123,8 @@ export default function RootLayout({
               </div>
               {/* Global Vinyl Player */}
               <VinylPlayer />
+              {/* Whispers Floating Button */}
+              <WhisperFloatingButton />
             </LanguageProvider>
           </ThemeProvider>
         </AuthProvider>

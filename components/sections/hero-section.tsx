@@ -72,19 +72,6 @@ export function HeroSection() {
                 {t(language, 'hero.universeSubtitle')}
               </p>
             </motion.div>
-
-            {/* Curator Signature */}
-            <motion.div
-              className="pt-8 flex items-center justify-center lg:justify-start gap-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-            >
-              <div className="h-px w-12 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
-              <span className="text-xs text-muted-foreground tracking-widest font-medium">
-                {t(language, 'hero.curator')}
-              </span>
-            </motion.div>
           </motion.div>
 
           {/* Right - Hero Image */}

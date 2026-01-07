@@ -169,6 +169,20 @@
   .magazine-shadow-lg {
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
   }
+
+  /* Invisible Scrollbar Utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Body Lock Utility */
+  .body-lock {
+    overflow: hidden;
+  }
 }
 
 /* MDX / Editorial Prose Styles */

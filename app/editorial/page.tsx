@@ -1,13 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { ArrowRight, Calendar, Camera } from 'lucide-react';
+import { ArrowRight, Calendar } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,6 +29,18 @@ export default function EditorialPage() {
   const { language } = useLanguage();
   const [publications, setPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end start'],
+  });
+
+  // Generate archive ID
+  const generateArchiveId = (index: number, date: string) => {
+    const year = new Date(date).getFullYear();
+    const num = String(index + 1).padStart(2, '0');
+    return `LMSY-ED-${year}-${num}`;
+  };
 
   useEffect(() => {
     async function fetchPublications() {
@@ -58,188 +70,381 @@ export default function EditorialPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <section className="relative py-24 md:py-32 overflow-hidden">
-        {/* Ambient Glow */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-gradient-radial from-lmsy-yellow/5 via-lmsy-blue/3 to-transparent rounded-full blur-3xl pointer-events-none" />
+    <div ref={containerRef} className="relative min-h-screen bg-background">
+      {/* Scanning Line Texture Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)',
+          }}
+        />
+      </div>
+
+      {/* Hero Masthead - 顶级时尚刊物风格 */}
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
+        {/* Subtle ambient glow */}
+        <motion.div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[100vw]"
+          style={{
+            background: 'radial-gradient(circle, rgba(251, 191, 36, 0.03) 0%, rgba(56, 189, 248, 0.02) 50%, transparent 70%)',
+            filter: 'blur(100px)',
+          }}
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <motion.div
-            className="text-center max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 30 }}
+            className="text-center max-w-6xl mx-auto"
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            {/* Label */}
-            <motion.span
-              className="inline-block text-xs md:text-sm font-medium tracking-widest uppercase px-4 py-2 rounded-full border border-lmsy-yellow/30 text-lmsy-yellow bg-lmsy-yellow/5 mb-6"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
+            {/* Small Label */}
+            <motion.p
+              initial={{ opacity: 0, letterSpacing: '0.5em' }}
+              animate={{ opacity: 1, letterSpacing: 'normal' }}
+              transition={{ duration: 1, delay: 0.3 }}
+              className="text-xs md:text-sm font-mono text-muted-foreground tracking-[0.4em] uppercase mb-8"
             >
-              {t(language, 'editorial.title').toUpperCase()}
-            </motion.span>
+              The Collection
+            </motion.p>
 
-            {/* Title */}
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                {t(language, 'editorial.title')}
+            {/* Main Title - 超大号衬线体 */}
+            <h1 className="font-serif text-[12vw] md:text-[10vw] lg:text-[9vw] font-light leading-[0.85] tracking-tight mb-8">
+              <span className="block bg-gradient-to-r from-foreground via-foreground/90 to-foreground bg-clip-text text-transparent">
+                THE
+              </span>
+              <span className="block italic font-light bg-gradient-to-r from-lmsy-yellow/80 via-lmsy-blue/60 to-lmsy-yellow/80 bg-clip-text text-transparent">
+                EDITORIALS
               </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="text-lg md:text-xl text-muted-foreground font-light">
-              {t(language, 'editorial.subtitle')}
-            </p>
-
             {/* Decorative Line */}
             <motion.div
-              className="mx-auto mt-8 w-24 h-1 bg-gradient-to-r from-lmsy-yellow via-lmsy-blue to-lmsy-yellow rounded-full"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-            />
+              className="mx-auto flex items-center justify-center gap-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className="h-px w-16 bg-gradient-to-r from-transparent to-lmsy-yellow/50" />
+              <div className="w-2 h-2 rotate-45 border border-lmsy-yellow/50" />
+              <div className="h-px w-16 bg-gradient-to-l from-transparent to-lmsy-blue/50" />
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Gallery Grid */}
-      <section className="py-16 md:py-24">
+      {/* Issues Section */}
+      <section className="py-12 md:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-[3/4] rounded-2xl bg-muted/30 animate-pulse"
-                />
+            <div className="space-y-32">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="grid lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-20 items-center">
+                  <div className="aspect-[3/4] rounded-sm bg-muted/20 animate-pulse" />
+                  <div className="space-y-6">
+                    <div className="h-6 w-48 bg-muted/20 rounded animate-pulse" />
+                    <div className="h-16 w-3/4 bg-muted/20 rounded animate-pulse" />
+                    <div className="h-24 w-full bg-muted/20 rounded animate-pulse" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : publications.length === 0 ? (
+            /* 艺术化空状态 - Nascent State */
             <motion.div
-              className="text-center py-20"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              className="relative min-h-[60vh] flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.5 }}
             >
-              <div className="max-w-md mx-auto">
-                <Camera className="mx-auto w-16 h-16 text-muted-foreground/30 mb-6" />
-                <h3 className="font-serif text-2xl font-bold text-foreground mb-4">
-                  {t(language, 'editorial.noIssues')}
-                </h3>
-                <p className="text-muted-foreground">
-                  {t(language, 'editorial.comingSoon')}
-                </p>
+              {/* 巨大的 'A' 字水印 */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <motion.div
+                  className="font-serif text-[40vw] font-light text-foreground/5 select-none"
+                  animate={{
+                    opacity: [0.03, 0.06, 0.03],
+                    scale: [1, 1.02, 1],
+                  }}
+                  transition={{
+                    duration: 8,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                >
+                  A
+                </motion.div>
+              </div>
+
+              {/* 前景文字 */}
+              <div className="relative text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1, delay: 0.5 }}
+                  className="space-y-6"
+                >
+                  <p className="font-mono text-xs tracking-[0.5em] text-muted-foreground/60 uppercase">
+                    Archive Status: Nascent
+                  </p>
+                  <div className="space-y-2">
+                    <p className="font-serif text-2xl md:text-3xl text-foreground/40 font-light italic">
+                      ISSUES ARE UNDER CURATION
+                    </p>
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="h-px w-12 bg-lmsy-yellow/30" />
+                      <p className="font-mono text-sm text-lmsy-yellow/60 tracking-wider">
+                        STANDBY FOR LIGHT
+                      </p>
+                      <div className="h-px w-12 bg-lmsy-blue/30" />
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Decorative corner elements */}
+                <div className="absolute top-0 left-0 w-32 h-32 border-l border-t border-foreground/5" />
+                <div className="absolute bottom-0 right-0 w-32 h-32 border-r border-b border-foreground/5" />
               </div>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            /* 非对称两列布局的刊物卡片 */
+            <div className="space-y-32 md:space-y-48">
               {publications.map((pub, index) => (
-                <PublicationCard
+                <IssueCard
                   key={pub.id}
                   publication={pub}
                   index={index}
+                  archiveId={generateArchiveId(index, pub.issue_date)}
                 />
               ))}
             </div>
           )}
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="relative py-20 border-t border-border/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            viewport={{ once: true }}
+          >
+            <p className="font-mono text-xs tracking-[0.3em] text-muted-foreground/40 uppercase mb-4">
+              LMSY.SPACE · THE EDITORIALS
+            </p>
+            <p className="font-serif text-sm text-muted-foreground/60 italic">
+              Curating moments of永恒 in print
+            </p>
+          </motion.div>
+        </div>
+      </footer>
     </div>
   );
 }
 
-interface PublicationCardProps {
+interface IssueCardProps {
   publication: Publication;
   index: number;
+  archiveId: string;
 }
 
-function PublicationCard({ publication, index }: PublicationCardProps) {
-  const { language } = useLanguage();
+function IssueCard({ publication, index, archiveId }: IssueCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Parallax effect on scroll
+  const { scrollYProgress } = useScroll({
+    target: cardRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [50, -50]);
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
     });
   };
 
+  // Alternate layout direction
+  const isEven = index % 2 === 0;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      className="group"
+      ref={cardRef}
+      style={{ y, opacity }}
+      initial={{ opacity: 0, y: 100 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
+      viewport={{ once: true, margin: '-100px' }}
+      className="relative"
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
     >
-      <Link href={`/editorial/${publication.slug}`} className="block">
-        <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted/30">
-          {/* Cover Image with Fade-in */}
-          <div className={`absolute inset-0 transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
-            <Image
-              src={publication.cover_url}
-              alt={publication.mag_name}
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-              onLoad={() => setImageLoaded(true)}
-            />
-          </div>
+      {/* Background color shift on hover */}
+      <motion.div
+        className="absolute inset-0 -z-10 rounded-sm opacity-0 transition-opacity duration-700"
+        style={{
+          background: isEven
+            ? 'radial-gradient(ellipse at center, rgba(251, 191, 36, 0.03) 0%, transparent 70%)'
+            : 'radial-gradient(ellipse at center, rgba(56, 189, 248, 0.03) 0%, transparent 70%)',
+        }}
+        animate={{ opacity: hovered ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+      />
 
-          {/* Loading Placeholder */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/70 animate-pulse" />
+      <div className={`grid lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-20 items-center ${!isEven ? 'lg:grid-cols-[1.2fr_1fr]' : ''}`}>
+        {/* Magazine Cover */}
+        <div className={`${!isEven ? 'lg:order-2' : ''}`}>
+          <Link href={`/editorial/${publication.slug}`} className="block group">
+            <motion.div
+              className="relative aspect-[3/4] overflow-hidden"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              {/* Cover Image */}
+              <div className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                <Image
+                  src={publication.cover_url}
+                  alt={publication.mag_name}
+                  fill
+                  className="object-cover"
+                  onLoad={() => setImageLoaded(true)}
+                />
+              </div>
+
+              {/* Loading state */}
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-muted/50">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 border-2 border-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-2 h-2 bg-foreground/20 rounded-full animate-pulse" />
+                      </div>
+                      <p className="font-mono text-xs text-foreground/20 tracking-wider">LOADING</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Subtle gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+
+              {/* Frame border */}
+              <div className="absolute inset-0 border border-foreground/10 pointer-events-none" />
+
+              {/* Corner decorations */}
+              <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-lmsy-yellow/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-lmsy-blue/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </motion.div>
+          </Link>
+        </div>
+
+        {/* Metadata Section */}
+        <div className={`${!isEven ? 'lg:order-1' : ''} space-y-8`}>
+          {/* Archive ID */}
+          <motion.div
+            initial={{ opacity: 0, x: isEven ? -20 : 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <p className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground/50 uppercase">
+              {archiveId}
+            </p>
+          </motion.div>
+
+          {/* Magazine Name - 超大号 */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            <Link href={`/editorial/${publication.slug}`} className="block group">
+              <h2 className="font-serif text-5xl md:text-6xl lg:text-7xl font-light leading-tight">
+                <span className="block text-foreground/90 group-hover:transition-colors duration-500">
+                  {publication.mag_name.split(' ').map((word, i) => (
+                    <span key={i} className="inline-block">
+                      {word}
+                      &nbsp;
+                    </span>
+                  ))}
+                </span>
+              </h2>
+            </Link>
+          </motion.div>
+
+          {/* Date */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="flex items-center gap-4"
+          >
+            <div className="h-px w-12 bg-gradient-to-r from-lmsy-yellow/50 to-transparent" />
+            <div className="flex items-center gap-3 text-muted-foreground/60">
+              <Calendar className="w-4 h-4" strokeWidth={1} />
+              <span className="font-mono text-sm tracking-wider uppercase">{formatDate(publication.issue_date)}</span>
+            </div>
+          </motion.div>
+
+          {/* Curator's Note */}
+          {publication.description && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="pl-6 border-l border-foreground/10">
+                <p className="font-serif text-lg md:text-xl text-foreground/60 leading-relaxed font-light italic">
+                  "{publication.description}"
+                </p>
+              </div>
+              <p className="font-mono text-[10px] text-muted-foreground/40 tracking-wider uppercase mt-4">
+                Curator's Note
+              </p>
+            </motion.div>
           )}
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-
-          {/* Duo Color Border */}
-          <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30 p-[2px]">
-            <div className="absolute inset-0 rounded-2xl bg-background/0" />
-          </div>
-
-          {/* Content */}
-          <div className="absolute inset-0 flex flex-col justify-end p-6">
-            {/* Magazine Name */}
-            <motion.h3
-              className="font-serif text-2xl md:text-3xl font-bold text-white mb-3"
-              style={{
-                background: 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
+          {/* View Issue Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <Link
+              href={`/editorial/${publication.slug}`}
+              className="inline-flex items-center gap-4 group/button"
             >
-              {publication.mag_name}
-            </motion.h3>
-
-            {/* Date */}
-            <div className="flex items-center gap-2 text-white/80 text-sm mb-3">
-              <Calendar className="w-4 h-4" />
-              <span>{formatDate(publication.issue_date)}</span>
-            </div>
-
-            {/* Photographer */}
-            {publication.credits?.photographer && (
-              <div className="flex items-center gap-2 text-white/70 text-xs">
-                <Camera className="w-3 h-3" />
-                <span>{publication.credits.photographer}</span>
-              </div>
-            )}
-
-            {/* Arrow Indicator */}
-            <motion.div
-              className="flex items-center gap-2 text-white/80 mt-4"
-              initial={{ x: 0 }}
-              whileHover={{ x: 5 }}
-            >
-              <span className="text-xs tracking-wider">{t(language, 'editorial.viewIssue').toUpperCase()}</span>
-              <ArrowRight className="w-4 h-4" />
-            </motion.div>
-          </div>
+              <span className="font-mono text-xs tracking-[0.3em] text-muted-foreground/50 uppercase group-hover/button:text-foreground/80 transition-colors">
+                View Full Issue
+              </span>
+              <div className="w-12 h-px bg-foreground/20 group-hover/button:w-20 group-hover/button:bg-foreground/40 transition-all duration-500" />
+              <ArrowRight className="w-4 h-4 text-foreground/30 group-hover/button:text-foreground/60 group-hover/button:translate-x-1 transition-all duration-500" strokeWidth={1} />
+            </Link>
+          </motion.div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }
