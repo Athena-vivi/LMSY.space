@@ -31,10 +31,10 @@ export default function AdminLayout({
   // Show loading while checking admin status (only for non-login pages)
   if (!isLoginPage && loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Shield className="h-12 w-12 text-lmsy-yellow mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Verifying admin access...</p>
+          <p className="text-white/40 font-mono text-sm">Verifying admin access...</p>
         </div>
       </div>
     );
@@ -51,7 +51,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Desktop Sidebar */}
       <AdminSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
 
@@ -63,12 +63,12 @@ export default function AdminLayout({
         className={cn(
           'transition-all duration-300',
           // Desktop: account for sidebar
-          'md:ml-72 md:collapsed:ml-20',
+          'md:ml-48 md:collapsed:ml-20',
           // Mobile: account for top header and bottom nav
-          'pt-16 pb-20 md:pb-0'
+          'pt-14 pb-20 md:pb-0'
         )}
       >
-        <div className="container mx-auto px-4 py-8 md:px-8">
+        <div className="container mx-auto px-6 py-8 md:px-8">
           {children}
         </div>
       </main>
@@ -77,7 +77,7 @@ export default function AdminLayout({
       <style jsx global>{`
         @media (min-width: 768px) {
           main {
-            margin-left: ${isCollapsed ? '5rem' : '18rem'};
+            margin-left: ${isCollapsed ? '5rem' : '12rem'};
           }
         }
       `}</style>

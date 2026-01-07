@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileText, PenTool, Database, Cloud, Shield, ArrowRight, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, PenTool, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -80,147 +80,177 @@ export default function AdminDashboard() {
 
   const quickActions = [
     {
-      title: 'Upload New Collection',
-      description: 'Add new images to the gallery',
+      title: 'Bulk Upload',
+      description: 'Add new images to the archive',
       icon: Upload,
       href: '/admin/upload',
-      gradient: 'from-lmsy-yellow/20 to-lmsy-yellow/5',
-      border: 'border-lmsy-yellow/30',
-      text: 'text-lmsy-yellow',
     },
     {
-      title: 'Edit Chronicle',
+      title: 'Chronicle Edit',
       description: 'Update timeline and events',
       icon: FileText,
       href: '/admin/chronicle',
-      gradient: 'from-lmsy-blue/20 to-lmsy-blue/5',
-      border: 'border-lmsy-blue/30',
-      text: 'text-lmsy-blue',
     },
     {
-      title: 'Curatorial Writing',
+      title: 'Editorial Studio',
       description: 'Draft exhibition texts',
       icon: PenTool,
       href: '/admin/editorial',
-      gradient: 'from-purple-500/20 to-purple-500/5',
-      border: 'border-purple-500/30',
-      text: 'text-purple-400',
     },
   ];
 
-  const StatusIcon = ({ status }: { status: SystemStatus[keyof SystemStatus] }) => {
-    switch (status) {
-      case 'checking':
-        return <AlertCircle className="h-5 w-5 text-yellow-500 animate-pulse" />;
-      case 'connected':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'error':
-        return <XCircle className="h-5 w-5 text-red-500" />;
-    }
-  };
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
-        <div>
-          <h1 className="font-serif text-4xl font-bold mb-2 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-            Admin Dashboard
-          </h1>
-          <p className="text-muted-foreground">Welcome back, Curator. The archive awaits your curation.</p>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-lmsy-yellow/10 border border-lmsy-yellow/30 rounded-lg">
-          <Shield className="h-5 w-5 text-lmsy-yellow" />
-          <span className="text-sm font-medium text-lmsy-yellow">Admin Access</span>
-        </div>
-      </motion.div>
+    <div className="relative min-h-screen">
+      {/* Scanline Effect */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.02]"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.1) 4px)',
+          backgroundSize: '100% 4px',
+          animation: 'scanline 8s linear infinite',
+        }}
+      />
 
-      {/* System Status */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
-      >
-        <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-lmsy-yellow/10 rounded-lg">
-                <Cloud className="h-5 w-5 text-lmsy-yellow" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Cloudflare R2</h3>
-                <p className="text-sm text-muted-foreground">Storage & CDN</p>
-              </div>
+      <style jsx global>{`
+        @keyframes scanline {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(4px); }
+        }
+        @keyframes gradient-flow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
+
+      <div className="relative z-10 space-y-6">
+        {/* Console Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between px-4 py-3 bg-black border-b"
+          style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
+        >
+          {/* System Info */}
+          <div className="flex items-center gap-4">
+            <div className="text-[10px] font-mono tracking-wider">
+              <span className="text-white/40">LMSY_SPACE_OS v1.0</span>
+              <span className="text-white/20 mx-2">/</span>
+              <span className="text-white/40">CURATOR_ASTRA</span>
             </div>
-            <StatusIcon status={systemStatus.r2} />
           </div>
-          <div className="text-xs text-muted-foreground">
-            {systemStatus.r2 === 'connected' && (
-              <span>CDN: {process.env.NEXT_PUBLIC_CDN_URL || 'Not configured'}</span>
-            )}
-            {systemStatus.r2 === 'error' && 'Configuration missing'}
-            {systemStatus.r2 === 'checking' && 'Checking connection...'}
-          </div>
-        </div>
 
-        <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-lmsy-blue/10 rounded-lg">
-                <Database className="h-5 w-5 text-lmsy-blue" />
+          {/* Status Indicators */}
+          <div className="flex items-center gap-6">
+            {/* R2 Status */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    systemStatus.r2 === 'connected'
+                      ? 'bg-green-500 animate-pulse'
+                      : systemStatus.r2 === 'error'
+                      ? 'bg-red-500'
+                      : 'bg-yellow-500 animate-pulse'
+                  }`}
+                  style={{
+                    boxShadow:
+                      systemStatus.r2 === 'connected'
+                        ? '0 0 8px rgba(34, 197, 94, 0.6)'
+                        : 'none',
+                  }}
+                />
+                <span className="text-[10px] font-mono text-white/30 tracking-wider">
+                  R2_MEDIA
+                </span>
               </div>
-              <div>
-                <h3 className="font-semibold">Supabase Database</h3>
-                <p className="text-sm text-muted-foreground">lmsy_archive schema</p>
-              </div>
+              <span
+                className={`text-[10px] font-mono tracking-wider ${
+                  systemStatus.r2 === 'connected'
+                    ? 'text-green-500/80'
+                    : systemStatus.r2 === 'error'
+                    ? 'text-red-500/80'
+                    : 'text-yellow-500/80'
+                }`}
+              >
+                {systemStatus.r2 === 'connected' ? 'ONLINE' : systemStatus.r2 === 'error' ? 'OFFLINE' : 'CHECKING'}
+              </span>
             </div>
-            <StatusIcon status={systemStatus.supabase} />
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {systemStatus.supabase === 'connected' && 'Connection stable'}
-            {systemStatus.supabase === 'error' && 'Connection failed'}
-            {systemStatus.supabase === 'checking' && 'Checking connection...'}
-          </div>
-        </div>
-      </motion.div>
 
-      {/* Collection Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6"
-      >
-        <h2 className="font-serif text-2xl font-bold mb-6">Collection Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-4 bg-gradient-to-br from-lmsy-yellow/10 to-transparent rounded-lg border border-lmsy-yellow/20">
-            <div className="text-4xl font-bold text-lmsy-yellow mb-2">{stats.gallery}</div>
-            <div className="text-sm text-muted-foreground">Gallery Items</div>
+            {/* Supabase Status */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    systemStatus.supabase === 'connected'
+                      ? 'bg-green-500 animate-pulse'
+                      : systemStatus.supabase === 'error'
+                      ? 'bg-red-500'
+                      : 'bg-yellow-500 animate-pulse'
+                  }`}
+                  style={{
+                    boxShadow:
+                      systemStatus.supabase === 'connected'
+                        ? '0 0 8px rgba(34, 197, 94, 0.6)'
+                        : 'none',
+                  }}
+                />
+                <span className="text-[10px] font-mono text-white/30 tracking-wider">
+                  DB_CORE
+                </span>
+              </div>
+              <span
+                className={`text-[10px] font-mono tracking-wider ${
+                  systemStatus.supabase === 'connected'
+                    ? 'text-green-500/80'
+                    : systemStatus.supabase === 'error'
+                    ? 'text-red-500/80'
+                    : 'text-yellow-500/80'
+                }`}
+              >
+                {systemStatus.supabase === 'connected' ? 'CONNECTED' : systemStatus.supabase === 'error' ? 'FAILED' : 'CHECKING'}
+              </span>
+            </div>
           </div>
-          <div className="text-center p-4 bg-gradient-to-br from-lmsy-blue/10 to-transparent rounded-lg border border-lmsy-blue/20">
-            <div className="text-4xl font-bold text-lmsy-blue mb-2">{stats.projects}</div>
-            <div className="text-sm text-muted-foreground">Projects</div>
-          </div>
-          <div className="text-center p-4 bg-gradient-to-br from-purple-500/10 to-transparent rounded-lg border border-purple-500/20">
-            <div className="text-4xl font-bold text-purple-400 mb-2">{stats.chronicle}</div>
-            <div className="text-sm text-muted-foreground">Chronicle Events</div>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <h2 className="font-serif text-2xl font-bold mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Museum Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-2 gap-6"
+        >
+          {/* Chronicle Artifacts */}
+          <div className="relative">
+            <div className="text-[10px] font-mono text-white/20 tracking-widest uppercase mb-3">
+              Chronicle Artifacts
+            </div>
+            <div className="font-serif text-6xl md:text-7xl lg:text-8xl font-light text-white/90 tracking-tight">
+              {stats.chronicle}
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lmsy-yellow/30 to-transparent" />
+          </div>
+
+          {/* Collected Projects */}
+          <div className="relative">
+            <div className="text-[10px] font-mono text-white/20 tracking-widest uppercase mb-3">
+              Collected Projects
+            </div>
+            <div className="font-serif text-6xl md:text-7xl lg:text-8xl font-light text-white/90 tracking-tight">
+              {stats.projects}
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lmsy-blue/30 to-transparent" />
+          </div>
+        </motion.div>
+
+        {/* Studio Portals - Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
           {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (
@@ -228,24 +258,70 @@ export default function AdminDashboard() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  className={`group relative bg-gradient-to-br ${action.gradient} border ${action.border} rounded-xl p-6 hover:shadow-lg hover:shadow-${action.text.split('-')[1]}-500/10 transition-all duration-300 cursor-pointer`}
-                  whileHover={{ y: -4 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className="group relative bg-black border rounded-lg p-6 overflow-hidden cursor-pointer"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                  }}
+                  whileHover={{
+                    scale: 1.02,
+                    transition: { duration: 0.2 },
+                  }}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 bg-${action.text.split('-')[1]}-500/10 rounded-lg group-hover:scale-110 transition-transform`}>
-                      <Icon className={`h-6 w-6 ${action.text}`} />
-                    </div>
-                    <ArrowRight className={`h-5 w-5 ${action.text} opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
+                  {/* Animated gradient border on hover */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(56, 189, 248, 0.1) 50%, rgba(251, 191, 36, 0.1) 100%)',
+                      backgroundSize: '200% 200%',
+                      animation: 'gradient-flow 3s ease infinite',
+                    }}
+                  />
+
+                  {/* Glow effect on hover */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div
+                      className="absolute inset-0 rounded-lg"
+                      style={{
+                        boxShadow: '0 0 30px rgba(251, 191, 36, 0.15), inset 0 0 30px rgba(56, 189, 248, 0.05)',
+                      }}
+                    />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">{action.title}</h3>
-                  <p className="text-sm text-muted-foreground">{action.description}</p>
+
+                  {/* Content */}
+                  <div className="relative">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2.5 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
+                        <Icon className="h-5 w-5 text-white/60 group-hover:text-white/90 transition-colors" strokeWidth={1.5} />
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-white/20 group-hover:text-white/60 group-hover:translate-x-1 transition-all duration-300" strokeWidth={1.5} />
+                    </div>
+
+                    <h3 className="font-serif text-lg font-medium text-white/90 mb-2">
+                      {action.title}
+                    </h3>
+                    <p className="text-sm text-white/40 font-light">
+                      {action.description}
+                    </p>
+                  </div>
+
+                  {/* Progressively lit border */}
+                  <div
+                    className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      border: '1px solid transparent',
+                      background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(56, 189, 248, 0.3)) border-box',
+                      WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
+                      WebkitMaskComposite: 'xor',
+                      maskComposite: 'exclude',
+                    }}
+                  />
                 </motion.div>
               </Link>
             );
           })}
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
