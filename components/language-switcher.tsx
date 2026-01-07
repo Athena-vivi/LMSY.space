@@ -3,6 +3,7 @@
 import { useLanguage } from '@/components/language-provider';
 import { languages, type Language } from '@/lib/languages';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 const languageLabels: Record<Language, string> = {
   en: 'EN',
@@ -12,6 +13,23 @@ const languageLabels: Record<Language, string> = {
 
 export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    // Return a placeholder during SSR
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-xs font-sans tracking-wider text-lmsy-yellow font-bold">EN</span>
+        <span className="text-xs font-sans tracking-wider text-muted-foreground/60">中</span>
+        <span className="text-xs font-sans tracking-wider text-muted-foreground/60">TH</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">
@@ -31,13 +49,14 @@ export function LanguageSwitcher() {
         >
           {languageLabels[lang]}
           {/* Underline animation for non-active languages on hover */}
-          <motion.span
-            className="absolute bottom-0 left-0 right-0 h-px bg-foreground origin-left"
-            initial={{ scaleX: 0 }}
-            whileHover={{ scaleX: 1 }}
-            transition={{ duration: 0.3 }}
-            style={{ display: language === lang ? 'none' : 'block' }}
-          />
+          {language !== lang && (
+            <motion.span
+              className="absolute bottom-0 left-0 right-0 h-px bg-foreground origin-left"
+              initial={{ scaleX: 0 }}
+              whileHover={{ scaleX: 1 }}
+              transition={{ duration: 0.3 }}
+            />
+          )}
         </motion.button>
       ))}
     </div>
