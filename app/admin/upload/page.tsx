@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Calendar, AlertCircle } from 'lucide-react';
+import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Calendar, AlertCircle, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -36,6 +36,13 @@ export default function AdminUploadPage() {
   const [description, setDescription] = useState('');
   const [archiveNumber, setArchiveNumber] = useState('');
   const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Batch Metadata Edit fields
+  const [showBatchEditor, setShowBatchEditor] = useState(false);
+  const [batchCredits, setBatchCredits] = useState('');
+  const [batchEventDate, setBatchEventDate] = useState('');
+  const [batchCatalogId, setBatchCatalogId] = useState('');
+  const [batchMagazineIssue, setBatchMagazineIssue] = useState('');
 
   // 生成自动编号
   useEffect(() => {
@@ -141,21 +148,57 @@ export default function AdminUploadPage() {
           throw new Error(uploadResult.error || 'Upload failed');
         }
 
-        // Store only relative path in database
+        // Generate blur data via API
+        let blurData: string | undefined;
+        try {
+          // Convert file to base64 for API
+          const reader = new FileReader();
+          const base64Promise = new Promise<string>((resolve) => {
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+          const base64Image = await base64Promise;
+
+          // Call blur generation API
+          const blurResponse = await fetch('/api/generate-blur', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Image }),
+          });
+
+          if (blurResponse.ok) {
+            const blurResult = await blurResponse.json();
+            blurData = blurResult.blurData;
+          }
+        } catch (blurError) {
+          console.warn('Failed to generate blur data:', blurError);
+          // Continue without blur data
+        }
+
+        // Prepare metadata with batch edits applied
+        const metadata: any = {
+          image_url: uploadResult.path, // Store relative path only
+          title: i === 0 ? title : `${title} (${i + 1})`,
+          description,
+          tag: selectedTags[0] || null,
+          caption: '',
+          is_featured: i === 0,
+          archive_number: i === 0 ? archiveNumber : undefined,
+          event_date: batchEventDate || eventDate,
+          project_id: selectedProject,
+          member_id: selectedMember,
+          // Add blur data if generated
+          ...(blurData && { blur_data: blurData }),
+          // Add batch metadata
+          ...(batchCredits && { credits: batchCredits }),
+          ...(batchCatalogId && { catalog_id: batchCatalogId }),
+          ...(batchMagazineIssue && { magazine_issue: batchMagazineIssue }),
+        };
+
+        // Store in database
         const { error: insertError } = await supabase
           .from('gallery')
-          .insert({
-            image_url: uploadResult.path, // Store relative path only
-            title: i === 0 ? title : `${title} (${i + 1})`,
-            description,
-            tag: selectedTags[0] || null,
-            caption: '',
-            is_featured: i === 0,
-            archive_number: i === 0 ? archiveNumber : undefined,
-            event_date: eventDate,
-            project_id: selectedProject,
-            member_id: selectedMember,
-          });
+          .insert(metadata);
 
         if (insertError) throw insertError;
       }
@@ -169,8 +212,12 @@ export default function AdminUploadPage() {
       setTitle('');
       setDescription('');
       setArchiveNumber(generateArchiveNumber({ type: 'G', sequence: 1 }));
+      setBatchCredits('');
+      setBatchEventDate('');
+      setBatchCatalogId('');
+      setBatchMagazineIssue('');
 
-      alert('Successfully uploaded all images to R2!');
+      alert('Successfully uploaded all images to R2 with blur placeholders!');
     } catch (error) {
       console.error('Upload error:', error);
       alert('Error uploading images. Please try again.');
@@ -471,6 +518,108 @@ export default function AdminUploadPage() {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Batch Metadata Editor */}
+          <div className="bg-gradient-to-br from-lmsy-yellow/5 via-lmsy-blue/5 to-lmsy-yellow/5 rounded-xl p-6 border border-lmsy-yellow/20">
+            <button
+              onClick={() => setShowBatchEditor(!showBatchEditor)}
+              className="w-full flex items-center justify-between mb-4"
+            >
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-lmsy-yellow" />
+                <span className="font-medium text-foreground">Batch Metadata Editor</span>
+              </div>
+              <motion.div
+                animate={{ rotate: showBatchEditor ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <X className={`w-5 h-5 text-muted-foreground ${showBatchEditor ? 'rotate-45' : ''}`} />
+              </motion.div>
+            </button>
+
+            <AnimatePresence>
+              {showBatchEditor && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-4"
+                >
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Apply metadata to all uploaded images at once. Perfect for curating magazine issues!
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Credits */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Credits (Source)</label>
+                      <input
+                        type="text"
+                        value={batchCredits}
+                        onChange={(e) => setBatchCredits(e.target.value)}
+                        placeholder="e.g., Vogue Thailand Jan 2025, Photog: Name"
+                        className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-yellow"
+                      />
+                    </div>
+
+                    {/* Event Date */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Event Date (Override)
+                      </label>
+                      <input
+                        type="date"
+                        value={batchEventDate}
+                        onChange={(e) => setBatchEventDate(e.target.value)}
+                        className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-yellow"
+                      />
+                    </div>
+
+                    {/* Catalog ID */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Catalog ID</label>
+                      <input
+                        type="text"
+                        value={batchCatalogId}
+                        onChange={(e) => setBatchCatalogId(e.target.value)}
+                        placeholder="e.g., LMSY-G-2025-001"
+                        className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-blue"
+                      />
+                    </div>
+
+                    {/* Magazine Issue */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Magazine Issue</label>
+                      <input
+                        type="text"
+                        value={batchMagazineIssue}
+                        onChange={(e) => setBatchMagazineIssue(e.target.value)}
+                        placeholder="e.g., Vogue Thailand January 2025"
+                        className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-lmsy-blue"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Example */}
+                  <div className="mt-4 p-4 bg-background/50 rounded-lg border border-border/50">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      <strong>Example:</strong> Upload 10 magazine photos and fill in:
+                    </p>
+                    <ul className="text-xs text-muted-foreground space-y-1 ml-4">
+                      <li>• Credits: "Vogue Thailand Jan 2025 | Photo: Pongthorn Nitinun"</li>
+                      <li>• Event Date: "2025-01-15"</li>
+                      <li>• Catalog ID: "LMSY-G-2025-015"</li>
+                      <li>• Magazine Issue: "Vogue Thailand January 2025"</li>
+                    </ul>
+                    <p className="text-xs text-muted-foreground mt-2 italic">
+                      Result: All 10 images get tagged instantly!
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Action Buttons */}
