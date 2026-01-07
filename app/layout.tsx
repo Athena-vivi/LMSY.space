@@ -6,7 +6,6 @@ import { LanguageProvider } from "@/components/language-provider";
 import { ServiceWorkerProvider } from "@/components/service-worker-provider";
 import { ArchiveLoading } from "@/components/archive-loading";
 import { SiteHeader } from "@/components/site-header";
-import { ConstructionBanner } from "@/components/construction-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { AuthProvider } from "@/components/auth-provider";
 
@@ -115,7 +114,6 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider defaultTheme="light" storageKey="lmsy-theme">
             <LanguageProvider defaultLanguage="en">
-              <ConstructionBanner />
               <div className="flex min-h-screen flex-col">
                 <SiteHeader />
                 <main className="flex-1">{children}</main>

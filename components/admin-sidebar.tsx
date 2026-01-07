@@ -58,7 +58,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          'hidden md:flex fixed left-0 top-0 z-50 h-screen border-r bg-card/95 backdrop-blur-xl transition-all duration-300',
+          'hidden md:flex flex-col fixed left-0 top-0 z-50 h-screen border-r bg-card/95 backdrop-blur-xl transition-all duration-300',
           isCollapsed ? 'w-20' : 'w-72'
         )}
       >
