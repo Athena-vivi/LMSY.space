@@ -18,7 +18,13 @@ export function AdminMobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t"
+      style={{
+        background: 'rgba(0, 0, 0, 0.8)',
+        backdropFilter: 'blur(20px)',
+        borderColor: 'rgba(255, 255, 255, 0.05)',
+      }}
+    >
       <div className="flex items-center justify-around py-2">
         {mobileNavItems.map((item) => {
           const Icon = item.icon;

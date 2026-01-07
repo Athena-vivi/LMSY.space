@@ -58,10 +58,14 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col fixed left-0 top-0 z-50 h-screen border-r bg-black transition-all duration-300',
+          'hidden md:flex flex-col fixed left-0 top-0 z-50 h-screen border-r transition-all duration-300',
           isCollapsed ? 'w-20' : 'w-48'
         )}
-        style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
+        style={{
+          borderColor: 'rgba(255, 255, 255, 0.05)',
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(20px)',
+        }}
       >
         {/* Logo & Toggle */}
         <div className="flex h-14 items-center justify-between border-b px-4" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
@@ -190,7 +194,13 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
       </aside>
 
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-black/95 backdrop-blur-xl border-b flex items-center justify-between px-4" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 border-b flex items-center justify-between px-4"
+        style={{
+          borderColor: 'rgba(255, 255, 255, 0.05)',
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-lmsy-yellow/80" strokeWidth={1.5} />
           <span className="font-serif text-base font-medium bg-gradient-to-r from-lmsy-yellow/90 to-lmsy-blue/90 bg-clip-text text-transparent">

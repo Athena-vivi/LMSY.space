@@ -135,10 +135,16 @@ export function SiteHeader() {
                                     />
                                   )}
 
-                                  {/* Text with hover color change */}
+                                  {/* Text with gradient color or hover color change */}
                                   <span
                                     className="flex-1"
                                     style={{
+                                      ...(isLMSY && {
+                                        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.8) 0%, rgba(56, 189, 248, 0.8) 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                      }),
                                       ...(isLookmhee && {
                                         color: 'rgba(251, 191, 36, 0.8)',
                                       }),
