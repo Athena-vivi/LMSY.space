@@ -29,19 +29,25 @@ export default function GalleryPage() {
   useEffect(() => {
     async function fetchImages() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('gallery')
-        .select('*')
-        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching gallery:', error);
+      try {
+        const { data, error } = await supabase
+          .from('gallery')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          // Silently handle error - likely not configured yet
+          setImages([]);
+        } else {
+          setImages(data || []);
+        }
+      } catch (err) {
+        // Catch any network or initialization errors
+        setImages([]);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setImages(data || []);
-      setLoading(false);
     }
 
     fetchImages();
@@ -219,14 +225,54 @@ export default function GalleryPage() {
               </AnimatePresence>
             </motion.div>
 
-            {/* Empty State */}
+            {/* Empty State / Under Construction */}
             {!loading && filteredImages.length === 0 && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 className="text-center py-20"
               >
-                <p className="text-muted-foreground text-lg">{t(language, 'gallery.noImages')}</p>
+                <div className="max-w-md mx-auto">
+                  {/* Animated Sparkle Icon */}
+                  <motion.div
+                    className="mx-auto w-16 h-16 mb-6"
+                    animate={{
+                      rotate: [0, 5, -5, 0],
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  >
+                    <div className="relative w-full h-full">
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-lmsy-yellow to-lmsy-blue blur-md opacity-50 animate-pulse" />
+                      <div className="relative w-full h-full rounded-full bg-gradient-to-br from-lmsy-yellow to-lmsy-blue flex items-center justify-center">
+                        <span className="text-3xl">✨</span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Message */}
+                  <h3 className="font-serif text-2xl font-bold text-foreground mb-4">
+                    {language === 'zh' ? '画廊建设中' : language === 'th' ? 'หอศิลป์กำลังสร้าง' : 'Gallery Under Construction'}
+                  </h3>
+                  <p className="text-muted-foreground text-lg mb-6">
+                    {language === 'zh'
+                      ? '我们正在精心策划每一张照片，敬请期待...'
+                      : language === 'th'
+                      ? 'เรากำลังคัดสรรภาพถ่ายทุกภาพอย่างพิถีพิถัน อดใจรอสักครู่...'
+                      : 'We are carefully curating every photo. Stay tuned...'}
+                  </p>
+
+                  {/* Decorative Line */}
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="h-px w-16 bg-gradient-to-r from-transparent to-lmsy-yellow" />
+                    <div className="w-2 h-2 rounded-full bg-lmsy-yellow animate-pulse" />
+                    <div className="h-px w-16 bg-gradient-to-l from-transparent to-lmsy-blue" />
+                  </div>
+                </div>
               </motion.div>
             )}
           </div>

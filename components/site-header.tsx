@@ -9,8 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { useTheme } from '@/components/theme-provider';
 import { useLanguage } from '@/components/language-provider';
+import { useBanner } from '@/components/construction-banner';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { SearchCommand } from '@/components/search-command';
@@ -27,49 +27,60 @@ const navItems = [
 export function SiteHeader() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
   const { language } = useLanguage();
-  const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const { showBanner } = useBanner();
+
+  const handleLogoClick = () => {
+    console.log('Logo clicked, pathname:', pathname);
+    showBanner();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-3"
-            onMouseEnter={() => setIsLogoHovered(true)}
-            onMouseLeave={() => setIsLogoHovered(false)}
-          >
-            <div className="relative h-8 w-8 md:h-9 md:w-9">
-              <Image
-                src="/lmsy-logo.png"
-                alt="LMSY Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div className="relative">
+          {pathname === '/' ? (
+            // On homepage: button to show banner
+            <button
+              onClick={handleLogoClick}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              title="Click to view announcement"
+            >
+              <div className="relative h-8 w-8 md:h-9 md:w-9">
+                <Image
+                  src="/lmsy-logo.png"
+                  alt="LMSY Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
               <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
                 LMSY
               </span>
-              <AnimatePresence>
-                {isLogoHovered && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent font-medium"
-                  >
-                    Hello, Besties! 💛💙
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </Link>
+            </button>
+          ) : (
+            // On other pages: link to homepage
+            <Link
+              href="/"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              title="Go to homepage"
+            >
+              <div className="relative h-8 w-8 md:h-9 md:w-9">
+                <Image
+                  src="/lmsy-logo.png"
+                  alt="LMSY Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                LMSY
+              </span>
+            </Link>
+          )}
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex md:items-center md:space-x-8">
