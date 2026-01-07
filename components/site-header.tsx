@@ -19,6 +19,7 @@ const mainNavItems = [
   { key: 'nav.chronicle', href: '/chronicle' },
   { key: 'nav.exhibitions', href: '/exhibitions' },
   { key: 'nav.editorial', href: '/editorial' },
+  { key: 'nav.resonance', href: '/resonance' },
   { key: 'nav.duality', href: '#', hasDropdown: true },
 ];
 

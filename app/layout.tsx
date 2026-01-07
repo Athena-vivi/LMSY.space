@@ -8,6 +8,7 @@ import { ArchiveLoading } from "@/components/archive-loading";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AuthProvider } from "@/components/auth-provider";
+import { VinylPlayer } from "@/components/vinyl-player";
 
 const sans = Inter({
   variable: "--font-geist-sans",
@@ -119,6 +120,8 @@ export default function RootLayout({
                 <main className="flex-1">{children}</main>
                 <SiteFooter />
               </div>
+              {/* Global Vinyl Player */}
+              <VinylPlayer />
             </LanguageProvider>
           </ThemeProvider>
         </AuthProvider>

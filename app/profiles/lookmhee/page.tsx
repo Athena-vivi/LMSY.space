@@ -2,8 +2,9 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
-import { Quote, BookOpen, ArrowLeft } from 'lucide-react';
+import { Quote, BookOpen, ArrowLeft, Disc } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
+import { AudioPlayer } from '@/components/audio-player';
 import { useRef } from 'react';
 
 const books = [
@@ -315,6 +316,128 @@ export default function LookmheePage() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* The Library of Sound - Music Section */}
+      <section className="relative py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="mb-12"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <Disc className="h-5 w-5 text-amber-600/40" strokeWidth={1} />
+              <h2 className="font-serif text-2xl text-amber-50/70">The Library of Sound</h2>
+            </div>
+            <p className="text-amber-200/40 text-sm">Where melody meets memory</p>
+            <div className="h-px w-24 mt-4 bg-gradient-to-r from-amber-600/20 via-sky-500/10 to-transparent" />
+          </motion.div>
+
+          {/* Featured Track - Lookmhee's Solo */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="relative p-8 rounded-2xl border overflow-hidden"
+            style={{
+              borderColor: 'rgba(217, 119, 6, 0.3)',
+              background: 'rgba(217, 119, 6, 0.03)',
+            }}
+          >
+            {/* Animated background */}
+            <motion.div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(circle at center, rgba(217, 119, 6, 0.08) 0%, transparent 70%)',
+              }}
+              animate={{
+                scale: [1, 1.15, 1],
+                opacity: [0.3, 0.5, 0.3],
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+
+            <div className="relative z-10 grid lg:grid-cols-2 gap-8 items-center">
+              {/* Album Art */}
+              <div className="relative order-2 lg:order-1">
+                <div className="aspect-square rounded-xl overflow-hidden border"
+                  style={{
+                    borderColor: 'rgba(217, 119, 6, 0.2)',
+                  }}
+                >
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <Disc className="h-24 w-24 text-amber-600/20 mx-auto mb-4" />
+                      <p className="text-amber-200/30 font-mono text-xs tracking-wider">
+                        ALBUM_ART
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rotating vinyl effect */}
+                <motion.div
+                  className="absolute -bottom-4 -right-4 w-32 h-32 rounded-full border-2 border-dashed opacity-30"
+                  style={{ borderColor: 'rgba(217, 119, 6, 0.4)' }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+                />
+              </div>
+
+              {/* Track Info & Player */}
+              <div className="space-y-6 order-1 lg:order-2">
+                <div>
+                  <p className="text-xs font-mono text-amber-600/50 tracking-wider uppercase mb-2">
+                    Solo Performance
+                  </p>
+                  <h3 className="font-serif text-4xl text-amber-50/90 mb-2">
+                    Golden Hour
+                  </h3>
+                  <p className="text-lg text-amber-200/60 font-light">
+                    黄金时刻
+                  </p>
+                </div>
+
+                <p className="text-amber-100/60 leading-relaxed font-light italic border-l-2 pl-4"
+                  style={{ borderColor: 'rgba(217, 119, 6, 0.4)' }}
+                >
+                  &quot;Where past and present embrace in warmth—the melody came to me during twilight, that magical hour when day and night hold each other.&quot;
+                </p>
+
+                {/* Mini Audio Player */}
+                <div className="p-4 rounded-xl backdrop-blur-xl"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                  }}
+                >
+                  <AudioPlayer
+                    src="/audio/golden-hour.mp3"
+                    title="Golden Hour"
+                    subtitle="Lookmhee Solo"
+                    showWaveform={true}
+                  />
+                </div>
+
+                <Link
+                  href="/resonance"
+                  className="inline-flex items-center gap-2 text-amber-200/50 hover:text-amber-200/80 transition-colors font-mono text-xs tracking-wider group"
+                >
+                  <span>VIEW FULL DISCOGRAPHY</span>
+                  <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
