@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Shield } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
 import { AdminSidebar } from '@/components/admin-sidebar';
@@ -14,18 +14,22 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { isAdmin, loading } = useAuth();
 
-  // Redirect if not admin
+  // Login page should not have admin restrictions or sidebar
+  const isLoginPage = pathname === '/admin/login';
+
+  // Redirect if not admin (only for non-login pages)
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (!isLoginPage && !loading && !isAdmin) {
       router.replace('/');
     }
-  }, [isAdmin, loading, router]);
+  }, [isAdmin, loading, router, isLoginPage]);
 
-  // Show loading while checking admin status
-  if (loading) {
+  // Show loading while checking admin status (only for non-login pages)
+  if (!isLoginPage && loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -34,6 +38,11 @@ export default function AdminLayout({
         </div>
       </div>
     );
+  }
+
+  // Login page renders without sidebar
+  if (isLoginPage) {
+    return <>{children}</>;
   }
 
   // Don't render if not admin (redirect will happen via useEffect)
