@@ -101,9 +101,6 @@ export const translations = {
     'footer.madeWith': 'Crafted with 💛 & 💙 by a Bestie, for all Besties',
     'footer.instagram': 'Instagram',
     'footer.twitter': 'Twitter',
-
-    // Hero
-    'hero.besties': 'A dedicated space for LMSY and their Besties.',
   },
   zh: {
     // Navigation
