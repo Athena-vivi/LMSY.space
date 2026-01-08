@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, FileText, PenTool, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 
 interface SystemStatus {
   r2: 'checking' | 'connected' | 'error';
@@ -34,26 +33,61 @@ export default function AdminDashboard() {
   }, []);
 
   const checkSystemStatus = async () => {
-    // Check R2 configuration
-    const r2Configured = !!(
-      process.env.NEXT_PUBLIC_CDN_URL &&
-      process.env.R2_ENDPOINT &&
-      process.env.R2_ACCESS_KEY_ID
-    );
-
-    setSystemStatus(prev => ({
-      ...prev,
-      r2: r2Configured ? 'connected' : 'error',
-    }));
-
-    // Check Supabase connection
+    // Check R2 configuration and connection (通过 API)
     try {
-      const { error } = await supabase.from('gallery').select('id').limit(1);
+      const response = await fetch('/api/admin/diagnose/r2');
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[R2_MEDIA] HTTP error:', response.status, response.statusText, errorText);
+        setSystemStatus(prev => ({
+          ...prev,
+          r2: 'error',
+        }));
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSystemStatus(prev => ({
+          ...prev,
+          r2: 'connected',
+        }));
+      } else {
+        console.error('[R2_MEDIA] Connection test failed:', data.code, data.error);
+        setSystemStatus(prev => ({
+          ...prev,
+          r2: 'error',
+        }));
+      }
+    } catch (error: any) {
+      console.error('[R2_MEDIA] Test error:', error?.message || error);
       setSystemStatus(prev => ({
         ...prev,
-        supabase: error ? 'error' : 'connected',
+        r2: 'error',
       }));
-    } catch (error) {
+    }
+
+    // Check Supabase connection via API (使用馆长客户端)
+    try {
+      const response = await fetch('/api/admin/diagnose/db');
+      const data = await response.json();
+      if (data.success) {
+        console.log('[DB_CORE] Connection successful via admin client');
+        setSystemStatus(prev => ({
+          ...prev,
+          supabase: 'connected',
+        }));
+      } else {
+        console.error('[DB_CORE] Connection failed via admin client:', data.error);
+        setSystemStatus(prev => ({
+          ...prev,
+          supabase: 'error',
+        }));
+      }
+    } catch (error: any) {
+      console.error('[DB_CORE] Unexpected error:', error?.message || error);
       setSystemStatus(prev => ({
         ...prev,
         supabase: 'error',
@@ -63,15 +97,17 @@ export default function AdminDashboard() {
 
   const fetchCollectionStats = async () => {
     try {
-      const [galleryResult, projectsResult] = await Promise.all([
-        supabase.from('gallery').select('id', { count: 'exact', head: true }),
-        supabase.from('projects').select('id', { count: 'exact', head: true }),
-      ]);
+      // 使用馆长客户端 API 获取统计
+      const response = await fetch('/api/admin/stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats');
+      }
+      const data = await response.json();
 
       setStats({
-        gallery: galleryResult.count || 0,
-        projects: projectsResult.count || 0,
-        chronicle: 0, // Will be implemented when chronicle table exists
+        gallery: data.gallery || 0,
+        projects: data.projects || 0,
+        chronicle: data.chronicle || 0,
       });
     } catch (error) {
       console.error('Failed to fetch stats:', error);

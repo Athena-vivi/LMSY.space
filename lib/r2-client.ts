@@ -1,17 +1,43 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
-// Initialize R2 Client
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: process.env.R2_ENDPOINT || 'https://<account-id>.r2.cloudflarestorage.com',
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
-  },
-});
+// 🔒 SECURITY: This file must only be used on the server side
+// Environment variables without NEXT_PUBLIC_ prefix are never available in the browser
+if (typeof window !== 'undefined') {
+  throw new Error(
+    'CRITICAL SECURITY ERROR: R2 client (with SERVICE_ROLE credentials) must never be used in browser code. ' +
+    'Use API routes or server actions instead.'
+  );
+}
 
-// Bucket name
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'lmsy-gallery';
+// Bucket name - 统一使用 lmsy-archive
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'lmsy-archive';
+
+// Initialize R2 Client (lazy initialization, only when used)
+const getR2Client = (): S3Client => {
+  const endpoint = process.env.R2_ENDPOINT;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+
+  if (!endpoint || !accessKeyId || !secretAccessKey) {
+    throw new Error(
+      'R2 configuration incomplete. Missing: ' +
+      [
+        !endpoint && 'R2_ENDPOINT',
+        !accessKeyId && 'R2_ACCESS_KEY_ID',
+        !secretAccessKey && 'R2_SECRET_ACCESS_KEY',
+      ].filter(Boolean).join(', ')
+    );
+  }
+
+  return new S3Client({
+    region: 'auto',
+    endpoint,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+};
 
 // Base CDN URL
 export const BASE_CDN_URL = process.env.NEXT_PUBLIC_CDN_URL || 'https://cdn.lmsy.space';
@@ -55,7 +81,7 @@ export async function uploadToR2(
       ContentType: finalContentType,
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
 
     // Return relative path and full CDN URL
     return {
@@ -84,7 +110,7 @@ export async function deleteFromR2(path: string): Promise<boolean> {
       Key: path,
     });
 
-    await r2Client.send(command);
+    await getR2Client().send(command);
     return true;
   } catch (error) {
     console.error('R2 delete error:', error);
@@ -128,5 +154,83 @@ export function getRelativePath(url: string): string {
   } catch {
     // If URL parsing fails, return as is
     return url;
+  }
+}
+
+/**
+ * Test R2 connection by listing buckets
+ * @returns Connection status with error details if failed
+ */
+export async function testR2Connection(): Promise<{
+  success: boolean;
+  error?: string;
+  code?: string;
+  rawError?: any;
+}> {
+  try {
+    // Verify configuration
+    const endpoint = process.env.R2_ENDPOINT;
+    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+    const bucketName = R2_BUCKET_NAME;
+
+    console.log('[R2_CONFIG] Server-side environment check:', {
+      endpoint: !!endpoint,
+      accessKeyId: !!accessKeyId,
+      secretAccessKey: !!secretAccessKey,
+      bucketName,
+    });
+
+    if (!endpoint || !accessKeyId || !secretAccessKey) {
+      throw new Error(
+        'R2 configuration incomplete. Missing: ' +
+        [
+          !endpoint && 'R2_ENDPOINT',
+          !accessKeyId && 'R2_ACCESS_KEY_ID',
+          !secretAccessKey && 'R2_SECRET_ACCESS_KEY',
+        ].filter(Boolean).join(', ')
+      );
+    }
+
+    // Test with HeadBucket instead of ListBuckets (more specific)
+    const { HeadBucketCommand } = await import('@aws-sdk/client-s3');
+    const command = new HeadBucketCommand({
+      Bucket: bucketName,
+    });
+
+    await getR2Client().send(command);
+    console.log('[R2_MEDIA] Connection test successful, bucket accessible:', bucketName);
+    return { success: true };
+  } catch (error: any) {
+    const errorCode = error?.name || error?.Code || 'UNKNOWN';
+    const errorMessage = error?.message || error?.Message || 'Unknown error';
+    const httpStatusCode = error?.$metadata?.httpStatusCode;
+
+    console.error(`[R2_RAW_ERROR] 🔍 Detailed Cloudflare R2 error analysis:`);
+    console.error('[R2_RAW_ERROR] Error Name:', error?.name);
+    console.error('[R2_RAW_ERROR] Error Code:', error?.Code || error?.name);
+    console.error('[R2_RAW_ERROR] HTTP Status:', httpStatusCode);
+    console.error('[R2_RAW_ERROR] Message:', errorMessage);
+    console.error('[R2_RAW_ERROR] Request ID:', error?.$metadata?.requestId);
+    console.error('[R2_RAW_ERROR] Extended Request ID:', error?.$metadata?.extendedRequestId);
+    console.error('[R2_RAW_ERROR] Endpoint:', process.env.R2_ENDPOINT);
+    console.error('[R2_RAW_ERROR] Bucket:', R2_BUCKET_NAME);
+    console.error('[R2_RAW_ERROR] Region:', 'auto');
+    console.error('[R2_RAW_ERROR] Full Error Object:', JSON.stringify(error, null, 2));
+
+    console.error(`[R2_MEDIA] Connection failed:`, {
+      bucket: R2_BUCKET_NAME,
+      code: errorCode,
+      message: errorMessage,
+      httpStatusCode,
+      raw: error,
+    });
+
+    return {
+      success: false,
+      error: errorMessage,
+      code: errorCode,
+      rawError: error,
+    };
   }
 }

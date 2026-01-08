@@ -56,6 +56,9 @@ export const supabaseAdmin: SupabaseClient = (() => {
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
+    db: {
+      schema: 'lmsy_archive',
+    },
     global: {
       headers: {
         'X-Client-Info': 'lmsy-space-admin',
