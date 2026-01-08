@@ -19,7 +19,6 @@ interface UploadItem {
 
 export default function AdminUploadPage() {
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -157,13 +156,13 @@ export default function AdminUploadPage() {
       return;
     }
 
-    // Generate previews with eternal IDs
+    // Generate previews with eternal UUIDs
     const newItems = await Promise.all(
       files.map(async (file) => {
         const preview = URL.createObjectURL(file);
         const fileName = file.name.split('.')[0];
         return {
-          id: `eternal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,  // Eternal ID
+          id: crypto.randomUUID(), // Eternal UUID
           file,
           preview,
           displayName: fileName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
@@ -172,7 +171,6 @@ export default function AdminUploadPage() {
     );
 
     setUploadItems(prev => [...prev, ...newItems]);
-    setPreviews(prev => [...prev, ...newItems.map(i => i.preview)]);
 
     // Auto-generate title from first file
     if (files.length > 0 && !title) {
@@ -187,13 +185,6 @@ export default function AdminUploadPage() {
         URL.revokeObjectURL(item.preview);
       }
       return prev.filter(i => i.id !== id);
-    });
-    setPreviews(prev => {
-      const item = uploadItems.find(i => i.id === id);
-      if (item) {
-        URL.revokeObjectURL(item.preview);
-      }
-      return uploadItems.filter(i => i.id !== id).map(i => i.preview);
     });
   };
 
@@ -300,8 +291,9 @@ export default function AdminUploadPage() {
 
       // Reset form on success
       if (successCount > 0) {
+        // Revoke all object URLs before clearing
+        uploadItems.forEach(item => URL.revokeObjectURL(item.preview));
         setUploadItems([]);
-        setPreviews([]);
         setSelectedTags([]);
         setSelectedProject(null);
         setSelectedMember(null);
