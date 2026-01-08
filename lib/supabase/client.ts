@@ -29,7 +29,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
  *
  * Schema: lmsy_archive (所有馆藏数据均在自定义 schema 中)
  */
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   db: {
     schema: 'lmsy_archive',
   },
@@ -45,7 +45,7 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
       'X-Client-Info': 'lmsy-space-public',
     },
   },
-});
+}) as unknown as SupabaseClient;
 
 /**
  * 获取 Supabase Storage 的公共 URL
