@@ -121,7 +121,7 @@ export function VinylPlayer() {
 
       {/* 左下角固定位置 - 空间化设计 */}
       <div className="fixed bottom-6 left-6 z-40 flex items-center gap-6">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {!isExpanded ? (
             /* 收起状态：双环光环 */
             <motion.div
@@ -130,12 +130,12 @@ export function VinylPlayer() {
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0, rotate: 90 }}
               transition={{ duration: 0.8, type: 'spring', stiffness: 200, damping: 25 }}
-              className="relative cursor-pointer group"
+              className="relative cursor-pointer group select-none"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                togglePlay();
+                setIsExpanded(true);
               }}
-              onDoubleClick={() => setIsExpanded(true)}
             >
               {/* 外环 - 黄色 */}
               <motion.div

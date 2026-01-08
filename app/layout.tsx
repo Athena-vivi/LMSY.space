@@ -125,7 +125,9 @@ export default function RootLayout({
                 <SiteFooter />
               </div>
               {/* Global Vinyl Player */}
-              <VinylPlayer />
+              <div key="vinyl-player">
+                <VinylPlayer />
+              </div>
               {/* Whispers Floating Button */}
               <WhisperFloatingButton />
             </LanguageProvider>
