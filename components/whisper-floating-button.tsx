@@ -99,8 +99,8 @@ export const WhisperPortal = () => {
         </svg>
 
         {/* 5. 悬停文案 - 衬线体增加博物馆感 */}
-        <div className="absolute -top-6 opacity-0 group-hover:opacity-100 transition-all duration-700 transform translate-y-1 group-hover:translate-y-0">
-          <span className={`text-[8px] tracking-[0.5em] font-serif uppercase ${isDark ? 'text-lmsy-yellow/80' : 'text-black/60'}`}>
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-700">
+          <span className={`text-[8px] tracking-[0.5em] font-serif uppercase whitespace-nowrap ${isDark ? 'text-lmsy-yellow/80' : 'text-black/60'}`}>
             The Whispering Gates
           </span>
         </div>

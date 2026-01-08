@@ -34,32 +34,77 @@ export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const [dualityOpen, setDualityOpen] = useState(false);
   const { language } = useLanguage();
+  const isHomePage = pathname === '/';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+    <header className={`sticky top-0 z-50 w-full ${isHomePage ? 'border-b border-border/50' : ''} bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60`}>
+      <div className={`${isHomePage ? 'container mx-auto px-4 sm:px-6 lg:px-8' : 'px-6 py-4'}`}>
+        <div className={`flex ${isHomePage ? 'h-16' : 'h-auto'} items-center ${isHomePage ? 'justify-between' : 'justify-start'}`}>
           {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            title="Go to homepage"
-          >
-            <div className="relative h-8 w-8 md:h-9 md:w-9">
-              <Image
-                src="/lmsy-logo.png"
-                alt="LMSY Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-              LMSY
-            </span>
-          </Link>
+          <div className="relative group">
+            <Link
+              href="/"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <div className="relative h-8 w-8 md:h-9 md:w-9">
+                {/* Glow effect */}
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(56, 189, 248, 0.3) 100%)',
+                    filter: 'blur(8px)',
+                  }}
+                  animate={{
+                    opacity: [0.3, 0.6, 0.3],
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+                <Image
+                  src="/lmsy-logo.png"
+                  alt="LMSY Logo"
+                  fill
+                  className="object-contain relative z-10"
+                  priority
+                />
+              </div>
+              {isHomePage && (
+                <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                  LMSY
+                </span>
+              )}
+            </Link>
 
-          {/* Desktop Navigation */}
+            {/* Tooltip - Return to Homepage */}
+            <motion.div
+              className="absolute top-full left-0 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none"
+              initial={false}
+            >
+              <div
+                className="px-3 py-1.5 rounded-full backdrop-blur-xl border"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  borderColor: 'rgba(255, 255, 255, 0.15)',
+                }}
+              >
+                <p className="text-[9px] font-serif tracking-[0.3em] uppercase whitespace-nowrap" style={{
+                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.9) 0%, rgba(56, 189, 248, 0.9) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>
+                  Return to Homepage
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Desktop Navigation - Only on Home */}
+          {isHomePage && (
           <nav className="hidden md:flex md:items-center md:space-x-8 lg:space-x-12">
             {mainNavItems.map((item) => (
               <div
@@ -192,8 +237,10 @@ export function SiteHeader() {
               </div>
             ))}
           </nav>
+          )}
 
-          {/* Theme Toggle, Language Switcher & Mobile Menu */}
+          {/* Theme Toggle, Language Switcher & Mobile Menu - Only on Home */}
+          {isHomePage && (
           <div className="flex items-center space-x-2">
             <SearchCommand />
             <div className="hidden md:flex items-center gap-6">
@@ -263,6 +310,7 @@ export function SiteHeader() {
               </SheetContent>
             </Sheet>
           </div>
+          )}
         </div>
       </div>
     </header>

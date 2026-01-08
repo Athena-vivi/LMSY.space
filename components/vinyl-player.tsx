@@ -49,16 +49,10 @@ export function VinylPlayer() {
 
   const currentTrack = playlist[currentTrackIndex];
 
-  // 播放/暂停控制
+  // 播放/暂停控制 - 仅用于视觉演示，不实际播放音频
   const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
+    // 不尝试播放音频，只切换状态用于动画
+    setIsPlaying(!isPlaying);
   };
 
   // 上一首
@@ -83,16 +77,18 @@ export function VinylPlayer() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // 进度条更新
+  // 进度条更新 - 模拟进度动画
   useEffect(() => {
-    if (isPlaying && audioRef.current) {
+    if (isPlaying) {
       progressIntervalRef.current = setInterval(() => {
-        if (audioRef.current) {
-          const current = audioRef.current.currentTime;
-          const duration = audioRef.current.duration || 1;
-          const newProgress = (current / duration) * 100;
-          setProgress(newProgress);
-        }
+        setProgress((prev) => {
+          if (prev >= 100) {
+            // 播放完成后自动切换到下一首
+            playNext();
+            return 0;
+          }
+          return prev + 0.5;
+        });
       }, 100);
     } else if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -105,15 +101,10 @@ export function VinylPlayer() {
     };
   }, [isPlaying, currentTrackIndex]);
 
-  // 音轨切换时重置
+  // 音轨切换时重置 - 仅重置进度，不加载音频
   useEffect(() => {
     setProgress(0);
-    if (audioRef.current) {
-      audioRef.current.src = currentTrack.audio;
-      if (isPlaying) {
-        audioRef.current.play();
-      }
-    }
+    // 不实际加载音频文件，避免错误
   }, [currentTrackIndex]);
 
   // 音量控制
@@ -125,12 +116,8 @@ export function VinylPlayer() {
 
   return (
     <>
-      <audio
-        ref={audioRef}
-        src={currentTrack.audio}
-        onEnded={playNext}
-        muted={isMuted}
-      />
+      {/* 仅保留音频元素用于UI展示，不加载实际音频 */}
+      <audio ref={audioRef} />
 
       {/* 左下角固定位置 - 空间化设计 */}
       <div className="fixed bottom-6 left-6 z-40 flex items-center gap-6">
@@ -223,78 +210,22 @@ export function VinylPlayer() {
 
               {/* Hover Tooltip - 磨砂玻璃质感 */}
               <motion.div
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none whitespace-nowrap"
                 initial={{ y: 10, opacity: 0 }}
                 whileHover={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
                 <div
-                  className="relative px-6 py-4 rounded-xl backdrop-blur-xl border"
+                  className="relative px-4 py-2 rounded-lg backdrop-blur-xl border"
                   style={{
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                    background: 'rgba(56, 189, 248, 0.1)',
+                    borderColor: 'rgba(56, 189, 248, 0.3)',
+                    boxShadow: '0 4px 16px rgba(56, 189, 248, 0.2)',
                   }}
                 >
-                  {/* 曲目信息 */}
-                  <div className="space-y-3">
-                    {/* 封面缩略图 */}
-                    <div className="flex items-center gap-4">
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden border"
-                        style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                      >
-                        {currentTrack.cover ? (
-                          <Image
-                            src={currentTrack.cover}
-                            alt={currentTrack.title}
-                            fill
-                            className="object-cover"
-                            sizes="64px"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20">
-                            <p className="font-serif text-xl font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                              {currentTrack.artist[0]}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="font-serif text-sm text-white/90 truncate">{currentTrack.title}</p>
-                        <p className="text-xs text-white/50 truncate">{currentTrack.artist}</p>
-                      </div>
-                    </div>
-
-                    {/* 进度条 */}
-                    <div className="space-y-1">
-                      <div
-                        className="h-0.5 bg-white/10 rounded-full overflow-hidden"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (audioRef.current) {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const x = e.clientX - rect.left;
-                            const percentage = (x / rect.width) * 100;
-                            audioRef.current.currentTime = (percentage / 100) * (audioRef.current.duration || 1);
-                            setProgress(percentage);
-                          }
-                        }}
-                      >
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${progress}%`,
-                            background: 'linear-gradient(90deg, rgba(251, 191, 36, 0.8) 0%, rgba(56, 189, 248, 0.8) 100%)',
-                          }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[8px] font-mono text-white/30">
-                        <span>{formatTime((progress / 100) * (audioRef.current?.duration || 0))}</span>
-                        <span>{formatTime(audioRef.current?.duration || 0)}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'rgba(56, 189, 248, 0.9)' }}>
+                    Vinyl Player
+                  </span>
                 </div>
               </motion.div>
             </motion.div>

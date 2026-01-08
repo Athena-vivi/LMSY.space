@@ -10,6 +10,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { AuthProvider } from "@/components/auth-provider";
 import { VinylPlayer } from "@/components/vinyl-player";
 import { WhisperFloatingButton } from "@/components/whisper-floating-button";
+import { ScrollProgress } from "@/components/scroll-progress";
 
 const sans = Inter({
   variable: "--font-geist-sans",
@@ -112,6 +113,7 @@ export default function RootLayout({
         className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}
       >
         <ArchiveLoading />
+        <ScrollProgress />
         <ServiceWorkerProvider />
         <AuthProvider>
           <ThemeProvider defaultTheme="light" storageKey="lmsy-theme">

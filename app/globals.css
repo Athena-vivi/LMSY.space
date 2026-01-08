@@ -137,6 +137,23 @@
     @apply border-border outline-ring/50;
   }
 
+  /* Smooth scrolling - interstellar glide experience */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Global scrollbar elimination - visual sovereignty */
+  html, body {
+    /* Hide Chrome, Safari, Opera scrollbar */
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    /* Hide Firefox scrollbar */
+    scrollbar-width: none;
+    /* Hide IE, Edge scrollbar */
+    -ms-overflow-style: none;
+  }
+
   /* Grainy texture effect for body background */
   body {
     @apply bg-background text-foreground antialiased;
@@ -170,12 +187,14 @@
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
   }
 
-  /* Invisible Scrollbar Utility */
-  .scrollbar-hide {
+  /* Universal scrollbar elimination utility */
+  .scrollbar-hide,
+  .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
+  .scrollbar-hide::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
