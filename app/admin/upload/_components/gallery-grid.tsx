@@ -53,7 +53,7 @@ const GalleryCard = memo(function GalleryCard({ item, index, onRemove, onClick, 
         fill
         className="object-cover select-none"
         draggable={false}
-        style={{ userSelect: 'none', WebkitUserDrag: 'none' }}
+        style={{ userSelect: 'none' } as React.CSSProperties}
         sizes="(max-width: 640px) 25vw, (max-width: 1024px) 20vw, (max-width: 1280px) 16vw, 14vw"
       />
 
