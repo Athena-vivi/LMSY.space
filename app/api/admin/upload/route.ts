@@ -1,19 +1,20 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { uploadToR2, getRelativePath } from '@/lib/r2-client';
-import { convertToWebP, generateBlurData, getImageMetadata } from '@/lib/image-processing';
-import { generateNextGalleryCatalogId } from '@/lib/catalog-id';
+import { uploadToR2 } from '@/lib/r2-client';
+import { convertToWebP, generateBlurData } from '@/lib/image-processing';
+import { generateNextGalleryCatalogId, getR2PathForCatalogId } from '@/lib/catalog-id';
 
 /**
- * Gallery Upload API
+ * Gallery Upload API - Astra 馆长档案标准
  *
  * Features:
  * - Schema locked to lmsy_archive
- * - Auto-numbering with catalog_id (LMSY-G-2026-XXX)
+ * - Auto-numbering with catalog_id (LMSY-G-YYYYMMDD-XXX)
  * - Automatic WebP conversion
- * - Optimized R2 paths using catalog_id
+ * - Optimized R2 paths using catalog_id as filename
  * - Blur data generation
+ * - Date-based sequence numbering
  */
 
 export async function POST(request: NextRequest) {
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
     const isEditorial = formData.get('is_editorial') === 'true';
     const curatorNote = formData.get('curator_note') as string | null;
     const eventDate = formData.get('event_date') as string | null;
+    const manualCatalogId = formData.get('catalog_id') as string | null; // Manual catalog ID override
 
     if (!file) {
       return NextResponse.json(
@@ -95,22 +97,49 @@ export async function POST(request: NextRequest) {
     // Schema 锁定：使用馆长客户端（已锁定到 lmsy_archive schema）
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Step 1: Extract year from event_date
-    let eventYear: number;
-    if (eventDate) {
-      // Parse event_date (format: YYYY-MM-DD)
-      eventYear = parseInt(eventDate.split('-')[0], 10);
-      console.log('[UPLOAD] Extracted year from event_date:', eventYear);
+    // Step 1: Determine the catalog ID to use
+    let catalogId: string;
+    let uploadDate: string;
+
+    if (manualCatalogId && manualCatalogId.trim()) {
+      // Use manually provided catalog ID (Astra 馆长的最终解释权)
+      catalogId = manualCatalogId.trim();
+      console.log('[UPLOAD] Using manual catalog_id:', catalogId);
+
+      // Extract date from manual catalog ID for event_date
+      const match = catalogId.match(/^LMSY-[A-Z]+-(\d{8})-\d{3}$/);
+      if (match) {
+        const compactDate = match[1];
+        uploadDate = `${compactDate.substring(0, 4)}-${compactDate.substring(4, 6)}-${compactDate.substring(6, 8)}`;
+        console.log('[UPLOAD] Extracted event_date from manual catalog_id:', uploadDate);
+      } else {
+        // Fallback to provided event_date or current date
+        uploadDate = eventDate || new Date().toISOString().split('T')[0];
+        console.warn('[UPLOAD] Could not extract date from manual catalog_id, using:', uploadDate);
+      }
     } else {
-      // Fallback to current year if no event_date provided
-      eventYear = new Date().getFullYear();
-      console.warn('[UPLOAD] No event_date provided, using current year:', eventYear);
+      // Auto-generate catalog ID based on event_date
+      if (eventDate) {
+        // Validate date format (YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(eventDate)) {
+          return NextResponse.json(
+            { error: 'Invalid date format. Expected YYYY-MM-DD' },
+            { status: 400 }
+          );
+        }
+        uploadDate = eventDate;
+        console.log('[UPLOAD] Using provided event_date:', uploadDate);
+      } else {
+        // Fallback to current date (UTC) if no event_date provided
+        uploadDate = new Date().toISOString().split('T')[0];
+        console.warn('[UPLOAD] No event_date provided, using current UTC date:', uploadDate);
+      }
+
+      // Generate catalog_id with full date (LMSY-G-YYYYMMDD-XXX)
+      catalogId = await generateNextGalleryCatalogId(supabaseAdmin, uploadDate);
+      console.log('[UPLOAD] Generated catalog_id:', catalogId);
     }
-
-    // Step 2: Generate catalog_id with event year (auto-numbering)
-    const catalogId = await generateNextGalleryCatalogId(supabaseAdmin, eventYear);
-
-    console.log('[UPLOAD] Generated catalog_id:', catalogId, 'for year:', eventYear);
 
     // Step 3: Convert to WebP with optimization
     console.log('[UPLOAD] Converting to WebP...');
@@ -127,10 +156,8 @@ export async function POST(request: NextRequest) {
     console.log('[UPLOAD] Generating blur data...');
     const blurData = await generateBlurData(file);
 
-    // Step 5: Upload to R2 with year-based archival path
-    // R2 path: gallery/{year}/{catalogId}.webp (e.g., gallery/2022/LMSY-G-2022-001.webp)
-    const r2Path = `gallery/${eventYear}/${catalogId}.webp`;
-
+    // Step 5: Upload to R2 with catalog_id as filename
+    const r2Path = getR2PathForCatalogId(catalogId);
     console.log('[UPLOAD] Uploading to R2:', r2Path);
     const uploadResult = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
 
@@ -157,7 +184,7 @@ export async function POST(request: NextRequest) {
         is_editorial: isEditorial,
         curator_note: curatorNote || null,
         blur_data: blurData,
-        event_date: eventDate || null,
+        event_date: uploadDate,
       })
       .select()
       .single();
@@ -181,8 +208,7 @@ export async function POST(request: NextRequest) {
         catalog_id: catalogId,
         image_url: uploadResult.url,
         r2_path: r2Path,
-        event_year: eventYear,
-        event_date: insertedItem.event_date,
+        event_date: uploadDate,
         caption: insertedItem.caption,
         tag: insertedItem.tag,
         is_featured: insertedItem.is_featured,
@@ -244,20 +270,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get next catalog ID preview
+    // Get next catalog ID preview for today
     const supabaseAdmin = getSupabaseAdmin();
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Check if there are any gallery items for today
     const { data: lastItem } = await supabaseAdmin
       .from('gallery')
       .select('catalog_id')
-      .like('catalog_id', 'LMSY-G-%')
+      .like('catalog_id', `LMSY-G-${today.replace(/-/g, '')}-%`)
       .order('catalog_id', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    const currentYear = new Date().getFullYear();
-    const nextId = lastItem?.catalog_id
-      ? `LMSY-G-${currentYear}-${(parseInt(lastItem.catalog_id.split('-')[3]) + 1).toString().padStart(3, '0')}`
-      : `LMSY-G-${currentYear}-001`;
+    let nextSequence = 1;
+
+    if (lastItem?.catalog_id) {
+      // Parse the sequence from the last item
+      const match = lastItem.catalog_id.match(/-(\d{3})$/);
+      if (match) {
+        const lastSequence = parseInt(match[1], 10);
+        nextSequence = lastSequence + 1;
+      }
+    }
 
     // Get total count
     const { count } = await supabaseAdmin
@@ -265,9 +300,9 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true });
 
     return NextResponse.json({
-      next_catalog_id: nextId,
+      next_catalog_id: `LMSY-G-${today.replace(/-/g, '')}-${String(nextSequence).padStart(3, '0')}`,
       total_items: count || 0,
-      current_year: currentYear,
+      today: today,
     });
   } catch (error: any) {
     console.error('[UPLOAD_STATS] Error:', error);

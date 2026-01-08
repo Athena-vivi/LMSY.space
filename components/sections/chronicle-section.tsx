@@ -282,7 +282,7 @@ export function ChronicleSection() {
                 {...milestone}
                 index={index}
                 isLast={index === milestones.length - 1}
-                onHover={setHoveredYear}
+                onHover={(isHovering) => setHoveredYear(isHovering ? milestone.year : null)}
               />
             ))}
           </div>
@@ -295,7 +295,7 @@ export function ChronicleSection() {
                 {...milestone}
                 index={index}
                 isLast={index === milestones.length - 1}
-                onHover={setHoveredYear}
+                onHover={(isHovering) => setHoveredYear(isHovering ? milestone.year : null)}
               />
             ))}
           </div>

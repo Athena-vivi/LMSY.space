@@ -1,24 +1,26 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Calendar, Sparkles } from 'lucide-react';
-import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase/client';
-import { uploadToR2 } from '@/lib/r2-client';
-import { SocialPreview } from '@/components/social-preview';
-import { generateArchiveNumber } from '@/lib/archive-number';
-import type { Project } from '@/lib/supabase';
+import type { Project, Member } from '@/lib/supabase/types';
+import UploadZone from './_components/upload-zone';
+import EditorialHeader from './_components/editorial-header';
+import GalleryGrid from './_components/gallery-grid';
+import CuratorSidebar from './_components/curator-sidebar';
+import ImageLightbox from './_components/image-lightbox';
 
-interface Member {
-  id: string;
-  name: string;
-  name_th: string;
+interface UploadItem {
+  id: string;  // Eternal ID - never changes
+  file: File;
+  preview: string;
+  displayName: string;  // For display only
 }
 
 export default function AdminUploadPage() {
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -28,7 +30,6 @@ export default function AdminUploadPage() {
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
 
   // New fields
   const [title, setTitle] = useState('');
@@ -43,16 +44,74 @@ export default function AdminUploadPage() {
   const [batchCatalogId, setBatchCatalogId] = useState('');
   const [batchMagazineIssue, setBatchMagazineIssue] = useState('');
 
-  // Generate auto number
+  // Catalog ID lock state
+  const [isCatalogLocked, setIsCatalogLocked] = useState(true);
+  const [hasManuallyEdited, setHasManuallyEdited] = useState(false);
+  const [showClickHint, setShowClickHint] = useState(false);
+
+  // Validate catalog ID format (weak validation for visual hint only)
+  const isValidCatalogFormat = (catalogId: string): boolean => {
+    if (!catalogId) return true; // Empty is valid (not submitted yet)
+    // Flexible pattern: LMSY-XXX-XXXXXXXX-XXX (allows any format with hyphens)
+    return /^LMSY-[A-Z]+-\d{8}-\d{3}$/.test(catalogId);
+  };
+
+  // Fetch next catalog ID from API (only when locked)
   useEffect(() => {
-    const year = new Date().getFullYear();
-    const generated = generateArchiveNumber({
-      type: 'G',
-      year,
-      sequence: 1,
-    });
-    setArchiveNumber(generated);
-  }, []);
+    if (!isCatalogLocked || hasManuallyEdited) return; // Don't auto-update if unlocked or manually edited
+
+    const fetchNextCatalogId = async () => {
+      try {
+        const response = await fetch('/api/admin/upload');
+        if (response.ok) {
+          const data = await response.json();
+          setArchiveNumber(data.next_catalog_id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch next catalog ID:', error);
+        setArchiveNumber('');
+      }
+    };
+
+    fetchNextCatalogId();
+  }, [eventDate, isCatalogLocked, hasManuallyEdited]);
+
+  // Handle manual catalog ID edit
+  const handleCatalogIdChange = (value: string) => {
+    setArchiveNumber(value);
+    setHasManuallyEdited(true);
+  };
+
+  // Handle click on locked field (shake + hint)
+  const handleLockedFieldClick = () => {
+    if (isCatalogLocked) {
+      setShowClickHint(true);
+      setTimeout(() => setShowClickHint(false), 2000);
+    }
+  };
+
+  // Prevent body scroll when lightbox is open
+  useEffect(() => {
+    if (lightboxIndex !== null) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [lightboxIndex]);
+
+  // Generate preview Catalog ID based on position
+  const getPreviewCatalogId = (index: number): string => {
+    const dateMatch = eventDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!dateMatch) return `LMSY-G-YYYYMMDD-${String(index + 1).padStart(3, '0')}`;
+
+    const [, year, month, day] = dateMatch;
+    const compactDate = `${year}${month}${day}`;
+    const sequence = String(index + 1).padStart(3, '0');
+    return `LMSY-G-${compactDate}-${sequence}`;
+  };
 
   // Fetch existing projects, members, and tags
   useEffect(() => {
@@ -65,7 +124,7 @@ export default function AdminUploadPage() {
       ]);
 
       if (projectsData.data) setProjects(projectsData.data);
-      if (membersData.data) setMembers(membersData.data as Member[]);
+      if (membersData.data) setMembers(membersData.data);
 
       // Extract unique tags
       const tags = [...new Set((galleryData.data || []).map(item => item.tag).filter(Boolean))];
@@ -92,26 +151,49 @@ export default function AdminUploadPage() {
   }, []);
 
   const handleFiles = async (files: File[]) => {
-    setUploadedFiles(prev => [...prev, ...files]);
+    // Check limit
+    if (uploadItems.length + files.length > 50) {
+      alert(`⚠ Upload limit exceeded. Maximum 50 images allowed.\nCurrent: ${uploadItems.length}\nAttempted to add: ${files.length}`);
+      return;
+    }
 
-    // Generate previews
-    const newPreviews = await Promise.all(
-      files.map(file => URL.createObjectURL(file))
+    // Generate previews with eternal IDs
+    const newItems = await Promise.all(
+      files.map(async (file) => {
+        const preview = URL.createObjectURL(file);
+        const fileName = file.name.split('.')[0];
+        return {
+          id: `eternal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,  // Eternal ID
+          file,
+          preview,
+          displayName: fileName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        };
+      })
     );
-    setPreviews(prev => [...prev, ...newPreviews]);
+
+    setUploadItems(prev => [...prev, ...newItems]);
+    setPreviews(prev => [...prev, ...newItems.map(i => i.preview)]);
 
     // Auto-generate title from first file
     if (files.length > 0 && !title) {
-      const fileName = files[0].name.split('.')[0];
-      setTitle(fileName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+      setTitle(newItems[0].displayName);
     }
   };
 
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setUploadItems(prev => {
+      const item = prev.find(i => i.id === id);
+      if (item) {
+        URL.revokeObjectURL(item.preview);
+      }
+      return prev.filter(i => i.id !== id);
+    });
     setPreviews(prev => {
-      URL.revokeObjectURL(prev[index]);
-      return prev.filter((_, i) => i !== index);
+      const item = uploadItems.find(i => i.id === id);
+      if (item) {
+        URL.revokeObjectURL(item.preview);
+      }
+      return uploadItems.filter(i => i.id !== id).map(i => i.preview);
     });
   };
 
@@ -126,99 +208,117 @@ export default function AdminUploadPage() {
     setSelectedTags(prev => prev.filter(t => t !== tag));
   };
 
+  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && tagInput) {
+      e.preventDefault();
+      addTag(tagInput);
+    }
+  };
+
+  const handleLightboxNavigate = (direction: 'prev' | 'next') => {
+    if (direction === 'prev' && lightboxIndex !== null && lightboxIndex > 0) {
+      setLightboxIndex(lightboxIndex - 1);
+    } else if (direction === 'next' && lightboxIndex !== null && lightboxIndex < uploadItems.length - 1) {
+      setLightboxIndex(lightboxIndex + 1);
+    }
+  };
+
   const handleUpload = async () => {
-    if (uploadedFiles.length === 0) return;
+    if (uploadItems.length === 0) return;
 
     setIsUploading(true);
 
     try {
-      const items = [];
+      let successCount = 0;
+      let failCount = 0;
+      const errors: string[] = [];
 
-      for (let i = 0; i < uploadedFiles.length; i++) {
-        const file = uploadedFiles[i];
+      // Upload each file using the new API
+      for (let i = 0; i < uploadItems.length; i++) {
+        const item = uploadItems[i];
+        const file = item.file;
 
-        // Generate file path
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${archiveNumber}-${i + 1}.${fileExt}`;
-        const filePath = `gallery/${fileName}`;
-
-        // Upload to Cloudflare R2
-        const uploadResult = await uploadToR2(file, filePath);
-
-        if (!uploadResult.success || !uploadResult.path) {
-          throw new Error(uploadResult.error || 'Upload failed');
-        }
-
-        // Generate blur data via API
-        let blurData: string | undefined;
         try {
-          const reader = new FileReader();
-          const base64Promise = new Promise<string>((resolve) => {
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(file);
-          });
-          const base64Image = await base64Promise;
+          // Prepare form data for API
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('event_date', batchEventDate || eventDate);
 
-          const blurResponse = await fetch('/api/generate-blur', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64Image }),
-          });
-
-          if (blurResponse.ok) {
-            const blurResult = await blurResponse.json();
-            blurData = blurResult.blurData;
+          // Add manual catalog ID if unlocked and manually edited (Astra 馆长的最终解释权)
+          if (!isCatalogLocked && hasManuallyEdited && archiveNumber) {
+            formData.append('catalog_id', archiveNumber);
           }
-        } catch (blurError) {
-          console.warn('Failed to generate blur data:', blurError);
+
+          // Only add optional fields if they have values
+          if (title) {
+            formData.append('caption', i === 0 ? title : `${title} (${i + 1})`);
+          }
+
+          if (selectedTags.length > 0) {
+            formData.append('tag', selectedTags[0]);
+          }
+
+          if (i === 0) {
+            formData.append('is_featured', 'true');
+          }
+
+          // Upload via API
+          const response = await fetch('/api/admin/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Upload failed');
+          }
+
+          const result = await response.json();
+
+          if (result.success) {
+            successCount++;
+            console.log(`✓ Uploaded ${file.name} -> ${result.data.catalog_id}`);
+          } else {
+            throw new Error('Upload returned unsuccessful');
+          }
+        } catch (error) {
+          failCount++;
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`${file.name}: ${errorMsg}`);
+          console.error(`✗ Failed to upload ${file.name}:`, errorMsg);
         }
-
-        // Prepare metadata
-        items.push({
-          image_url: uploadResult.path,
-          title: i === 0 ? title : `${title} (${i + 1})`,
-          description,
-          tag: selectedTags[0] || null,
-          caption: '',
-          is_featured: i === 0,
-          archive_number: i === 0 ? archiveNumber : null,
-          event_date: batchEventDate || eventDate,
-          project_id: selectedProject,
-          member_id: selectedMember,
-          ...(blurData && { blur_data: blurData }),
-          ...(batchCredits && { credits: batchCredits }),
-          ...(batchCatalogId && { catalog_id: batchCatalogId }),
-          ...(batchMagazineIssue && { magazine_issue: batchMagazineIssue }),
-        });
       }
 
-      // Sync to vault via backend API
-      const response = await fetch('/api/admin/gallery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to sync to vault');
+      // Show results
+      if (successCount === uploadItems.length) {
+        alert(`✓ Successfully uploaded all ${successCount} images!`);
+      } else if (successCount > 0) {
+        alert(`⚠ Partial upload: ${successCount} succeeded, ${failCount} failed.\n\nErrors:\n${errors.join('\n')}`);
+      } else {
+        alert(`✗ All uploads failed!\n\n${errors.join('\n')}`);
       }
 
-      // Reset form
-      setUploadedFiles([]);
-      setPreviews([]);
-      setSelectedTags([]);
-      setSelectedProject(null);
-      setSelectedMember(null);
-      setTitle('');
-      setDescription('');
-      setArchiveNumber(generateArchiveNumber({ type: 'G', sequence: 1 }));
-      setBatchCredits('');
-      setBatchEventDate('');
-      setBatchCatalogId('');
-      setBatchMagazineIssue('');
+      // Reset form on success
+      if (successCount > 0) {
+        setUploadItems([]);
+        setPreviews([]);
+        setSelectedTags([]);
+        setSelectedProject(null);
+        setSelectedMember(null);
+        setTitle('');
+        setDescription('');
+        setBatchCredits('');
+        setBatchEventDate('');
+        setBatchCatalogId('');
+        setBatchMagazineIssue('');
 
-      alert('Successfully uploaded all images to R2 and synced to vault!');
+        // Refresh catalog ID for next upload
+        const response = await fetch('/api/admin/upload');
+        if (response.ok) {
+          const data = await response.json();
+          setArchiveNumber(data.next_catalog_id);
+        }
+      }
     } catch (error) {
       console.error('Upload error:', error);
       alert(`Error: ${error instanceof Error ? error.message : 'Upload failed'}`);
@@ -252,530 +352,114 @@ export default function AdminUploadPage() {
           0% { background-position: 0% 50%; }
           100% { background-position: 100% 50%; }
         }
+        @keyframes shield-shake {
+          0%, 100% { transform: translateX(0) rotate(0deg); }
+          25% { transform: translateX(-2px) rotate(-5deg); }
+          75% { transform: translateX(2px) rotate(5deg); }
+        }
+        .reorder-item {
+          cursor: grab;
+          user-select: none;
+        }
+        .reorder-item:active {
+          cursor: grabbing;
+        }
+        .reorder-item img {
+          pointer-events: none;
+          user-select: none;
+          -webkit-user-drag: none;
+        }
       `}</style>
 
-      <div className="relative z-10 px-6 py-8">
+      <div className="relative z-10 px-4 py-6 max-w-[1800px] mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-serif text-4xl font-light text-white/90 mb-2">
-            Bulk Upload Studio
-          </h1>
-          <p className="text-white/30 text-xs font-mono tracking-wider">
-            Curator's Reminder: Respect the shutter's effort.
-          </p>
-        </div>
-
-        {/* Main Grid - 12 columns */}
-        <div className="grid grid-cols-12 gap-8">
-          {/* Left Panel - Upload Zone (Col-span-7) */}
-          <div className="col-span-12 lg:col-span-7 space-y-6">
-            {/* Holographic Archive Number Stamp */}
-            <div
-              className="relative inline-block px-6 py-3 border rounded-lg"
-              style={{
-                borderColor: 'rgba(251, 191, 36, 0.3)',
-                boxShadow: '0 0 20px rgba(251, 191, 36, 0.1)',
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <Hash className="h-4 w-4 text-lmsy-yellow/60" strokeWidth={1.5} />
-                <div>
-                  <div className="text-[10px] text-white/30 font-mono tracking-widest uppercase mb-1">
-                    Archive Number
-                  </div>
-                  <input
-                    type="text"
-                    value={archiveNumber}
-                    onChange={(e) => setArchiveNumber(e.target.value)}
-                    className="bg-transparent font-mono text-lg text-lmsy-yellow/90 focus:outline-none tracking-wider"
-                    style={{ textShadow: '0 0 10px rgba(251, 191, 36, 0.3)' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Tech Upload Zone with Dashed Border & Pulse */}
-            <motion.div
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              className="relative border-2 border-dashed rounded-lg p-16 text-center cursor-pointer group transition-all duration-300"
-              style={{
-                borderColor: 'rgba(251, 191, 36, 0.2)',
-                animation: 'pulse-border 3s ease-in-out infinite',
-              }}
-              whileHover={{
-                borderColor: 'rgba(251, 191, 36, 0.4)',
-                backgroundColor: 'rgba(251, 191, 36, 0.02)',
-              }}
-            >
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileInput}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <motion.div
-                animate={{ y: uploadedFiles.length > 0 ? -10 : 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Upload className="h-12 w-12 mx-auto mb-4 text-white/20 group-hover:text-lmsy-yellow/60 transition-colors" strokeWidth={1.5} />
-                <p className="text-sm font-light text-white/40 mb-2">
-                  Drag & Drop images here
-                </p>
-                <p className="text-xs text-white/20 font-mono">
-                  or click to browse • JPG, PNG, WebP
-                </p>
-              </motion.div>
-            </motion.div>
-
-            {/* Selected Files Grid */}
-            <AnimatePresence>
-              {uploadedFiles.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-mono text-white/30 tracking-wider flex items-center gap-2">
-                      <Images className="h-3 w-3" />
-                      SELECTED IMAGES ({uploadedFiles.length})
-                    </h3>
-                  </div>
-
-                  {/* File Grid */}
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                    {uploadedFiles.map((file, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="relative aspect-square rounded overflow-hidden border"
-                        style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-                      >
-                        <Image
-                          src={previews[index]}
-                          alt={file.name}
-                          fill
-                          className="object-cover"
-                        />
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="absolute top-1 right-1 bg-black/80 hover:bg-red-500/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                        >
-                          <X className="h-2.5 w-2.5 text-white" strokeWidth={2} />
-                        </button>
-                        {index === 0 && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-lmsy-yellow/90 backdrop-blur-sm text-black text-[8px] font-bold text-center py-1 font-mono">
-                            PRIMARY
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Title Input with Bottom Border */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-white/30 tracking-wider uppercase">
-                Title
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Collection title..."
-                className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-              />
-            </div>
-
-            {/* Description with Bottom Border */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-white/30 tracking-wider uppercase">
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Curator's notes..."
-                rows={2}
-                className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors resize-none"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-              />
-            </div>
-
-            {/* Tags with Gradient Text */}
-            <div className="space-y-3">
-              <label className="text-[10px] font-mono text-white/30 tracking-wider flex items-center gap-2 uppercase">
-                <Tag className="h-3 w-3" />
-                Tags
-              </label>
-
-              <div className="flex flex-wrap gap-2">
-                {selectedTags.map(tag => (
-                  <motion.span
-                    key={tag}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm border cursor-pointer"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(56, 189, 248, 0.1))',
-                      borderColor: 'rgba(251, 191, 36, 0.2)',
-                      color: 'rgba(251, 191, 36, 0.9)',
-                    }}
-                  >
-                    {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-white/60"
-                    >
-                      <X className="h-3 w-3" strokeWidth={2} />
-                    </button>
-                  </motion.span>
-                ))}
-              </div>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addTag(tagInput);
-                    }
-                  }}
-                  placeholder="Type and press Enter..."
-                  className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-                />
-
-                {/* Tag Suggestions */}
-                {tagInput && availableTags.filter(tag =>
-                  tag.toLowerCase().includes(tagInput.toLowerCase()) &&
-                  !selectedTags.includes(tag)
-                ).length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-black/95 backdrop-blur-xl border rounded-lg overflow-hidden" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
-                    {availableTags
-                      .filter(tag =>
-                        tag.toLowerCase().includes(tagInput.toLowerCase()) &&
-                        !selectedTags.includes(tag)
-                      )
-                      .slice(0, 5)
-                      .map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => addTag(tag)}
-                          className="w-full px-4 py-2 text-left hover:bg-white/5 transition-colors text-sm text-white/60 hover:text-white/90"
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Quick Tags */}
-              <div className="flex flex-wrap gap-2">
-                {['Fashion', 'BehindTheScene', 'Affair', 'Magazine', 'Event'].map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => addTag(tag)}
-                    className="px-3 py-1 text-xs rounded-full border transition-all text-white/30 hover:text-white/60"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-                  >
-                    + {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="font-serif text-3xl font-light text-white/90 mb-1">
+              Bulk Upload Studio
+            </h1>
+            <p className="text-white/20 text-[10px] font-mono tracking-wider">
+              Curator's Reminder: Respect the shutter's effort.
+            </p>
           </div>
-
-          {/* Right Panel - Form Fields (Col-span-5) */}
-          <div className="col-span-12 lg:col-span-5 space-y-6">
-            {/* Event Date with Bottom Border */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-white/30 tracking-wider flex items-center gap-2 uppercase">
-                <Calendar className="h-3 w-3" />
-                Event Date
-              </label>
-              <input
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors [color-scheme:dark]"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-              />
+          <div className="text-right">
+            <div className="text-[10px] font-mono text-white/30">
+              {uploadItems.length} / 50 IMAGES
             </div>
-
-            {/* Project Link with Bottom Border */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-white/30 tracking-wider flex items-center gap-2 uppercase">
-                <Link2 className="h-3 w-3" />
-                Link to Project
-              </label>
-              <select
-                value={selectedProject || ''}
-                onChange={(e) => setSelectedProject(e.target.value || null)}
-                className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-blue/60 transition-colors"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-              >
-                <option value="" className="bg-black">No project linked</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id} className="bg-black">
-                    {project.title} ({project.category})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Member Feature with Bottom Border */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-white/30 tracking-wider flex items-center gap-2 uppercase">
-                <User className="h-3 w-3" />
-                Feature Member
-              </label>
-              <select
-                value={selectedMember || ''}
-                onChange={(e) => setSelectedMember(e.target.value || null)}
-                className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-blue/60 transition-colors"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-              >
-                <option value="" className="bg-black">No specific member</option>
-                {members.map(member => (
-                  <option key={member.id} value={member.id} className="bg-black">
-                    {member.name} ({member.name_th})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Batch Metadata Toggle */}
-            <div className="border rounded-lg p-4" style={{ borderColor: 'rgba(255, 255, 255, 0.05)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
-              <button
-                onClick={() => setShowBatchEditor(!showBatchEditor)}
-                className="w-full flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-lmsy-yellow/60" strokeWidth={1.5} />
-                  <span className="text-xs font-mono text-white/40 tracking-wider">BATCH METADATA</span>
-                </div>
-                <motion.div
-                  animate={{ rotate: showBatchEditor ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <X className={`w-4 h-4 text-white/30 ${showBatchEditor ? 'rotate-45' : ''}`} strokeWidth={1.5} />
-                </motion.div>
-              </button>
-
-              <AnimatePresence>
-                {showBatchEditor && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 space-y-3"
-                  >
-                    <p className="text-xs text-white/30 font-light">
-                      Apply metadata to all uploaded images at once.
-                    </p>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-white/20 tracking-wider">Credits</label>
-                      <input
-                        type="text"
-                        value={batchCredits}
-                        onChange={(e) => setBatchCredits(e.target.value)}
-                        placeholder="Source, photographer..."
-                        className="w-full px-0 py-2 bg-transparent text-white/70 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors text-xs"
-                        style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-white/20 tracking-wider">Event Date Override</label>
-                      <input
-                        type="date"
-                        value={batchEventDate}
-                        onChange={(e) => setBatchEventDate(e.target.value)}
-                        className="w-full px-0 py-2 bg-transparent text-white/70 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors text-xs [color-scheme:dark]"
-                        style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-white/20 tracking-wider">Catalog ID</label>
-                      <input
-                        type="text"
-                        value={batchCatalogId}
-                        onChange={(e) => setBatchCatalogId(e.target.value)}
-                        placeholder="LMSY-G-2025-001"
-                        className="w-full px-0 py-2 bg-transparent text-white/70 font-light focus:outline-none border-b focus:border-lmsy-blue/60 transition-colors text-xs"
-                        style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-white/20 tracking-wider">Magazine Issue</label>
-                      <input
-                        type="text"
-                        value={batchMagazineIssue}
-                        onChange={(e) => setBatchMagazineIssue(e.target.value)}
-                        placeholder="Magazine name, issue..."
-                        className="w-full px-0 py-2 bg-transparent text-white/70 font-light focus:outline-none border-b focus:border-lmsy-blue/60 transition-colors text-xs"
-                        style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Upload Button - The Execution */}
-            <motion.button
-              onClick={handleUpload}
-              disabled={uploadedFiles.length === 0 || isUploading}
-              className="relative w-full py-4 rounded-lg overflow-hidden font-mono text-sm tracking-wider transition-all duration-300"
-              style={{
-                background: uploadedFiles.length > 0
-                  ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(56, 189, 248, 0.9))'
-                  : 'rgba(255, 255, 255, 0.05)',
-                color: uploadedFiles.length > 0 ? '#000' : 'rgba(255, 255, 255, 0.2)',
-                boxShadow: uploadedFiles.length > 0
-                  ? '0 0 30px rgba(251, 191, 36, 0.3), 0 0 60px rgba(56, 189, 248, 0.2)'
-                  : 'none',
-                cursor: uploadedFiles.length > 0 ? 'pointer' : 'not-allowed',
-              }}
-              whileHover={uploadedFiles.length > 0 ? { scale: 1.02 } : {}}
-              whileTap={uploadedFiles.length > 0 ? { scale: 0.98 } : {}}
-            >
-              {/* Data Flow Animation */}
-              {uploadedFiles.length > 0 && (
-                <div
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-                    backgroundSize: '200% 100%',
-                    animation: 'data-flow 2s linear infinite',
-                  }}
-                />
-              )}
-
-              <div className="relative flex items-center justify-center gap-2">
-                {isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    SYNCING_TO_VAULT...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" strokeWidth={1.5} />
-                    UPLOAD ALL ({uploadedFiles.length})
-                  </>
-                )}
+            {uploadItems.length > 0 && (
+              <div className="text-[8px] font-mono text-lmsy-yellow/60 mt-1">
+                Event: {eventDate}
               </div>
-            </motion.button>
+            )}
           </div>
         </div>
 
-        {/* Floating Preview Toggle */}
-        <motion.button
-          onClick={() => setShowPreview(!showPreview)}
-          className="fixed bottom-6 right-6 z-40 p-4 rounded-full border transition-all duration-300"
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-          }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Eye className="h-5 w-5 text-white/40" strokeWidth={1.5} />
-        </motion.button>
+        {/* Upload Zone */}
+        <UploadZone onDrop={handleDrop} onFileInput={handleFileInput} />
 
-        {/* Frosted Glass Preview Sidebar */}
-        <AnimatePresence>
-          {showPreview && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowPreview(false)}
-                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-              />
+        {/* Main Canvas - Dominant Preview Grid with Right Sidebar */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left: Editorial Header + Gallery Grid (Col-span-10) */}
+          <div className="col-span-12 xl:col-span-10 space-y-6">
+            {/* Editorial Header - Curator Sovereignty */}
+            <EditorialHeader
+              title={title}
+              description={description}
+              onTitleChange={setTitle}
+              onDescriptionChange={setDescription}
+            />
 
-              {/* Sidebar */}
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="fixed right-0 top-0 bottom-0 w-full sm:w-96 z-50 overflow-y-auto"
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                  backdropFilter: 'blur(30px)',
-                  borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
-                }}
-              >
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-serif text-lg text-white/90">Preview</h3>
-                    <button
-                      onClick={() => setShowPreview(false)}
-                      className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-                    >
-                      <X className="h-4 w-4 text-white/40" strokeWidth={1.5} />
-                    </button>
-                  </div>
+            {/* Reorderable Gallery Grid */}
+            <GalleryGrid
+              uploadItems={uploadItems}
+              onReorder={setUploadItems}
+              onRemove={removeFile}
+              onItemClick={setLightboxIndex}
+              getPreviewCatalogId={getPreviewCatalogId}
+            />
+          </div>
 
-                  <SocialPreview
-                    archiveNumber={archiveNumber}
-                    title={title || 'Untitled Collection'}
-                    description={description || 'No description provided.'}
-                    tags={selectedTags}
-                    project={projects.find(p => p.id === selectedProject)?.title}
-                  />
+          {/* Right: Curator Workbench Sidebar (Col-span-2) */}
+          <CuratorSidebar
+            // Base Meta
+            eventDate={eventDate}
+            onEventDateChange={setEventDate}
+            selectedProject={selectedProject}
+            onProjectChange={setSelectedProject}
+            selectedMember={selectedMember}
+            onMemberChange={setSelectedMember}
+            projects={projects}
+            members={members}
+            // Archive Data
+            showBatchEditor={showBatchEditor}
+            onToggleBatchEditor={() => setShowBatchEditor(!showBatchEditor)}
+            batchCredits={batchCredits}
+            onBatchCreditsChange={setBatchCredits}
+            batchCatalogId={batchCatalogId}
+            onBatchCatalogIdChange={setBatchCatalogId}
+            batchMagazineIssue={batchMagazineIssue}
+            onBatchMagazineIssueChange={setBatchMagazineIssue}
+            // Archive Spec
+            selectedTags={selectedTags}
+            onRemoveTag={removeTag}
+            tagInput={tagInput}
+            onTagInputChange={setTagInput}
+            onTagInputKeyDown={handleTagInputKeyDown}
+            // Upload
+            isUploading={isUploading}
+            uploadItemsCount={uploadItems.length}
+            onUpload={handleUpload}
+          />
+        </div>
 
-                  {/* Gallery Preview */}
-                  {previews.length > 0 && (
-                    <div className="mt-6 border rounded-lg overflow-hidden" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-                      <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
-                        <h4 className="text-xs font-mono text-white/30 tracking-wider">GALLERY PREVIEW</h4>
-                      </div>
-                      <div className="p-4">
-                        <div className="columns-2 gap-2 space-y-2">
-                          {previews.slice(0, 6).map((preview, index) => (
-                            <div
-                              key={index}
-                              className="relative aspect-[3/4] rounded overflow-hidden border"
-                              style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-                            >
-                              <Image
-                                src={preview}
-                                alt={`Preview ${index + 1}`}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        {/* Lightbox */}
+        <ImageLightbox
+          lightboxIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={handleLightboxNavigate}
+          uploadItems={uploadItems}
+          getPreviewCatalogId={getPreviewCatalogId}
+        />
       </div>
     </div>
   );

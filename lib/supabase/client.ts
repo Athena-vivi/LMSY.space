@@ -26,8 +26,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 /**
  * 公共 Supabase 客户端
  * 用于浏览器端和公开数据访问
+ *
+ * Schema: lmsy_archive (所有馆藏数据均在自定义 schema 中)
  */
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  db: {
+    schema: 'lmsy_archive',
+  },
   auth: {
     persistSession: true,
     autoRefreshToken: true,
