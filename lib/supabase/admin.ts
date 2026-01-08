@@ -32,7 +32,7 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
  * 2. 浏览器环境
  * 3. 可能暴露给前端的任何代码
  */
-export const supabaseAdmin: SupabaseClient = (() => {
+export const supabaseAdmin: SupabaseClient<any, any, 'lmsy_archive', any, any> = (() => {
   // 安全检查：确保不在浏览器端执行
   if (typeof window !== 'undefined') {
     throw new Error(
@@ -80,7 +80,7 @@ export function isServerEnvironment(): boolean {
  * 如果在浏览器端调用，会抛出错误而不是返回客户端
  * @returns Supabase 管理员客户端
  */
-export function getSupabaseAdmin(): SupabaseClient {
+export function getSupabaseAdmin(): SupabaseClient<any, any, 'lmsy_archive', any, any> {
   if (!isServerEnvironment()) {
     throw new Error(
       'CRITICAL SECURITY ERROR: supabaseAdmin cannot be accessed from browser code. ' +
