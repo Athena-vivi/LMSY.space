@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Disc } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import Link from 'next/link';
+import { BackButton } from '@/components/back-button';
 
 // Mock data - In production, this will come from Supabase
 const musicTracks = [
@@ -151,6 +152,11 @@ export default function ResonancePage() {
       {/* Hero Section with Scanning Effect */}
       <section className="relative pt-32 pb-16 px-6">
         <div className="container mx-auto max-w-6xl">
+          {/* Back Button */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

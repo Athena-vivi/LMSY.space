@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { useTheme } from '@/components/theme-provider';
+import { BackButton } from '@/components/back-button';
 
 interface Publication {
   id: string;
@@ -18,10 +18,7 @@ interface Publication {
 }
 
 export default function EditorialPage() {
-  const { theme } = useTheme();
   const [publications, setPublications] = useState<Publication[]>([]);
-
-  const isDark = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   useEffect(() => {
     async function fetchPublications() {
@@ -53,27 +50,10 @@ export default function EditorialPage() {
       <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4 md:px-12 md:py-6 backdrop-blur-md border-b border-white/5"
         style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
       >
-        <div className="flex items-start justify-between">
-          {/* Left: Logo + Small Title */}
+        <div className="flex items-start justify-between w-full">
+          {/* Left: Back Button + Small Title */}
           <div className="flex items-center gap-6">
-            {/* Logo */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <Link href="/" className="block hover:opacity-80 transition-opacity">
-                <div className="relative h-8 w-8 md:h-9 md:w-9">
-                  <Image
-                    src="/lmsy-logo.png"
-                    alt="LMSY Logo"
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-              </Link>
-            </motion.div>
+            <BackButton />
 
             {/* Title */}
             <motion.div
@@ -111,10 +91,9 @@ export default function EditorialPage() {
                 <ExhibitionSlot
                   publication={publications[0]}
                   index={0}
-                  isDark={isDark}
                 />
               ) : (
-                <EmptySlot index={0} isDark={isDark} />
+                <EmptySlot index={0} />
               )}
             </div>
           </section>
@@ -126,14 +105,12 @@ export default function EditorialPage() {
                 key={pub.id}
                 publication={pub}
                 index={i + 1}
-                isDark={isDark}
               />
             ))}
             {[...Array(Math.max(0, emptySlots - 1))].map((_, i) => (
               <EmptySlot
                 key={`empty-${i}`}
                 index={publications.length + i}
-                isDark={isDark}
               />
             ))}
           </section>
@@ -155,10 +132,9 @@ export default function EditorialPage() {
 interface ExhibitionSlotProps {
   publication?: Publication;
   index: number;
-  isDark: boolean;
 }
 
-function ExhibitionSlot({ publication, index, isDark }: ExhibitionSlotProps) {
+function ExhibitionSlot({ publication, index }: ExhibitionSlotProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -186,9 +162,7 @@ function ExhibitionSlot({ publication, index, isDark }: ExhibitionSlotProps) {
           <div
             className="absolute inset-0 backdrop-blur-sm"
             style={{
-              background: isDark
-                ? 'rgba(255, 255, 255, 0.02)'
-                : 'rgba(0, 0, 0, 0.02)',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
             }}
           >
             {/* Shimmer Effect */}
@@ -281,10 +255,9 @@ function ExhibitionSlot({ publication, index, isDark }: ExhibitionSlotProps) {
 
 interface EmptySlotProps {
   index: number;
-  isDark: boolean;
 }
 
-function EmptySlot({ index, isDark }: EmptySlotProps) {
+function EmptySlot({ index }: EmptySlotProps) {
   const [hovered, setHovered] = useState(false);
   const slotNumber = String(index + 1).padStart(3, '0');
 
@@ -301,9 +274,7 @@ function EmptySlot({ index, isDark }: EmptySlotProps) {
         <div
           className="absolute inset-0 backdrop-blur-sm"
           style={{
-            background: isDark
-              ? 'rgba(255, 255, 255, 0.02)'
-              : 'rgba(0, 0, 0, 0.02)',
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
           }}
         >
           {/* Shimmer Effect */}

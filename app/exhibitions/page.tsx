@@ -6,6 +6,7 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import Image from 'next/image';
 import { useState } from 'react';
+import { BackButton } from '@/components/back-button';
 
 interface Exhibition {
   id: string;
@@ -172,6 +173,11 @@ export default function ExhibitionsPage() {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+          {/* Back Button */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
+import { BackButton } from '@/components/back-button';
 
 interface Message {
   id: string;
@@ -167,7 +168,16 @@ export default function WhispersPage() {
       {/* Content */}
       <div className="relative z-10">
         {/* The Masthead */}
-        <section className="relative pt-32 pb-12 px-6">
+        <section className="relative pt-24 pb-16 px-6">
+          <div className="container mx-auto max-w-6xl">
+            {/* Back Button */}
+            <div className="mb-8">
+              <BackButton />
+            </div>
+          </div>
+        </section>
+
+        <section className="relative pt-12 pb-12 px-6">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 40 }}

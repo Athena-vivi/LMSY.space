@@ -6,6 +6,7 @@ import { Quote } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { useRef } from 'react';
+import { BackButton } from '@/components/back-button';
 
 const quotes = {
   lookmhee: [
@@ -104,6 +105,11 @@ export default function ProfilesPage() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Back Button */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

@@ -63,41 +63,6 @@
 
 :root {
   --radius: 0.625rem;
-  /* LMSY Theme - Light Mode: "Day Museum" */
-  --background: #FAF9F6; /* Cream paper - warm gallery walls */
-  --foreground: #1A1A1A; /* Charcoal text - museum signage */
-  --card: #FFFFFF; /* Pure white - archival paper */
-  --card-foreground: #1A1A1A;
-  --popover: #FFFFFF;
-  --popover-foreground: #1A1A1A;
-  --primary: #FBBF24; /* LMSY Yellow - gallery spotlight */
-  --primary-foreground: #1A1A1A;
-  --secondary: #38BDF8; /* LMSY Blue - cool accent */
-  --secondary-foreground: #1A1A1A;
-  --muted: #F5F5F0; /* Soft warm gray */
-  --muted-foreground: #8B8680; /* Warm taupe - aged paper */
-  --accent: #FBBF24;
-  --accent-foreground: #1A1A1A;
-  --destructive: #DC2626;
-  --border: #E8E8E0; /* Subtle border - museum frame */
-  --input: #E8E8E0;
-  --ring: #FBBF24;
-  --chart-1: #FBBF24;
-  --chart-2: #38BDF8;
-  --chart-3: #8B5CF6;
-  --chart-4: #EC4899;
-  --chart-5: #14B8A6;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #1A1A1A;
-  --sidebar-primary: #FBBF24;
-  --sidebar-primary-foreground: #1A1A1A;
-  --sidebar-accent: #F5F5F0;
-  --sidebar-accent-foreground: #1A1A1A;
-  --sidebar-border: #E8E8E0;
-  --sidebar-ring: #FBBF24;
-}
-
-.dark {
   /* LMSY Theme - Dark Mode: "Midnight Star Gallery" */
   --background: #0A0A0A; /* Deep space black */
   --foreground: #FAF9F6; /* Warm cream - starlight */
@@ -366,16 +331,4 @@
 
 .prose td {
   border-top: 1px solid theme('colors.border');
-}
-
-.dark .prose {
-  --tw-prose-invert-body: theme('colors.foreground');
-  --tw-prose-invert-headings: theme('colors.foreground');
-  --tw-prose-invert-links: theme('colors.lmsy.blue');
-  --tw-prose-invert-bold: theme('colors.foreground');
-  --tw-prose-invert-code: theme('colors.lmsy.blue');
-  --tw-prose-invert-pre-code: theme('colors.foreground');
-  --tw-prose-invert-pre-bg: theme('colors.muted / 0.5');
-  --tw-prose-invert-quotes: theme('colors.foreground');
-  --tw-prose-invert-quote-borders: theme('colors.lmsy.yellow');
 }

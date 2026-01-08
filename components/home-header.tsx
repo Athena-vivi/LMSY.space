@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
@@ -28,26 +27,18 @@ const dualitySubItems = [
   { key: 'nav.sonya', href: '/profiles/sonya' },
 ];
 
-export function SiteHeader() {
-  const pathname = usePathname();
+export function HomeHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const [dualityOpen, setDualityOpen] = useState(false);
   const { language } = useLanguage();
-  const isHomePage = pathname === '/';
 
   return (
-    <header
-      className={`sticky top-0 z-50 w-full backdrop-blur-xl ${isHomePage ? 'border-b border-white/5' : ''}`}
-      style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
-    >
-      <div className={`${isHomePage ? 'container mx-auto px-4 sm:px-6 lg:px-8' : 'px-6 py-4'}`}>
-        <div className={`flex ${isHomePage ? 'h-16' : 'h-auto'} items-center ${isHomePage ? 'justify-between' : 'justify-start'}`}>
+    <header className="sticky top-0 z-50 w-full backdrop-blur-xl border-b border-white/5" style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="relative">
-            <Link
-              href="/"
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="relative h-8 w-8 md:h-9 md:w-9">
                 {/* Glow effect */}
                 <motion.div
@@ -74,16 +65,13 @@ export function SiteHeader() {
                   priority
                 />
               </div>
-              {isHomePage && (
-                <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                  LMSY
-                </span>
-              )}
+              <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                LMSY
+              </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation - Only on Home */}
-          {isHomePage && (
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex md:items-center md:space-x-8 lg:space-x-12">
             {mainNavItems.map((item) => (
               <div
@@ -216,10 +204,8 @@ export function SiteHeader() {
               </div>
             ))}
           </nav>
-          )}
 
-          {/* Theme Toggle, Language Switcher & Mobile Menu - Only on Home */}
-          {isHomePage && (
+          {/* Language Switcher & Mobile Menu */}
           <div className="flex items-center space-x-2">
             <SearchCommand />
             <div className="hidden md:flex items-center gap-6">
@@ -283,7 +269,6 @@ export function SiteHeader() {
               </SheetContent>
             </Sheet>
           </div>
-          )}
         </div>
       </div>
     </header>

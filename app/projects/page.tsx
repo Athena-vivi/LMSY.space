@@ -10,6 +10,7 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { supabase, type Project } from '@/lib/supabase';
 import { CompactCatalogNumber } from '@/components/catalog-number';
+import { BackButton } from '@/components/back-button';
 
 const categoryIcons = {
   series: Play,
@@ -57,6 +58,11 @@ export default function ProjectsPage() {
       {/* Header */}
       <section className="pt-24 pb-16 md:pt-32 md:pb-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

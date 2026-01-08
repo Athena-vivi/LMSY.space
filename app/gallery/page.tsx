@@ -9,6 +9,7 @@ import { t } from '@/lib/languages';
 import { supabase, type GalleryItem } from '@/lib/supabase';
 import Lightbox from './lightbox';
 import { CompactCatalogNumber } from '@/components/catalog-number';
+import { BackButton } from '@/components/back-button';
 
 const gradients = [
   'from-lmsy-yellow/20 to-lmsy-yellow/5',
@@ -78,6 +79,11 @@ export default function GalleryPage() {
       {/* Header */}
       <section className="pt-24 pb-8 md:pt-32 md:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
+import { BackButton } from '@/components/back-button';
 
 // Sample schedule data - will be replaced with Supabase data
 const scheduleItems = [
@@ -106,6 +107,11 @@ export default function SchedulePage() {
       {/* Header */}
       <section className="pt-24 pb-16 md:pt-32 md:pb-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

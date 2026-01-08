@@ -1,5 +1,6 @@
 import { ChronicleTimeline } from '@/components/chronicle-timeline';
 import { getAllTimelineEvents } from '@/lib/timeline';
+import { BackButton } from '@/components/back-button';
 
 export const metadata = {
   title: 'Chronicle Timeline | LMSY Archive',
@@ -20,6 +21,11 @@ export default async function ChroniclePage() {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Back Button */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
+
           <div className="max-w-4xl mx-auto text-center">
             {/* Label */}
             <div className="mb-6">

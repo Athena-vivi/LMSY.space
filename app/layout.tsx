@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { ServiceWorkerProvider } from "@/components/service-worker-provider";
 import { ArchiveLoading } from "@/components/archive-loading";
-import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AuthProvider } from "@/components/auth-provider";
 import { VinylPlayer } from "@/components/vinyl-player";
@@ -119,10 +118,9 @@ export default function RootLayout({
         <ScrollProgress />
         <ServiceWorkerProvider />
         <AuthProvider>
-          <ThemeProvider defaultTheme="light" storageKey="lmsy-theme">
+          <ThemeProvider defaultTheme="dark" storageKey="lmsy-theme">
             <LanguageProvider defaultLanguage="en">
               <div className="flex min-h-screen flex-col">
-                <SiteHeader />
                 <main className="flex-1">{children}</main>
                 <SiteFooter />
               </div>
