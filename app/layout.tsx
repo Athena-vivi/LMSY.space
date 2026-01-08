@@ -11,6 +11,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { VinylPlayer } from "@/components/vinyl-player";
 import { WhisperFloatingButton } from "@/components/whisper-floating-button";
 import { ScrollProgress } from "@/components/scroll-progress";
+import { NebulaBackground } from "@/components/nebula-background";
 
 const sans = Inter({
   variable: "--font-geist-sans",
@@ -111,7 +112,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}
+        style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
+        <NebulaBackground />
         <ArchiveLoading />
         <ScrollProgress />
         <ServiceWorkerProvider />

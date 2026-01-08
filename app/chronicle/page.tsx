@@ -10,7 +10,7 @@ export default async function ChroniclePage() {
   const events = await getAllTimelineEvents();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative py-24 md:py-32 overflow-hidden border-b border-border">
         {/* Ambient background */}

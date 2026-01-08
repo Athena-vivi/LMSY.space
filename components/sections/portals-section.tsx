@@ -31,7 +31,13 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
       className="group relative"
     >
       <Link href={href} className="block">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted/30">
+        <div
+          className="relative aspect-[4/5] overflow-hidden rounded-2xl border"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            borderColor: 'rgba(255, 255, 255, 0.05)',
+          }}
+        >
           {/* Background Gradient */}
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-110`} />
 
@@ -147,15 +153,7 @@ export function PortalsSection() {
   ];
 
   return (
-    <section className="relative py-24 md:py-32 bg-muted/20 overflow-hidden">
-      {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 opacity-[0.02]">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
-        }} />
-      </div>
-
+    <section className="relative py-24 md:py-32 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Section Header */}
         <motion.div

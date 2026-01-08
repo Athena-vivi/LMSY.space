@@ -93,15 +93,7 @@ export function ChronicleSection() {
   ];
 
   return (
-    <section className="relative py-24 md:py-32 bg-muted/20 overflow-hidden">
-      {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 opacity-[0.02]">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
-        }} />
-      </div>
-
+    <section className="relative py-24 md:py-32 overflow-hidden">
       {/* Ambient Glow */}
       <div className="absolute left-1/4 top-1/2 -translate-y-1/2 w-[40vw] h-[40vw] bg-gradient-radial from-lmsy-yellow/3 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
       <div className="absolute right-1/4 top-1/2 -translate-y-1/2 w-[40vw] h-[40vw] bg-gradient-radial from-lmsy-blue/3 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />

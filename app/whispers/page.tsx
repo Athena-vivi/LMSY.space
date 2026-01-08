@@ -135,7 +135,7 @@ export default function WhispersPage() {
   if (!mounted) return null;
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative min-h-screen">
       {/* Scanning Wave Animation */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-[0.02]">
         <motion.div
@@ -174,7 +174,7 @@ export default function WhispersPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2 }}
             >
-              <h1 className="font-serif text-7xl md:text-8xl lg:text-9xl font-light text-foreground/90 tracking-tight mb-4">
+              <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-light text-foreground/90 tracking-tight mb-4">
                 WHISPERS
               </h1>
               <p className="text-[10px] md:text-xs tracking-[0.4em] text-muted-foreground/50 font-mono uppercase">

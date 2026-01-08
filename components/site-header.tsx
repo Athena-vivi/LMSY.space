@@ -11,7 +11,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/components/language-provider';
 import { LanguageSwitcher } from '@/components/language-switcher';
-import { ThemeSwitcher } from '@/components/theme-switcher';
 import { SearchCommand } from '@/components/search-command';
 import { t } from '@/lib/languages';
 
@@ -37,7 +36,10 @@ export function SiteHeader() {
   const isHomePage = pathname === '/';
 
   return (
-    <header className={`sticky top-0 z-50 w-full ${isHomePage ? 'border-b border-border/50' : ''} bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60`}>
+    <header
+      className={`sticky top-0 z-50 w-full backdrop-blur-xl ${isHomePage ? 'border-b border-white/5' : ''}`}
+      style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
+    >
       <div className={`${isHomePage ? 'container mx-auto px-4 sm:px-6 lg:px-8' : 'px-6 py-4'}`}>
         <div className={`flex ${isHomePage ? 'h-16' : 'h-auto'} items-center ${isHomePage ? 'justify-between' : 'justify-start'}`}>
           {/* Logo */}
@@ -245,8 +247,6 @@ export function SiteHeader() {
             <SearchCommand />
             <div className="hidden md:flex items-center gap-6">
               <LanguageSwitcher />
-              <span className="text-muted-foreground/40 text-xs">|</span>
-              <ThemeSwitcher />
             </div>
 
             {/* Mobile Navigation */}
@@ -301,10 +301,6 @@ export function SiteHeader() {
                   <div className="flex items-center gap-2">
                     <LanguageSwitcher />
                     <span className="text-sm text-muted-foreground">Language</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ThemeSwitcher />
-                    <span className="text-sm text-muted-foreground">Theme</span>
                   </div>
                 </div>
               </SheetContent>

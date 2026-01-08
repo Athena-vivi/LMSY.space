@@ -150,7 +150,7 @@ function ExhibitionCard({ exhibition, index }: { exhibition: Exhibition; index: 
 
           {/* Decorative Border */}
           <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-br from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30 p-[2px]">
-            <div className="absolute inset-0 rounded-2xl bg-background/0" />
+            <div className="absolute inset-0 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0)' }} />
           </div>
         </div>
       </Link>
@@ -162,7 +162,7 @@ export default function ExhibitionsPage() {
   const { language } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative py-24 md:py-32 overflow-hidden">
         {/* Ambient Background */}

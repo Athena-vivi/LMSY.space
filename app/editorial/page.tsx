@@ -48,9 +48,11 @@ export default function EditorialPage() {
   const emptySlots = Math.max(0, totalSlots - publications.length);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Refined Masthead - 顶部精致页眉 */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4 md:px-12 md:py-6 bg-background/80 backdrop-blur-md border-b border-border/30">
+      <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4 md:px-12 md:py-6 backdrop-blur-md border-b border-white/5"
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
+      >
         <div className="flex items-start justify-between">
           {/* Left: Logo + Small Title */}
           <div className="flex items-center gap-6">

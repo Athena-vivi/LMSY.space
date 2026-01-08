@@ -49,7 +49,7 @@ export default function ResonancePage() {
   const [waveSpeed, setWaveSpeed] = useState(1);
 
   return (
-    <div className="relative min-h-screen" style={{ background: '#050505' }}>
+    <div className="relative min-h-screen">
       {/* Audio Grid Lines - 音频网格线 */}
       <div className="fixed inset-0 pointer-events-none">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">

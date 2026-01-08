@@ -40,7 +40,13 @@ export function SiteFooter() {
   }, [clickCount, lastClickTime, user, router]);
 
   return (
-    <footer className="border-t bg-black">
+    <footer
+      className="border-t backdrop-blur-xl"
+      style={{
+        borderColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+      }}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-6 md:py-8">
           {/* Quick Links - First Row */}

@@ -13,12 +13,7 @@ export function LongformSection() {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
-    <section className="relative py-24 md:py-32 bg-background overflow-hidden">
-      {/* Paper Texture Background */}
-      <div className="absolute inset-0 opacity-[0.03]">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIi8+CjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMwMDAiIG9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4=')]"></div>
-      </div>
-
+    <section className="relative py-24 md:py-32 overflow-hidden">
       {/* Subtle Ambient Glow */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-gradient-radial from-lmsy-yellow/3 via-lmsy-blue/2 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -111,7 +106,11 @@ export function LongformSection() {
 
             {/* Excerpt */}
             <motion.div
-              className="relative py-8 px-6 md:px-10 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/50"
+              className="relative py-8 px-6 md:px-10 rounded-2xl backdrop-blur-xl border"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                borderColor: 'rgba(255, 255, 255, 0.05)',
+              }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

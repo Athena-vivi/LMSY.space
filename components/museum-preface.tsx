@@ -104,28 +104,8 @@ export function MuseumPreface() {
     <section
       key={theme}
       ref={ref}
-      className="!bg-background relative py-32 md:py-48 overflow-hidden transition-colors duration-500 dark:!bg-[#0A0A0A]"
+      className="relative py-32 md:py-48 overflow-hidden transition-colors duration-500"
     >
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 opacity-30">
-        <div
-          className="absolute inset-0 transition-transform duration-[20s] ease-in-out animate-gradient-shift dark:opacity-20"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(251, 191, 36, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(56, 189, 248, 0.15) 0%, transparent 50%)',
-            backgroundSize: '200% 200%',
-          }}
-        />
-      </div>
-
-      <style jsx>{`
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-gradient-shift {
-          animation: gradient-shift 20s ease-in-out infinite;
-        }
-      `}</style>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
@@ -229,7 +209,10 @@ export function MuseumPreface() {
               {/* Glowing ring effect */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-lmsy-yellow via-lmsy-blue to-lmsy-yellow blur-md opacity-60 dark:opacity-40" />
               {/* Inner ring */}
-              <div className="absolute inset-1 rounded-full bg-background dark:bg-background/80 backdrop-blur-sm" />
+              <div
+                className="absolute inset-1 rounded-full backdrop-blur-sm"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
+              />
               {/* Center dot */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
             </div>

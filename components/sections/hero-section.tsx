@@ -11,7 +11,7 @@ export function HeroSection() {
   const { language } = useLanguage();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Ambient Lighting Effects */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* Left ambient glow - Yellow */}
@@ -98,7 +98,13 @@ export function HeroSection() {
               className="relative"
             >
               {/* Main Photo Container */}
-              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-muted/50 to-muted border border-border/50 shadow-2xl group cursor-pointer">
+              <div
+                className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl shadow-2xl group cursor-pointer border"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  borderColor: 'rgba(255, 255, 255, 0.05)',
+                }}
+              >
                 <Image
                   src="/lmsy-001.jpg"
                   alt="Lookmhee & Sonya"
@@ -113,7 +119,11 @@ export function HeroSection() {
 
                 {/* Editorial Badge - Shown on Hover */}
                 <motion.div
-                  className="absolute top-4 right-4 px-4 py-2 bg-black/60 backdrop-blur-sm rounded-full border border-lmsy-yellow/30 flex items-center gap-2"
+                  className="absolute top-4 right-4 px-4 py-2 backdrop-blur-sm rounded-full border flex items-center gap-2"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    borderColor: 'rgba(251, 191, 36, 0.3)',
+                  }}
                   initial={{ opacity: 0, scale: 0.8 }}
                   whileHover={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3 }}
