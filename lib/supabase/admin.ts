@@ -22,7 +22,7 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
  * 使用 SERVICE_ROLE_KEY，仅用于服务端管理操作
  *
  * ⚠️ 仅在以下场景使用：
- * 1. API 路由 (app/api/**/route.ts)
+ * 1. API 路由 (app/api 目录下的 route.ts)
  * 2. Server Components (没有 'use client' 的组件)
  * 3. Server Actions
  * 4. 中间件
