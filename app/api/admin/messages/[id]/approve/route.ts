@@ -1,13 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 // PATCH - 批准或拒绝留言
+// 使用馆长客户端进行管理操作
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,11 +11,11 @@ export async function PATCH(
   try {
     const { id } = await params;
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+    // 使用 SSR 客户端进行身份验证
     const supabaseAuth = createServerClient(
       rawUrl,
-      serviceRoleKey,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       {
         cookies: {
           get(name: string) {
@@ -39,8 +35,8 @@ export async function PATCH(
       );
     }
 
-    // 检查是否为管理员
-    const { data: adminCheck, error: adminError } = await supabase
+    // 检查是否为管理员（使用公共客户端，受 RLS 保护）
+    const { data: adminCheck, error: adminError } = await supabaseAuth
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -64,8 +60,9 @@ export async function PATCH(
       );
     }
 
-    // 更新留言状态
-    const { data, error } = await supabase
+    // 更新留言状态（使用馆长客户端，绕过 RLS）
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin
       .from('messages')
       .update({ is_approved })
       .eq('id', id)
@@ -94,6 +91,7 @@ export async function PATCH(
 }
 
 // DELETE - 删除留言
+// 使用馆长客户端进行管理操作
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -101,11 +99,11 @@ export async function DELETE(
   try {
     const { id } = await params;
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+    // 使用 SSR 客户端进行身份验证
     const supabaseAuth = createServerClient(
       rawUrl,
-      serviceRoleKey,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       {
         cookies: {
           get(name: string) {
@@ -125,8 +123,8 @@ export async function DELETE(
       );
     }
 
-    // 检查是否为管理员
-    const { data: adminCheck, error: adminError } = await supabase
+    // 检查是否为管理员（使用公共客户端，受 RLS 保护）
+    const { data: adminCheck, error: adminError } = await supabaseAuth
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -140,8 +138,9 @@ export async function DELETE(
       );
     }
 
-    // 删除留言
-    const { error } = await supabase
+    // 删除留言（使用馆长客户端，绕过 RLS）
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin
       .from('messages')
       .delete()
       .eq('id', id);

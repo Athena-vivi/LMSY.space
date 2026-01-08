@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, Plus, Tag, Link2, Eye, Save, Loader2, Images, Hash, User, Calendar, Sparkles } from 'lucide-react';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { uploadToR2 } from '@/lib/r2-client';
 import { SocialPreview } from '@/components/social-preview';
 import { generateArchiveNumber } from '@/lib/archive-number';
@@ -132,6 +132,8 @@ export default function AdminUploadPage() {
     setIsUploading(true);
 
     try {
+      const items = [];
+
       for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
 
@@ -172,14 +174,14 @@ export default function AdminUploadPage() {
         }
 
         // Prepare metadata
-        const metadata: any = {
+        items.push({
           image_url: uploadResult.path,
           title: i === 0 ? title : `${title} (${i + 1})`,
           description,
           tag: selectedTags[0] || null,
           caption: '',
           is_featured: i === 0,
-          archive_number: i === 0 ? archiveNumber : undefined,
+          archive_number: i === 0 ? archiveNumber : null,
           event_date: batchEventDate || eventDate,
           project_id: selectedProject,
           member_id: selectedMember,
@@ -187,14 +189,19 @@ export default function AdminUploadPage() {
           ...(batchCredits && { credits: batchCredits }),
           ...(batchCatalogId && { catalog_id: batchCatalogId }),
           ...(batchMagazineIssue && { magazine_issue: batchMagazineIssue }),
-        };
+        });
+      }
 
-        // Store in database
-        const { error: insertError } = await supabase
-          .from('gallery')
-          .insert(metadata);
+      // Sync to vault via backend API
+      const response = await fetch('/api/admin/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
 
-        if (insertError) throw insertError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync to vault');
       }
 
       // Reset form
@@ -211,10 +218,10 @@ export default function AdminUploadPage() {
       setBatchCatalogId('');
       setBatchMagazineIssue('');
 
-      alert('Successfully uploaded all images to R2 with blur placeholders!');
+      alert('Successfully uploaded all images to R2 and synced to vault!');
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Error uploading images. Please try again.');
+      alert(`Error: ${error instanceof Error ? error.message : 'Upload failed'}`);
     } finally {
       setIsUploading(false);
     }
@@ -665,7 +672,7 @@ export default function AdminUploadPage() {
                 {isUploading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    UPLOADING...
+                    SYNCING_TO_VAULT...
                   </>
                 ) : (
                   <>

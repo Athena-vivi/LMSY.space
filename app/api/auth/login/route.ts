@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
+// POST - 用户登录
+// 使用公共客户端进行身份验证
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
@@ -17,7 +19,6 @@ export async function POST(request: NextRequest) {
       success: true,
     });
 
-    // 使用 Service Role Key（如果可用）进行更强大的认证
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '');
 
     // 确保 URL 可用
@@ -29,25 +30,19 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseUrl = rawUrl;
-
-    // 确保至少有一个 key 可用
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!serviceRoleKey && !anonKey) {
+    if (!anonKey) {
       return NextResponse.json(
-        { error: 'Server configuration error: Missing Supabase credentials' },
+        { error: 'Server configuration error: Missing NEXT_PUBLIC_SUPABASE_ANON_KEY' },
         { status: 500 }
       );
     }
 
-    // TypeScript non-null assertion is safe here because we checked both keys above
-    const supabaseKey = (serviceRoleKey || anonKey)!;
-
-    // Create Supabase client with cookie handling
+    // Create Supabase client with cookie handling (使用公共客户端)
     const supabase = createServerClient(
       supabaseUrl,
-      supabaseKey,
+      anonKey,
       {
         cookies: {
           get(name: string) {

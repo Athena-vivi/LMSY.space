@@ -1,12 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from '@/lib/supabase/client';
 
 // GET - 获取已批准的留言
+// 使用公共客户端，因为只需要读取已批准的公开留言
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -38,6 +34,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - 提交新留言
+// 使用公共客户端，新留言默认未批准，需要管理员在后台审核
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -83,7 +80,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 插入留言
+    // 插入留言（使用公共客户端，受 RLS 策略保护）
     const { data, error } = await supabase
       .from('messages')
       .insert([

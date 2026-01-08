@@ -1,21 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
-import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createServerClient } from '@supabase/ssr';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 // GET - 获取所有留言（包括待审核的）
+// 使用馆长客户端进行管理操作
 export async function GET(request: NextRequest) {
   try {
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+    // 使用 SSR 客户端进行身份验证
     const supabaseAuth = createServerClient(
       rawUrl,
-      serviceRoleKey,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       {
         cookies: {
           get(name: string) {
@@ -35,8 +31,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 检查是否为管理员
-    const { data: adminCheck, error: adminError } = await supabase
+    // 检查是否为管理员（使用公共客户端，受 RLS 保护）
+    const { data: adminCheck, error: adminError } = await supabaseAuth
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -50,12 +46,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 获取所有留言
+    // 获取所有留言（使用馆长客户端，绕过 RLS）
+    const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // 'pending', 'approved', 'all'
     const limit = parseInt(searchParams.get('limit') || '100');
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('messages')
       .select('*')
       .order('created_at', { ascending: false })
