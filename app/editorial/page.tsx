@@ -99,21 +99,33 @@ export default function EditorialPage() {
           const galleryImages = project.gallery || [];
           const artifactCount = galleryImages.length;
 
-          // Determine cover URL: use project cover_url or first gallery image
+          // Determine cover URL: use project cover_url or find from gallery
           let coverUrl = project.cover_url;
           let blurData = project.blur_data;
+          let coverSource = 'project';
 
           if (!coverUrl && galleryImages.length > 0) {
-            // Sort gallery images by caption (numeric) to get the first one
-            const sortedGallery = [...galleryImages].sort((a, b) => {
-              const aNum = parseInt(a.caption?.match(/\d+/)?.[0] || '999');
-              const bNum = parseInt(b.caption?.match(/\d+/)?.[0] || '999');
-              return aNum - bNum;
-            });
+            // Priority 1: Look for caption exactly '000' (cover image)
+            const coverImage = galleryImages.find((img: GalleryImage) => img.caption === '000');
 
-            coverUrl = sortedGallery[0].image_url;
-            blurData = sortedGallery[0].blur_data;
-            console.log('[EDITORIAL] Using gallery cover for', project.title);
+            if (coverImage) {
+              coverUrl = coverImage.image_url;
+              blurData = coverImage.blur_data;
+              coverSource = 'gallery-000';
+            } else {
+              // Priority 2: Sort by caption numeric and take lowest sequence
+              const sortedGallery = [...galleryImages].sort((a, b) => {
+                const aNum = parseInt(a.caption?.match(/\d+/)?.[0] || '999');
+                const bNum = parseInt(b.caption?.match(/\d+/)?.[0] || '999');
+                return aNum - bNum;
+              });
+
+              coverUrl = sortedGallery[0].image_url;
+              blurData = sortedGallery[0].blur_data;
+              coverSource = `gallery-${sortedGallery[0].caption}`;
+            }
+
+            console.log('[EDITORIAL] Cover fallback for', project.title, '-> source:', coverSource);
           }
 
           return {
@@ -122,6 +134,7 @@ export default function EditorialPage() {
             blur_data: blurData,
             gallery_images: galleryImages,
             artifact_count: artifactCount,
+            cover_source: coverSource,
           };
         });
 

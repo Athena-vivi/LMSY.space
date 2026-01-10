@@ -9,6 +9,7 @@ import EditorialHeader from './_components/editorial-header';
 import GalleryGrid from './_components/gallery-grid';
 import CuratorSidebar from './_components/curator-sidebar';
 import ImageLightbox from './_components/image-lightbox';
+import StorageWidget from './_components/storage-widget';
 import { Toast } from './_components/toast';
 
 interface UploadItem {
@@ -190,6 +191,55 @@ export default function AdminUploadPage() {
       return;
     }
 
+    // Check for duplicates by comparing with existing R2 objects
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      // Get all existing objects with their sizes
+      const checkResponse = await fetch('/api/admin/check-duplicate', {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
+
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        if (checkData.success && checkData.objects) {
+          const existingSizes = new Set(checkData.objects.map((obj: any) => obj.size));
+
+          // Check each file for size match
+          const duplicates: string[] = [];
+          const nonDuplicateFiles = files.filter(file => {
+            if (existingSizes.has(file.size)) {
+              duplicates.push(file.name);
+              return false;
+            }
+            return true;
+          });
+
+          if (duplicates.length > 0) {
+            const duplicateList = duplicates.join('\n• ');
+            alert(`⚠️ DUPLICATE DETECTION\n\n以下藏品可能已在馆中 (相同文件大小):\n\n• ${duplicateList}\n\n如需确认是否重复，请使用手动补账功能查看现有馆藏。`);
+
+            // Only add non-duplicate files
+            if (nonDuplicateFiles.length === 0) {
+              return; // All files are duplicates
+            }
+
+            // Update files to only non-duplicates
+            files = nonDuplicateFiles;
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Duplicate check failed, proceeding with upload:', error);
+    }
+
     // Generate previews with eternal UUIDs
     const newItems = await Promise.all(
       files.map(async (file) => {
@@ -283,6 +333,9 @@ export default function AdminUploadPage() {
       console.log(`[UPLOAD] Starting sequential upload of ${uploadItems.length} files...`);
 
       // Upload each file using the new API - STOP ON FIRST ERROR
+      const uploadResults: any[] = [];
+      let totalWebPSize = 0;
+
       for (let i = 0; i < uploadItems.length; i++) {
         const item = uploadItems[i];
         const file = item.file;
@@ -293,6 +346,12 @@ export default function AdminUploadPage() {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('event_date', batchEventDate || eventDate);
+
+        // 🔒 CRITICAL: Add project_id if a project is selected
+        if (selectedProject) {
+          formData.append('project_id', selectedProject);
+          console.log(`[UPLOAD] Adding project_id: ${selectedProject}`);
+        }
 
         // Add manual catalog ID if unlocked and manually edited (Astra 馆长的最终解释权)
         if (!isCatalogLocked && hasManuallyEdited && archiveNumber) {
@@ -375,6 +434,12 @@ export default function AdminUploadPage() {
           return; // STOP IMMEDIATELY
         }
 
+        // Collect result for storage info
+        uploadResults.push(result.data);
+        if (result.data.metadata?.webpSize) {
+          totalWebPSize += result.data.metadata.webpSize;
+        }
+
         console.log(`[UPLOAD] ✅ [${i + 1}/${uploadItems.length}] Successfully uploaded: ${file.name}`);
         console.log(`[UPLOAD]    Catalog ID: ${result.data.catalog_id}`);
         console.log(`[UPLOAD]    URL: ${result.data.image_url}`);
@@ -382,7 +447,36 @@ export default function AdminUploadPage() {
 
       // ✅ ALL UPLOADS SUCCESSFUL
       console.log('[UPLOAD] ✅✅✅ ALL UPLOADS COMPLETE ✅✅✅');
-      alert(`✅ Successfully uploaded all ${uploadItems.length} images!`);
+
+      // Fetch storage info after upload
+      let storageInfo = '';
+      try {
+        const storageHeaders: Record<string, string> = {};
+        if (session?.access_token) {
+          storageHeaders['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const storageResponse = await fetch('/api/admin/storage', {
+          headers: storageHeaders,
+          credentials: 'include',
+        });
+
+        if (storageResponse.ok) {
+          const storageData = await storageResponse.json();
+          if (storageData.success) {
+            storageInfo = `\n\nStorage: ${storageData.usage.remainingFormatted} / ${storageData.usage.limitGB} GB Remaining`;
+          }
+        }
+      } catch (e) {
+        console.log('Failed to fetch storage info');
+      }
+
+      // Format WebP size info
+      const webpSizeInfo = totalWebPSize > 0
+        ? `\n\nOptimized: ${(totalWebPSize / 1024).toFixed(2)} KB WebP Total`
+        : '';
+
+      alert(`✅ Successfully uploaded all ${uploadItems.length} images!${webpSizeInfo}${storageInfo}`);
 
       // Reset form on success
       uploadItems.forEach(item => URL.revokeObjectURL(item.preview));
@@ -475,7 +569,7 @@ export default function AdminUploadPage() {
 
       <div className="relative z-10 px-4 py-6 max-w-[1800px] mx-auto">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-start justify-between gap-6">
           <div>
             <h1 className="font-serif text-3xl font-light text-white/90 mb-1">
               Bulk Upload Studio
@@ -484,15 +578,21 @@ export default function AdminUploadPage() {
               Curator's Reminder: Respect the shutter's effort.
             </p>
           </div>
-          <div className="text-right">
-            <div className="text-[10px] font-mono text-white/30">
-              {uploadItems.length} / 50 IMAGES
-            </div>
-            {uploadItems.length > 0 && (
-              <div className="text-[8px] font-mono text-lmsy-yellow/60 mt-1">
-                Event: {eventDate}
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="text-[10px] font-mono text-white/30">
+                {uploadItems.length} / 50 IMAGES
               </div>
-            )}
+              {uploadItems.length > 0 && (
+                <div className="text-[8px] font-mono text-lmsy-yellow/60 mt-1">
+                  Event: {eventDate}
+                </div>
+              )}
+            </div>
+            {/* Storage Widget */}
+            <div className="w-48">
+              <StorageWidget />
+            </div>
           </div>
         </div>
 

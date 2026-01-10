@@ -1,8 +1,10 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, PlusCircle } from 'lucide-react';
+import { X, Loader2, PlusCircle, Database } from 'lucide-react';
+import { useState } from 'react';
 import type { Project, Member } from '@/lib/supabase/types';
+import { supabase } from '@/lib/supabase/client';
 import QuickProjectModal from './quick-project-modal';
 
 interface CuratorSidebarProps {
@@ -85,6 +87,69 @@ export default function CuratorSidebar({
   onToggleProjectModal,
   onProjectCreated,
 }: CuratorSidebarProps) {
+  const [isReconciling, setIsReconciling] = useState(false);
+
+  const handleReconcile = async () => {
+    if (!confirm('手动补账: 扫描 R2 仓库并补齐缺失的数据库记录。\n\n此操作将:\n1. 扫描 R2 中的所有图片\n2. 对比数据库找出缺失记录\n3. 自动补齐缺失的数据库条目\n\n是否继续?')) {
+      return;
+    }
+
+    setIsReconciling(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      // First, get preview
+      const previewResponse = await fetch('/api/admin/reconcile', {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
+
+      if (!previewResponse.ok) {
+        throw new Error('Failed to get reconciliation preview');
+      }
+
+      const preview = await previewResponse.json();
+
+      if (!confirm(`预览结果:\n\n总计: ${preview.preview.total} 个文件\n需要补账: ${preview.preview.toCreate} 个\n已存在: ${preview.preview.exists} 个\n格式无效: ${preview.preview.invalid} 个\n\n是否执行补账?`)) {
+        setIsReconciling(false);
+        return;
+      }
+
+      // Execute reconciliation
+      const response = await fetch('/api/admin/reconcile', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Reconciliation failed');
+      }
+
+      const result = await response.json();
+
+      alert(`补账完成!\n\n成功创建: ${result.summary.created}\n已存在: ${result.summary.exists}\n失败: ${result.summary.errored}\n\n总计处理: ${result.summary.total}`);
+
+      // Refresh the page to show new records
+      window.location.reload();
+    } catch (error) {
+      console.error('Reconciliation error:', error);
+      alert(`补账失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
   return (
     <div className="col-span-12 xl:col-span-2 space-y-4">
       {/* Group A: BASE_META */}
@@ -351,6 +416,36 @@ export default function CuratorSidebar({
           </span>
         ) : (
           `UPLOAD ALL (${uploadItemsCount})`
+        )}
+      </motion.button>
+
+      {/* Manual Reconciliation Button */}
+      <motion.button
+        onClick={handleReconcile}
+        disabled={isReconciling || isUploading}
+        className="w-full h-10 rounded border font-mono text-xs tracking-wider transition-all duration-300 relative overflow-hidden"
+        style={{
+          borderColor: !isReconciling && !isUploading ? 'rgba(56, 189, 248, 0.5)' : 'rgba(255, 255, 255, 0.1)',
+          color: !isReconciling && !isUploading ? 'rgba(56, 189, 248, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+          backgroundColor: 'rgba(0, 0, 0, 0)',
+          cursor: !isReconciling && !isUploading ? 'pointer' : 'not-allowed',
+        }}
+        whileHover={!isReconciling && !isUploading ? {
+          borderColor: 'rgba(56, 189, 248, 0.7)',
+          textShadow: '0 0 15px rgba(56, 189, 248, 0.8)',
+        } : {}}
+        whileTap={!isReconciling && !isUploading ? { scale: 0.98 } : {}}
+      >
+        {isReconciling ? (
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            SYNCING R2 → DB...
+          </span>
+        ) : (
+          <span className="flex items-center justify-center gap-2">
+            <Database className="h-3 w-3" />
+            手动补账 (R2 → DB)
+          </span>
         )}
       </motion.button>
 

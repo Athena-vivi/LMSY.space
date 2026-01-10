@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/client-s3';
 
 // 🔒 SECURITY: This file must only be used on the server side
 // Environment variables without NEXT_PUBLIC_ prefix are never available in the browser
@@ -154,6 +154,90 @@ export function getRelativePath(url: string): string {
   } catch {
     // If URL parsing fails, return as is
     return url;
+  }
+}
+
+/**
+ * List objects in R2 bucket with optional prefix filter
+ * @param prefix - Optional prefix to filter objects (e.g., 'magazines/2024/')
+ * @returns Array of R2 object metadata
+ */
+export async function listR2Objects(prefix?: string): Promise<{
+  success: boolean;
+  objects?: Array<{
+    key: string;
+    size: number;
+    lastModified: Date;
+    etag: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: R2_BUCKET_NAME,
+      Prefix: prefix,
+    });
+
+    const response = await getR2Client().send(command);
+
+    const objects = (response.Contents || []).map(obj => ({
+      key: obj.Key!,
+      size: obj.Size || 0,
+      lastModified: obj.LastModified || new Date(),
+      etag: obj.ETag?.replace(/"/g, '') || '',
+    }));
+
+    console.log(`[R2_LIST] Found ${objects.length} objects with prefix: ${prefix || '(all)'}`);
+
+    return {
+      success: true,
+      objects,
+    };
+  } catch (error) {
+    console.error('[R2_LIST] Error listing objects:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Get object metadata from R2
+ * @param key - Object key in R2 bucket
+ * @returns Object metadata
+ */
+export async function getR2ObjectMetadata(key: string): Promise<{
+  success: boolean;
+  metadata?: {
+    size: number;
+    contentType: string;
+    lastModified: Date;
+  };
+  error?: string;
+}> {
+  try {
+    const command = new HeadObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+    });
+
+    const response = await getR2Client().send(command);
+
+    return {
+      success: true,
+      metadata: {
+        size: response.ContentLength || 0,
+        contentType: response.ContentType || 'application/octet-stream',
+        lastModified: response.LastModified || new Date(),
+      },
+    };
+  } catch (error) {
+    console.error('[R2_METADATA] Error getting object metadata:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
