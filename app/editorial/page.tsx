@@ -11,12 +11,14 @@ interface Magazine {
   id: string;
   title: string;
   category: string;
-  cover_url: string;
-  release_date: string;
+  cover_url: string | null;
+  release_date: string | null;
   description: string | null;
   catalog_id: string | null;
   blur_data: string | null;
   artifact_count?: number;
+  gallery_cover_url?: string | null;
+  gallery_blur_data?: string | null;
 }
 
 interface NebulaColors {
@@ -52,34 +54,74 @@ export default function EditorialPage() {
   useEffect(() => {
     async function fetchMagazines() {
       try {
+        console.log('[EDITORIAL] Fetching magazines from lmsy_archive.projects...');
+
         const { data, error } = await supabase
+          .schema('lmsy_archive')
           .from('projects')
           .select('*')
-          .eq('category', 'magazine')
+          .eq('category', 'editorial')
           .order('release_date', { ascending: false });
 
         if (error) {
-          console.error('Failed to fetch magazines:', error);
+          console.error('[EDITORIAL] ❌ Failed to fetch magazines:', error);
           setMagazines([]);
-        } else {
-          // Fetch artifact counts for each magazine
-          const magazinesWithCounts = await Promise.all(
-            (data || []).map(async (magazine) => {
-              const { count } = await supabase
-                .from('gallery')
-                .select('*', { count: 'exact', head: true })
-                .eq('project_id', magazine.id);
-
-              return {
-                ...magazine,
-                artifact_count: (count || 0) + 1, // +1 for the cover itself
-              };
-            })
-          );
-          setMagazines(magazinesWithCounts);
+          return;
         }
+
+        console.log('[EDITORIAL_DEBUG] Raw data from DB:', data);
+
+        if (!data || data.length === 0) {
+          console.log('[EDITORIAL] ⚠️ No editorial projects found');
+          setMagazines([]);
+          return;
+        }
+
+        // Fetch artifact counts and gallery cover fallback for each magazine
+        const magazinesWithExtras = await Promise.all(
+          data.map(async (magazine) => {
+            // Count gallery items for this project
+            const { count } = await supabase
+              .schema('lmsy_archive')
+              .from('gallery')
+              .select('*', { count: 'exact', head: true })
+              .eq('project_id', magazine.id);
+
+            // If no cover_url in projects, try to get the 000 image from gallery
+            let galleryCoverUrl = null;
+            let galleryBlurData = null;
+
+            if (!magazine.cover_url) {
+              const { data: galleryData } = await supabase
+                .schema('lmsy_archive')
+                .from('gallery')
+                .select('image_url, blur_data')
+                .eq('project_id', magazine.id)
+                .ilike('caption', '%000%')
+                .limit(1)
+                .single();
+
+              if (galleryData) {
+                galleryCoverUrl = galleryData.image_url;
+                galleryBlurData = galleryData.blur_data;
+                console.log('[EDITORIAL] Found gallery cover for', magazine.title, ':', galleryCoverUrl);
+              }
+            }
+
+            return {
+              ...magazine,
+              artifact_count: (count || 0),
+              gallery_cover_url: galleryCoverUrl,
+              gallery_blur_data: galleryBlurData,
+            };
+          })
+        );
+
+        console.log('[EDITORIAL] ✅ Successfully loaded', magazinesWithExtras.length, 'magazines');
+        console.log('[EDITORIAL_DEBUG] Processed magazines:', magazinesWithExtras);
+        setMagazines(magazinesWithExtras);
       } catch (err) {
-        console.error('Error fetching magazines:', err);
+        console.error('[EDITORIAL] ❌ Error fetching magazines:', err);
         setMagazines([]);
       } finally {
         setLoading(false);
@@ -171,13 +213,10 @@ export default function EditorialPage() {
                     />
                   ))}
 
-                  {/* Empty Slots for curation */}
-                  {[...Array(Math.max(0, 8 - magazines.length))].map((_, index) => (
-                    <EmptySlot
-                      key={`empty-${index}`}
-                      index={magazines.length + index}
-                    />
-                  ))}
+                  {/* Only show empty slots when we have zero magazines */}
+                  {magazines.length === 0 && (
+                    <EmptySlot index={0} />
+                  )}
                 </>
               ) : (
                 // Loading skeletons
@@ -213,6 +252,10 @@ interface MagazineSlotProps {
 function MagazineSlot({ magazine, index, catalogId, onHover, theme }: MagazineSlotProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Determine cover URL and blur data
+  const coverUrl = magazine.cover_url || magazine.gallery_cover_url;
+  const blurData = magazine.blur_data || magazine.gallery_blur_data;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -235,16 +278,16 @@ function MagazineSlot({ magazine, index, catalogId, onHover, theme }: MagazineSl
           </div>
 
           {/* Cover Image with blur-up */}
-          {magazine.cover_url ? (
+          {coverUrl ? (
             <Image
-              src={magazine.cover_url}
+              src={coverUrl}
               alt={magazine.title}
               fill
               className={`object-cover transition-transform duration-700 group-hover:scale-105 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
               placeholder="blur"
-              blurDataURL={magazine.blur_data || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyL/wAARCADIAeAADAREAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Jj9T5r6JzH8qg9hjtiT0OqT5VoT8VfG8a8M+Jt0X05ZT6bqHKKqWpSmJySMipW0pJzaX4JMqopJlEYxjmUxlJcqWpSmQyOV5UqTlKUhlKcYyxnKCUooyinKcIyinCUYxjmOclSjmKcYynCUYxjmOclSnGMZzjlKcYynGMZzjlKUoRylKMUoypTFKMUwplylMUwplyjGMU5ylKMUoRylGMQ=='}
+              blurDataURL={blurData || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyL/wAARCADIAeAADAREAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Jj9T5r6JzH8qg9hjtiT0OqT5VoT8VfG8a8M+Jt0X05ZT6bqHKKqWpSmJySMipW0pJzaX4JMqopJlEYxjmUxlJcqWpSmQyOV5UqTlKUhlKcYyxnKCUooyinKcIyinCUYxjmOclSjmKcYynCUYxjmOclSnGMZzjlKcYynGMZzjlKUoRylKMUoypTFKMUwplylMUwplyjGMU5ylKMUoRylGMQ=='}
               onLoad={() => setImageLoaded(true)}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               priority
@@ -263,7 +306,7 @@ function MagazineSlot({ magazine, index, catalogId, onHover, theme }: MagazineSl
           {/* Artifact Count Overlay - Always visible */}
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 rounded px-2 py-1">
             <span className="font-mono text-[8px] text-white/70 tracking-[0.15em] uppercase">
-              {magazine.artifact_count || 1} ARTIFACT{magazine.artifact_count !== 1 ? 'S' : ''} INSIDE
+              {magazine.artifact_count || 0} ARTIFACT{magazine.artifact_count !== 1 ? 'S' : ''} INSIDE
             </span>
           </div>
 

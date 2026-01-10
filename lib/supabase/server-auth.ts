@@ -83,33 +83,3 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthRe
 
   return { user: null, error: 'Authentication failed', method: 'none' };
 }
-
-/**
- * 验证管理员权限
- * 检查用户是否在 admin_users 表中
- */
-export async function verifyAdminUser(
-  request: NextRequest,
-  supabaseAuth: any
-): Promise<{ isAdmin: boolean; error: string | null }> {
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return { isAdmin: false, error: authResult.error || 'Unauthorized' };
-  }
-
-  // 检查是否为管理员
-  const { data: adminCheck, error } = await supabaseAuth
-    .schema('lmsy_archive')
-    .from('admin_users')
-    .select('*')
-    .eq('user_id', authResult.user.id)
-    .eq('is_active', true)
-    .single();
-
-  if (error || !adminCheck) {
-    return { isAdmin: false, error: 'Forbidden: Admin access required' };
-  }
-
-  return { isAdmin: true, error: null };
-}

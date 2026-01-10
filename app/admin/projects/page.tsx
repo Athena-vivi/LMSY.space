@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { supabase, type Project } from '@/lib/supabase';
+import EditProjectModal from './_components/edit-project-modal';
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -15,6 +16,10 @@ export default function AdminProjectsPage() {
     type: 'success',
   });
 
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -22,6 +27,7 @@ export default function AdminProjectsPage() {
   const fetchProjects = async () => {
     setLoading(true);
     const { data, error } = await supabase
+      .schema('lmsy_archive')
       .from('projects')
       .select('*')
       .order('release_date', { ascending: false });
@@ -35,8 +41,24 @@ export default function AdminProjectsPage() {
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
   };
 
+  const handleEdit = (project: Project) => {
+    setSelectedProject(project);
+    setEditModalOpen(true);
+  };
+
+  const handleUpdate = () => {
+    // Refresh the projects list after successful update
+    fetchProjects();
+    showToast('PROJECT_RECORD_UPDATED');
+  };
+
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('projects').delete().eq('id', id);
+    const { error } = await supabase
+      .schema('lmsy_archive')
+      .from('projects')
+      .delete()
+      .eq('id', id);
+
     if (!error) {
       setProjects(prev => prev.filter(p => p.id !== id));
       showToast('PROJECT_DELETED_FROM_ARCHIVE');
@@ -289,7 +311,10 @@ export default function AdminProjectsPage() {
 
                   {/* Actions */}
                   <div className="col-span-1 flex items-center justify-end gap-2">
-                    <button className="p-1.5 text-white/20 hover:text-white/40 hover:bg-white/5 transition-all">
+                    <button
+                      onClick={() => handleEdit(project)}
+                      className="p-1.5 text-white/20 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
+                    >
                       <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
@@ -305,6 +330,14 @@ export default function AdminProjectsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Edit Project Modal */}
+      <EditProjectModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        project={selectedProject}
+        onUpdate={handleUpdate}
+      />
 
       {/* Toast Notification */}
       <AnimatePresence>

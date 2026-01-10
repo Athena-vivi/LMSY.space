@@ -32,6 +32,7 @@ export interface Project {
   description: string | null;
   cover_url: string | null;
   watch_url: string | null;
+  tags: string[] | null;
   created_at: string;
 }
 
