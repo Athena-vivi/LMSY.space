@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ExternalLink, Play, BookOpen, Camera } from 'lucide-react';
+import { ExternalLink, Play, BookOpen, Camera, FileText, Sparkles, Calendar, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/components/language-provider';
@@ -12,16 +12,37 @@ import { supabase, type Project } from '@/lib/supabase';
 import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
 
-const categoryIcons = {
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   series: Play,
+  editorial: FileText,
+  appearance: Sparkles,
+  journal: Calendar,
+  commercial: Briefcase,
+  // Legacy support
   music: BookOpen,
   magazine: Camera,
 };
 
-const categoryColors = {
+const categoryColors: Record<string, string> = {
   series: 'from-rose-100 to-rose-200 dark:from-rose-900/30 dark:to-rose-950/30',
+  editorial: 'from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-950/30',
+  appearance: 'from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-950/30',
+  journal: 'from-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:to-emerald-950/30',
+  commercial: 'from-violet-100 to-violet-200 dark:from-violet-900/30 dark:to-violet-950/30',
+  // Legacy support
   music: 'from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-950/30',
   magazine: 'from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-950/30',
+};
+
+const categoryLabels: Record<string, string> = {
+  series: 'TV_SERIES',
+  editorial: 'EDITORIAL',
+  appearance: 'APPEARANCE',
+  journal: 'JOURNAL',
+  commercial: 'COMMERCIAL',
+  // Legacy support
+  music: 'MUSIC_VIDEO',
+  magazine: 'MAGAZINE',
 };
 
 export default function ProjectsPage() {
@@ -105,7 +126,7 @@ export default function ProjectsPage() {
                           <div className="absolute top-4 left-4">
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-black/50 backdrop-blur text-xs font-medium">
                               <Icon className="h-3 w-3" />
-                              {project.category.toUpperCase()}
+                              {categoryLabels[project.category] || project.category.toUpperCase()}
                             </span>
                           </div>
 
