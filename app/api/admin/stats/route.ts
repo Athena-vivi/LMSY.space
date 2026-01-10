@@ -7,8 +7,8 @@ export async function GET() {
 
     // Get counts from all collections using admin client
     const [galleryResult, projectsResult] = await Promise.all([
-      supabaseAdmin.from('gallery').select('id', { count: 'exact', head: true }),
-      supabaseAdmin.from('projects').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.schema('lmsy_archive').from('gallery').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.schema('lmsy_archive').from('projects').select('id', { count: 'exact', head: true }),
     ]);
 
     return NextResponse.json({

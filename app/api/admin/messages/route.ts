@@ -34,8 +34,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 检查是否为管理员（使用公共客户端，受 RLS 保护）
+    // 检查是否为管理员（显式指定 schema）
     const { data: adminCheck, error: adminError } = await supabaseAuth
+      .schema('lmsy_archive')
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -49,13 +50,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 获取所有留言（使用馆长客户端，绕过 RLS）
+    // 获取所有留言（显式指定 schema）
     const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // 'pending', 'approved', 'all'
     const limit = parseInt(searchParams.get('limit') || '100');
 
     let query = supabaseAdmin
+      .schema('lmsy_archive')
       .from('messages')
       .select('*')
       .order('created_at', { ascending: false })

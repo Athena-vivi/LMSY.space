@@ -95,6 +95,8 @@ export default function EditorialHeader({
                 width={28}
                 height={28}
                 className="w-7 h-7"
+                sizes="28px"
+                priority
               />
             </motion.button>
             {/* Custom Tooltip */}

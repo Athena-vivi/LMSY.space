@@ -91,7 +91,7 @@ export default function CategoryDropdown({ options, value, onChange }: CategoryD
                     className="w-full px-4 py-3 text-left font-mono text-xs flex items-center gap-3 relative transition-all duration-150"
                     style={{
                       color: isSelected ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.5)',
-                      backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                      backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0)',
                     }}
                     whileHover={{
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -144,7 +144,7 @@ export default function CategoryDropdown({ options, value, onChange }: CategoryD
           ease: 'easeInOut',
         }}
         style={{
-          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, rgba(0, 0, 0, 0) 70%)',
         }}
       />
     </div>

@@ -334,7 +334,7 @@ export default function CuratorSidebar({
         style={{
           borderColor: uploadItemsCount > 0 && !isUploading ? 'rgba(251, 191, 36, 0.5)' : 'rgba(255, 255, 255, 0.1)',
           color: uploadItemsCount > 0 && !isUploading ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-          backgroundColor: 'transparent',
+          backgroundColor: 'rgba(0, 0, 0, 0)',
           textShadow: uploadItemsCount > 0 && !isUploading ? '0 0 10px rgba(251, 191, 36, 0.5)' : 'none',
           cursor: uploadItemsCount > 0 && !isUploading ? 'pointer' : 'not-allowed',
         }}

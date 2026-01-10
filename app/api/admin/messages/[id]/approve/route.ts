@@ -38,8 +38,9 @@ export async function PATCH(
       );
     }
 
-    // 检查是否为管理员（使用公共客户端，受 RLS 保护）
+    // 检查是否为管理员（显式指定 schema）
     const { data: adminCheck, error: adminError } = await supabaseAuth
+      .schema('lmsy_archive')
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -63,9 +64,10 @@ export async function PATCH(
       );
     }
 
-    // 更新留言状态（使用馆长客户端，绕过 RLS）
+    // 更新留言状态（显式指定 schema）
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('messages')
       .update({ is_approved })
       .eq('id', id)
@@ -129,8 +131,9 @@ export async function DELETE(
       );
     }
 
-    // 检查是否为管理员（使用公共客户端，受 RLS 保护）
+    // 检查是否为管理员（显式指定 schema）
     const { data: adminCheck, error: adminError } = await supabaseAuth
+      .schema('lmsy_archive')
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -144,9 +147,10 @@ export async function DELETE(
       );
     }
 
-    // 删除留言（使用馆长客户端，绕过 RLS）
+    // 删除留言（显式指定 schema）
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('messages')
       .delete()
       .eq('id', id);

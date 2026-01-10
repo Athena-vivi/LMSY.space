@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
 
     const { data, error } = await supabase
+      .schema('lmsy_archive')
       .from('messages')
       .select('*')
       .eq('is_approved', true)
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
 
     // 插入留言（使用公共客户端，受 RLS 策略保护）
     const { data, error } = await supabase
+      .schema('lmsy_archive')
       .from('messages')
       .insert([
         {

@@ -43,8 +43,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查是否为管理员（额外验证，受 RLS 保护）
+    // 检查是否为管理员（显式指定 schema，额外验证）
     const { data: adminCheck, error: adminError } = await supabaseAuth
+      .schema('lmsy_archive')
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
 
     for (const item of items) {
       const { data, error } = await supabaseAdmin
+        .schema('lmsy_archive')
         .from('gallery')
         .insert({
           image_url: item.image_url,

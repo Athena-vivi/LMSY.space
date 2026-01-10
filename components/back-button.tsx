@@ -35,6 +35,7 @@ export function BackButton() {
             alt="LMSY Logo"
             fill
             className="object-contain"
+            sizes="32px"
             priority
           />
         </div>

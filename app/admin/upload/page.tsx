@@ -66,7 +66,19 @@ export default function AdminUploadPage() {
 
     const fetchNextCatalogId = async () => {
       try {
-        const response = await fetch('/api/admin/upload');
+        // 🔒 CRITICAL: Get session for Bearer token
+        const { data: { session } } = await supabase.auth.getSession();
+
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const response = await fetch('/api/admin/upload', {
+          credentials: 'include',
+          headers,
+        });
+
         if (response.ok) {
           const data = await response.json();
           setArchiveNumber(data.next_catalog_id);
@@ -138,9 +150,10 @@ export default function AdminUploadPage() {
     const fetchData = async () => {
       setIsLoading(true);
       const [projectsData, membersData, galleryData] = await Promise.all([
-        supabase.from('projects').select('*').order('title'),
-        supabase.from('profiles').select('*'),
-        supabase.from('gallery').select('tag'),
+        // 🔒 CRITICAL: 显式指定 schema
+        supabase.schema('lmsy_archive').from('projects').select('*').order('title'),
+        supabase.schema('lmsy_archive').from('profiles').select('*'),
+        supabase.schema('lmsy_archive').from('gallery').select('tag'),
       ]);
 
       if (projectsData.data) setProjects(projectsData.data);
@@ -254,6 +267,20 @@ export default function AdminUploadPage() {
     setIsUploading(true);
 
     try {
+      // 🔒 CRITICAL: Verify session exists before API calls
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        console.error('[UPLOAD] No valid session:', sessionError);
+        alert('Authentication required. Please log in again.');
+        // Force redirect to login page
+        window.location.href = '/admin/login';
+        setIsUploading(false);
+        return;
+      }
+
+      console.log('[UPLOAD] Session verified for user:', session.user.email);
+
       let successCount = 0;
       let failCount = 0;
       const errors: string[] = [];
@@ -287,10 +314,18 @@ export default function AdminUploadPage() {
             formData.append('is_featured', 'true');
           }
 
+          // 🔒 CRITICAL: Add Authorization header with session token
+          const headers: Record<string, string> = {};
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+          }
+
           // Upload via API
           const response = await fetch('/api/admin/upload', {
             method: 'POST',
+            headers,
             body: formData,
+            credentials: 'include',
           });
 
           if (!response.ok) {
@@ -339,7 +374,17 @@ export default function AdminUploadPage() {
         setBatchMagazineIssue('');
 
         // Refresh catalog ID for next upload
-        const response = await fetch('/api/admin/upload');
+        const { data: { session: refreshSession } } = await supabase.auth.getSession();
+        const refreshHeaders: Record<string, string> = {};
+        if (refreshSession?.access_token) {
+          refreshHeaders['Authorization'] = `Bearer ${refreshSession.access_token}`;
+        }
+
+        const response = await fetch('/api/admin/upload', {
+          credentials: 'include',
+          headers: refreshHeaders,
+        });
+
         if (response.ok) {
           const data = await response.json();
           setArchiveNumber(data.next_catalog_id);

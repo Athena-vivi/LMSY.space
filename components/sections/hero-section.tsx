@@ -110,6 +110,7 @@ export function HeroSection() {
                   alt="Lookmhee & Sonya"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="50vw"
                   priority
                 />
 

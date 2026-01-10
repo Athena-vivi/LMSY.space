@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const [galleryResults, projectResults, scheduleResults] = await Promise.all([
       // Search gallery (images)
       supabase
+        .schema('lmsy_archive')
         .from('gallery')
         .select('*')
         .or(`caption.ilike.%${searchTerm}%,tag.ilike.%${searchTerm}%`)
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
 
       // Search projects
       supabase
+        .schema('lmsy_archive')
         .from('projects')
         .select('*')
         .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest) {
 
       // Search schedule (events)
       supabase
+        .schema('lmsy_archive')
         .from('schedule')
         .select('*')
         .or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`)

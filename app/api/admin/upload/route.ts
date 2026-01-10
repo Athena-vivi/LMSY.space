@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { uploadToR2 } from '@/lib/r2-client';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
 import { generateNextGalleryCatalogId, getR2PathForCatalogId } from '@/lib/catalog-id';
@@ -10,6 +11,7 @@ import { generateNextGalleryCatalogId, getR2PathForCatalogId } from '@/lib/catal
  *
  * Features:
  * - Schema locked to lmsy_archive
+ * - Dual authentication: Cookie + Bearer token
  * - Auto-numbering with catalog_id (LMSY-G-YYYYMMDD-XXX)
  * - Automatic WebP conversion
  * - Optimized R2 paths using catalog_id as filename
@@ -19,6 +21,11 @@ import { generateNextGalleryCatalogId, getR2PathForCatalogId } from '@/lib/catal
 
 export async function POST(request: NextRequest) {
   try {
+    // 🔍 DEBUG: 打印关键请求信息（移除敏感 token）
+    console.log('[UPLOAD] ========== API Request ==========');
+    console.log('[UPLOAD] Has Cookie:', !!request.headers.get('cookie'));
+    console.log('[UPLOAD] Has Authorization:', !!request.headers.get('authorization'));
+
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
 
     // 使用 SSR 客户端进行身份验证（Schema 锁定到 lmsy_archive）
@@ -37,15 +44,19 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // 验证用户身份
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    // 🔐 使用统一的认证辅助函数
+    const authResult = await getAuthenticatedUser(request);
 
-    if (userError || !user) {
+    if (!authResult.user || authResult.error) {
+      console.error('[UPLOAD] ❌ Authentication failed:', authResult.error, authResult.method);
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', method: authResult.method },
         { status: 401 }
       );
     }
+
+    const user = authResult.user;
+    console.log('[UPLOAD] ✅ User authenticated via', authResult.method, ':', user.email);
 
     // 双重身份校验：硬编码检查 Email
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
@@ -56,8 +67,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查是否为管理员
+    // 检查是否为管理员（显式指定 schema）
     const { data: adminCheck, error: adminError } = await supabaseAuth
+      .schema('lmsy_archive')
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -174,9 +186,10 @@ export async function POST(request: NextRequest) {
 
     console.log('[UPLOAD] R2 upload successful:', uploadResult.url);
 
-    // Step 6: Insert into database (schema locked to lmsy_archive)
+    // Step 6: Insert into database（显式指定 schema，双重保险）
     console.log('[UPLOAD] Inserting into database...');
     const { data: insertedItem, error: insertError } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('gallery')
       .insert({
         image_url: uploadResult.url, // Full CDN URL
@@ -242,31 +255,24 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+    // 🔍 DEBUG: 打印关键请求信息（移除敏感 token）
+    console.log('[UPLOAD_STATS] ========== API Request ==========');
+    console.log('[UPLOAD_STATS] Has Cookie:', !!request.headers.get('cookie'));
+    console.log('[UPLOAD_STATS] Has Authorization:', !!request.headers.get('authorization'));
 
-    const supabaseAuth = createServerClient(
-      rawUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-        db: {
-          schema: 'lmsy_archive',
-        },
-      }
-    );
+    // 🔐 使用统一的认证辅助函数
+    const authResult = await getAuthenticatedUser(request);
 
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-
-    if (userError || !user) {
+    if (!authResult.user || authResult.error) {
+      console.error('[UPLOAD_STATS] ❌ Authentication failed:', authResult.error, authResult.method);
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', method: authResult.method },
         { status: 401 }
       );
     }
+
+    const user = authResult.user;
+    console.log('[UPLOAD_STATS] ✅ User authenticated via', authResult.method, ':', user.email);
 
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
     if (user.email !== adminEmail) {
@@ -280,8 +286,9 @@ export async function GET(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin();
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-    // Check if there are any gallery items for today
+    // Check if there are any gallery items for today（显式指定 schema）
     const { data: lastItem } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('gallery')
       .select('catalog_id')
       .like('catalog_id', `LMSY-G-${today.replace(/-/g, '')}-%`)
@@ -300,8 +307,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get total count
+    // Get total count（显式指定 schema）
     const { count } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('gallery')
       .select('*', { count: 'exact', head: true });
 

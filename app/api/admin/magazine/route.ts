@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Verify admin role
     const { data: adminCheck, error: adminError } = await supabaseAuth
+      .schema('lmsy_archive')
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
@@ -145,6 +146,7 @@ export async function POST(request: NextRequest) {
     // Create magazine project record with cover catalog_id
     console.log('[MAGAZINE] Creating project record...');
     const { data: project, error: projectError } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('projects')
       .insert({
         title,
@@ -209,6 +211,7 @@ export async function POST(request: NextRequest) {
 
           // Create gallery record linked to project
           const { data: galleryItem, error: galleryError } = await supabaseAdmin
+            .schema('lmsy_archive')
             .from('gallery')
             .insert({
               image_url: imageUpload.url,
@@ -313,6 +316,7 @@ export async function GET(request: NextRequest) {
 
     // Check if there are any magazine items for today
     const { data: lastItem } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('gallery')
       .select('catalog_id')
       .like('catalog_id', `LMSY-MAG-${today.replace(/-/g, '')}-%`)
@@ -334,6 +338,7 @@ export async function GET(request: NextRequest) {
 
     // Get total magazine count
     const { count } = await supabaseAdmin
+      .schema('lmsy_archive')
       .from('projects')
       .select('*', { count: 'exact', head: true })
       .eq('category', 'magazine');

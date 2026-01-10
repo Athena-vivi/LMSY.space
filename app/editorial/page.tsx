@@ -247,6 +247,7 @@ function MagazineSlot({ magazine, index, catalogId, onHover, theme }: MagazineSl
               blurDataURL={magazine.blur_data || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyL/wAARCADIAeAADAREAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Jj9T5r6JzH8qg9hjtiT0OqT5VoT8VfG8a8M+Jt0X05ZT6bqHKKqWpSmJySMipW0pJzaX4JMqopJlEYxjmUxlJcqWpSmQyOV5UqTlKUhlKcYyxnKCUooyinKcIyinCUYxjmOclSjmKcYynCUYxjmOclSnGMZzjlKcYynGMZzjlKUoRylKMUoypTFKMUwplylMUwplyjGMU5ylKMUoRylGMQ=='}
               onLoad={() => setImageLoaded(true)}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              priority
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">

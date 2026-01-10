@@ -42,20 +42,69 @@ export default function QuickProjectModal({
     setIsSubmitting(true);
 
     try {
+      // 🔒 CRITICAL: Verify session exists before API call
+      console.log('[QUICK_PROJECT] ========== Session Verification ==========');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        console.error('[QUICK_PROJECT] No valid session:', sessionError);
+        alert('Authentication required. Please log in again.');
+        // Force redirect to login page
+        window.location.href = '/admin/login';
+        return;
+      }
+
+      console.log('[QUICK_PROJECT] ✅ Session verified for user:', session.user.email);
+
+      // 🔍 DEBUG: Log the exact query being executed
+      console.log('[QUICK_PROJECT] ========== Database Insert ==========');
+      console.log('[QUICK_PROJECT] Schema: lmsy_archive');
+      console.log('[QUICK_PROJECT] Table: projects');
+
+      // 🛡️ 防御性编程：只提交数据库中存在的字段
+      const insertData = {
+        title: title.trim(),
+        category,
+        release_date: releaseDate || null,
+        description: null,
+        cover_url: null,
+        watch_url: null,
+      };
+
+      console.log('[QUICK_PROJECT] Insert data:', insertData);
+
+      // 显式解构 Supabase 返回值（显式指定 schema）
       const { data, error } = await supabase
+        .schema('lmsy_archive')
         .from('projects')
-        .insert({
-          title: title.trim(),
-          category,
-          release_date: releaseDate || null,
-          description: null,
-          cover_url: null,
-          watch_url: null,
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      // 打印原始 JSON 错误详情
+      if (error) {
+        console.log('[QUICK_PROJECT] ========== DATABASE ERROR DETAILS ==========');
+        console.log('[DB_ERROR_DETAIL]', JSON.stringify(error, null, 2));
+        console.log('[QUICK_PROJECT] Error message:', error.message);
+        console.log('[QUICK_PROJECT] Error hint:', (error as any).hint);
+        console.log('[QUICK_PROJECT] Error details:', (error as any).details);
+        console.log('[QUICK_PROJECT] Error code:', (error as any).code);
+
+        // 检查是否是 schema 错误
+        if (error.message.includes('relation') && error.message.includes('does not exist')) {
+          console.error('[QUICK_PROJECT] 🔴 SCHEMA ERROR: Code is still pointing to wrong schema!');
+          console.error('[QUICK_PROJECT] Expected: lmsy_archive.projects');
+          console.error('[QUICK_PROJECT] Error message suggests:', error.message);
+          alert(`Schema Error: ${error.message}\n\nThe code is not pointing to lmsy_archive schema.`);
+          return;
+        }
+
+        // 显示错误给用户
+        alert(error.message);
+        return;
+      }
+
+      console.log('[QUICK_PROJECT] ✅ Insert successful! Project ID:', data?.id);
 
       // Reset form
       setTitle('');
@@ -68,7 +117,9 @@ export default function QuickProjectModal({
       // Close modal
       onClose();
     } catch (error) {
-      console.error('Failed to create project:', error);
+      console.log('[QUICK_PROJECT] ========== CATCH BLOCK ERROR ==========');
+      console.log('[QUICK_PROJECT] Exception caught:', error);
+      console.log('[DB_ERROR_DETAIL]', JSON.stringify(error, null, 2));
       alert(`Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
@@ -201,7 +252,7 @@ export default function QuickProjectModal({
                     style={{
                       borderColor: title.trim() && !isSubmitting ? 'rgba(251, 191, 36, 0.5)' : 'rgba(255, 255, 255, 0.1)',
                       color: title.trim() && !isSubmitting ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-                      backgroundColor: 'transparent',
+                      backgroundColor: 'rgba(0, 0, 0, 0)',
                       cursor: title.trim() && !isSubmitting ? 'pointer' : 'not-allowed',
                     }}
                     whileHover={title.trim() && !isSubmitting ? {

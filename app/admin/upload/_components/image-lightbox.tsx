@@ -135,6 +135,7 @@ export default function ImageLightbox({
                 width={1920}
                 height={1080}
                 className="object-contain w-full h-full rounded-lg"
+                sizes="100vw"
                 priority
               />
 

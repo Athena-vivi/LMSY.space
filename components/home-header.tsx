@@ -62,6 +62,7 @@ export function HomeHeader() {
                   alt="LMSY Logo"
                   fill
                   className="object-contain relative z-10"
+                  sizes="32px"
                   priority
                 />
               </div>
