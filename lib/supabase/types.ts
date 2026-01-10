@@ -46,6 +46,7 @@ export interface GalleryItem {
   catalog_id: string | null;  // LMSY-2026-XXX
   is_editorial: boolean;  // 策展特别推荐
   curator_note: string | null;  // Markdown 格式的策展笔记
+  blur_data: string | null;  // Blur placeholder for image optimization
   created_at: string;
 }
 

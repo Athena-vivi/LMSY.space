@@ -166,24 +166,17 @@ export default function GalleryPage() {
                       {/* Image with Lazy Loading and Blur-up */}
                       <div className="relative aspect-[3/4] bg-muted">
                         {item.image_url ? (
-                          <>
-                            {/* Blur placeholder */}
-                            <div
-                              className={`absolute inset-0 bg-gradient-to-br ${gradients[index % gradients.length]} blur-xl`}
-                            />
-
-                            {/* Actual image */}
-                            <Image
-                              src={item.image_url}
-                              alt={item.caption || item.tag || 'Gallery image'}
-                              fill
-                              className="object-cover transition-transform duration-500 group-hover:scale-110"
-                              loading="lazy"
-                              placeholder="blur"
-                              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+OjMLzvtADmF0br/iI2p09qeH0Sti2cYR2u0bkjZTgH4++NJ9e6t/Ps2bpJ0H396kN1tJbNk4yJ+YGqZ1T6TTN+qyJ6m5cVZKXaSOpOjPqLxP0l0qCzkkFh6RHAKHnKlC0c="
-                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            />
-                          </>
+                          <Image
+                            src={item.image_url}
+                            alt={item.caption || item.tag || 'Gallery image'}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                            placeholder={item.blur_data ? "blur" : "empty"}
+                            blurDataURL={item.blur_data || undefined}
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            priority={index === 0}
+                            loading={index === 0 ? "eager" : "lazy"}
+                          />
                         ) : (
                           <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index % gradients.length]}`} />
                         )}

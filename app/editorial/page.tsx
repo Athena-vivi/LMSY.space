@@ -72,7 +72,8 @@ export default function EditorialPage() {
               id,
               image_url,
               blur_data,
-              caption
+              caption,
+              catalog_id
             )
           `)
           .eq('category', 'editorial')
@@ -99,33 +100,47 @@ export default function EditorialPage() {
           const galleryImages = project.gallery || [];
           const artifactCount = galleryImages.length;
 
-          // Determine cover URL: use project cover_url or find from gallery
+          // 🔒 CRITICAL: Cover selection logic - prioritize catalog_id ending with -000
           let coverUrl = project.cover_url;
           let blurData = project.blur_data;
           let coverSource = 'project';
 
           if (!coverUrl && galleryImages.length > 0) {
-            // Priority 1: Look for caption exactly '000' (cover image)
-            const coverImage = galleryImages.find((img: GalleryImage) => img.caption === '000');
+            // Priority 1: Find image with catalog_id ending in -000 (cover image)
+            const coverImage = galleryImages.find((img: any) => {
+              const catalogId = img.catalog_id;
+              if (!catalogId) return false;
+              // Check if catalog_id ends with -000
+              return /-000$/.test(catalogId);
+            });
 
             if (coverImage) {
               coverUrl = coverImage.image_url;
               blurData = coverImage.blur_data;
-              coverSource = 'gallery-000';
+              coverSource = `catalog-${coverImage.catalog_id}`;
+              console.log('[EDITORIAL] Found -000 cover for', project.title, '->', coverImage.catalog_id);
             } else {
-              // Priority 2: Sort by caption numeric and take lowest sequence
-              const sortedGallery = [...galleryImages].sort((a, b) => {
-                const aNum = parseInt(a.caption?.match(/\d+/)?.[0] || '999');
-                const bNum = parseInt(b.caption?.match(/\d+/)?.[0] || '999');
-                return aNum - bNum;
+              // Priority 2: Find image with smallest catalog_id sequence (fallback)
+              // Sort by catalog_id to get the lowest sequence number
+              const sortedGallery = [...galleryImages].sort((a: any, b: any) => {
+                const aCatalog = a.catalog_id || '';
+                const bCatalog = b.catalog_id || '';
+
+                // Extract sequence number from catalog_id (last 3 digits after last hyphen)
+                const aMatch = aCatalog.match(/-(\d{3})$/);
+                const bMatch = bCatalog.match(/-(\d{3})$/);
+
+                const aSeq = aMatch ? parseInt(aMatch[1], 10) : 999;
+                const bSeq = bMatch ? parseInt(bMatch[1], 10) : 999;
+
+                return aSeq - bSeq;
               });
 
               coverUrl = sortedGallery[0].image_url;
               blurData = sortedGallery[0].blur_data;
-              coverSource = `gallery-${sortedGallery[0].caption}`;
+              coverSource = `fallback-${sortedGallery[0].catalog_id}`;
+              console.log('[EDITORIAL] Cover fallback for', project.title, '->', sortedGallery[0].catalog_id);
             }
-
-            console.log('[EDITORIAL] Cover fallback for', project.title, '-> source:', coverSource);
           }
 
           return {
@@ -231,6 +246,7 @@ export default function EditorialPage() {
                       catalogId={magazine.catalog_id || getCatalogId(index)}
                       onHover={setHoveredMagazine}
                       theme={getMagazineTheme(magazine)}
+                      isFirst={index === 0}
                     />
                   ))}
 
@@ -268,10 +284,12 @@ interface MagazineSlotProps {
   catalogId: string;
   onHover: (id: string | null) => void;
   theme: NebulaColors;
+  isFirst: boolean;
 }
 
-function MagazineSlot({ magazine, index, catalogId, onHover }: MagazineSlotProps) {
+function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: MagazineSlotProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Use getImageUrl to ensure CDN URL is properly formatted
   const coverUrl = magazine.cover_url ? getImageUrl(magazine.cover_url) : null;
@@ -286,10 +304,17 @@ function MagazineSlot({ magazine, index, catalogId, onHover }: MagazineSlotProps
       onHoverStart={() => onHover(magazine.id)}
       onHoverEnd={() => onHover(null)}
       className="relative group"
+      style={{ cursor: 'pointer' }}
     >
-      <Link href={`/editorial/${magazine.id}`} className="block">
+      <Link
+        href={`/editorial/${magazine.id}`}
+        className="block"
+        onClick={() => setIsNavigating(true)}
+      >
         {/* Magazine Cover Container - 3:4 Aspect Ratio */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
+        <div className={`relative aspect-[3/4] overflow-hidden rounded-lg bg-white/[0.02] border border-white/10 transition-opacity duration-300 ${
+          isNavigating ? 'opacity-50' : ''
+        }`}>
           {/* Corner Frame Decorations - Viewfinder Style */}
           <div className="absolute inset-0 pointer-events-none">
             {/* Top-left corner */}
@@ -304,14 +329,14 @@ function MagazineSlot({ magazine, index, catalogId, onHover }: MagazineSlotProps
               src={coverUrl}
               alt={magazine.title}
               fill
-              className={`object-cover transition-transform duration-700 group-hover:scale-105 ${
+              className={`object-cover transition-opacity duration-700 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              placeholder="blur"
-              blurDataURL={blurData || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyL/wAARCADIAeAADAREAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Jj9T5r6JzH8qg9hjtiT0OqT5VoT8VfG8a8M+Jt0X05ZT6bqHKKqWpSmJySMipW0pJzaX4JMqopJlEYxjmUxlJcqWpSmQyOV5UqTlKUhlKcYyxnKCUooyinKcIyinCUYxjmOclSjmKcYynCUYxjmOclSnGMZzjlKcYynGMZzjlKUoRylKMUoypTFKMUwplylMUwplyjGMU5ylKMUoRylGMQ=='}
+              } group-hover:scale-105`}
+              placeholder={blurData ? "blur" : "empty"}
+              blurDataURL={blurData || undefined}
               onLoad={() => setImageLoaded(true)}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              priority
+              priority={isFirst}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
