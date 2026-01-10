@@ -45,13 +45,43 @@ export default function AdminProjectsPage() {
     }
   };
 
-  const categoryConfig = {
+  const categoryConfig: Record<string, {
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+  }> = {
     series: {
       label: 'TV_SERIES',
       color: 'rgba(251, 191, 36, 0.9)',
       bg: 'rgba(251, 191, 36, 0.1)',
       border: 'rgba(251, 191, 36, 0.3)',
     },
+    editorial: {
+      label: 'EDITORIAL',
+      color: 'rgba(168, 85, 247, 0.9)',
+      bg: 'rgba(168, 85, 247, 0.1)',
+      border: 'rgba(168, 85, 247, 0.3)',
+    },
+    appearance: {
+      label: 'APPEARANCE',
+      color: 'rgba(56, 189, 248, 0.9)',
+      bg: 'rgba(56, 189, 248, 0.1)',
+      border: 'rgba(56, 189, 248, 0.3)',
+    },
+    journal: {
+      label: 'JOURNAL',
+      color: 'rgba(236, 72, 153, 0.9)',
+      bg: 'rgba(236, 72, 153, 0.1)',
+      border: 'rgba(236, 72, 153, 0.3)',
+    },
+    commercial: {
+      label: 'COMMERCIAL',
+      color: 'rgba(34, 197, 94, 0.9)',
+      bg: 'rgba(34, 197, 94, 0.1)',
+      border: 'rgba(34, 197, 94, 0.3)',
+    },
+    // Legacy support
     music: {
       label: 'MUSIC_VIDEO',
       color: 'rgba(56, 189, 248, 0.9)',
