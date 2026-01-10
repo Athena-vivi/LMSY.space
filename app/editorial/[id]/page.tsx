@@ -12,8 +12,8 @@ interface Magazine {
   id: string;
   title: string;
   category: string;
-  cover_url: string;
-  release_date: string;
+  cover_url: string | null;
+  release_date: string | null;
   description: string | null;
   catalog_id: string | null;
   blur_data: string | null;
@@ -38,38 +38,44 @@ export default function EditorialDetailPage() {
   useEffect(() => {
     async function fetchMagazineData() {
       try {
-        // Fetch magazine project
+        console.log('[EDITORIAL_DETAIL] Fetching magazine:', magazineId);
+
+        // Fetch magazine project from lmsy_archive schema
         const { data: project, error: projectError } = await supabase
+          .schema('lmsy_archive')
           .from('projects')
           .select('*')
           .eq('id', magazineId)
-          .eq('category', 'magazine')
+          .eq('category', 'editorial')
           .single();
 
         if (projectError) {
-          console.error('Failed to fetch magazine:', projectError);
+          console.error('[EDITORIAL_DETAIL] ❌ Failed to fetch magazine:', projectError);
           return;
         }
 
+        console.log('[EDITORIAL_DETAIL] ✅ Found magazine:', project?.title);
         setMagazine(project);
 
         // Fetch gallery images linked to this project
         const { data: images, error: imagesError } = await supabase
+          .schema('lmsy_archive')
           .from('gallery')
           .select('*')
           .eq('project_id', magazineId)
           .order('created_at', { ascending: true });
 
         if (imagesError) {
-          console.error('Failed to fetch gallery images:', imagesError);
+          console.error('[EDITORIAL_DETAIL] ❌ Failed to fetch gallery images:', imagesError);
         } else {
+          console.log('[EDITORIAL_DETAIL] ✅ Found', images?.length || 0, 'gallery images');
           setGalleryImages(images || []);
         }
 
         // Set curator note (can be from project description or custom note)
         setCuratorNote(project.description);
       } catch (err) {
-        console.error('Error fetching magazine data:', err);
+        console.error('[EDITORIAL_DETAIL] ❌ Error fetching magazine data:', err);
       } finally {
         setLoading(false);
       }
@@ -80,7 +86,8 @@ export default function EditorialDetailPage() {
     }
   }, [magazineId]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'TBD';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -181,24 +188,26 @@ export default function EditorialDetailPage() {
           )}
 
           {/* Magazine Cover - Full Size */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="relative mb-16"
-          >
-            <div className="relative aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
-              <Image
-                src={magazine.cover_url}
-                alt={magazine.title}
-                fill
-                className="object-contain"
-                placeholder="blur"
-                blurDataURL={magazine.blur_data || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyL/wAARCADIAeAADAREAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Jj9T5r6JzH8qg9hjtiT0OqT5VoT8VfG8a8M+Jt0X05ZT6bqHKKqWpSmJySMipW0pJzaX4JMqopJlEYxjmUxlJcqWpSmQyOV5UqTlKUhlKcYyxnKCUooyinKcIyinCUYxjmOclSjmKcYynCUYxjmOclSnGMZzjlKcYynGMZzjlKUoRylKMUoypTFKMUwplylMUwplyjGMU5ylKMUoRylGMQ=='}
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </div>
-          </motion.div>
+          {magazine.cover_url && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="relative mb-16"
+            >
+              <div className="relative aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
+                <Image
+                  src={magazine.cover_url}
+                  alt={magazine.title}
+                  fill
+                  className="object-contain"
+                  placeholder="blur"
+                  blurDataURL={magazine.blur_data || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyL/wAARCADIAeAADAREAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Jj9T5r6JzH8qg9hjtiT0OqT5VoT8VfG8a8M+Jt0X05ZT6bqHKKqWpSmJySMipW0pJzaX4JMqopJlEYxjmUxlJcqWpSmQyOV5UqTlKUhlKcYyxnKCUooyinKcIyinCUYxjmOclSjmKcYynCUYxjmOclSnGMZzjlKcYynGMZzjlKUoRylKMUoypTFKMUwplylMUwplyjGMU5ylKMUoRylGMQ=='}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
+            </motion.div>
+          )}
         </div>
       </section>
 
@@ -222,7 +231,7 @@ export default function EditorialDetailPage() {
 
             {/* Masonry Grid using CSS Columns */}
             <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-              <AnimatePresence>
+              <AnimatePresence mode="wait">
                 {galleryImages.map((image, index) => (
                   <motion.div
                     key={image.id}

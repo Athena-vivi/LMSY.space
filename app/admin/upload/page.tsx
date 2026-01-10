@@ -280,119 +280,150 @@ export default function AdminUploadPage() {
       }
 
       console.log('[UPLOAD] Session verified for user:', session.user.email);
+      console.log(`[UPLOAD] Starting sequential upload of ${uploadItems.length} files...`);
 
-      let successCount = 0;
-      let failCount = 0;
-      const errors: string[] = [];
-
-      // Upload each file using the new API
+      // Upload each file using the new API - STOP ON FIRST ERROR
       for (let i = 0; i < uploadItems.length; i++) {
         const item = uploadItems[i];
         const file = item.file;
 
-        try {
-          // Prepare form data for API
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('event_date', batchEventDate || eventDate);
+        console.log(`[UPLOAD] [${i + 1}/${uploadItems.length}] Processing: ${file.name}`);
 
-          // Add manual catalog ID if unlocked and manually edited (Astra 馆长的最终解释权)
-          if (!isCatalogLocked && hasManuallyEdited && archiveNumber) {
-            formData.append('catalog_id', archiveNumber);
-          }
+        // Prepare form data for API
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('event_date', batchEventDate || eventDate);
 
-          // Only add optional fields if they have values
-          if (title) {
-            formData.append('caption', i === 0 ? title : `${title} (${i + 1})`);
-          }
-
-          if (selectedTags.length > 0) {
-            formData.append('tag', selectedTags[0]);
-          }
-
-          if (i === 0) {
-            formData.append('is_featured', 'true');
-          }
-
-          // 🔒 CRITICAL: Add Authorization header with session token
-          const headers: Record<string, string> = {};
-          if (session?.access_token) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-          }
-
-          // Upload via API
-          const response = await fetch('/api/admin/upload', {
-            method: 'POST',
-            headers,
-            body: formData,
-            credentials: 'include',
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Upload failed');
-          }
-
-          const result = await response.json();
-
-          if (result.success) {
-            successCount++;
-            console.log(`✓ Uploaded ${file.name} -> ${result.data.catalog_id}`);
-          } else {
-            throw new Error('Upload returned unsuccessful');
-          }
-        } catch (error) {
-          failCount++;
-          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-          errors.push(`${file.name}: ${errorMsg}`);
-          console.error(`✗ Failed to upload ${file.name}:`, errorMsg);
-        }
-      }
-
-      // Show results
-      if (successCount === uploadItems.length) {
-        alert(`✓ Successfully uploaded all ${successCount} images!`);
-      } else if (successCount > 0) {
-        alert(`⚠ Partial upload: ${successCount} succeeded, ${failCount} failed.\n\nErrors:\n${errors.join('\n')}`);
-      } else {
-        alert(`✗ All uploads failed!\n\n${errors.join('\n')}`);
-      }
-
-      // Reset form on success
-      if (successCount > 0) {
-        // Revoke all object URLs before clearing
-        uploadItems.forEach(item => URL.revokeObjectURL(item.preview));
-        setUploadItems([]);
-        setSelectedTags([]);
-        setSelectedProject(null);
-        setSelectedMember(null);
-        setTitle('');
-        setDescription('');
-        setBatchCredits('');
-        setBatchEventDate('');
-        setBatchCatalogId('');
-        setBatchMagazineIssue('');
-
-        // Refresh catalog ID for next upload
-        const { data: { session: refreshSession } } = await supabase.auth.getSession();
-        const refreshHeaders: Record<string, string> = {};
-        if (refreshSession?.access_token) {
-          refreshHeaders['Authorization'] = `Bearer ${refreshSession.access_token}`;
+        // Add manual catalog ID if unlocked and manually edited (Astra 馆长的最终解释权)
+        if (!isCatalogLocked && hasManuallyEdited && archiveNumber) {
+          formData.append('catalog_id', archiveNumber);
         }
 
+        // Only add optional fields if they have values
+        if (title) {
+          formData.append('caption', i === 0 ? title : `${title} (${i + 1})`);
+        }
+
+        if (selectedTags.length > 0) {
+          formData.append('tag', selectedTags[0]);
+        }
+
+        if (i === 0) {
+          formData.append('is_featured', 'true');
+        }
+
+        // 🔒 CRITICAL: Add Authorization header with session token
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        // Upload via API
         const response = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers,
+          body: formData,
           credentials: 'include',
-          headers: refreshHeaders,
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          setArchiveNumber(data.next_catalog_id);
+        // ❌ HTTP ERROR - STOP IMMEDIATELY
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('[UPLOAD] ❌ HTTP ERROR Response:', errorData);
+
+          // Build detailed error message for user
+          let errorMsg = `❌ UPLOAD FAILED\n\nFile: ${file.name} (${i + 1}/${uploadItems.length})`;
+          errorMsg += `\n\nStatus: ${response.status} ${response.statusText}`;
+
+          if (errorData.error) {
+            errorMsg += `\n\nError: ${errorData.error}`;
+          }
+          if (errorData.details) {
+            errorMsg += `\n\nDetails: ${errorData.details}`;
+          }
+          if (errorData.missingVars && errorData.missingVars.length > 0) {
+            errorMsg += `\n\n❌ Missing Environment Variables:\n${errorData.missingVars.map((v: string) => `  • ${v}`).join('\n')}`;
+            errorMsg += `\n\n⚠️ Please check your .env.local file.`;
+          }
+          if (errorData.bucket) {
+            errorMsg += `\n\nR2 Bucket: ${errorData.bucket}`;
+          }
+          if (errorData.r2Path) {
+            errorMsg += `\n\nR2 Path: ${errorData.r2Path}`;
+          }
+          if (errorData.uploadedFileUrl) {
+            errorMsg += `\n\n⚠️ File was uploaded to R2 but database insert failed.\nURL: ${errorData.uploadedFileUrl}`;
+          }
+
+          setIsUploading(false);
+          alert(errorMsg);
+          return; // STOP IMMEDIATELY
         }
+
+        const result = await response.json();
+
+        // ❌ API RETURNED success: false - STOP IMMEDIATELY
+        if (!result.success) {
+          console.error('[UPLOAD] ❌ API returned unsuccessful:', result);
+
+          let errorMsg = `❌ UPLOAD FAILED\n\nFile: ${file.name} (${i + 1}/${uploadItems.length})`;
+          errorMsg += `\n\nReason: API returned success: false`;
+          errorMsg += `\n\nFull Response:\n${JSON.stringify(result, null, 2)}`;
+
+          setIsUploading(false);
+          alert(errorMsg);
+          return; // STOP IMMEDIATELY
+        }
+
+        console.log(`[UPLOAD] ✅ [${i + 1}/${uploadItems.length}] Successfully uploaded: ${file.name}`);
+        console.log(`[UPLOAD]    Catalog ID: ${result.data.catalog_id}`);
+        console.log(`[UPLOAD]    URL: ${result.data.image_url}`);
+      }
+
+      // ✅ ALL UPLOADS SUCCESSFUL
+      console.log('[UPLOAD] ✅✅✅ ALL UPLOADS COMPLETE ✅✅✅');
+      alert(`✅ Successfully uploaded all ${uploadItems.length} images!`);
+
+      // Reset form on success
+      uploadItems.forEach(item => URL.revokeObjectURL(item.preview));
+      setUploadItems([]);
+      setSelectedTags([]);
+      setSelectedProject(null);
+      setSelectedMember(null);
+      setTitle('');
+      setDescription('');
+      setBatchCredits('');
+      setBatchEventDate('');
+      setBatchCatalogId('');
+      setBatchMagazineIssue('');
+
+      // Refresh catalog ID for next upload
+      const { data: { session: refreshSession } } = await supabase.auth.getSession();
+      const refreshHeaders: Record<string, string> = {};
+      if (refreshSession?.access_token) {
+        refreshHeaders['Authorization'] = `Bearer ${refreshSession.access_token}`;
+      }
+
+      const response = await fetch('/api/admin/upload', {
+        credentials: 'include',
+        headers: refreshHeaders,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setArchiveNumber(data.next_catalog_id);
+        console.log('[UPLOAD] Refreshed catalog ID:', data.next_catalog_id);
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Upload failed'}`);
+      console.error('[UPLOAD] ❌ CATCH BLOCK ERROR:', error);
+
+      let errorMsg = '❌ UPLOAD FAILED\n\nUnexpected error occurred:';
+      errorMsg += `\n\n${error instanceof Error ? error.message : String(error)}`;
+      if (error instanceof Error && error.stack) {
+        console.error('[UPLOAD] Stack:', error.stack);
+      }
+
+      alert(errorMsg);
     } finally {
       setIsUploading(false);
     }

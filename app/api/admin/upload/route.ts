@@ -9,190 +9,194 @@ import { generateNextGalleryCatalogId, getR2PathForCatalogId } from '@/lib/catal
 /**
  * Gallery Upload API - Astra 馆长档案标准
  *
- * Features:
- * - Schema locked to lmsy_archive
- * - Dual authentication: Cookie + Bearer token
- * - Auto-numbering with catalog_id (LMSY-G-YYYYMMDD-XXX)
- * - Automatic WebP conversion
- * - Optimized R2 paths using catalog_id as filename
- * - Blur data generation
- * - Date-based sequence numbering
+ * STRICT ERROR HANDLING:
+ * - Any error immediately stops the process
+ * - All errors are returned to frontend with full details
+ * - No silent failures
  */
 
 export async function POST(request: NextRequest) {
-  try {
-    // 🔍 DEBUG: 打印关键请求信息（移除敏感 token）
-    console.log('[UPLOAD] ========== API Request ==========');
-    console.log('[UPLOAD] Has Cookie:', !!request.headers.get('cookie'));
-    console.log('[UPLOAD] Has Authorization:', !!request.headers.get('authorization'));
+  // ========================================
+  // PRE-FLIGHT: ENVIRONMENT CHECKS
+  // ========================================
+  const requiredEnvVars = {
+    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+    R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    NEXT_PUBLIC_CDN_URL: process.env.NEXT_PUBLIC_CDN_URL,
+  };
 
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+  const missingVars = Object.entries(requiredEnvVars)
+    .filter(([key, value]) => !value)
+    .map(([key]) => key);
 
-    // 使用 SSR 客户端进行身份验证（Schema 锁定到 lmsy_archive）
-    const supabaseAuth = createServerClient(
-      rawUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+  if (missingVars.length > 0) {
+    console.error('[UPLOAD] ❌ Missing environment variables:', missingVars.join(', '));
+    return NextResponse.json(
       {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-        db: {
-          schema: 'lmsy_archive',
-        },
-      }
+        error: 'LOCAL_ENV_MISSING: Check .env.local',
+        details: `Missing required environment variables: ${missingVars.join(', ')}`,
+        missingVars,
+      },
+      { status: 500 }
     );
+  }
 
-    // 🔐 使用统一的认证辅助函数
-    const authResult = await getAuthenticatedUser(request);
+  // ========================================
+  // AUTHENTICATION
+  // ========================================
+  const authResult = await getAuthenticatedUser(request);
 
-    if (!authResult.user || authResult.error) {
-      console.error('[UPLOAD] ❌ Authentication failed:', authResult.error, authResult.method);
-      return NextResponse.json(
-        { error: 'Unauthorized', method: authResult.method },
-        { status: 401 }
-      );
-    }
+  if (!authResult.user || authResult.error) {
+    console.error('[UPLOAD] ❌ Authentication failed:', authResult.error);
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
+    );
+  }
 
-    const user = authResult.user;
-    console.log('[UPLOAD] ✅ User authenticated via', authResult.method, ':', user.email);
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  if (authResult.user.email !== adminEmail) {
+    console.error('[UPLOAD] ❌ Authorization failed: Non-admin user');
+    return NextResponse.json(
+      { error: 'Forbidden: Admin access required' },
+      { status: 403 }
+    );
+  }
 
-    // 双重身份校验：硬编码检查 Email
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+  // ========================================
+  // PARSE FORM DATA
+  // ========================================
+  const formData = await request.formData();
+  const file = formData.get('file') as File;
+  const caption = formData.get('caption') as string | null;
+  const tag = formData.get('tag') as string | null;
+  const isFeatured = formData.get('is_featured') === 'true';
+  const isEditorial = formData.get('is_editorial') === 'true';
+  const curatorNote = formData.get('curator_note') as string | null;
+  const eventDate = formData.get('event_date') as string | null;
+  const manualCatalogId = formData.get('catalog_id') as string | null;
 
-    // 检查是否为管理员（显式指定 schema）
-    const { data: adminCheck, error: adminError } = await supabaseAuth
-      .schema('lmsy_archive')
-      .from('admin_users')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single();
+  if (!file) {
+    console.error('[UPLOAD] ❌ No file provided');
+    return NextResponse.json(
+      { error: 'No file provided' },
+      { status: 400 }
+    );
+  }
 
-    if (adminError || !adminCheck) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+  if (!file.type.startsWith('image/')) {
+    console.error('[UPLOAD] ❌ Invalid file type:', file.type);
+    return NextResponse.json(
+      { error: 'File must be an image' },
+      { status: 400 }
+    );
+  }
 
-    // Parse multipart form data
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const caption = formData.get('caption') as string | null;
-    const tag = formData.get('tag') as string | null;
-    const isFeatured = formData.get('is_featured') === 'true';
-    const isEditorial = formData.get('is_editorial') === 'true';
-    const curatorNote = formData.get('curator_note') as string | null;
-    const eventDate = formData.get('event_date') as string | null;
-    const manualCatalogId = formData.get('catalog_id') as string | null; // Manual catalog ID override
+  // ========================================
+  // DETERMINE CATALOG ID
+  // ========================================
+  const supabaseAdmin = getSupabaseAdmin();
+  let catalogId: string;
+  let uploadDate: string;
 
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
-    }
+  if (manualCatalogId && manualCatalogId.trim()) {
+    catalogId = manualCatalogId.trim();
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json(
-        { error: 'File must be an image' },
-        { status: 400 }
-      );
-    }
-
-    // Schema 锁定：使用馆长客户端（已锁定到 lmsy_archive schema）
-    const supabaseAdmin = getSupabaseAdmin();
-
-    // Step 1: Determine the catalog ID to use
-    let catalogId: string;
-    let uploadDate: string;
-
-    if (manualCatalogId && manualCatalogId.trim()) {
-      // Use manually provided catalog ID (Astra 馆长的最终解释权)
-      catalogId = manualCatalogId.trim();
-      console.log('[UPLOAD] Using manual catalog_id:', catalogId);
-
-      // Extract date from manual catalog ID for event_date
-      const match = catalogId.match(/^LMSY-[A-Z]+-(\d{8})-\d{3}$/);
-      if (match) {
-        const compactDate = match[1];
-        uploadDate = `${compactDate.substring(0, 4)}-${compactDate.substring(4, 6)}-${compactDate.substring(6, 8)}`;
-        console.log('[UPLOAD] Extracted event_date from manual catalog_id:', uploadDate);
-      } else {
-        // Fallback to provided event_date or current date
-        uploadDate = eventDate || new Date().toISOString().split('T')[0];
-        console.warn('[UPLOAD] Could not extract date from manual catalog_id, using:', uploadDate);
-      }
+    const match = catalogId.match(/^LMSY-[A-Z]+-(\d{8})-\d{3}$/);
+    if (match) {
+      const compactDate = match[1];
+      uploadDate = `${compactDate.substring(0, 4)}-${compactDate.substring(4, 6)}-${compactDate.substring(6, 8)}`;
     } else {
-      // Auto-generate catalog ID based on event_date
-      if (eventDate) {
-        // Validate date format (YYYY-MM-DD)
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(eventDate)) {
-          return NextResponse.json(
-            { error: 'Invalid date format. Expected YYYY-MM-DD' },
-            { status: 400 }
-          );
-        }
-        uploadDate = eventDate;
-        console.log('[UPLOAD] Using provided event_date:', uploadDate);
-      } else {
-        // Fallback to current date (UTC) if no event_date provided
-        uploadDate = new Date().toISOString().split('T')[0];
-        console.warn('[UPLOAD] No event_date provided, using current UTC date:', uploadDate);
+      uploadDate = eventDate || new Date().toISOString().split('T')[0];
+    }
+  } else {
+    if (eventDate) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(eventDate)) {
+        console.error('[UPLOAD] ❌ Invalid date format:', eventDate);
+        return NextResponse.json(
+          { error: 'Invalid date format. Expected YYYY-MM-DD' },
+          { status: 400 }
+        );
       }
-
-      // Generate catalog_id with full date (LMSY-G-YYYYMMDD-XXX)
-      catalogId = await generateNextGalleryCatalogId(supabaseAdmin, uploadDate);
-      console.log('[UPLOAD] Generated catalog_id:', catalogId);
+      uploadDate = eventDate;
+    } else {
+      uploadDate = new Date().toISOString().split('T')[0];
     }
 
-    // Step 3: Convert to WebP with optimization
-    console.log('[UPLOAD] Converting to WebP...');
-    const webpResult = await convertToWebP(file, 85);
+    catalogId = await generateNextGalleryCatalogId(supabaseAdmin, uploadDate);
+  }
 
-    console.log('[UPLOAD] WebP conversion complete:', {
-      originalSize: file.size,
-      webpSize: webpResult.sizeBytes,
-      compression: `${((1 - webpResult.sizeBytes / file.size) * 100).toFixed(1)}%`,
-      dimensions: `${webpResult.width}x${webpResult.height}`,
-    });
+  // ========================================
+  // WEBP CONVERSION
+  // ========================================
+  let webpResult;
+  try {
+    webpResult = await convertToWebP(file, 85);
+  } catch (error) {
+    console.error('[UPLOAD] ❌ WebP conversion failed:', error);
+    return NextResponse.json(
+      {
+        error: 'WebP conversion failed',
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      { status: 500 }
+    );
+  }
 
-    // Step 4: Generate blur data
-    console.log('[UPLOAD] Generating blur data...');
-    const blurData = await generateBlurData(file);
+  // ========================================
+  // BLUR DATA GENERATION
+  // ========================================
+  let blurData;
+  try {
+    blurData = await generateBlurData(file);
+  } catch (error) {
+    console.warn('[UPLOAD] ⚠️ Blur generation failed (non-fatal):', error);
+    blurData = null;
+  }
 
-    // Step 5: Upload to R2 with catalog_id as filename
-    const r2Path = getR2PathForCatalogId(catalogId);
-    console.log('[UPLOAD] Uploading to R2:', r2Path);
-    const uploadResult = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
+  // ========================================
+  // R2 UPLOAD
+  // ========================================
+  const r2Path = getR2PathForCatalogId(catalogId);
+  let uploadResult;
+  try {
+    uploadResult = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
 
     if (!uploadResult.success) {
-      console.error('[UPLOAD] R2 upload failed:', uploadResult.error);
-      return NextResponse.json(
-        { error: `Failed to upload to R2: ${uploadResult.error}` },
-        { status: 500 }
-      );
+      console.error('[UPLOAD] ❌ R2 upload failed:', uploadResult.error);
+      throw new Error(`R2 upload failed: ${uploadResult.error}`);
     }
+  } catch (error) {
+    console.error('[UPLOAD] ❌ R2 upload exception:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to upload to R2',
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        r2Path,
+        bucket: process.env.R2_BUCKET_NAME,
+      },
+      { status: 500 }
+    );
+  }
 
-    console.log('[UPLOAD] R2 upload successful:', uploadResult.url);
-
-    // Step 6: Insert into database（显式指定 schema，双重保险）
-    console.log('[UPLOAD] Inserting into database...');
-    const { data: insertedItem, error: insertError } = await supabaseAdmin
+  // ========================================
+  // DATABASE INSERT
+  // ========================================
+  let insertedItem;
+  try {
+    const insertResult = await supabaseAdmin
       .schema('lmsy_archive')
       .from('gallery')
       .insert({
-        image_url: uploadResult.url, // Full CDN URL
+        image_url: uploadResult.url,
         caption: caption || null,
         tag: tag || null,
         is_featured: isFeatured,
@@ -205,49 +209,57 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
+    const { data, error: insertError } = insertResult;
+
     if (insertError) {
-      console.error('[UPLOAD] Database insert failed:', insertError);
-      // Attempt to rollback R2 upload
-      // Note: In production, you might want to implement proper transaction handling
-      return NextResponse.json(
-        { error: `Failed to insert into database: ${insertError.message}` },
-        { status: 500 }
-      );
+      console.error('[UPLOAD] ❌ Database insert failed:', insertError.message, '| Code:', insertError.code);
+      throw insertError;
     }
 
-    console.log('[UPLOAD] Insert successful:', insertedItem.id);
+    if (!data) {
+      console.error('[UPLOAD] ❌ Database insert returned NULL');
+      throw new Error('Database insert returned no data');
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: insertedItem.id,
-        catalog_id: catalogId,
-        image_url: uploadResult.url,
-        r2_path: r2Path,
-        event_date: uploadDate,
-        caption: insertedItem.caption,
-        tag: insertedItem.tag,
-        is_featured: insertedItem.is_featured,
-        is_editorial: insertedItem.is_editorial,
-        curator_note: insertedItem.curator_note,
-        metadata: {
-          originalSize: file.size,
-          webpSize: webpResult.sizeBytes,
-          compressionRatio: `${((1 - webpResult.sizeBytes / file.size) * 100).toFixed(1)}%`,
-          dimensions: `${webpResult.width}x${webpResult.height}`,
-        },
-      },
-    });
-  } catch (error: any) {
-    console.error('[UPLOAD] Unexpected error:', error);
+    insertedItem = data;
+    console.log('[UPLOAD] ✅', catalogId, '| ID:', insertedItem.id);
+  } catch (error) {
+    console.error('[UPLOAD] ❌ Database operation exception:', error);
     return NextResponse.json(
       {
-        error: 'Internal server error',
-        message: error?.message || 'Unknown error',
+        error: 'Failed to insert into database',
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        uploadedFileUrl: uploadResult.url,
       },
       { status: 500 }
     );
   }
+
+  // ========================================
+  // SUCCESS RESPONSE
+  // ========================================
+  return NextResponse.json({
+    success: true,
+    data: {
+      id: insertedItem.id,
+      catalog_id: catalogId,
+      image_url: uploadResult.url,
+      r2_path: r2Path,
+      event_date: uploadDate,
+      caption: insertedItem.caption,
+      tag: insertedItem.tag,
+      is_featured: insertedItem.is_featured,
+      is_editorial: insertedItem.is_editorial,
+      curator_note: insertedItem.curator_note,
+      metadata: {
+        originalSize: file.size,
+        webpSize: webpResult.sizeBytes,
+        compressionRatio: `${((1 - webpResult.sizeBytes / file.size) * 100).toFixed(1)}%`,
+        dimensions: `${webpResult.width}x${webpResult.height}`,
+      },
+    },
+  });
 }
 
 /**
@@ -255,38 +267,26 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // 🔍 DEBUG: 打印关键请求信息（移除敏感 token）
-    console.log('[UPLOAD_STATS] ========== API Request ==========');
-    console.log('[UPLOAD_STATS] Has Cookie:', !!request.headers.get('cookie'));
-    console.log('[UPLOAD_STATS] Has Authorization:', !!request.headers.get('authorization'));
-
-    // 🔐 使用统一的认证辅助函数
     const authResult = await getAuthenticatedUser(request);
 
     if (!authResult.user || authResult.error) {
-      console.error('[UPLOAD_STATS] ❌ Authentication failed:', authResult.error, authResult.method);
       return NextResponse.json(
-        { error: 'Unauthorized', method: authResult.method },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const user = authResult.user;
-    console.log('[UPLOAD_STATS] ✅ User authenticated via', authResult.method, ':', user.email);
-
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
+    if (authResult.user?.email !== adminEmail) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
       );
     }
 
-    // Get next catalog ID preview for today
     const supabaseAdmin = getSupabaseAdmin();
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0];
 
-    // Check if there are any gallery items for today（显式指定 schema）
     const { data: lastItem } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('gallery')
@@ -297,17 +297,13 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     let nextSequence = 1;
-
     if (lastItem?.catalog_id) {
-      // Parse the sequence from the last item
       const match = lastItem.catalog_id.match(/-(\d{3})$/);
       if (match) {
-        const lastSequence = parseInt(match[1], 10);
-        nextSequence = lastSequence + 1;
+        nextSequence = parseInt(match[1], 10) + 1;
       }
     }
 
-    // Get total count（显式指定 schema）
     const { count } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('gallery')
@@ -318,10 +314,13 @@ export async function GET(request: NextRequest) {
       total_items: count || 0,
       today: today,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[UPLOAD_STATS] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to retrieve statistics' },
+      {
+        error: 'Failed to retrieve statistics',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

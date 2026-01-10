@@ -1,4 +1,9 @@
-import { getCdnUrl } from './r2-client';
+/**
+ * Image URL utilities for browser and server
+ *
+ * This file is safe to use in both browser and server code
+ * It only uses public environment variables (NEXT_PUBLIC_*)
+ */
 
 /**
  * Get the full image URL for display
@@ -27,6 +32,24 @@ export function getImageUrl(imageUrl: string | null | undefined): string {
 
   // Convert relative path to CDN URL
   return getCdnUrl(imageUrl);
+}
+
+/**
+ * Get the CDN base URL from environment variables
+ * This is safe for browser use as it only uses NEXT_PUBLIC_ vars
+ */
+function getCdnUrl(path: string): string {
+  const cdnBaseUrl = process.env.NEXT_PUBLIC_CDN_URL || 'https://cdn.lmsy.space';
+
+  // If path already includes full URL, return as is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // Remove leading slash if present
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+
+  return `${cdnBaseUrl}/${cleanPath}`;
 }
 
 /**

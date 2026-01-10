@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/back-button';
 import { supabase } from '@/lib/supabase/client';
+import { getImageUrl } from '@/lib/image-url';
 
 interface Magazine {
   id: string;
@@ -16,9 +17,14 @@ interface Magazine {
   description: string | null;
   catalog_id: string | null;
   blur_data: string | null;
-  artifact_count?: number;
-  gallery_cover_url?: string | null;
-  gallery_blur_data?: string | null;
+  gallery_images?: GalleryImage[];
+}
+
+interface GalleryImage {
+  id: string;
+  image_url: string;
+  caption: string | null;
+  blur_data: string | null;
 }
 
 interface NebulaColors {
@@ -56,10 +62,19 @@ export default function EditorialPage() {
       try {
         console.log('[EDITORIAL] Fetching magazines from lmsy_archive.projects...');
 
-        const { data, error } = await supabase
+        // Fetch projects with their gallery images using foreign key relationship
+        const { data: projects, error } = await supabase
           .schema('lmsy_archive')
           .from('projects')
-          .select('*')
+          .select(`
+            *,
+            gallery (
+              id,
+              image_url,
+              blur_data,
+              caption
+            )
+          `)
           .eq('category', 'editorial')
           .order('release_date', { ascending: false });
 
@@ -69,57 +84,50 @@ export default function EditorialPage() {
           return;
         }
 
-        console.log('[EDITORIAL_DEBUG] Raw data from DB:', data);
+        console.log('[EDITORIAL_DEBUG] Raw data from DB:', projects);
 
-        if (!data || data.length === 0) {
+        if (!projects || projects.length === 0) {
           console.log('[EDITORIAL] ⚠️ No editorial projects found');
           setMagazines([]);
+          setLoading(false);
           return;
         }
 
-        // Fetch artifact counts and gallery cover fallback for each magazine
-        const magazinesWithExtras = await Promise.all(
-          data.map(async (magazine) => {
-            // Count gallery items for this project
-            const { count } = await supabase
-              .schema('lmsy_archive')
-              .from('gallery')
-              .select('*', { count: 'exact', head: true })
-              .eq('project_id', magazine.id);
+        // Process magazines: get cover from gallery if needed, count artifacts
+        const processedMagazines = projects.map((project: any) => {
+          // Get gallery images (Supabase returns them in a nested array)
+          const galleryImages = project.gallery || [];
+          const artifactCount = galleryImages.length;
 
-            // If no cover_url in projects, try to get the 000 image from gallery
-            let galleryCoverUrl = null;
-            let galleryBlurData = null;
+          // Determine cover URL: use project cover_url or first gallery image
+          let coverUrl = project.cover_url;
+          let blurData = project.blur_data;
 
-            if (!magazine.cover_url) {
-              const { data: galleryData } = await supabase
-                .schema('lmsy_archive')
-                .from('gallery')
-                .select('image_url, blur_data')
-                .eq('project_id', magazine.id)
-                .ilike('caption', '%000%')
-                .limit(1)
-                .single();
+          if (!coverUrl && galleryImages.length > 0) {
+            // Sort gallery images by caption (numeric) to get the first one
+            const sortedGallery = [...galleryImages].sort((a, b) => {
+              const aNum = parseInt(a.caption?.match(/\d+/)?.[0] || '999');
+              const bNum = parseInt(b.caption?.match(/\d+/)?.[0] || '999');
+              return aNum - bNum;
+            });
 
-              if (galleryData) {
-                galleryCoverUrl = galleryData.image_url;
-                galleryBlurData = galleryData.blur_data;
-                console.log('[EDITORIAL] Found gallery cover for', magazine.title, ':', galleryCoverUrl);
-              }
-            }
+            coverUrl = sortedGallery[0].image_url;
+            blurData = sortedGallery[0].blur_data;
+            console.log('[EDITORIAL] Using gallery cover for', project.title);
+          }
 
-            return {
-              ...magazine,
-              artifact_count: (count || 0),
-              gallery_cover_url: galleryCoverUrl,
-              gallery_blur_data: galleryBlurData,
-            };
-          })
-        );
+          return {
+            ...project,
+            cover_url: coverUrl,
+            blur_data: blurData,
+            gallery_images: galleryImages,
+            artifact_count: artifactCount,
+          };
+        });
 
-        console.log('[EDITORIAL] ✅ Successfully loaded', magazinesWithExtras.length, 'magazines');
-        console.log('[EDITORIAL_DEBUG] Processed magazines:', magazinesWithExtras);
-        setMagazines(magazinesWithExtras);
+        console.log('[EDITORIAL] ✅ Successfully loaded', processedMagazines.length, 'magazines');
+        console.log('[EDITORIAL_DEBUG] Processed magazines:', processedMagazines);
+        setMagazines(processedMagazines);
       } catch (err) {
         console.error('[EDITORIAL] ❌ Error fetching magazines:', err);
         setMagazines([]);
@@ -249,12 +257,12 @@ interface MagazineSlotProps {
   theme: NebulaColors;
 }
 
-function MagazineSlot({ magazine, index, catalogId, onHover, theme }: MagazineSlotProps) {
+function MagazineSlot({ magazine, index, catalogId, onHover }: MagazineSlotProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Determine cover URL and blur data
-  const coverUrl = magazine.cover_url || magazine.gallery_cover_url;
-  const blurData = magazine.blur_data || magazine.gallery_blur_data;
+  // Use getImageUrl to ensure CDN URL is properly formatted
+  const coverUrl = magazine.cover_url ? getImageUrl(magazine.cover_url) : null;
+  const blurData = magazine.blur_data;
 
   return (
     <motion.div
