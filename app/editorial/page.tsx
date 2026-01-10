@@ -127,82 +127,83 @@ export default function EditorialPage() {
     <div className="min-h-screen bg-black transition-colors duration-1000">
       {/* Dynamic Nebula Background */}
       <motion.div
-        className="fixed inset-0 pointer-events-none z-0"
-        animate={{
-          background: hoveredMagazine
-            ? `radial-gradient(ellipse at 50% 50%, ${currentTheme.primary} 0%, ${currentTheme.secondary} 40%, transparent 70%)`
-            : 'radial-gradient(ellipse at 50% 50%, rgba(251, 191, 36, 0.05) 0%, rgba(56, 189, 248, 0.03) 40%, transparent 70%)',
-        }}
-        transition={{ duration: 1.2, ease: 'easeInOut' }}
-      />
+          className="fixed inset-0 pointer-events-none z-0"
+          animate={{
+            background: hoveredMagazine
+              ? `radial-gradient(ellipse at 50% 50%, ${currentTheme.primary} 0%, ${currentTheme.secondary} 40%, transparent 70%)`
+              : 'radial-gradient(ellipse at 50% 50%, rgba(251, 191, 36, 0.05) 0%, rgba(56, 189, 248, 0.03) 40%, transparent 70%)',
+          }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
+        />
 
-      {/* Header */}
-      <header className="relative z-10 px-6 py-8 md:px-12 md:py-12">
-        <div className="flex items-start justify-between max-w-7xl mx-auto">
-          <BackButton />
+        {/* Header */}
+        <header className="relative z-10 px-6 py-8 md:px-12 md:py-12">
+          <div className="flex items-start justify-between max-w-7xl mx-auto">
+            <BackButton />
 
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-right"
-          >
-            <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2">
-              <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                The Editorials
-              </span>
-            </h1>
-            <p className="font-mono text-xs text-white/40 tracking-[0.3em]">
-              MAGAZINE ARCHIVE COLLECTION
-            </p>
-          </motion.div>
-        </div>
-      </header>
-
-      {/* Magazine Grid */}
-      <main className="relative z-10 px-6 pb-20 md:px-12">
-        <div className="max-w-7xl mx-auto">
-          {/* Asymmetric Vertical Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-            <AnimatePresence mode="wait">
-              {!loading ? (
-                <>
-                  {magazines.map((magazine, index) => (
-                    <MagazineSlot
-                      key={magazine.id}
-                      magazine={magazine}
-                      index={index}
-                      catalogId={magazine.catalog_id || getCatalogId(index)}
-                      onHover={setHoveredMagazine}
-                      theme={getMagazineTheme(magazine)}
-                      isFirst={index === 0}
-                    />
-                  ))}
-
-                  {/* Only show empty slots when we have zero magazines */}
-                  {magazines.length === 0 && (
-                    <EmptySlot index={0} />
-                  )}
-                </>
-              ) : (
-                // Loading skeletons
-                [0, 1, 2, 3, 4, 5, 6, 7].map((index) => (
-                  <LoadingSlot key={`loading-${index}`} index={index} />
-                ))
-              )}
-            </AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-right"
+            >
+              <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2">
+                <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                  The Editorials
+                </span>
+              </h1>
+              <p className="font-mono text-xs text-white/40 tracking-[0.3em]">
+                MAGAZINE ARCHIVE COLLECTION
+              </p>
+            </motion.div>
           </div>
-        </div>
-      </main>
+        </header>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 py-12 px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="font-mono text-[10px] text-white/20 tracking-[0.3em] uppercase">
-            LMSY.SPACE · EDITORIAL_ARCHIVE_VOL_001 · {magazines.length} ISSUES CURATED
-          </p>
-        </div>
-      </footer>
+        {/* Magazine Grid */}
+        <main className="relative z-10 px-6 pb-20 md:px-12">
+          <div className="max-w-7xl mx-auto">
+            {/* Asymmetric Vertical Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+              <AnimatePresence mode="wait">
+                {!loading ? (
+                  <>
+                    {magazines.map((magazine, index) => (
+                      <MagazineSlot
+                        key={magazine.id}
+                        magazine={magazine}
+                        index={index}
+                        catalogId={magazine.catalog_id || getCatalogId(index)}
+                        onHover={setHoveredMagazine}
+                        theme={getMagazineTheme(magazine)}
+                        isFirst={index === 0}
+                      />
+                    ))}
+
+                    {/* Only show empty slots when we have zero magazines */}
+                    {magazines.length === 0 && (
+                      <EmptySlot index={0} />
+                    )}
+                  </>
+                ) : (
+                  // Loading skeletons
+                  [0, 1, 2, 3, 4, 5, 6, 7].map((index) => (
+                    <LoadingSlot key={`loading-${index}`} index={index} />
+                  ))
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="relative z-10 border-t border-white/5 py-12 px-6">
+          <div className="max-w-7xl mx-auto text-center">
+            <p className="font-mono text-[10px] text-white/20 tracking-[0.3em] uppercase">
+              LMSY.SPACE · EDITORIAL_ARCHIVE_VOL_001 · {magazines.length} ISSUES CURATED
+            </p>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
