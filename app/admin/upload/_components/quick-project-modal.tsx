@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import type { Project, ProjectCategory } from '@/lib/supabase/types';
+import CategoryDropdown from './category-dropdown';
 
 interface QuickProjectModalProps {
   isOpen: boolean;
@@ -145,48 +146,11 @@ export default function QuickProjectModal({
                   <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
                     Category
                   </label>
-                  <motion.div
-                    className="relative"
-                    initial={false}
-                    animate={{
-                      boxShadow: category ? '0 0 20px rgba(56, 189, 248, 0.15)' : '0 0 0px transparent',
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value as ProjectCategory)}
-                      className="w-full px-0 py-2 bg-transparent text-white/70 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer relative z-10"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    >
-                      {CATEGORY_OPTIONS.map((option) => (
-                        <option
-                          key={option.value}
-                          value={option.value}
-                          className="bg-lmsy-blue text-lmsy-yellow"
-                        >
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    {/* Nebula glow effect */}
-                    <motion.div
-                      className="absolute inset-0 pointer-events-none rounded"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{
-                        opacity: [0, 0.3, 0],
-                        scale: [0.8, 1.2, 0.8],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                      style={{
-                        background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
-                      }}
-                    />
-                  </motion.div>
+                  <CategoryDropdown
+                    options={CATEGORY_OPTIONS}
+                    value={category}
+                    onChange={setCategory}
+                  />
                   {/* Selected prefix display */}
                   <motion.div
                     initial={{ opacity: 0 }}
