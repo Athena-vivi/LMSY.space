@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   try {
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
 
-    // Auth with SSR client
+    // Auth with SSR client（Schema 锁定到 lmsy_archive）
     const supabaseAuth = createServerClient(
       rawUrl,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
           get(name: string) {
             return request.cookies.get(name)?.value;
           },
+        },
+        db: {
+          schema: 'lmsy_archive',
         },
       }
     );
@@ -279,6 +282,9 @@ export async function GET(request: NextRequest) {
           get(name: string) {
             return request.cookies.get(name)?.value;
           },
+        },
+        db: {
+          schema: 'lmsy_archive',
         },
       }
     );

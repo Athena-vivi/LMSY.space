@@ -12,7 +12,7 @@ export async function PATCH(
     const { id } = await params;
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
 
-    // 使用 SSR 客户端进行身份验证
+    // 使用 SSR 客户端进行身份验证（Schema 锁定到 lmsy_archive）
     const supabaseAuth = createServerClient(
       rawUrl,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -21,6 +21,9 @@ export async function PATCH(
           get(name: string) {
             return request.cookies.get(name)?.value;
           },
+        },
+        db: {
+          schema: 'lmsy_archive',
         },
       }
     );
@@ -100,7 +103,7 @@ export async function DELETE(
     const { id } = await params;
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
 
-    // 使用 SSR 客户端进行身份验证
+    // 使用 SSR 客户端进行身份验证（Schema 锁定到 lmsy_archive）
     const supabaseAuth = createServerClient(
       rawUrl,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -109,6 +112,9 @@ export async function DELETE(
           get(name: string) {
             return request.cookies.get(name)?.value;
           },
+        },
+        db: {
+          schema: 'lmsy_archive',
         },
       }
     );
