@@ -1,8 +1,9 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, PlusCircle } from 'lucide-react';
 import type { Project, Member } from '@/lib/supabase/types';
+import QuickProjectModal from './quick-project-modal';
 
 interface CuratorSidebarProps {
   // Base Meta
@@ -28,6 +29,7 @@ interface CuratorSidebarProps {
   // Archive Spec
   selectedTags: string[];
   onRemoveTag: (tag: string) => void;
+  onAddTag: (tag: string) => void;
   tagInput: string;
   onTagInputChange: (value: string) => void;
   onTagInputKeyDown: (e: React.KeyboardEvent) => void;
@@ -36,7 +38,22 @@ interface CuratorSidebarProps {
   isUploading: boolean;
   uploadItemsCount: number;
   onUpload: () => void;
+
+  // Quick Project Creation
+  showProjectModal: boolean;
+  onToggleProjectModal: () => void;
+  onProjectCreated: (project: Project) => void;
 }
+
+const CURATOR_FAVORITE_TAGS = [
+  'LMSY',
+  'Affair',
+  'Editorial',
+  'Performance',
+  'Portrait',
+];
+
+const MAX_TAGS = 8;
 
 export default function CuratorSidebar({
   eventDate,
@@ -57,12 +74,16 @@ export default function CuratorSidebar({
   onBatchMagazineIssueChange,
   selectedTags,
   onRemoveTag,
+  onAddTag,
   tagInput,
   onTagInputChange,
   onTagInputKeyDown,
   isUploading,
   uploadItemsCount,
-  onUpload
+  onUpload,
+  showProjectModal,
+  onToggleProjectModal,
+  onProjectCreated,
 }: CuratorSidebarProps) {
   return (
     <div className="col-span-12 xl:col-span-2 space-y-4">
@@ -86,9 +107,19 @@ export default function CuratorSidebar({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
-            Project
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+              Project
+            </label>
+            <motion.button
+              onClick={onToggleProjectModal}
+              className="text-lmsy-yellow/60 hover:text-lmsy-yellow/80 transition-colors"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+            </motion.button>
+          </div>
           <motion.select
             value={selectedProject || ''}
             onChange={(e) => onProjectChange(e.target.value || null)}
@@ -96,7 +127,7 @@ export default function CuratorSidebar({
             style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
             whileFocus={{ boxShadow: '0 0 10px rgba(56, 189, 248, 0.1)' }}
           >
-            <option value="" className="bg-black">None</option>
+            <option value="" className="bg-black">_UNLINKED</option>
             {projects.map(project => (
               <option key={project.id} value={project.id} className="bg-black">
                 {project.title}
@@ -116,7 +147,7 @@ export default function CuratorSidebar({
             style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
             whileFocus={{ boxShadow: '0 0 10px rgba(56, 189, 248, 0.1)' }}
           >
-            <option value="" className="bg-black">None</option>
+            <option value="" className="bg-black">DUAL_RESONANCE (LMSY)</option>
             {members.map(member => (
               <option key={member.id} value={member.id} className="bg-black">
                 {member.name}
@@ -164,8 +195,8 @@ export default function CuratorSidebar({
                   type="text"
                   value={batchCredits}
                   onChange={(e) => onBatchCreditsChange(e.target.value)}
-                  placeholder="Source, photographer..."
-                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors"
+                  placeholder="Source: X / Weibo / Official"
+                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/15"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.03)' }}
                 />
               </div>
@@ -179,7 +210,7 @@ export default function CuratorSidebar({
                   value={batchCatalogId}
                   onChange={(e) => onBatchCatalogIdChange(e.target.value)}
                   placeholder="LMSY-G-20250109-001"
-                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors"
+                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/15"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.03)' }}
                 />
               </div>
@@ -192,8 +223,8 @@ export default function CuratorSidebar({
                   type="text"
                   value={batchMagazineIssue}
                   onChange={(e) => onBatchMagazineIssueChange(e.target.value)}
-                  placeholder="Issue name, number..."
-                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors"
+                  placeholder="Publication name and issue number"
+                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-white/15"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.03)' }}
                 />
               </div>
@@ -204,9 +235,14 @@ export default function CuratorSidebar({
 
       {/* Group C: ARCHIVE_SPEC - Tags */}
       <div className="space-y-3 pb-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-        <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
-          Archive Spec
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+            Archive Spec
+          </label>
+          <span className="text-[8px] font-mono" style={{ color: selectedTags.length >= MAX_TAGS ? 'rgba(239, 68, 68, 0.7)' : 'rgba(255, 255, 255, 0.2)' }}>
+            {selectedTags.length} / {MAX_TAGS}
+          </span>
+        </div>
 
         <div className="flex flex-wrap gap-1.5">
           {selectedTags.map((tag, index) => (
@@ -240,10 +276,54 @@ export default function CuratorSidebar({
           value={tagInput}
           onChange={(e) => onTagInputChange(e.target.value)}
           onKeyDown={onTagInputKeyDown}
-          placeholder="+ Add tag"
-          className="w-full px-0 py-1.5 bg-transparent text-white/40 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+          placeholder={selectedTags.length >= MAX_TAGS ? "Maximum tags reached" : "+ Add tag"}
+          disabled={selectedTags.length >= MAX_TAGS}
+          className="w-full px-0 py-1.5 bg-transparent text-white/40 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 disabled:opacity-30 disabled:cursor-not-allowed"
           style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
         />
+
+        {/* Curator's Favorite Tags */}
+        <div className="pt-2">
+          <div className="text-[8px] font-mono text-white/15 tracking-wider uppercase mb-2">
+            Quick Add
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {CURATOR_FAVORITE_TAGS.map((tag) => {
+              const isSelected = selectedTags.includes(tag);
+              const isDisabled = isSelected || selectedTags.length >= MAX_TAGS;
+              return (
+                <motion.button
+                  key={tag}
+                  onClick={() => !isDisabled && onAddTag(tag)}
+                  disabled={isDisabled}
+                  className={`px-2 py-0.5 rounded text-[8px] font-mono border transition-all ${
+                    isSelected
+                      ? 'bg-white/10 cursor-default'
+                      : isDisabled
+                      ? 'opacity-20 cursor-not-allowed'
+                      : 'cursor-pointer'
+                  }`}
+                  style={{
+                    borderColor: isSelected
+                      ? 'rgba(255, 255, 255, 0.2)'
+                      : 'rgba(251, 191, 36, 0.1)',
+                    color: isSelected
+                      ? 'rgba(255, 255, 255, 0.4)'
+                      : 'rgba(251, 191, 36, 0.5)',
+                  }}
+                  whileHover={!isDisabled ? {
+                    borderColor: 'rgba(251, 191, 36, 0.3)',
+                    color: 'rgba(251, 191, 36, 0.8)',
+                    scale: 1.02,
+                  } : {}}
+                  whileTap={!isDisabled ? { scale: 0.98 } : {}}
+                >
+                  #{tag}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Upload Button */}
@@ -273,6 +353,13 @@ export default function CuratorSidebar({
           `UPLOAD ALL (${uploadItemsCount})`
         )}
       </motion.button>
+
+      {/* Quick Project Modal */}
+      <QuickProjectModal
+        isOpen={showProjectModal}
+        onClose={onToggleProjectModal}
+        onProjectCreated={onProjectCreated}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import EditorialHeader from './_components/editorial-header';
 import GalleryGrid from './_components/gallery-grid';
 import CuratorSidebar from './_components/curator-sidebar';
 import ImageLightbox from './_components/image-lightbox';
+import { Toast } from './_components/toast';
 
 interface UploadItem {
   id: string;  // Eternal ID - never changes
@@ -47,6 +48,10 @@ export default function AdminUploadPage() {
   const [isCatalogLocked, setIsCatalogLocked] = useState(true);
   const [hasManuallyEdited, setHasManuallyEdited] = useState(false);
   const [showClickHint, setShowClickHint] = useState(false);
+
+  // Quick Project Modal state
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Validate catalog ID format (weak validation for visual hint only)
   const isValidCatalogFormat = (catalogId: string): boolean => {
@@ -101,16 +106,32 @@ export default function AdminUploadPage() {
     };
   }, [lightboxIndex]);
 
-  // Generate preview Catalog ID based on position
-  const getPreviewCatalogId = (index: number): string => {
+  // Generate preview Catalog ID based on position with dynamic prefix
+  const getPreviewCatalogId = useCallback((index: number): string => {
+    // Find selected project to determine category
+    const selectedProjectObj = projects.find(p => p.id === selectedProject);
+
+    // Dynamic prefix based on project category
+    const prefixMap: Record<string, string> = {
+      series: 'STILL',      // TV/Drama
+      editorial: 'MAG',     // Magazine
+      appearance: 'STAGE',  // Event/Stage
+      journal: 'JRN',       // Daily/Travel
+      commercial: 'AD',     // Ad/Brand
+    };
+
+    const prefix = selectedProjectObj?.category
+      ? prefixMap[selectedProjectObj.category] || 'G'
+      : 'G'; // Default: Gallery
+
     const dateMatch = eventDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!dateMatch) return `LMSY-G-YYYYMMDD-${String(index + 1).padStart(3, '0')}`;
+    if (!dateMatch) return `LMSY-${prefix}-YYYYMMDD-${String(index + 1).padStart(3, '0')}`;
 
     const [, year, month, day] = dateMatch;
     const compactDate = `${year}${month}${day}`;
     const sequence = String(index + 1).padStart(3, '0');
-    return `LMSY-G-${compactDate}-${sequence}`;
-  };
+    return `LMSY-${prefix}-${compactDate}-${sequence}`;
+  }, [eventDate, selectedProject, projects]);
 
   // Fetch existing projects, members, and tags
   useEffect(() => {
@@ -189,7 +210,8 @@ export default function AdminUploadPage() {
   };
 
   const addTag = (tag: string) => {
-    if (tag && !selectedTags.includes(tag)) {
+    const MAX_TAGS = 8;
+    if (tag && !selectedTags.includes(tag) && selectedTags.length < MAX_TAGS) {
       setSelectedTags(prev => [...prev, tag]);
       setTagInput('');
     }
@@ -197,6 +219,18 @@ export default function AdminUploadPage() {
 
   const removeTag = (tag: string) => {
     setSelectedTags(prev => prev.filter(t => t !== tag));
+  };
+
+  // Handle project creation from QuickProjectModal
+  const handleProjectCreated = (newProject: Project) => {
+    // Add new project to the list
+    setProjects(prev => [...prev, newProject]);
+
+    // Auto-select the newly created project
+    setSelectedProject(newProject.id);
+
+    // Show toast notification
+    setToastMessage('New orbit project established and linked.');
   };
 
   const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
@@ -397,6 +431,8 @@ export default function AdminUploadPage() {
             <EditorialHeader
               title={title}
               description={description}
+              eventDate={eventDate}
+              selectedProject={selectedProject}
               onTitleChange={setTitle}
               onDescriptionChange={setDescription}
             />
@@ -434,6 +470,7 @@ export default function AdminUploadPage() {
             // Archive Spec
             selectedTags={selectedTags}
             onRemoveTag={removeTag}
+            onAddTag={addTag}
             tagInput={tagInput}
             onTagInputChange={setTagInput}
             onTagInputKeyDown={handleTagInputKeyDown}
@@ -441,6 +478,10 @@ export default function AdminUploadPage() {
             isUploading={isUploading}
             uploadItemsCount={uploadItems.length}
             onUpload={handleUpload}
+            // Quick Project Creation
+            showProjectModal={showProjectModal}
+            onToggleProjectModal={() => setShowProjectModal(!showProjectModal)}
+            onProjectCreated={handleProjectCreated}
           />
         </div>
 
@@ -452,6 +493,14 @@ export default function AdminUploadPage() {
           uploadItems={uploadItems}
           getPreviewCatalogId={getPreviewCatalogId}
         />
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <Toast
+            message={toastMessage}
+            onClose={() => setToastMessage(null)}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,270 @@
+'use client';
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import type { Project, ProjectCategory } from '@/lib/supabase/types';
+
+interface QuickProjectModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onProjectCreated: (project: Project) => void;
+}
+
+const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string }[] = [
+  { value: 'series', label: 'Series (TV/Drama)', prefix: 'STILL' },
+  { value: 'editorial', label: 'Editorial (Magazine)', prefix: 'MAG' },
+  { value: 'appearance', label: 'Appearance (Event/Stage)', prefix: 'STAGE' },
+  { value: 'journal', label: 'Journal (Daily/Travel)', prefix: 'JRN' },
+  { value: 'commercial', label: 'Commercial (Ad/Brand)', prefix: 'AD' },
+];
+
+export default function QuickProjectModal({
+  isOpen,
+  onClose,
+  onProjectCreated,
+}: QuickProjectModalProps) {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<ProjectCategory>('series');
+  const [releaseDate, setReleaseDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!title.trim()) {
+      alert('Title is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          title: title.trim(),
+          category,
+          release_date: releaseDate || null,
+          description: null,
+          cover_url: null,
+          watch_url: null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Reset form
+      setTitle('');
+      setCategory('series');
+      setReleaseDate('');
+
+      // Notify parent component
+      onProjectCreated(data as Project);
+
+      // Close modal
+      onClose();
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      alert(`Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-md bg-black border rounded-lg overflow-hidden"
+              style={{
+                borderColor: 'rgba(251, 191, 36, 0.2)',
+                boxShadow: '0 0 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(251, 191, 36, 0.1)',
+              }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+                <div>
+                  <h2 className="text-lg font-serif text-white/90">New Orbit Project</h2>
+                  <p className="text-[10px] font-mono text-white/30 tracking-wider uppercase mt-0.5">
+                    Quick Establishment
+                  </p>
+                </div>
+                <motion.button
+                  onClick={onClose}
+                  className="text-white/30 hover:text-white/60 transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                {/* Title */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter project title..."
+                    className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+                    style={{
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      fontFamily: 'var(--font-playfair), Georgia, serif',
+                      fontSize: '16px',
+                    }}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Category */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    Category
+                  </label>
+                  <motion.div
+                    className="relative"
+                    initial={false}
+                    animate={{
+                      boxShadow: category ? '0 0 20px rgba(56, 189, 248, 0.15)' : '0 0 0px transparent',
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value as ProjectCategory)}
+                      className="w-full px-0 py-2 bg-transparent text-white/70 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer relative z-10"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    >
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <option
+                          key={option.value}
+                          value={option.value}
+                          className="bg-lmsy-blue text-lmsy-yellow"
+                        >
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {/* Nebula glow effect */}
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none rounded"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{
+                        opacity: [0, 0.3, 0],
+                        scale: [0.8, 1.2, 0.8],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
+                      style={{
+                        background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
+                      }}
+                    />
+                  </motion.div>
+                  {/* Selected prefix display */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-[8px] font-mono text-lmsy-yellow/60 tracking-wider"
+                  >
+                    Catalog Prefix: {CATEGORY_OPTIONS.find(opt => opt.value === category)?.prefix}
+                  </motion.div>
+                </div>
+
+                {/* Release Date */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    Release Date
+                  </label>
+                  <input
+                    type="date"
+                    value={releaseDate}
+                    onChange={(e) => setReleaseDate(e.target.value)}
+                    className="w-full px-0 py-2 bg-transparent text-white/70 font-mono text-sm focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors [color-scheme:dark]"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <motion.button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 py-2.5 rounded border font-mono text-xs tracking-wider transition-all"
+                    style={{
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      color: 'rgba(255, 255, 255, 0.5)',
+                    }}
+                    whileHover={{
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      color: 'rgba(255, 255, 255, 0.8)',
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    CANCEL
+                  </motion.button>
+
+                  <motion.button
+                    type="submit"
+                    disabled={isSubmitting || !title.trim()}
+                    className="flex-1 py-2.5 rounded border font-mono text-xs tracking-wider transition-all relative overflow-hidden"
+                    style={{
+                      borderColor: title.trim() && !isSubmitting ? 'rgba(251, 191, 36, 0.5)' : 'rgba(255, 255, 255, 0.1)',
+                      color: title.trim() && !isSubmitting ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+                      backgroundColor: 'transparent',
+                      cursor: title.trim() && !isSubmitting ? 'pointer' : 'not-allowed',
+                    }}
+                    whileHover={title.trim() && !isSubmitting ? {
+                      borderColor: 'rgba(251, 191, 36, 0.7)',
+                      textShadow: '0 0 15px rgba(251, 191, 36, 0.8)',
+                    } : {}}
+                    whileTap={title.trim() && !isSubmitting ? { scale: 0.98 } : {}}
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <motion.span
+                          className="w-3 h-3 border border-current border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        />
+                        ESTABLISHING...
+                      </span>
+                    ) : (
+                      'ESTABLISH ORBIT'
+                    )}
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}

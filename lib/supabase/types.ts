@@ -22,10 +22,12 @@ export interface Member {
 }
 
 // 项目表 (projects)
+export type ProjectCategory = 'series' | 'editorial' | 'appearance' | 'journal' | 'commercial';
+
 export interface Project {
   id: string;
   title: string;
-  category: 'series' | 'music' | 'magazine';
+  category: ProjectCategory;
   release_date: string | null;
   description: string | null;
   cover_url: string | null;
