@@ -47,52 +47,36 @@ export default function AdminProjectsPage() {
 
   const categoryConfig: Record<string, {
     label: string;
-    color: string;
-    bg: string;
-    border: string;
+    className: string;
   }> = {
     series: {
       label: 'TV_SERIES',
-      color: 'rgba(251, 191, 36, 0.9)',
-      bg: 'rgba(251, 191, 36, 0.1)',
-      border: 'rgba(251, 191, 36, 0.3)',
+      className: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5 backdrop-blur-sm',
     },
     editorial: {
       label: 'EDITORIAL',
-      color: 'rgba(168, 85, 247, 0.9)',
-      bg: 'rgba(168, 85, 247, 0.1)',
-      border: 'rgba(168, 85, 247, 0.3)',
+      className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
     },
     appearance: {
       label: 'APPEARANCE',
-      color: 'rgba(56, 189, 248, 0.9)',
-      bg: 'rgba(56, 189, 248, 0.1)',
-      border: 'rgba(56, 189, 248, 0.3)',
+      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
     },
     journal: {
       label: 'JOURNAL',
-      color: 'rgba(236, 72, 153, 0.9)',
-      bg: 'rgba(236, 72, 153, 0.1)',
-      border: 'rgba(236, 72, 153, 0.3)',
+      className: 'text-white/40 border-white/10 bg-transparent backdrop-blur-sm',
     },
     commercial: {
       label: 'COMMERCIAL',
-      color: 'rgba(34, 197, 94, 0.9)',
-      bg: 'rgba(34, 197, 94, 0.1)',
-      border: 'rgba(34, 197, 94, 0.3)',
+      className: 'text-amber-200/70 border-amber-500/20 bg-amber-500/5 backdrop-blur-sm',
     },
     // Legacy support
     music: {
       label: 'MUSIC_VIDEO',
-      color: 'rgba(56, 189, 248, 0.9)',
-      bg: 'rgba(56, 189, 248, 0.1)',
-      border: 'rgba(56, 189, 248, 0.3)',
+      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
     },
     magazine: {
       label: 'MAGAZINE',
-      color: 'rgba(168, 85, 247, 0.9)',
-      bg: 'rgba(168, 85, 247, 0.1)',
-      border: 'rgba(168, 85, 247, 0.3)',
+      className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
     },
   };
 
@@ -257,16 +241,15 @@ export default function AdminProjectsPage() {
 
                   {/* Category Badge */}
                   <div className="col-span-2">
-                    <span
-                      className="inline-block px-2 py-1 text-[10px] font-mono tracking-wider border"
-                      style={{
-                        color: config.color,
-                        backgroundColor: config.bg,
-                        borderColor: config.border,
+                    <motion.span
+                      className={`inline-block px-2 py-1 text-[10px] font-mono tracking-[0.1em] uppercase border ${config.className}`}
+                      whileHover={{
+                        scale: 1.02,
                       }}
+                      transition={{ duration: 0.2 }}
                     >
                       {config.label}
-                    </span>
+                    </motion.span>
                   </div>
 
                   {/* Release Date */}

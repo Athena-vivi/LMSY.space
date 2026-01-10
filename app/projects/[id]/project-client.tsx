@@ -32,17 +32,40 @@ interface ProjectClientProps {
 export default function ProjectClient({ project }: ProjectClientProps) {
   const { language } = useLanguage();
 
-  // Category badges with colors
-  const categoryColors = {
-    series: 'bg-lmsy-yellow/20 text-lmsy-yellow border-lmsy-yellow',
-    music: 'bg-lmsy-blue/20 text-lmsy-blue border-lmsy-blue',
-    magazine: 'bg-purple-500/20 text-purple-500 border-purple-500',
-  };
-
-  const categoryNames = {
-    series: 'TV Series',
-    music: 'Music Video',
-    magazine: 'Magazine',
+  // Category badges with refined monochrome palette
+  const categoryConfig: Record<string, {
+    label: string;
+    className: string;
+  }> = {
+    series: {
+      label: 'TV Series',
+      className: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5 backdrop-blur-sm',
+    },
+    editorial: {
+      label: 'Editorial',
+      className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
+    },
+    appearance: {
+      label: 'Appearance',
+      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
+    },
+    journal: {
+      label: 'Journal',
+      className: 'text-white/40 border-white/10 bg-transparent backdrop-blur-sm',
+    },
+    commercial: {
+      label: 'Commercial',
+      className: 'text-amber-200/70 border-amber-500/20 bg-amber-500/5 backdrop-blur-sm',
+    },
+    // Legacy support
+    music: {
+      label: 'Music Video',
+      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
+    },
+    magazine: {
+      label: 'Magazine',
+      className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
+    },
   };
 
   return (
@@ -83,9 +106,15 @@ export default function ProjectClient({ project }: ProjectClientProps) {
           {/* Title and Category */}
           <motion.div variants={item} className="mb-8">
             <div className="flex flex-wrap items-center gap-4 mb-4">
-              <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${categoryColors[project.category]}`}>
-                {categoryNames[project.category]}
-              </span>
+              <motion.span
+                className={`px-3 py-1 text-[10px] font-mono tracking-[0.1em] uppercase border ${categoryConfig[project.category]?.className || categoryConfig.series.className}`}
+                whileHover={{
+                  scale: 1.02,
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                {categoryConfig[project.category]?.label || 'Uncategorized'}
+              </motion.span>
               {project.release_date && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="w-4 h-4" />
@@ -144,7 +173,7 @@ export default function ProjectClient({ project }: ProjectClientProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div>
                 <span className="text-muted-foreground">Category</span>
-                <p className="font-medium mt-1">{categoryNames[project.category]}</p>
+                <p className="font-medium mt-1">{categoryConfig[project.category]?.label || 'Uncategorized'}</p>
               </div>
               {project.release_date && (
                 <div>
