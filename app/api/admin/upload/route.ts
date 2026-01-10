@@ -132,10 +132,11 @@ export async function POST(request: NextRequest) {
     console.log('[UPLOAD] Generated catalog ID:', catalogId, 'for category:', categoryPrefix);
   }
 
-  // WebP conversion
+  // WebP conversion with ARCHIVAL QUALITY (95)
+  // 🔒 CRITICAL: Editorial content gets maximum quality preservation
   let webpResult;
   try {
-    webpResult = await convertToWebP(file, 85);
+    webpResult = await convertToWebP(file, 95, isEditorial);
   } catch (error) {
     return NextResponse.json(
       {

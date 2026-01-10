@@ -2,8 +2,8 @@ import sharp from 'sharp';
 
 /**
  * Image processing utilities for R2 uploads
- * - WebP conversion for optimization
- * - Resizing if needed
+ * - High-quality WebP conversion (95 quality for archival standards)
+ * - Original resolution preservation for editorial content
  * - Metadata extraction
  */
 
@@ -16,14 +16,16 @@ export interface ProcessedImageResult {
 }
 
 /**
- * Convert an image to WebP format with optimization
+ * Convert an image to WebP format with ARCHIVAL QUALITY
  * @param file - Original file (File or Buffer)
- * @param quality - WebP quality (1-100), default 85
+ * @param quality - WebP quality (1-100), default 95 for archival quality
+ * @param isEditorial - Whether this is editorial content (preserves original resolution)
  * @returns Processed image buffer and metadata
  */
 export async function convertToWebP(
   file: File | Buffer,
-  quality: number = 85
+  quality: number = 95,
+  isEditorial: boolean = false
 ): Promise<ProcessedImageResult> {
   try {
     let inputBuffer: Buffer;
@@ -35,17 +37,40 @@ export async function convertToWebP(
       inputBuffer = file;
     }
 
-    // Use sharp to convert to WebP
-    const processedImage = await sharp(inputBuffer)
-      .webp({ quality, effort: 4 }) // effort: 4 is balanced speed/compression
-      .toBuffer({ resolveWithObject: true });
-
+    // Get original metadata for quality preservation
     const metadata = await sharp(inputBuffer).metadata();
+    const originalWidth = metadata.width || 0;
+    const originalHeight = metadata.height || 0;
+
+    console.log(`[IMAGE_PROCESSING] Original: ${originalWidth}x${originalHeight}, quality: ${quality}, editorial: ${isEditorial}`);
+
+    // Build sharp pipeline with archival quality settings
+    let pipeline = sharp(inputBuffer);
+
+    // 🔒 CRITICAL: For editorial content, NEVER resize - preserve original resolution
+    // For regular content, we still preserve original (no resizing)
+    // Archival standard: no quality degradation
+
+    pipeline = pipeline.webp({
+      quality,
+      // nearLossless: true for max quality on photos
+      nearLossless: quality >= 95,
+      // effort: 6 is maximum compression effort (slower but better quality/size ratio)
+      effort: 6,
+      // smartSubsample: true for better chroma subsampling
+      smartSubsample: true,
+      // alphaQuality: full quality for transparency
+      alphaQuality: 100,
+    });
+
+    const processedImage = await pipeline.toBuffer({ resolveWithObject: true });
+
+    console.log(`[IMAGE_PROCESSING] Output: ${processedImage.info.width}x${processedImage.info.height}, size: ${(processedImage.data.length / 1024).toFixed(2)} KB`);
 
     return {
       buffer: processedImage.data,
-      width: metadata.width || 0,
-      height: metadata.height || 0,
+      width: originalWidth,
+      height: originalHeight,
       format: 'webp',
       sizeBytes: processedImage.data.length,
     };

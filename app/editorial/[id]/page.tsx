@@ -208,6 +208,7 @@ export default function EditorialDetailPage() {
                   blurDataURL={magazine.blur_data || undefined}
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority
+                  unoptimized={true}
                 />
               </div>
             </motion.div>
@@ -247,19 +248,19 @@ export default function EditorialDetailPage() {
                     onClick={() => setLightboxIndex(index)}
                   >
                     <div className="relative overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
-                      {/* Image - object-contain preserves full image */}
-                      <div className="relative w-full">
+                      {/* Image - fill mode with proper aspect ratio container */}
+                      <div className="relative w-full aspect-[3/4]">
                         <Image
                           src={image.image_url}
                           alt={image.caption || `Page ${index + 1}`}
-                          width={800}
-                          height={Math.max(600, 800 * (Math.random() * 0.5 + 0.75))}
-                          className="w-full h-auto object-contain"
+                          fill
+                          className="object-contain"
                           placeholder={image.blur_data ? "blur" : "empty"}
                           blurDataURL={image.blur_data || undefined}
                           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           priority={index < 3}
                           fetchPriority={index < 3 ? "high" : "auto"}
+                          unoptimized={true}
                         />
                       </div>
 

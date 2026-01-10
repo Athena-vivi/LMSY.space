@@ -163,6 +163,7 @@ export default function EditorialLightbox({
                   blurDataURL={currentImage.blur_data || undefined}
                   sizes="100vw"
                   priority
+                  unoptimized={true}
                 />
               </div>
             </motion.div>
@@ -180,6 +181,26 @@ export default function EditorialLightbox({
                 </span>
               </motion.div>
             )}
+
+            {/* VIEW_ORIGINAL_4K Button - Top Left (below catalog ID) */}
+            <motion.a
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              href={imageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute top-6 left-6 z-10 flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 rounded transition-colors group/btn"
+              style={{ marginTop: '24px' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg className="w-3.5 h-3.5 text-lmsy-yellow/60 group-hover/btn:text-lmsy-yellow transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v4.5m0-4.5L15 15" />
+              </svg>
+              <span className="font-mono text-[9px] text-lmsy-yellow/80 group-hover/btn:text-lmsy-yellow transition-colors tracking-[0.15em] uppercase">
+                VIEW_ORIGINAL_4K
+              </span>
+            </motion.a>
 
             {/* Image Counter - Top Right */}
             <motion.div
