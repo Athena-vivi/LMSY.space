@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight } from 'lucide-react';
+import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight, Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import { supabase, type Project } from '@/lib/supabase';
 import EditProjectModal from './_components/edit-project-modal';
@@ -19,6 +19,18 @@ export default function AdminProjectsPage() {
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean;
+    projectId: string;
+    projectTitle: string;
+  }>({
+    show: false,
+    projectId: '',
+    projectTitle: '',
+  });
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -52,19 +64,76 @@ export default function AdminProjectsPage() {
     showToast('PROJECT_RECORD_UPDATED');
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase
-      .schema('lmsy_archive')
-      .from('projects')
-      .delete()
-      .eq('id', id);
+  const handleDeleteClick = (project: Project) => {
+    setDeleteConfirm({
+      show: true,
+      projectId: project.id,
+      projectTitle: project.title,
+    });
+  };
 
-    if (!error) {
-      setProjects(prev => prev.filter(p => p.id !== id));
+  const confirmDelete = async () => {
+    if (!deleteConfirm.projectId) return;
+
+    setDeletingProjectId(deleteConfirm.projectId);
+    setDeleteConfirm(prev => ({ ...prev, show: false }));
+
+    try {
+      // Get session for Bearer token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        console.error('[PROJECTS] No valid session:', sessionError);
+        alert('Authentication required. Please log in again.');
+        window.location.href = '/admin/login';
+        return;
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (session.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      console.log('[PROJECTS] Deleting project:', deleteConfirm.projectId);
+
+      const response = await fetch(`/api/admin/projects/${deleteConfirm.projectId}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Delete failed');
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error('Delete operation returned unsuccessful');
+      }
+
+      console.log('[PROJECTS] ✅ Delete successful, reloading page...');
+
+      // Show toast
       showToast('PROJECT_DELETED_FROM_ARCHIVE');
-    } else {
+
+      // Force page reload to ensure real-time feedback
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      console.error('Delete error:', error);
       showToast('DELETE_OPERATION_FAILED', 'error');
+      setDeletingProjectId(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, projectId: '', projectTitle: '' });
   };
 
   const categoryConfig: Record<string, {
@@ -318,10 +387,15 @@ export default function AdminProjectsPage() {
                       <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
-                      onClick={() => handleDelete(project.id)}
-                      className="p-1.5 text-white/20 hover:text-red-400/80 hover:bg-red-500/5 transition-all"
+                      onClick={() => handleDeleteClick(project)}
+                      disabled={deletingProjectId === project.id}
+                      className="p-1.5 text-white/20 hover:text-red-400/80 hover:bg-red-500/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      {deletingProjectId === project.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      )}
                     </button>
                   </div>
                 </motion.div>
@@ -338,6 +412,123 @@ export default function AdminProjectsPage() {
         project={selectedProject}
         onUpdate={handleUpdate}
       />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm.show && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={cancelDelete}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+            />
+
+            {/* Modal */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className="relative w-full max-w-md bg-black border rounded-lg overflow-hidden"
+                style={{
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                  boxShadow: '0 0 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(239, 68, 68, 0.15)',
+                  backdropFilter: 'blur(40px)',
+                  backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+                  <div>
+                    <h2 className="text-lg font-serif text-white/90">确认销毁档案</h2>
+                    <p className="text-[10px] font-mono text-red-400/60 tracking-wider uppercase mt-0.5">
+                      ARCHIVE_DESTRUCTION_PROTOCOL
+                    </p>
+                  </div>
+                  <motion.button
+                    onClick={cancelDelete}
+                    className="text-white/30 hover:text-white/60 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <X className="w-4 h-4" />
+                  </motion.button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-4">
+                  <p className="text-sm text-white/60 leading-relaxed">
+                    即将永久删除以下项目档案：
+                  </p>
+
+                  <div className="px-4 py-3 bg-red-500/5 border border-red-500/20 rounded">
+                    <p className="text-sm text-white/90 font-serif truncate">
+                      {deleteConfirm.projectTitle}
+                    </p>
+                    <p className="text-[10px] font-mono text-white/30 mt-1">
+                      ID: {deleteConfirm.projectId}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-red-400/70 font-mono tracking-wide">
+                    ⚠️ 此操作不可撤销。档案将从数据库中永久移除。
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 px-6 pb-6">
+                  <motion.button
+                    onClick={cancelDelete}
+                    disabled={deletingProjectId !== null}
+                    className="flex-1 py-2.5 rounded border font-mono text-xs tracking-wider transition-all"
+                    style={{
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      color: 'rgba(255, 255, 255, 0.5)',
+                    }}
+                    whileHover={{
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      color: 'rgba(255, 255, 255, 0.8)',
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    CANCEL
+                  </motion.button>
+
+                  <motion.button
+                    onClick={confirmDelete}
+                    disabled={deletingProjectId !== null}
+                    className="flex-1 py-2.5 rounded border font-mono text-xs tracking-wider transition-all relative overflow-hidden flex items-center justify-center gap-2"
+                    style={{
+                      borderColor: deletingProjectId ? 'rgba(255, 255, 255, 0.1)' : 'rgba(239, 68, 68, 0.5)',
+                      color: deletingProjectId ? 'rgba(255, 255, 255, 0.3)' : 'rgba(239, 68, 68, 0.9)',
+                      backgroundColor: 'rgba(0, 0, 0, 0)',
+                      cursor: deletingProjectId ? 'not-allowed' : 'pointer',
+                    }}
+                    whileHover={deletingProjectId === null ? {
+                      borderColor: 'rgba(239, 68, 68, 0.7)',
+                      textShadow: '0 0 15px rgba(239, 68, 68, 0.8)',
+                    } : {}}
+                    whileTap={deletingProjectId === null ? { scale: 0.98 } : {}}
+                  >
+                    {deletingProjectId ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        DELETING...
+                      </>
+                    ) : (
+                      'CONFIRM_DELETE'
+                    )}
+                  </motion.button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Toast Notification */}
       <AnimatePresence>

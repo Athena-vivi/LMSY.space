@@ -3,141 +3,52 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 
 /**
- * Update Project API
- * PATCH /api/admin/projects/[id]
+ * Projects Management API
  *
- * Updates a single project in the lmsy_archive.projects table
- * Requires admin authentication
+ * DELETE /api/admin/projects/[id] - Delete a project
+ * PATCH /api/admin/projects/[id] - Update a project
  */
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-
-    // 🔐 使用统一的认证辅助函数
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      console.error('[UPDATE_PROJECT] ❌ Authentication failed:', authResult.error);
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const user = authResult.user;
-    console.log('[UPDATE_PROJECT] ✅ User authenticated via', authResult.method);
-
-    // 双重身份校验：硬编码检查 Email
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    // Parse request body
-    const body = await request.json();
-    const { title, category, release_date, description, watch_url, tags } = body;
-
-    // Validate required fields
-    if (!title || !category) {
-      return NextResponse.json(
-        { error: 'Title and category are required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate category
-    const validCategories = ['series', 'editorial', 'appearance', 'journal', 'commercial'];
-    if (!validCategories.includes(category)) {
-      return NextResponse.json(
-        { error: `Invalid category. Must be one of: ${validCategories.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    // Use admin client to update project
-    const supabaseAdmin = getSupabaseAdmin();
-
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .update({
-        title,
-        category,
-        release_date: release_date || null,
-        description: description || null,
-        watch_url: watch_url || null,
-        tags: tags && Array.isArray(tags) && tags.length > 0 ? tags : null,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('[UPDATE_PROJECT] Database update failed:', error);
-      return NextResponse.json(
-        { error: `Failed to update project: ${error.message}` },
-        { status: 500 }
-      );
-    }
-
-    console.log('[UPDATE_PROJECT] ✅ Project updated successfully:', id);
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error: any) {
-    console.error('[UPDATE_PROJECT] Unexpected error:', error);
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error?.message || 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * DELETE /api/admin/projects/[id]
- * Deletes a single project
- */
+// ========================================
+// DELETE - Delete Project
+// ========================================
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-
-    // 🔐 使用统一的认证辅助函数
+    // Authentication
     const authResult = await getAuthenticatedUser(request);
 
     if (!authResult.user || authResult.error) {
+      console.error('[PROJECTS_DELETE] ❌ Authentication failed:', authResult.error);
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', details: authResult.error },
         { status: 401 }
       );
     }
 
-    const user = authResult.user;
-
-    // 双重身份校验
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
+    if (authResult.user.email !== adminEmail) {
+      console.error('[PROJECTS_DELETE] ❌ Authorization failed: Non-admin user');
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }
       );
     }
 
-    // Use admin client to delete project
+    // Get project ID
+    const { id } = await params;
+
+    if (!id) {
+      console.error('[PROJECTS_DELETE] ❌ Missing project ID');
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Delete project using admin client
     const supabaseAdmin = getSupabaseAdmin();
 
     const { error } = await supabaseAdmin
@@ -147,25 +58,138 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      console.error('[DELETE_PROJECT] Database delete failed:', error);
+      console.error('[PROJECTS_DELETE] ❌ Delete failed:', error.message, '| Code:', error.code);
       return NextResponse.json(
-        { error: `Failed to delete project: ${error.message}` },
+        { error: 'Failed to delete project', details: error.message },
         { status: 500 }
       );
     }
 
-    console.log('[DELETE_PROJECT] ✅ Project deleted successfully:', id);
+    console.log('[PROJECTS_DELETE] ✅ Project deleted:', id);
 
     return NextResponse.json({
       success: true,
       message: 'Project deleted successfully',
     });
-  } catch (error: any) {
-    console.error('[DELETE_PROJECT] Unexpected error:', error);
+  } catch (error) {
+    console.error('[PROJECTS_DELETE] ❌ Operation exception:', error);
     return NextResponse.json(
       {
-        error: 'Internal server error',
-        message: error?.message || 'Unknown error',
+        error: 'Failed to delete project',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// ========================================
+// PATCH - Update Project
+// ========================================
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Authentication
+    const authResult = await getAuthenticatedUser(request);
+
+    if (!authResult.user || authResult.error) {
+      console.error('[PROJECTS_PATCH] ❌ Authentication failed:', authResult.error);
+      return NextResponse.json(
+        { error: 'Unauthorized', details: authResult.error },
+        { status: 401 }
+      );
+    }
+
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    if (authResult.user.email !== adminEmail) {
+      console.error('[PROJECTS_PATCH] ❌ Authorization failed: Non-admin user');
+      return NextResponse.json(
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Get project ID
+    const { id } = await params;
+
+    console.log('[PROJECTS_PATCH] Update request for ID:', id);
+
+    if (!id) {
+      console.error('[PROJECTS_PATCH] ❌ Missing project ID');
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Parse request body
+    const body = await request.json();
+
+    // Validate required fields
+    if (!body.title || !body.title.trim()) {
+      console.error('[PROJECTS_PATCH] ❌ Missing title');
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      );
+    }
+
+    // Prepare update data
+    const updateData: Record<string, any> = {
+      title: body.title.trim(),
+      category: body.category,
+    };
+
+    // Optional fields
+    if (body.release_date !== undefined) updateData.release_date = body.release_date || null;
+    if (body.description !== undefined) updateData.description = body.description || null;
+    if (body.watch_url !== undefined) updateData.watch_url = body.watch_url || null;
+    if (body.tags !== undefined) updateData.tags = body.tags && body.tags.length > 0 ? body.tags : null;
+
+    console.log('[PROJECTS_PATCH] Update data:', updateData);
+
+    // Update project using admin client
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // ❌ DON'T use .single() - it's too fragile and throws PGRST116 if no rows match
+    const { data, error } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .update(updateData)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('[PROJECTS_PATCH] ❌ Update failed:', error.message, '| Code:', error.code);
+      return NextResponse.json(
+        { error: 'Failed to update project', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    // Check if any rows were updated
+    if (!data || data.length === 0) {
+      console.error('[PROJECTS_PATCH] ❌ No rows updated. Project not found for ID:', id);
+      return NextResponse.json(
+        { error: 'Project not found', details: `No project with ID ${id}` },
+        { status: 404 }
+      );
+    }
+
+    console.log('[PROJECTS_PATCH] ✅ Project updated:', id, '| Rows:', data.length);
+
+    return NextResponse.json({
+      success: true,
+      data: data[0], // Return first (and should be only) row
+    });
+  } catch (error) {
+    console.error('[PROJECTS_PATCH] ❌ Operation exception:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to update project',
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
