@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight, Loader2, X } from 'lucide-react';
+import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight, Loader2, X, Images } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { supabase, type Project } from '@/lib/supabase';
 import EditProjectModal from './_components/edit-project-modal';
 
@@ -380,6 +381,13 @@ export default function AdminProjectsPage() {
 
                   {/* Actions */}
                   <div className="col-span-1 flex items-center justify-end gap-2">
+                    <Link
+                      href={`/admin/projects/${project.id}/curate`}
+                      className="p-1.5 text-white/20 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all"
+                      title="Curate Gallery"
+                    >
+                      <Images className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </Link>
                     <button
                       onClick={() => handleEdit(project)}
                       className="p-1.5 text-white/20 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
