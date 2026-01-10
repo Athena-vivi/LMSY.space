@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { BackButton } from '@/components/back-button';
 import { supabase } from '@/lib/supabase/client';
+import EditorialLightbox from '@/components/lightbox/editorial-lightbox';
 
 interface Magazine {
   id: string;
@@ -24,6 +25,7 @@ interface GalleryImage {
   image_url: string;
   caption: string | null;
   blur_data: string | null;
+  catalog_id: string | null;
 }
 
 export default function EditorialDetailPage() {
@@ -34,6 +36,7 @@ export default function EditorialDetailPage() {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [curatorNote, setCuratorNote] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchMagazineData() {
@@ -61,7 +64,7 @@ export default function EditorialDetailPage() {
         const { data: images, error: imagesError } = await supabase
           .schema('lmsy_archive')
           .from('gallery')
-          .select('*')
+          .select('id, image_url, caption, blur_data, catalog_id')
           .eq('project_id', magazineId)
           .order('created_at', { ascending: true });
 
@@ -240,7 +243,8 @@ export default function EditorialDetailPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -30 }}
                     transition={{ duration: 0.6, delay: 1 + index * 0.1 }}
-                    className="break-inside-avoid relative group"
+                    className="break-inside-avoid relative group cursor-pointer"
+                    onClick={() => setLightboxIndex(index)}
                   >
                     <div className="relative overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
                       {/* Image - object-contain preserves full image */}
@@ -261,6 +265,15 @@ export default function EditorialDetailPage() {
 
                       {/* Hover Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                      {/* Click to View Indicator */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-4">
+                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607zM10.5 7.5v6m3-3h-6" />
+                          </svg>
+                        </div>
+                      </div>
 
                       {/* Caption */}
                       {image.caption && (
@@ -291,6 +304,17 @@ export default function EditorialDetailPage() {
           </p>
         </div>
       </footer>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <EditorialLightbox
+            images={galleryImages}
+            initialIndex={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

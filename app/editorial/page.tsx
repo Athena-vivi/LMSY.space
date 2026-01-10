@@ -5,18 +5,20 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/back-button';
-import { supabase } from '@/lib/supabase/client';
 import { getImageUrl } from '@/lib/image-url';
 
+// API Response Types
 interface Magazine {
   id: string;
   title: string;
   category: string;
   cover_url: string | null;
+  blur_data: string | null;
   release_date: string | null;
   description: string | null;
   catalog_id: string | null;
-  blur_data: string | null;
+  artifact_count: number;
+  cover_source: string;
   gallery_images?: GalleryImage[];
 }
 
@@ -25,6 +27,7 @@ interface GalleryImage {
   image_url: string;
   caption: string | null;
   blur_data: string | null;
+  catalog_id: string | null;
 }
 
 interface NebulaColors {
@@ -60,102 +63,28 @@ export default function EditorialPage() {
   useEffect(() => {
     async function fetchMagazines() {
       try {
-        console.log('[EDITORIAL] Fetching magazines from lmsy_archive.projects...');
+        console.log('[EDITORIAL] Fetching magazines from API...');
 
-        // Fetch projects with their gallery images using foreign key relationship
-        const { data: projects, error } = await supabase
-          .schema('lmsy_archive')
-          .from('projects')
-          .select(`
-            *,
-            gallery (
-              id,
-              image_url,
-              blur_data,
-              caption,
-              catalog_id
-            )
-          `)
-          .eq('category', 'editorial')
-          .order('release_date', { ascending: false });
+        const response = await fetch('/api/editorial');
 
-        if (error) {
-          console.error('[EDITORIAL] ❌ Failed to fetch magazines:', error);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('[EDITORIAL] ❌ API request failed:', errorData);
           setMagazines([]);
           return;
         }
 
-        console.log('[EDITORIAL_DEBUG] Raw data from DB:', projects);
+        const data = await response.json();
 
-        if (!projects || projects.length === 0) {
+        if (!data.success || !data.projects) {
           console.log('[EDITORIAL] ⚠️ No editorial projects found');
           setMagazines([]);
           setLoading(false);
           return;
         }
 
-        // Process magazines: get cover from gallery if needed, count artifacts
-        const processedMagazines = projects.map((project: any) => {
-          // Get gallery images (Supabase returns them in a nested array)
-          const galleryImages = project.gallery || [];
-          const artifactCount = galleryImages.length;
-
-          // 🔒 CRITICAL: Cover selection logic - prioritize catalog_id ending with -000
-          let coverUrl = project.cover_url;
-          let blurData = project.blur_data;
-          let coverSource = 'project';
-
-          if (!coverUrl && galleryImages.length > 0) {
-            // Priority 1: Find image with catalog_id ending in -000 (cover image)
-            const coverImage = galleryImages.find((img: any) => {
-              const catalogId = img.catalog_id;
-              if (!catalogId) return false;
-              // Check if catalog_id ends with -000
-              return /-000$/.test(catalogId);
-            });
-
-            if (coverImage) {
-              coverUrl = coverImage.image_url;
-              blurData = coverImage.blur_data;
-              coverSource = `catalog-${coverImage.catalog_id}`;
-              console.log('[EDITORIAL] Found -000 cover for', project.title, '->', coverImage.catalog_id);
-            } else {
-              // Priority 2: Find image with smallest catalog_id sequence (fallback)
-              // Sort by catalog_id to get the lowest sequence number
-              const sortedGallery = [...galleryImages].sort((a: any, b: any) => {
-                const aCatalog = a.catalog_id || '';
-                const bCatalog = b.catalog_id || '';
-
-                // Extract sequence number from catalog_id (last 3 digits after last hyphen)
-                const aMatch = aCatalog.match(/-(\d{3})$/);
-                const bMatch = bCatalog.match(/-(\d{3})$/);
-
-                const aSeq = aMatch ? parseInt(aMatch[1], 10) : 999;
-                const bSeq = bMatch ? parseInt(bMatch[1], 10) : 999;
-
-                return aSeq - bSeq;
-              });
-
-              coverUrl = sortedGallery[0].image_url;
-              blurData = sortedGallery[0].blur_data;
-              coverSource = `fallback-${sortedGallery[0].catalog_id}`;
-              console.log('[EDITORIAL] Cover fallback for', project.title, '->', sortedGallery[0].catalog_id);
-            }
-          }
-
-          return {
-            ...project,
-            cover_url: coverUrl,
-            blur_data: blurData,
-            gallery_images: galleryImages,
-            artifact_count: artifactCount,
-            cover_source: coverSource,
-          };
-        });
-
-        console.log('[EDITORIAL] ✅ Successfully loaded', processedMagazines.length, 'magazines');
-        console.log('[EDITORIAL_DEBUG] Processed magazines:', processedMagazines);
-        setMagazines(processedMagazines);
+        console.log('[EDITORIAL] ✅ Successfully loaded', data.projects.length, 'magazines');
+        setMagazines(data.projects);
       } catch (err) {
         console.error('[EDITORIAL] ❌ Error fetching magazines:', err);
         setMagazines([]);
