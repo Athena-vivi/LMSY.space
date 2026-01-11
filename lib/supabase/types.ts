@@ -37,6 +37,8 @@ export interface Project {
 }
 
 // 图库表 (gallery)
+export type GalleryCategoryTag = 'official_stills' | 'bts' | 'press_events' | null;
+
 export interface GalleryItem {
   id: string;
   image_url: string;
@@ -47,6 +49,8 @@ export interface GalleryItem {
   is_editorial: boolean;  // 策展特别推荐
   curator_note: string | null;  // Markdown 格式的策展笔记
   blur_data: string | null;  // Blur placeholder for image optimization
+  category_tag: GalleryCategoryTag;  // 项目内分类标签 (stills/bts/press)
+  project_id: string | null;  // 关联项目ID
   created_at: string;
 }
 
