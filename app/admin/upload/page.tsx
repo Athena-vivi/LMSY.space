@@ -311,6 +311,16 @@ export default function AdminUploadPage() {
     }
   };
 
+  /**
+   * ARCHITECTURE UPGRADE: Client-to-R2 Direct Upload
+   *
+   * Flow:
+   * 1. Request presigned URL from /api/admin/r2/sign
+   * 2. Upload file directly to R2 via PUT request
+   * 3. Register image in database via /api/admin/upload/register
+   *
+   * Bypasses Vercel's 4.5MB request size limit
+   */
   const handleUpload = async () => {
     if (uploadItems.length === 0) return;
 
@@ -323,141 +333,226 @@ export default function AdminUploadPage() {
       if (sessionError || !session) {
         console.error('[UPLOAD] No valid session:', sessionError);
         alert('Authentication required. Please log in again.');
-        // Force redirect to login page
         window.location.href = '/admin/login';
         setIsUploading(false);
         return;
       }
 
+      console.log('[UPLOAD] 🚀 ARCHITECTURE UPGRADE: Client-to-R2 Direct Upload');
       console.log('[UPLOAD] Session verified for user:', session.user.email);
       console.log(`[UPLOAD] Starting sequential upload of ${uploadItems.length} files...`);
 
-      // Upload each file using the new API - STOP ON FIRST ERROR
+      const authHeaders: Record<string, string> = {};
+      if (session?.access_token) {
+        authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      // Upload each file using three-step flow - STOP ON FIRST ERROR
       const uploadResults: any[] = [];
-      let totalWebPSize = 0;
 
       for (let i = 0; i < uploadItems.length; i++) {
         const item = uploadItems[i];
         const file = item.file;
 
-        console.log(`[UPLOAD] [${i + 1}/${uploadItems.length}] Processing: ${file.name}`);
+        console.log(`[UPLOAD] [${i + 1}/${uploadItems.length}] Processing: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
 
-        // Prepare form data for API
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('event_date', batchEventDate || eventDate);
+        // ========================================
+        // STEP 1: Determine catalog ID
+        // ========================================
+        let catalogId: string;
 
-        // 🔒 CRITICAL: Add project_id if a project is selected
-        if (selectedProject) {
-          formData.append('project_id', selectedProject);
-          console.log(`[UPLOAD] Adding project_id: ${selectedProject}`);
-        }
-
-        // Add manual catalog ID if unlocked and manually edited (Astra 馆长的最终解释权)
         if (!isCatalogLocked && hasManuallyEdited && archiveNumber) {
-          formData.append('catalog_id', archiveNumber);
+          // Manual catalog ID
+          catalogId = archiveNumber;
+          console.log(`[UPLOAD] Step 1: Using manual catalog ID: ${catalogId}`);
+        } else {
+          // Generate catalog ID from event date and sequence
+          const compactDate = (batchEventDate || eventDate).replace(/-/g, '');
+
+          // Find selected project to determine category prefix
+          const selectedProjectObj = projects.find(p => p.id === selectedProject);
+          const prefixMap: Record<string, string> = {
+            series: 'STILL',
+            editorial: 'MAG',
+            appearance: 'STAGE',
+            journal: 'JRN',
+            commercial: 'AD',
+          };
+          const prefix = selectedProjectObj?.category
+            ? prefixMap[selectedProjectObj.category] || 'G'
+            : 'G';
+
+          // Generate with sequence (i + 1, starting from 001)
+          const sequence = String(i + 1).padStart(3, '0');
+          catalogId = `LMSY-${prefix}-${compactDate}-${sequence}`;
+
+          console.log(`[UPLOAD] Step 1: Generated catalog ID: ${catalogId} (prefix: ${prefix})`);
         }
 
-        // Only add optional fields if they have values
-        if (title) {
-          formData.append('caption', i === 0 ? title : `${title} (${i + 1})`);
-        }
+        try {
+          // ========================================
+          // STEP 2: Convert to WebP (client-side)
+          // ========================================
+          console.log(`[UPLOAD] Step 2: Converting to WebP...`);
 
-        if (selectedTags.length > 0) {
-          formData.append('tag', selectedTags[0]);
-        }
+          let webpBlob: Blob;
+          try {
+            webpBlob = await convertToWebPClient(file, 95);
+            console.log(`[UPLOAD] Step 2: ✅ WebP conversion complete (${(webpBlob.size / 1024).toFixed(2)} KB)`);
+          } catch (convError) {
+            throw new Error(`WebP conversion failed: ${convError instanceof Error ? convError.message : String(convError)}`);
+          }
 
-        if (i === 0) {
-          formData.append('is_featured', 'true');
-        }
+          // ========================================
+          // STEP 3: Get Presigned URL from server
+          // ========================================
+          console.log(`[UPLOAD] Step 3: Requesting presigned URL...`);
 
-        // 🔒 CRITICAL: Add Authorization header with session token
-        const headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
+          const signResponse = await fetch('/api/admin/r2/sign', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...authHeaders,
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              catalogId,
+              contentType: 'image/webp',
+            }),
+          });
 
-        // Upload via API
-        const response = await fetch('/api/admin/upload', {
-          method: 'POST',
-          headers,
-          body: formData,
-          credentials: 'include',
-        });
+          if (!signResponse.ok) {
+            const responseText = await signResponse.text();
+            console.error('[UPLOAD] Step 3: ❌ Presigned URL request failed:', {
+              status: signResponse.status,
+              statusText: signResponse.statusText,
+              body: responseText,
+            });
+            throw new Error(`Presigned URL request failed: ${signResponse.status} ${signResponse.statusText}\n\n${responseText}`);
+          }
 
-        // ❌ HTTP ERROR - STOP IMMEDIATELY
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('[UPLOAD] ❌ HTTP ERROR Response:', errorData);
+          const signData = await signResponse.json();
 
-          // Build detailed error message for user
+          if (!signData.success) {
+            console.error('[UPLOAD] Step 3: ❌ Presigned URL API returned unsuccessful:', signData);
+            throw new Error(`Presigned URL API failed: ${signData.error || 'Unknown error'}`);
+          }
+
+          console.log(`[UPLOAD] Step 3: ✅ Presigned URL obtained (expires in ${signData.expiresIn}s)`);
+
+          // ========================================
+          // STEP 4: Upload directly to R2
+          // ========================================
+          console.log(`[UPLOAD] Step 4: Uploading directly to R2 (${(webpBlob.size / 1024 / 1024).toFixed(2)} MB)...`);
+
+          const r2UploadStart = Date.now();
+
+          const r2Response = await fetch(signData.uploadUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'image/webp',
+            },
+            body: webpBlob,
+          });
+
+          const r2UploadDuration = Date.now() - r2UploadStart;
+
+          if (!r2Response.ok) {
+            const responseText = await r2Response.text();
+            console.error('[UPLOAD] Step 4: ❌ R2 upload failed:', {
+              status: r2Response.status,
+              statusText: r2Response.statusText,
+              body: responseText,
+              duration: `${r2UploadDuration}ms`,
+            });
+            throw new Error(`R2 upload failed: ${r2Response.status} ${r2Response.statusText}\n\n${responseText}`);
+          }
+
+          console.log(`[UPLOAD] Step 4: ✅ Uploaded to R2 successfully (${r2UploadDuration}ms)`);
+
+          // ========================================
+          // STEP 5: Register in database
+          // ========================================
+          console.log(`[UPLOAD] Step 5: Registering in database...`);
+
+          const registerPayload = {
+            catalogId,
+            imageUrl: signData.publicUrl,
+            caption: title ? (i === 0 ? title : `${title} (${i + 1})`) : null,
+            tag: selectedTags.length > 0 ? selectedTags[0] : null,
+            projectId: selectedProject || null,
+            isFeatured: i === 0,
+            originalSize: file.size,
+          };
+
+          const registerResponse = await fetch('/api/admin/upload/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...authHeaders,
+            },
+            credentials: 'include',
+            body: JSON.stringify(registerPayload),
+          });
+
+          if (!registerResponse.ok) {
+            const responseText = await registerResponse.text();
+            console.error('[UPLOAD] Step 5: ❌ Database registration failed:', {
+              status: registerResponse.status,
+              statusText: registerResponse.statusText,
+              body: responseText,
+            });
+            throw new Error(`Database registration failed: ${registerResponse.status} ${registerResponse.statusText}\n\n${responseText}`);
+          }
+
+          const registerData = await registerResponse.json();
+
+          if (!registerData.success) {
+            console.error('[UPLOAD] Step 5: ❌ Registration API returned unsuccessful:', registerData);
+            throw new Error(`Registration API failed: ${registerData.error || 'Unknown error'}`);
+          }
+
+          console.log(`[UPLOAD] Step 5: ✅ Registered in database`);
+          console.log(`[UPLOAD] ✅ [${i + 1}/${uploadItems.length}] Complete: ${file.name}`);
+          console.log(`[UPLOAD]    Catalog ID: ${catalogId}`);
+          console.log(`[UPLOAD]    Public URL: ${signData.publicUrl}`);
+
+          // Collect result
+          uploadResults.push({
+            ...registerData.data,
+            metadata: {
+              originalSize: file.size,
+              webpSize: webpBlob.size,
+            },
+          });
+
+        } catch (error) {
+          // ❌ ERROR - STOP IMMEDIATELY
+          console.error(`[UPLOAD] ❌ File [${i + 1}/${uploadItems.length}] FAILED:`, error);
+
           let errorMsg = `❌ UPLOAD FAILED\n\nFile: ${file.name} (${i + 1}/${uploadItems.length})`;
-          errorMsg += `\n\nStatus: ${response.status} ${response.statusText}`;
+          errorMsg += `\nCatalog ID: ${catalogId}`;
+          errorMsg += `\n\nError: ${error instanceof Error ? error.message : String(error)}`;
 
-          if (errorData.error) {
-            errorMsg += `\n\nError: ${errorData.error}`;
-          }
-          if (errorData.details) {
-            errorMsg += `\n\nDetails: ${errorData.details}`;
-          }
-          if (errorData.missingVars && errorData.missingVars.length > 0) {
-            errorMsg += `\n\n❌ Missing Environment Variables:\n${errorData.missingVars.map((v: string) => `  • ${v}`).join('\n')}`;
-            errorMsg += `\n\n⚠️ Please check your .env.local file.`;
-          }
-          if (errorData.bucket) {
-            errorMsg += `\n\nR2 Bucket: ${errorData.bucket}`;
-          }
-          if (errorData.r2Path) {
-            errorMsg += `\n\nR2 Path: ${errorData.r2Path}`;
-          }
-          if (errorData.uploadedFileUrl) {
-            errorMsg += `\n\n⚠️ File was uploaded to R2 but database insert failed.\nURL: ${errorData.uploadedFileUrl}`;
+          if (error instanceof Error && error.stack) {
+            console.error('[UPLOAD] Stack trace:', error.stack);
           }
 
           setIsUploading(false);
           alert(errorMsg);
           return; // STOP IMMEDIATELY
         }
-
-        const result = await response.json();
-
-        // ❌ API RETURNED success: false - STOP IMMEDIATELY
-        if (!result.success) {
-          console.error('[UPLOAD] ❌ API returned unsuccessful:', result);
-
-          let errorMsg = `❌ UPLOAD FAILED\n\nFile: ${file.name} (${i + 1}/${uploadItems.length})`;
-          errorMsg += `\n\nReason: API returned success: false`;
-          errorMsg += `\n\nFull Response:\n${JSON.stringify(result, null, 2)}`;
-
-          setIsUploading(false);
-          alert(errorMsg);
-          return; // STOP IMMEDIATELY
-        }
-
-        // Collect result for storage info
-        uploadResults.push(result.data);
-        if (result.data.metadata?.webpSize) {
-          totalWebPSize += result.data.metadata.webpSize;
-        }
-
-        console.log(`[UPLOAD] ✅ [${i + 1}/${uploadItems.length}] Successfully uploaded: ${file.name}`);
-        console.log(`[UPLOAD]    Catalog ID: ${result.data.catalog_id}`);
-        console.log(`[UPLOAD]    URL: ${result.data.image_url}`);
       }
 
       // ✅ ALL UPLOADS SUCCESSFUL
       console.log('[UPLOAD] ✅✅✅ ALL UPLOADS COMPLETE ✅✅✅');
+      console.log(`[UPLOAD] Successfully processed ${uploadResults.length} files`);
 
       // Fetch storage info after upload
       let storageInfo = '';
       try {
-        const storageHeaders: Record<string, string> = {};
-        if (session?.access_token) {
-          storageHeaders['Authorization'] = `Bearer ${session.access_token}`;
-        }
-
         const storageResponse = await fetch('/api/admin/storage', {
-          headers: storageHeaders,
+          headers: authHeaders,
           credentials: 'include',
         });
 
@@ -468,15 +563,17 @@ export default function AdminUploadPage() {
           }
         }
       } catch (e) {
-        console.log('Failed to fetch storage info');
+        console.log('[UPLOAD] Failed to fetch storage info:', e);
       }
 
-      // Format WebP size info
-      const webpSizeInfo = totalWebPSize > 0
-        ? `\n\nOptimized: ${(totalWebPSize / 1024).toFixed(2)} KB WebP Total`
+      // Calculate total compression
+      const totalOriginal = uploadResults.reduce((sum, r) => sum + (r.metadata?.originalSize || 0), 0);
+      const totalWebP = uploadResults.reduce((sum, r) => sum + (r.metadata?.webpSize || 0), 0);
+      const compressionInfo = totalOriginal > 0
+        ? `\n\nOriginal: ${(totalOriginal / 1024 / 1024).toFixed(2)} MB\nOptimized: ${(totalWebP / 1024 / 1024).toFixed(2)} MB WebP\nSaved: ${((1 - totalWebP / totalOriginal) * 100).toFixed(1)}%`
         : '';
 
-      alert(`✅ Successfully uploaded all ${uploadItems.length} images!${webpSizeInfo}${storageInfo}`);
+      alert(`✅ Successfully uploaded all ${uploadItems.length} images!${compressionInfo}${storageInfo}`);
 
       // Reset form on success
       uploadItems.forEach(item => URL.revokeObjectURL(item.preview));
@@ -492,22 +589,21 @@ export default function AdminUploadPage() {
       setBatchMagazineIssue('');
 
       // Refresh catalog ID for next upload
-      const { data: { session: refreshSession } } = await supabase.auth.getSession();
-      const refreshHeaders: Record<string, string> = {};
-      if (refreshSession?.access_token) {
-        refreshHeaders['Authorization'] = `Bearer ${refreshSession.access_token}`;
+      try {
+        const refreshResponse = await fetch('/api/admin/upload', {
+          credentials: 'include',
+          headers: authHeaders,
+        });
+
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          setArchiveNumber(data.next_catalog_id);
+          console.log('[UPLOAD] Refreshed catalog ID:', data.next_catalog_id);
+        }
+      } catch (e) {
+        console.log('[UPLOAD] Failed to refresh catalog ID:', e);
       }
 
-      const response = await fetch('/api/admin/upload', {
-        credentials: 'include',
-        headers: refreshHeaders,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setArchiveNumber(data.next_catalog_id);
-        console.log('[UPLOAD] Refreshed catalog ID:', data.next_catalog_id);
-      }
     } catch (error) {
       console.error('[UPLOAD] ❌ CATCH BLOCK ERROR:', error);
 
@@ -521,6 +617,65 @@ export default function AdminUploadPage() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  /**
+   * Client-side WebP conversion using Canvas API
+   * @param file - Original file
+   * @param quality - WebP quality (0-100)
+   * @returns WebP Blob
+   */
+  const convertToWebPClient = async (file: File, quality: number = 95): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+
+      // Create object URL for the file
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        try {
+          // Create canvas with original dimensions
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          // Draw image to canvas
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0);
+
+          // Convert to WebP
+          canvas.toBlob(
+            (blob) => {
+              URL.revokeObjectURL(objectUrl);
+              if (!blob) {
+                reject(new Error('Canvas toBlob failed'));
+                return;
+              }
+              resolve(blob);
+            },
+            'image/webp',
+            quality / 100
+          );
+        } catch (error) {
+          URL.revokeObjectURL(objectUrl);
+          reject(error);
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Failed to load image'));
+      };
+
+      // Load image from object URL
+      img.src = objectUrl;
+    });
   };
 
   return (
