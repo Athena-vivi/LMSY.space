@@ -4,7 +4,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { ServiceWorkerProvider } from "@/components/service-worker-provider";
-import { ArchiveLoading } from "@/components/archive-loading";
 import { SiteFooter } from "@/components/site-footer";
 import { AuthProvider } from "@/components/auth-provider";
 import { VinylPlayer } from "@/components/vinyl-player";
@@ -114,7 +113,6 @@ export default function RootLayout({
         style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
         <NebulaBackground />
-        <ArchiveLoading />
         <ScrollProgress />
         <ServiceWorkerProvider />
         <AuthProvider>
