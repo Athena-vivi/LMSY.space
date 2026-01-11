@@ -2,6 +2,92 @@ import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
+/**
+ * GET - Retrieve gallery images
+ * Supports filtering by project_id via query parameter
+ * Returns all images including those linked to projects
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+
+    // Auth with SSR client (Schema locked to lmsy_archive)
+    const supabaseAuth = createServerClient(
+      rawUrl,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+        },
+        db: {
+          schema: 'lmsy_archive',
+        },
+      }
+    );
+
+    // Verify user authentication
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Double-check admin email
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    if (user.email !== adminEmail) {
+      return NextResponse.json(
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('project_id');
+
+    // Build query
+    let query = supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Filter by project_id if provided (for curation view)
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching gallery:', error);
+      return NextResponse.json(
+        { error: `Failed to fetch gallery: ${error.message}` },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      count: data?.length || 0,
+      data: data || [],
+    });
+  } catch (error) {
+    console.error('Unexpected error in GET:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 // POST - 图库入库
 // 使用馆长客户端进行管理操作
 export async function POST(request: NextRequest) {
