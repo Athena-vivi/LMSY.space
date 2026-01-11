@@ -5,6 +5,10 @@ import { getImageUrl } from '@/lib/image-url';
 import Image from 'next/image';
 import Link from 'next/link';
 import { NebulaBackground } from '@/components/nebula-background';
+import { motion } from 'framer-motion';
+
+// Force dynamic rendering to prevent caching
+export const dynamic = 'force-dynamic';
 
 interface ExhibitionPageProps {
   params: {
@@ -38,6 +42,13 @@ const typeMapping: Record<string, { category?: string; tag?: string; title: stri
   },
 };
 
+// Generate static params for all valid types
+export async function generateStaticParams() {
+  return Object.keys(typeMapping).map((type) => ({
+    type,
+  }));
+}
+
 export async function generateMetadata({ params }: ExhibitionPageProps): Promise<Metadata> {
   const type = params.type;
   const mapping = typeMapping[type];
@@ -56,11 +67,20 @@ export async function generateMetadata({ params }: ExhibitionPageProps): Promise
 
 export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
   const type = params.type;
+
+  // Debug logging
+  console.log('[ROUTE_CHECK] Rendering category:', type);
+  console.log('[ROUTE_CHECK] Full params:', params);
+  console.log('[ROUTE_CHECK] Available mappings:', Object.keys(typeMapping));
+
   const mapping = typeMapping[type];
 
   if (!mapping) {
+    console.log('[ROUTE_CHECK] No mapping found for type:', type);
     notFound();
   }
+
+  console.log('[ROUTE_CHECK] Mapping found:', mapping);
 
   // Query projects based on type
   const supabaseAdmin = getSupabaseAdmin();
@@ -78,6 +98,8 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
 
   const { data: projects } = await query;
 
+  console.log('[ROUTE_CHECK] Projects found:', projects?.length || 0);
+
   // Filter by tag if specified
   let filteredProjects = projects || [];
   if (mapping.tag) {
@@ -85,6 +107,8 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
       project.tags?.includes(mapping.tag)
     );
   }
+
+  console.log('[ROUTE_CHECK] Filtered projects:', filteredProjects.length);
 
   // For projects without covers, fetch associated gallery images
   const projectIds = filteredProjects.map((p) => p.id);
@@ -253,6 +277,3 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
     </>
   );
 }
-
-// Import motion for animation
-import { motion } from 'framer-motion';
