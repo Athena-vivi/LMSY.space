@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { Quote, BookOpen, ArrowLeft, Disc } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
-import { AudioPlayer } from '@/components/audio-player';
+import { MusicPlatformLinks } from '@/components/music-platform-links';
 import { useRef } from 'react';
 
 const books = [
@@ -413,20 +413,17 @@ export default function LookmheePage() {
                   &quot;Where past and present embrace in warmth—the melody came to me during twilight, that magical hour when day and night hold each other.&quot;
                 </p>
 
-                {/* Mini Audio Player */}
-                <div className="p-4 rounded-xl backdrop-blur-xl"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                {/* Platform Source Matrix */}
+                <MusicPlatformLinks
+                  trackName="Golden Hour"
+                  platforms={{
+                    spotify: 'https://open.spotify.com/track/golden-hour',
+                    appleMusic: 'https://music.apple.com/album/golden-hour',
+                    youtubeMusic: 'https://music.youtube.com/watch?v=golden-hour',
+                    netEase: 'https://music.163.com/#/song?id=golden-hour',
                   }}
-                >
-                  <AudioPlayer
-                    src="/audio/golden-hour.mp3"
-                    title="Golden Hour"
-                    subtitle="Lookmhee Solo"
-                    showWaveform={true}
-                  />
-                </div>
+                  variant="minimal"
+                />
 
                 <Link
                   href="/resonance"

@@ -7,32 +7,51 @@ import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/lib/image-url';
+import { MusicPlatformLinks } from '@/components/music-platform-links';
 
-// Mock playlist - 在生产环境中这将来自 Supabase
+// Playlist with R2 preview snippets (30s high-quality previews)
 const playlist = [
   {
     id: '1',
     title: 'Silent Resonance',
     artist: 'Sonya',
     cover: 'gallery/music/silent-resonance-cover.jpg',
-    audio: '/audio/silent-resonance.mp3',
-    duration: 0,
+    previewAudio: 'gallery/music/previews/silent-resonance-preview.mp3', // R2 30s preview
+    duration: 30,
+    platforms: {
+      spotify: 'https://open.spotify.com/track/example1',
+      appleMusic: 'https://music.apple.com/album/example1',
+      youtubeMusic: 'https://music.youtube.com/watch?v=example1',
+      netEase: 'https://music.163.com/#/song?id=example1',
+    },
   },
   {
     id: '2',
     title: 'Golden Hour',
     artist: 'Lookmhee',
     cover: 'gallery/music/golden-hour-cover.jpg',
-    audio: '/audio/golden-hour.mp3',
-    duration: 0,
+    previewAudio: 'gallery/music/previews/golden-hour-preview.mp3', // R2 30s preview
+    duration: 30,
+    platforms: {
+      spotify: 'https://open.spotify.com/track/example2',
+      appleMusic: 'https://music.apple.com/album/example2',
+      youtubeMusic: 'https://music.youtube.com/watch?v=example2',
+      netEase: 'https://music.163.com/#/song?id=example2',
+    },
   },
   {
     id: '3',
     title: 'Duality',
     artist: 'LMSY',
     cover: 'gallery/music/duality-cover.jpg',
-    audio: '/audio/duality.mp3',
-    duration: 0,
+    previewAudio: 'gallery/music/previews/duality-preview.mp3', // R2 30s preview
+    duration: 30,
+    platforms: {
+      spotify: 'https://open.spotify.com/track/example3',
+      appleMusic: 'https://music.apple.com/album/example3',
+      youtubeMusic: 'https://music.youtube.com/watch?v=example3',
+      netEase: 'https://music.163.com/#/song?id=example3',
+    },
   },
 ];
 
@@ -50,10 +69,16 @@ export function VinylPlayer() {
 
   const currentTrack = playlist[currentTrackIndex];
 
-  // 播放/暂停控制 - 仅用于视觉演示，不实际播放音频
+  // 播放/暂停控制 - 播放 R2 预览片段
   const togglePlay = () => {
-    // 不尝试播放音频，只切换状态用于动画
-    setIsPlaying(!isPlaying);
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
   };
 
   // 上一首
@@ -61,6 +86,7 @@ export function VinylPlayer() {
     const newIndex = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
     setCurrentTrackIndex(newIndex);
     setProgress(0);
+    setIsPlaying(false);
   };
 
   // 下一首
@@ -68,6 +94,7 @@ export function VinylPlayer() {
     const newIndex = currentTrackIndex === playlist.length - 1 ? 0 : currentTrackIndex + 1;
     setCurrentTrackIndex(newIndex);
     setProgress(0);
+    setIsPlaying(false);
   };
 
   // 格式化时间
@@ -78,35 +105,50 @@ export function VinylPlayer() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // 进度条更新 - 模拟进度动画
+  // 进度条更新 - 使用真实音频进度
   useEffect(() => {
-    if (isPlaying) {
-      progressIntervalRef.current = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            // 播放完成后自动切换到下一首
-            playNext();
-            return 0;
-          }
-          return prev + 0.5;
-        });
-      }, 100);
-    } else if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+    const handleTimeUpdate = () => {
+      const current = audio.currentTime;
+      const total = audio.duration || 30;
+      const newProgress = (current / total) * 100;
+      setProgress(newProgress);
+
+      // 预览播放完毕后循环
+      if (current >= total) {
+        playNext();
       }
     };
-  }, [isPlaying, currentTrackIndex]);
 
-  // 音轨切换时重置 - 仅重置进度，不加载音频
-  useEffect(() => {
-    setProgress(0);
-    // 不实际加载音频文件，避免错误
+    const handleLoadedMetadata = () => {
+      // 音频加载完成
+    };
+
+    const handleEnded = () => {
+      playNext();
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+    };
   }, [currentTrackIndex]);
+
+  // 音轨切换时加载新的预览音频
+  useEffect(() => {
+    if (audioRef.current) {
+      setProgress(0);
+      audioRef.current.src = getImageUrl(currentTrack.previewAudio);
+      audioRef.current.load();
+    }
+  }, [currentTrackIndex, currentTrack.previewAudio]);
 
   // 音量控制
   useEffect(() => {
@@ -114,6 +156,19 @@ export function VinylPlayer() {
       audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
+
+  // 进度条点击跳转
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+
+    if (audioRef.current) {
+      const duration = audioRef.current.duration || 30;
+      audioRef.current.currentTime = (percentage / 100) * duration;
+      setProgress(percentage);
+    }
+  };
 
   // Close panel when clicking outside
   useEffect(() => {
@@ -135,8 +190,11 @@ export function VinylPlayer() {
 
   return (
     <>
-      {/* 仅保留音频元素用于UI展示，不加载实际音频 */}
-      <audio ref={audioRef} />
+      {/* Audio element for R2 preview playback */}
+      <audio
+        ref={audioRef}
+        preload="metadata"
+      />
 
       {/* 左下角固定位置 - 空间化设计 */}
       <div className="fixed bottom-6 left-6 z-40 flex items-center gap-6 vinyl-player-container">
@@ -278,7 +336,7 @@ export function VinylPlayer() {
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-lmsy-yellow animate-pulse" />
-                    <p className="text-[10px] font-mono text-white/40 tracking-wider uppercase">Now Playing</p>
+                    <p className="text-[10px] font-mono text-white/40 tracking-wider uppercase">Preview</p>
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
@@ -321,15 +379,7 @@ export function VinylPlayer() {
                   <div className="space-y-2">
                     <div
                       className="h-0.5 bg-white/10 rounded-full overflow-hidden cursor-pointer"
-                      onClick={(e) => {
-                        if (audioRef.current) {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const x = e.clientX - rect.left;
-                          const percentage = (x / rect.width) * 100;
-                          audioRef.current.currentTime = (percentage / 100) * (audioRef.current.duration || 1);
-                          setProgress(percentage);
-                        }
-                      }}
+                      onClick={handleSeek}
                     >
                       <motion.div
                         className="h-full rounded-full"
@@ -340,8 +390,8 @@ export function VinylPlayer() {
                       />
                     </div>
                     <div className="flex justify-between text-[8px] font-mono text-white/30">
-                      <span>{formatTime((progress / 100) * (audioRef.current?.duration || 0))}</span>
-                      <span>{formatTime(audioRef.current?.duration || 0)}</span>
+                      <span>{formatTime((progress / 100) * (currentTrack.duration || 30))}</span>
+                      <span>0:30</span>
                     </div>
                   </div>
 
@@ -420,6 +470,7 @@ export function VinylPlayer() {
                           onClick={() => {
                             const newIndex = playlist.findIndex(t => t.id === track.id);
                             setCurrentTrackIndex(newIndex);
+                            setIsPlaying(false);
                           }}
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group/track"
                         >
@@ -444,6 +495,12 @@ export function VinylPlayer() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Platform Links - Support message */}
+                  <MusicPlatformLinks
+                    trackName={currentTrack.title}
+                    platforms={currentTrack.platforms}
+                  />
                 </div>
               </div>
             </motion.div>

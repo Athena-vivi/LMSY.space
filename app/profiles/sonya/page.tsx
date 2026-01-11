@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import Link from 'next/link';
 import { Quote, Activity, ArrowLeft, Music, Disc } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
-import { AudioPlayer } from '@/components/audio-player';
+import { MusicPlatformLinks } from '@/components/music-platform-links';
 import { useRef, useEffect, useState } from 'react';
 
 const performances = [
@@ -600,20 +600,17 @@ export default function SonyaPage() {
                   &quot;The first moment of understanding between two souls—where silence speaks louder than words, and the heart finds its own frequency.&quot;
                 </p>
 
-                {/* Mini Audio Player */}
-                <div className="p-4 rounded-xl backdrop-blur-xl"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                {/* Platform Source Matrix */}
+                <MusicPlatformLinks
+                  trackName="Silent Resonance"
+                  platforms={{
+                    spotify: 'https://open.spotify.com/track/silent-resonance',
+                    appleMusic: 'https://music.apple.com/album/silent-resonance',
+                    youtubeMusic: 'https://music.youtube.com/watch?v=silent-resonance',
+                    netEase: 'https://music.163.com/#/song?id=silent-resonance',
                   }}
-                >
-                  <AudioPlayer
-                    src="/audio/silent-resonance.mp3"
-                    title="Silent Resonance"
-                    subtitle="Sonya Solo"
-                    showWaveform={true}
-                  />
-                </div>
+                  variant="minimal"
+                />
 
                 <Link
                   href="/resonance"
