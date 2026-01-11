@@ -127,28 +127,28 @@ export function PortalsSection() {
       titleKey: 'portal.drama',
       descKey: 'portal.dramaDesc',
       image: '', // Temporarily disabled - using gradient background instead
-      href: '/gallery?tag=drama',
+      href: '/exhibitions/category/drama',
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
       titleKey: 'portal.live',
       descKey: 'portal.liveDesc',
       image: '', // Temporarily disabled - using gradient background instead
-      href: '/schedule',
+      href: '/exhibitions/category/stage',
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
     {
       titleKey: 'portal.journey',
       descKey: 'portal.journeyDesc',
       image: '', // Temporarily disabled - using gradient background instead
-      href: '/gallery?tag=journey',
+      href: '/exhibitions/category/travel',
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
       titleKey: 'portal.daily',
       descKey: 'portal.dailyDesc',
       image: '', // Temporarily disabled - using gradient background instead
-      href: '/gallery?tag=daily',
+      href: '/exhibitions/category/daily',
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
   ];
