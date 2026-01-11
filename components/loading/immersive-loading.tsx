@@ -17,7 +17,7 @@ export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadi
       const exitTimer = setTimeout(() => {
         setShowContent(true);
         onComplete();
-      }, 3200); // Extended to 3.2s to match the馆长专用版 animation timing
+      }, 2800);
       return () => clearTimeout(exitTimer);
     }
   }, [loading, onComplete]);
@@ -33,23 +33,22 @@ export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadi
       transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
       className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden"
     >
-      {/* 核心视觉层：LMSY 字符门户 */}
+      {/* 核心视觉层：LMSY 字符门户 - 纯文字渐变方案 */}
       <div className="relative flex flex-col items-center">
         <motion.h1
           initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
           animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           transition={{ duration: 1.5, ease: 'easeOut' }}
-          className="font-serif font-black select-none pointer-events-none text-transparent leading-none tracking-tighter"
+          className="font-serif font-black select-none pointer-events-none leading-none tracking-tighter"
           style={{
-            // 响应式字号：确保在任何屏幕都不会溢出
             fontSize: 'clamp(8rem, 22vw, 24rem)',
             backgroundImage: `url(/hero-reveal.jpg)`,
-            backgroundSize: 'cover', // 核心：保持比例不拉伸
-            backgroundPosition: 'center 30%', // 调整这里以对准她们的脸部
-            backgroundClip: 'text',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 30%',
             WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
             color: 'transparent',
-            // 增加发光感，让文字在黑暗中浮现
             filter: 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.15)) brightness(1.1)',
           }}
         >
