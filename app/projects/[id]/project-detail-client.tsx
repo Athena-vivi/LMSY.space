@@ -283,7 +283,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
             )}
           </AnimatePresence>
 
-          {/* Masonry Gallery */}
+          {/* Masonry Gallery - True CSS Columns with Original Aspect Ratios */}
           <AnimatePresence mode="wait">
             <motion.div
               key={`gallery-${activeTab}`}
@@ -302,12 +302,14 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                   className="mb-4 md:mb-6 break-inside-avoid"
                 >
                   <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                    {/* Image with original aspect ratio - no stretching, no cropping */}
                     <Image
                       src={getImageUrl(image.image_url)}
                       alt={image.caption || image.catalog_id || ''}
-                      width={400}
-                      height={500}
-                      className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
                     />
 
                     {/* Overlay */}
