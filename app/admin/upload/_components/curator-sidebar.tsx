@@ -18,6 +18,9 @@ interface CuratorSidebarProps {
   projects: Project[];
   members: Member[];
 
+  // Date validation warning
+  dateMismatchWarning: string | null;
+
   // Archive Data
   showBatchEditor: boolean;
   onToggleBatchEditor: () => void;
@@ -66,6 +69,7 @@ export default function CuratorSidebar({
   onMemberChange,
   projects,
   members,
+  dateMismatchWarning,
   showBatchEditor,
   onToggleBatchEditor,
   batchCredits,
@@ -162,13 +166,62 @@ export default function CuratorSidebar({
           <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
             Event Date
           </label>
-          <input
-            type="date"
-            value={eventDate}
-            onChange={(e) => onEventDateChange(e.target.value)}
-            className="w-full px-0 py-1.5 bg-transparent text-white/70 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors [color-scheme:dark]"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-          />
+          <motion.div
+            className="relative"
+            animate={dateMismatchWarning ? {
+              boxShadow: [
+                '0 0 5px rgba(239, 68, 68, 0.3)',
+                '0 0 20px rgba(239, 68, 68, 0.6)',
+                '0 0 5px rgba(239, 68, 68, 0.3)',
+              ],
+            } : {}}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <input
+              type="date"
+              value={eventDate}
+              onChange={(e) => onEventDateChange(e.target.value)}
+              className={`w-full px-0 py-1.5 bg-transparent font-mono text-xs focus:outline-none border-b transition-colors [color-scheme:dark] ${
+                !eventDate
+                  ? 'text-white/30 placeholder:text-white/20'
+                  : 'text-white/70'
+              }`}
+              style={{
+                borderColor: dateMismatchWarning
+                  ? 'rgba(239, 68, 68, 0.6)'
+                  : 'rgba(255, 255, 255, 0.05)',
+              }}
+              placeholder={!eventDate ? 'Select date...' : undefined}
+            />
+            {!eventDate && (
+              <motion.div
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-[8px] font-mono text-white/20 pointer-events-none"
+                animate={{
+                  opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              >
+                REQUIRED
+              </motion.div>
+            )}
+          </motion.div>
+          {dateMismatchWarning && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-[8px] font-mono text-red-400/80 mt-1"
+            >
+              ⚠️ {dateMismatchWarning}
+            </motion.div>
+          )}
         </div>
 
         <div className="space-y-1.5">

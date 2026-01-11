@@ -36,7 +36,8 @@ export default function AdminUploadPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [archiveNumber, setArchiveNumber] = useState('');
-  const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
+  // 🔒 CRITICAL: Default to empty string - forces curator to actively choose date
+  const [eventDate, setEventDate] = useState('');
 
   // Batch Metadata Edit fields
   const [showBatchEditor, setShowBatchEditor] = useState(false);
@@ -53,6 +54,9 @@ export default function AdminUploadPage() {
   // Quick Project Modal state
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // 🔒 Date validation state - detect year mismatch from filenames
+  const [dateMismatchWarning, setDateMismatchWarning] = useState<string | null>(null);
 
   // Validate catalog ID format (weak validation for visual hint only)
   const isValidCatalogFormat = (catalogId: string): boolean => {
@@ -256,6 +260,43 @@ export default function AdminUploadPage() {
 
     setUploadItems(prev => [...prev, ...newItems]);
 
+    // 🔒 SMART DATE VALIDATION: Detect year mismatch from filenames
+    // Extract years from filenames (patterns: 2024, 2023, etc.)
+    const filenameYears = files.flatMap(file => {
+      const matches = file.name.match(/\b(20\d{2})\b/g);
+      return matches ? [...new Set(matches.map(m => parseInt(m, 10)))] : [];
+    });
+
+    if (filenameYears.length > 0) {
+      // Get most common year from filenames
+      const yearCounts = filenameYears.reduce((acc, year) => {
+        acc[year] = (acc[year] || 0) + 1;
+        return acc;
+      }, {} as Record<number, number>);
+
+      const detectedYear = Object.entries(yearCounts)
+        .sort((a, b) => b[1] - a[1])[0][0];
+
+      // Check if selected event year differs from detected year
+      if (eventDate) {
+        const eventYear = new Date(eventDate).getFullYear();
+        const yearDiff = Math.abs(parseInt(detectedYear) - eventYear);
+
+        if (yearDiff > 0) {
+          setDateMismatchWarning(
+            `Filenames suggest ${detectedYear}, but Event Date is ${eventYear}`
+          );
+        } else {
+          setDateMismatchWarning(null);
+        }
+      } else {
+        // No event date selected, suggest detected year
+        setDateMismatchWarning(`Filenames suggest ${detectedYear} - please set Event Date`);
+      }
+    } else {
+      setDateMismatchWarning(null);
+    }
+
     // Auto-generate title from first file
     if (files.length > 0 && !title) {
       setTitle(newItems[0].displayName);
@@ -323,6 +364,34 @@ export default function AdminUploadPage() {
    */
   const handleUpload = async () => {
     if (uploadItems.length === 0) return;
+
+    // 🔒 DATE VALIDATION: Check if event date is selected
+    if (!eventDate && !batchEventDate) {
+      alert('⚠️ DATE REQUIRED\n\nPlease select an Event Date before uploading.\n\nThis ensures proper archival organization.');
+      return;
+    }
+
+    // 🔒 UPLOAD CONFIRMATION: Show non-intrusive confirmation
+    const targetDate = batchEventDate || eventDate;
+    const formattedDate = targetDate ? new Date(targetDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }) : 'UNKNOWN DATE';
+
+    const confirmed = confirm(
+      `Ready to archive ${uploadItems.length} artifact${uploadItems.length > 1 ? 's' : ''} into ${formattedDate}?\n\n` +
+      `• Files: ${uploadItems.length}\n` +
+      `• Event Date: ${formattedDate}\n` +
+      (selectedProject ? `• Project: ${projects.find(p => p.id === selectedProject)?.title || 'Unknown'}\n` : '') +
+      (dateMismatchWarning ? `\n⚠️ ${dateMismatchWarning}` : '') +
+      `\n\nProceed?`
+    );
+
+    if (!confirmed) {
+      console.log('[UPLOAD] Cancelled by curator');
+      return;
+    }
 
     setIsUploading(true);
 
@@ -789,6 +858,8 @@ export default function AdminUploadPage() {
             onMemberChange={setSelectedMember}
             projects={projects}
             members={members}
+            // Date validation warning
+            dateMismatchWarning={dateMismatchWarning}
             // Archive Data
             showBatchEditor={showBatchEditor}
             onToggleBatchEditor={() => setShowBatchEditor(!showBatchEditor)}
