@@ -11,9 +11,9 @@ import { motion } from 'framer-motion';
 export const dynamic = 'force-dynamic';
 
 interface ExhibitionPageProps {
-  params: {
+  params: Promise<{
     type: string;
-  };
+  }>;
 }
 
 // Type to category/tag mapping
@@ -50,7 +50,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ExhibitionPageProps): Promise<Metadata> {
-  const type = params.type;
+  const { type } = await params;
   const mapping = typeMapping[type];
 
   if (!mapping) {
@@ -66,11 +66,10 @@ export async function generateMetadata({ params }: ExhibitionPageProps): Promise
 }
 
 export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
-  const type = params.type;
+  const { type } = await params;
 
   // Debug logging
   console.log('[ROUTE_CHECK] Rendering category:', type);
-  console.log('[ROUTE_CHECK] Full params:', params);
   console.log('[ROUTE_CHECK] Available mappings:', Object.keys(typeMapping));
 
   const mapping = typeMapping[type];
