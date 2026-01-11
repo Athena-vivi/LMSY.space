@@ -5,7 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit2, Trash2, X, Save, Loader2, Calendar, Images } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { supabase, type GalleryItem } from '@/lib/supabase';
+import { type GalleryItem } from '@/lib/supabase';
+
+// Force dynamic rendering to prevent Vercel static caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface EditorialArticle extends GalleryItem {
   title?: string;
@@ -47,18 +51,34 @@ export default function AdminEditorialPage() {
 
   const fetchArticles = async () => {
     setLoading(true);
-    // Fetch magazine projects (from projects table where category = 'magazine')
-    const { data: projects, error } = await supabase
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .eq('category', 'magazine')
-      .order('release_date', { ascending: false });
+    try {
+      // Import admin client for full data visibility
+      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
+      const supabaseAdmin = getSupabaseAdmin();
 
-    if (!error && projects) {
-      setArticles(projects as EditorialArticle[]);
+      // Fetch magazine projects (from projects table where category = 'magazine')
+      const { data: projects, error } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('*')
+        .eq('category', 'magazine')
+        .order('release_date', { ascending: false });
+
+      console.log('[ADMIN_FETCH] Editorial magazines:', {
+        count: projects?.length || 0,
+        error,
+        sample: projects?.slice(0, 2)
+      });
+
+      if (!error && projects) {
+        setArticles(projects as EditorialArticle[]);
+      }
+      if (error) console.error('[ADMIN_FETCH] Error:', error);
+    } catch (err) {
+      console.error('[ADMIN_FETCH] Exception:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleCreate = () => {
@@ -98,14 +118,21 @@ export default function AdminEditorialPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this magazine? This will also delete all associated pages.')) return;
 
-    const { error } = await supabase
-      .schema('lmsy_archive')
-      .from('projects')
-      .delete()
-      .eq('id', id);
+    try {
+      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
+      const supabaseAdmin = getSupabaseAdmin();
 
-    if (!error) {
-      setArticles(prev => prev.filter(a => a.id !== id));
+      const { error } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        setArticles(prev => prev.filter(a => a.id !== id));
+      }
+    } catch (err) {
+      console.error('[ADMIN_DELETE] Error:', err);
     }
   };
 
@@ -119,26 +146,33 @@ export default function AdminEditorialPage() {
       release_date: formData.release_date,
     };
 
-    let error;
-    if (viewMode === 'create') {
-      // For new magazines, redirect to upload page
-      window.location.href = `/admin/upload?type=magazine&title=${encodeURIComponent(formData.title)}&date=${formData.release_date}`;
-      return;
-    } else if (selectedArticle) {
-      const result = await supabase
-        .schema('lmsy_archive')
-        .from('projects')
-        .update(payload)
-        .eq('id', selectedArticle.id);
-      error = result.error;
-    }
+    try {
+      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
+      const supabaseAdmin = getSupabaseAdmin();
 
-    if (!error) {
-      await fetchArticles();
-      setViewMode('list');
-    }
+      let error;
+      if (viewMode === 'create') {
+        // For new magazines, redirect to upload page
+        window.location.href = `/admin/upload?type=magazine&title=${encodeURIComponent(formData.title)}&date=${formData.release_date}`;
+        return;
+      } else if (selectedArticle) {
+        const result = await supabaseAdmin
+          .schema('lmsy_archive')
+          .from('projects')
+          .update(payload)
+          .eq('id', selectedArticle.id);
+        error = result.error;
+      }
 
-    setSaving(false);
+      if (!error) {
+        await fetchArticles();
+        setViewMode('list');
+      }
+    } catch (err) {
+      console.error('[ADMIN_SAVE] Error:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

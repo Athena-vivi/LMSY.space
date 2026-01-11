@@ -4,7 +4,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, Trash2, Search, Check, X } from 'lucide-react';
 import Image from 'next/image';
-import { supabase, type GalleryItem } from '@/lib/supabase';
+import { type GalleryItem } from '@/lib/supabase';
+
+// Force dynamic rendering to prevent Vercel static caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function AdminGalleryPage() {
   const [images, setImages] = useState<GalleryItem[]>([]);
@@ -25,13 +29,30 @@ export default function AdminGalleryPage() {
 
   const fetchImages = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('gallery')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      // Import admin client for full data visibility
+      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
+      const supabaseAdmin = getSupabaseAdmin();
 
-    if (!error && data) setImages(data);
-    setLoading(false);
+      const { data, error } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      console.log('[ADMIN_FETCH] Gallery images:', {
+        count: data?.length || 0,
+        error,
+        sample: data?.slice(0, 2)
+      });
+
+      if (!error && data) setImages(data);
+      if (error) console.error('[ADMIN_FETCH] Error:', error);
+    } catch (err) {
+      console.error('[ADMIN_FETCH] Exception:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -40,16 +61,29 @@ export default function AdminGalleryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('gallery').delete().eq('id', id);
-    if (!error) {
-      setImages(prev => prev.filter(img => img.id !== id));
-      setSelectedIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-      showToast('IMAGE_DELETED_FROM_VAULT');
-    } else {
+    try {
+      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
+      const supabaseAdmin = getSupabaseAdmin();
+
+      const { error } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        setImages(prev => prev.filter(img => img.id !== id));
+        setSelectedIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+        showToast('IMAGE_DELETED_FROM_VAULT');
+      } else {
+        showToast('DELETE_OPERATION_FAILED', 'error');
+      }
+    } catch (err) {
+      console.error('[ADMIN_DELETE] Error:', err);
       showToast('DELETE_OPERATION_FAILED', 'error');
     }
   };
@@ -57,17 +91,26 @@ export default function AdminGalleryPage() {
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
 
-    const { error } = await supabase
-      .from('gallery')
-      .delete()
-      .in('id', Array.from(selectedIds));
+    try {
+      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
+      const supabaseAdmin = getSupabaseAdmin();
 
-    if (!error) {
-      setImages(prev => prev.filter(img => !selectedIds.has(img.id)));
-      setSelectedIds(new Set());
-      setSelectedAll(false);
-      showToast(`${selectedIds.size}_IMAGES_PURGED`);
-    } else {
+      const { error } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery')
+        .delete()
+        .in('id', Array.from(selectedIds));
+
+      if (!error) {
+        setImages(prev => prev.filter(img => !selectedIds.has(img.id)));
+        setSelectedIds(new Set());
+        setSelectedAll(false);
+        showToast(`${selectedIds.size}_IMAGES_PURGED`);
+      } else {
+        showToast('BATCH_DELETE_FAILED', 'error');
+      }
+    } catch (err) {
+      console.error('[ADMIN_BATCH_DELETE] Error:', err);
       showToast('BATCH_DELETE_FAILED', 'error');
     }
   };
