@@ -4,17 +4,18 @@ import { supabase } from '@/lib/supabase';
 import ProjectClient from './project-client';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
   const { data: project } = await supabase
     .from('projects')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (!project) {
@@ -30,10 +31,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProjectPage({ params }: PageProps) {
+  const { id } = await params;
   const { data: project, error } = await supabase
     .from('projects')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (error || !project) {
