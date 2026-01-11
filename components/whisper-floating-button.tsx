@@ -71,8 +71,9 @@ export const WhisperPortal = () => {
               strokeWidth="2.8"
               strokeLinecap="round"
               fill="none"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.4)) drop-shadow(0 0 16px rgba(251, 191, 36, 0.2))' }}
               animate={{
-                opacity: [0.6, 1, 0.6],
+                opacity: [0.5, 0.9, 0.5],
                 strokeWidth: [2.5, 2.8, 2.5]
               }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -85,8 +86,9 @@ export const WhisperPortal = () => {
               strokeWidth="2.8"
               strokeLinecap="round"
               fill="none"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)) drop-shadow(0 0 16px rgba(56, 189, 248, 0.2))' }}
               animate={{
-                opacity: [0.6, 1, 0.6],
+                opacity: [0.5, 0.9, 0.5],
                 strokeWidth: [2.5, 2.8, 2.5]
               }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
@@ -98,12 +100,22 @@ export const WhisperPortal = () => {
           <circle cx="82" cy="80" r="1" fill="#38BDF8" className="animate-pulse" />
         </svg>
 
-        {/* 5. 悬停文案 - 衬线体增加博物馆感 */}
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-700">
-          <span className={`text-[8px] tracking-[0.5em] font-serif uppercase whitespace-nowrap ${isDark ? 'text-lmsy-yellow/80' : 'text-black/60'}`}>
-            The Whispering Gates
-          </span>
-        </div>
+        {/* 5. 悬停文案 - 磨砂玻璃质感 - 显示在图标下方 */}
+        <motion.div
+          className="absolute top-0 left-1/4 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none whitespace-nowrap"
+        >
+          <motion.div
+            className="relative px-2 py-1 rounded-md backdrop-blur-md"
+            style={{ background: 'rgba(255, 255, 255, 0.03)' }}
+            initial={{ letterSpacing: '0.3em' }}
+            whileHover={{ letterSpacing: '0.15em' }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/60'}`} style={{ fontFamily: 'var(--font-serif)' }}>
+              The Whispering Gates
+            </span>
+          </motion.div>
+        </motion.div>
       </motion.div>
     </Link>
   );
