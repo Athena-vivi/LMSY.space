@@ -484,15 +484,18 @@ export function VinylPlayer() {
                           <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 border"
                             style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
                           >
-                            {track.cover ? (
-                              <Image src={getImageUrl(track.cover)} alt={track.title} fill className="object-cover" sizes="32px" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/10 to-lmsy-blue/10">
-                                <p className="text-[8px] font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                                  {track.artist[0]}
-                                </p>
-                              </div>
-                            )}
+                            {(() => {
+                              const coverUrl = getImageUrl(track.cover);
+                              return coverUrl ? (
+                                <Image src={coverUrl} alt={track.title} fill className="object-cover" sizes="32px" unoptimized />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/10 to-lmsy-blue/10">
+                                  <p className="text-[8px] font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                                    {track.artist[0]}
+                                  </p>
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-thin font-serif text-white/50 truncate">{track.title}</p>
