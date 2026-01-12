@@ -114,44 +114,48 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
             transition={{ duration: 0.8 }}
             className="mb-12"
           >
-            {project.cover_url ? (
-              <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-white/10">
-                <Image
-                  src={getImageUrl(project.cover_url)}
-                  alt={project.title}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            ) : (
-              /* Glowing text logo placeholder */
-              <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-white/10 bg-gradient-to-br from-lmsy-yellow/10 via-lmsy-blue/10 to-black flex items-center justify-center">
-                <div className="text-center">
-                  <motion.h1
-                    className="font-serif text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter"
-                    style={{
-                      background: 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 50%, rgb(251, 191, 36) 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      filter: 'drop-shadow(0 0 30px rgba(251, 191, 36, 0.3))',
-                    }}
-                    animate={{
-                      backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                    }}
-                    transition={{
-                      duration: 5,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
-                  >
-                    {project.title.split(' ').map(word => word[0]).join('') || project.title.substring(0, 3).toUpperCase()}
-                  </motion.h1>
-                  <p className="text-white/40 text-sm mt-4 tracking-widest uppercase">Coming Soon</p>
+            {(() => {
+              const coverUrl = getImageUrl(project.cover_url);
+              return coverUrl ? (
+                <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-white/10">
+                  <Image
+                    src={coverUrl}
+                    alt={project.title}
+                    fill
+                    className="object-cover"
+                    priority
+                    unoptimized
+                  />
                 </div>
-              </div>
-            )}
+              ) : (
+                /* Glowing text logo placeholder */
+                <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-white/10 bg-gradient-to-br from-lmsy-yellow/10 via-lmsy-blue/10 to-black flex items-center justify-center">
+                  <div className="text-center">
+                    <motion.h1
+                      className="font-serif text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter"
+                      style={{
+                        background: 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 50%, rgb(251, 191, 36) 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        filter: 'drop-shadow(0 0 30px rgba(251, 191, 36, 0.3))',
+                      }}
+                      animate={{
+                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                      }}
+                      transition={{
+                        duration: 5,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
+                    >
+                      {project.title.split(' ').map(word => word[0]).join('') || project.title.substring(0, 3).toUpperCase()}
+                    </motion.h1>
+                    <p className="text-white/40 text-sm mt-4 tracking-widest uppercase">Coming Soon</p>
+                  </div>
+                </div>
+              );
+            })()}
           </motion.div>
 
           {/* Title and Category */}
@@ -303,14 +307,20 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                 >
                   <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
                     {/* Image with original aspect ratio - no stretching, no cropping */}
-                    <Image
-                      src={getImageUrl(image.image_url)}
-                      alt={image.caption || image.catalog_id || ''}
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
-                    />
+                    {(() => {
+                      const imageUrl = getImageUrl(image.image_url);
+                      return imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={image.caption || image.catalog_id || ''}
+                          width={0}
+                          height={0}
+                          sizes="100vw"
+                          className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                          unoptimized
+                        />
+                      ) : null;
+                    })()}
 
                     {/* Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
