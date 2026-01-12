@@ -78,21 +78,28 @@ export function ExhibitionContent({ mapping, projects, type }: ExhibitionContent
                         }}
                       >
                         {/* Image */}
-                        {project.displayImage ? (
-                          <Image
-                            src={getImageUrl(project.displayImage)}
-                            alt={project.title}
-                            fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-lmsy-yellow/10 to-lmsy-blue/10 flex items-center justify-center">
-                            <span className="font-serif text-4xl font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                              {project.title.charAt(0)}
-                            </span>
-                          </div>
-                        )}
+                        {(() => {
+                          const imageUrl = project.displayImage ? getImageUrl(project.displayImage) : null;
+                          if (imageUrl) {
+                            return (
+                              <Image
+                                src={imageUrl}
+                                alt={project.title}
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                unoptimized
+                              />
+                            );
+                          }
+                          return (
+                            <div className="absolute inset-0 bg-gradient-to-br from-lmsy-yellow/10 to-lmsy-blue/10 flex items-center justify-center">
+                              <span className="font-serif text-4xl font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                                {project.title.charAt(0)}
+                              </span>
+                            </div>
+                          );
+                        })()}
 
                         {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
