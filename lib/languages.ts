@@ -120,6 +120,8 @@ export const translations = {
     'portal.journeyDesc': 'Paths walked together',
     'portal.daily': 'Daily',
     'portal.dailyDesc': 'Beautiful ordinary days',
+    'portal.commercial': 'Commercial',
+    'portal.commercialDesc': 'Where inspiration meets value',
 
     // Longform
     'longform.title': 'Chronicle',
@@ -289,6 +291,8 @@ export const translations = {
     'portal.journeyDesc': '同行相伴的足迹',
     'portal.daily': '日常',
     'portal.dailyDesc': '美好的平凡岁月',
+    'portal.commercial': '商务',
+    'portal.commercialDesc': '品牌灵感的碰撞',
 
     // Longform
     'longform.title': '纪事',
@@ -458,6 +462,8 @@ export const translations = {
     'portal.journeyDesc': 'เส้นทางที่เดินตามร่วมกัน',
     'portal.daily': 'ชีวิตประจำวัน',
     'portal.dailyDesc': 'วันธรรมดาที่งดงาม',
+    'portal.commercial': 'ธุรกิจ',
+    'portal.commercialDesc': 'จุดบรรจบของแรงบันดาลความคุณค่า',
 
     // Longform
     'longform.title': 'บันทึก',

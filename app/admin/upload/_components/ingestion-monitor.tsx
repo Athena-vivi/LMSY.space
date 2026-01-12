@@ -104,13 +104,16 @@ export default function IngestionMonitor({
             transition={{ delay: 0.2 }}
             className="relative"
           >
-            <div className="aspect-square rounded-2xl overflow-hidden border border-white/10 bg-white/[0.02]">
-              {currentItem ? (
+            <div className="aspect-square rounded-2xl overflow-hidden border border-white/10 bg-amber-950/20">
+              {currentItem && currentItem.preview ? (
                 <Image
                   src={currentItem.preview}
-                  alt={currentItem.fileName}
+                  alt={currentItem.fileName || 'Processing...'}
                   fill
                   className="object-cover"
+                  unoptimized
+                  placeholder="blur"
+                  blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmNTlmMTYiIG9wYWNpdHk9IjAuMiIvPjwvc3ZnPg=="
                 />
               ) : allComplete ? (
                 <div className="w-full h-full flex items-center justify-center">

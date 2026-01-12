@@ -280,8 +280,9 @@ export function useUploadState() {
     });
   };
 
-  const resetForm = () => {
-    uploadItems.forEach(item => URL.revokeObjectURL(item.preview));
+  // 🔒 CRITICAL: Only clear form state, DON'T revoke URLs yet
+  // URLs should be revoked AFTER IngestionMonitor closes
+  const resetFormState = () => {
     setUploadItems([]);
     setSelectedTags([]);
     setSelectedProject(null);
@@ -292,6 +293,16 @@ export function useUploadState() {
     setBatchEventDate('');
     setBatchCatalogId('');
     setBatchMagazineIssue('');
+  };
+
+  // 🔒 CRITICAL: Revoke preview URLs after monitor closes
+  const cleanupPreviews = (items: UploadItem[]) => {
+    items.forEach(item => URL.revokeObjectURL(item.preview));
+  };
+
+  // Legacy alias for backward compatibility
+  const resetForm = () => {
+    resetFormState();
   };
 
   // ========================================
@@ -363,6 +374,8 @@ export function useUploadState() {
     handleFiles,
     removeFile,
     resetForm,
+    resetFormState,
+    cleanupPreviews,
     handleProjectCreated,
   };
 }

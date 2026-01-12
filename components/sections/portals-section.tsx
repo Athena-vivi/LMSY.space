@@ -15,12 +15,27 @@ interface PortalCardProps {
   href: string;
   index: number;
   gradient: string;
+  isFeatured?: boolean;
 }
 
-function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalCardProps) {
+function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeatured }: PortalCardProps) {
   const { language } = useLanguage();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  // 🔥 AMBER GOLD theme for commercial cards
+  const isCommercial = isFeatured || gradient.includes('amber');
+  const titleGradient = isCommercial
+    ? 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(217, 119, 6) 50%, rgb(180, 83, 9) 100%)'
+    : 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 100%)';
+
+  const glowGradient = isCommercial
+    ? 'radial-gradient(circle at center, rgba(251, 191, 36, 0.15) 0%, rgba(217, 119, 6, 0.1) 50%, rgba(180, 83, 9, 0.05) 100%)'
+    : 'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%)';
+
+  const borderColor = isCommercial
+    ? 'from-amber-400/40 via-yellow-500/30 to-amber-600/40'
+    : 'from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30';
 
   return (
     <motion.div
@@ -71,7 +86,7 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
 
           {/* Duo Color Border */}
-          <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30 p-[2px]">
+          <div className={`absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r p-[2px] ${isCommercial ? 'from-amber-400/40 via-yellow-500/30 to-amber-600/40' : 'from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30'}`}>
             <div className="absolute inset-0 rounded-2xl bg-background/0" />
           </div>
 
@@ -81,7 +96,7 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
             <motion.h3
               className="font-serif text-3xl md:text-4xl font-bold text-white mb-3"
               style={{
-                background: 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 100%)',
+                background: titleGradient,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -110,7 +125,7 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
           <motion.div
             className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
             style={{
-              background: 'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%)',
+              background: glowGradient,
             }}
           />
         </div>
@@ -151,6 +166,14 @@ export function PortalsSection() {
       href: '/exhibitions/category/daily',
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
+    {
+      titleKey: 'portal.commercial',
+      descKey: 'portal.commercialDesc',
+      image: '',
+      href: '/exhibitions/category/commercial',
+      gradient: 'from-amber-400/30 via-yellow-500/20 to-amber-600/30',
+      isFeatured: true, // Commercial gets special treatment
+    },
   ];
 
   return (
@@ -174,15 +197,26 @@ export function PortalsSection() {
           </p>
         </motion.div>
 
-        {/* Portals Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {portals.map((portal, index) => (
-            <PortalCard
-              key={portal.titleKey}
-              {...portal}
-              index={index}
-            />
-          ))}
+        {/* 🔥 ASYMMETRIC LAYOUT: Non-traditional grid with visual tension */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 md:gap-8">
+          {/* First row: Drama (large) + Live (medium) */}
+          <div className="lg:col-span-7">
+            <PortalCard {...portals[0]} index={0} />
+          </div>
+          <div className="lg:col-span-5">
+            <PortalCard {...portals[1]} index={1} />
+          </div>
+
+          {/* Second row: Journey (medium) + Daily (medium) + Commercial (featured, wide) */}
+          <div className="lg:col-span-4">
+            <PortalCard {...portals[2]} index={2} />
+          </div>
+          <div className="lg:col-span-3">
+            <PortalCard {...portals[3]} index={3} />
+          </div>
+          <div className="lg:col-span-5">
+            <PortalCard {...portals[4]} index={4} />
+          </div>
         </div>
       </div>
     </section>

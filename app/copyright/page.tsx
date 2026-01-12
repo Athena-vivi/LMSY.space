@@ -5,6 +5,7 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { Mail, Shield, Scale, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { ArchiveDisclaimer } from '@/components/archive-disclaimer';
 
 export default function CopyrightPage() {
   const { language } = useLanguage();
@@ -59,6 +60,11 @@ export default function CopyrightPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
+              {/* 🔒 ARCHIVE DISCLAIMER - Chapter One Title */}
+              <div className="mb-8">
+                <ArchiveDisclaimer />
+              </div>
+
               <p className="font-serif text-xl md:text-2xl text-foreground/80 leading-relaxed">
                 {t(language, 'copyright.intro')}
               </p>

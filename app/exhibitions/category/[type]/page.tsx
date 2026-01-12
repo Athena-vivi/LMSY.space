@@ -36,6 +36,11 @@ const typeMapping: Record<string, { category?: string; tag?: string; title: stri
     title: 'DAILY MOMENTS',
     description: 'Everyday moments and behind-the-scenes glimpses',
   },
+  commercial: {
+    category: 'commercial',
+    title: 'COMMERCIAL',
+    description: 'Brand collaborations, endorsements, and where inspiration meets value',
+  },
 };
 
 // Generate static params for all valid types

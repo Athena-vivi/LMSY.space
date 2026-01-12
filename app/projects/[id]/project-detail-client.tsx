@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, ExternalLink, Play, Quote } from 'lucide-react';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
 import { NebulaBackground } from '@/components/nebula-background';
+import { ArchiveCreditCompact } from '@/components/archive-credit';
 import { CATEGORIES, CategoryType } from './page';
 
 interface GalleryImage {
@@ -301,6 +302,11 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
             <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
               {project.title}
             </h1>
+
+            {/* 🔒 ARCHIVE CREDIT - Dynamic Gratitude based on category */}
+            <div className="mb-4">
+              <ArchiveCreditCompact category={project.category} />
+            </div>
 
             <div className="w-24 h-0.5 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
           </motion.div>

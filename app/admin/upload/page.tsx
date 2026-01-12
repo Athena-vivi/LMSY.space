@@ -36,6 +36,9 @@ export default function AdminUploadPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // 🔒 CRITICAL: Store upload items reference for cleanup after monitor closes
+  const [pendingCleanup, setPendingCleanup] = useState<any[] | null>(null);
+
   // ========================================
   // FILE DROP HANDLERS
   // ========================================
@@ -113,6 +116,7 @@ export default function AdminUploadPage() {
         id: item.id,
         file: item.file,
         displayName: item.displayName,
+        preview: item.preview, // 🔒 CRITICAL: Pass blob URL for monitor preview
       })),
       eventDate: targetDate,
       title: uploadState.title,
@@ -130,7 +134,12 @@ export default function AdminUploadPage() {
           : '';
 
         alert(`✅ Successfully uploaded all ${uploadState.uploadItems.length} images!${compressionInfo}`);
-        uploadState.resetForm();
+
+        // 🔒 CRITICAL: Store items for cleanup AFTER monitor closes
+        setPendingCleanup(uploadState.uploadItems);
+
+        // Clear form state but DON'T revoke URLs yet
+        uploadState.resetFormState();
       },
       onError: (errorMessage) => {
         alert(`❌ UPLOAD FAILED\n\n${errorMessage}`);
@@ -139,6 +148,18 @@ export default function AdminUploadPage() {
 
     setIsUploading(false);
   };
+
+  // ========================================
+  // MONITOR CLOSE HANDLER (with cleanup)
+  // ========================================
+  const handleCloseMonitor = useCallback(() => {
+    // 🔒 CRITICAL: Revoke preview URLs BEFORE closing monitor
+    if (pendingCleanup) {
+      uploadState.cleanupPreviews(pendingCleanup);
+      setPendingCleanup(null);
+    }
+    closeMonitor();
+  }, [pendingCleanup, uploadState, closeMonitor]);
 
   // ========================================
   // PROJECT CREATION HANDLER
@@ -251,7 +272,7 @@ export default function AdminUploadPage() {
         {ingestionMonitor.visible && (
           <IngestionMonitor
             state={ingestionMonitor}
-            onClose={closeMonitor}
+            onClose={handleCloseMonitor}
             onRetry={handleUpload}
           />
         )}

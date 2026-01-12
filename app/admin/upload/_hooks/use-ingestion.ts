@@ -131,6 +131,7 @@ export function useIngestion() {
       id: string;
       file: File;
       displayName: string;
+      preview: string; // 🔒 CRITICAL: Blob URL for preview in monitor
     }>;
     eventDate: string;
     title: string;
@@ -157,11 +158,11 @@ export function useIngestion() {
       onError,
     } = params;
 
-    // Initialize monitoring state
+    // 🔒 VISUAL RETENTION: Initialize monitoring state with preview URLs
     const initialItems: UploadStatus[] = uploadItems.map(item => ({
       id: item.id,
       fileName: item.displayName,
-      preview: '', // Preview will be added by caller
+      preview: item.preview, // 🔒 CRITICAL: Preserve blob URL for monitor display
       status: 'pending' as UploadStep,
       currentStep: 'Waiting...',
       progress: 0,

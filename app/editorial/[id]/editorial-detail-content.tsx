@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { BackButton } from '@/components/back-button';
 import { GalleryImageWithLightbox } from './gallery-image';
 import { getImageUrl } from '@/lib/image-url';
+import { ArchiveCreditCompact } from '@/components/archive-credit';
 
 interface Magazine {
   id: string;
@@ -112,6 +113,16 @@ export function EditorialDetailContent({
                 Artifacts Preserved
               </p>
             </div>
+          </motion.div>
+
+          {/* 🔒 ARCHIVE CREDIT - Dynamic Gratitude based on category */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-8"
+          >
+            <ArchiveCreditCompact category={magazine.category} />
           </motion.div>
 
           {/* Curator's Note */}
