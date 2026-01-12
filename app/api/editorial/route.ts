@@ -2,24 +2,15 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 /**
- * Editorial Projects API - DATA STITCHING
+ * Editorial Projects API - FORCED ALIGNMENT
  *
- * 🔒 EXPLICIT SCHEMA + FK JOIN + SELF-HEALING:
- * 1. Explicit .schema('lmsy_archive')
- * 2. FK join: .select('*, gallery(*)')
- * 3. Self-healing: Discover cover from gallery if missing
- * 4. Clear status codes: 'gallery_fallback' | 'database' | 'empty_vault'
- *
- * ❌ NO undefined
- * ❌ NO placeholder
- * ✅ REAL DATA with clear status
+ * 🔥 MANDATORY EXPLICIT .schema('lmsy_archive') ON EVERY QUERY
+ * ✅ TARGET: 7 editorial + 2 series projects confirmed in database
+ * ❌ NO RELIANCE ON "PRE-CONFIGURED" DEFAULTS
  */
 
 export const revalidate = 0;
 
-/**
- * Get CDN URL from relative path
- */
 function getCdnUrl(imagePath: string | null): string | null {
   if (!imagePath) return null;
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -28,73 +19,56 @@ function getCdnUrl(imagePath: string | null): string | null {
   return `https://cdn.lmsy.space/${imagePath.startsWith('/') ? imagePath.slice(1) : imagePath}`;
 }
 
-/**
- * Discover cover from gallery array
- * Priority: -000 → smallest catalog_id
- */
-function discoverCoverFromGallery(galleryImages: any[]): { imageUrl: string | null; source: string } {
+function discoverCoverFromGallery(galleryImages: any[]): string | null {
   if (!galleryImages || galleryImages.length === 0) {
-    return { imageUrl: null, source: 'empty_vault' };
+    return null;
   }
 
-  // Priority 1: -000 cover designation
   const coverImage = galleryImages.find((img: any) =>
     img.catalog_id && img.catalog_id.endsWith('-000')
   );
 
   if (coverImage && coverImage.image_url) {
-    console.log(`[DATA_STITCH] ✅ Found -000 cover: ${coverImage.catalog_id}`);
-    return { imageUrl: getCdnUrl(coverImage.image_url), source: 'gallery_fallback' };
+    console.log(`[COVER_DISCOVERY] ✅ Found -000 cover: ${coverImage.catalog_id}`);
+    return getCdnUrl(coverImage.image_url);
   }
 
-  // Priority 2: Smallest catalog_id (first image)
   const sorted = [...galleryImages]
     .filter((img: any) => img.catalog_id)
     .sort((a: any, b: any) => (a.catalog_id || '').localeCompare(b.catalog_id || ''));
 
   if (sorted.length > 0 && sorted[0].image_url) {
-    console.log(`[DATA_STITCH] ✅ Found first image: ${sorted[0].catalog_id}`);
-    return { imageUrl: getCdnUrl(sorted[0].image_url), source: 'gallery_fallback' };
+    console.log(`[COVER_DISCOVERY] ✅ Found first image: ${sorted[0].catalog_id}`);
+    return getCdnUrl(sorted[0].image_url);
   }
 
-  console.log(`[DATA_STITCH] ⚠️ Gallery has items but no valid image_url`);
-  return { imageUrl: null, source: 'gallery_fallback' };
+  console.log(`[COVER_DISCOVERY] ⚠️ Gallery has ${galleryImages.length} items but no valid image_url`);
+  return null;
 }
 
 export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    console.log('[API_DEBUG] 🔍 Fetching ALL projects from lmsy_archive for audit...');
+    console.log('[FORCED_ALIGNMENT] ========== FORCED SCHEMA ALIGNMENT ==========');
+    console.log('[FORCED_ALIGNMENT] 🎯 Target: lmsy_archive.projects');
+    console.log('[FORCED_ALIGNMENT] 🎯 Expected: 7 editorial + 2 series projects');
+    console.log('[FORCED_ALIGNMENT] 📡 Query: .or("category.eq.editorial,category.eq.series")');
 
-    // 🔍 DEBUG: First, fetch ALL projects to see what's in the database
-    const { data: allProjects, error: allProjectsError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('id, title, category, release_date')
-      .order('release_date', { ascending: false });
-
-    if (allProjectsError) {
-      console.error('[API_DEBUG] ❌ Query failed:', allProjectsError);
-      return NextResponse.json(
-        { error: 'Query failed', details: allProjectsError.message },
-        { status: 500 }
-      );
-    }
-
-    console.log('[API_DEBUG] 📊 ALL PROJECTS IN DATABASE:', {
-      total: allProjects?.length || 0,
-      categories: allProjects?.map(p => p.category),
-      sample: allProjects?.slice(0, 5)
-    });
-
-    // 🔒 EXPLICIT SCHEMA + FK JOIN with INCLUSIVE category filter
-    // Match both 'editorial', 'magazine', and any case variations
-    const { data: projects, error: fetchError } = await supabaseAdmin
-      .schema('lmsy_archive')
+    // 🔥 FORCED: Explicit schema + category filter matching database
+    const { data, error, status, statusText } = await supabaseAdmin
+      .schema('lmsy_archive')  // 🚨 MANDATORY EXPLICIT SCHEMA
       .from('projects')
       .select(`
-        *,
+        id,
+        title,
+        description,
+        category,
+        cover_url,
+        blur_data,
+        release_date,
+        catalog_id,
+        created_at,
         gallery (
           id,
           image_url,
@@ -104,140 +78,109 @@ export async function GET() {
           created_at
         )
       `)
-      .in('category', ['editorial', 'magazine', 'Editorial', 'Magazine', 'EDITORIAL', 'MAGAZINE'])
+      .or('category.eq.editorial,category.eq.series')  // Match confirmed 7+2 projects
       .order('release_date', { ascending: false });
 
-    if (fetchError) {
-      console.error('[API_DEBUG] ❌ Category-filtered query failed:', fetchError);
+    console.log('[FORCED_ALIGNMENT] ========== QUERY RESULT ==========');
+    console.log('[FORCED_ALIGNMENT] 📊 HTTP Status:', status, statusText);
+    console.log('[FORCED_ALIGNMENT] 📊 Data Length:', data?.length || 0);
+    console.log('[FORCED_ALIGNMENT] 📊 Error:', error ? JSON.stringify(error, null, 2) : 'NO_ERROR');
+
+    if (data && data.length > 0) {
+      console.log('[FORCED_ALIGNMENT] ✅ SUCCESS - Found projects:', data.map(p => ({
+        id: p.id,
+        title: p.title,
+        category: p.category,
+        gallery_count: p.gallery?.length || 0
+      })));
+    }
+
+    if (error) {
+      console.error('[FORCED_ALIGNMENT] ❌ CRITICAL ERROR:', JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { error: 'Query failed', details: fetchError.message },
+        {
+          error: 'FORCED_ALIGNMENT_FAILED',
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+          fullError: JSON.stringify(error, null, 2)
+        },
         { status: 500 }
       );
     }
 
-    if (!projects || projects.length === 0) {
-      console.log('[API_DEBUG] ⚠️ NO MATCHING PROJECTS - Trying WITHOUT category filter...');
-
-      // Fallback: Try fetching ALL projects without category filter
-      const { data: allProjectsWithGallery, error: fallbackError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select(`
-          *,
-          gallery (
-            id,
-            image_url,
-            blur_data,
-            caption,
-            catalog_id,
-            created_at
-          )
-        `)
-        .order('release_date', { ascending: false });
-
-      if (fallbackError) {
-        console.error('[API_DEBUG] ❌ Fallback query failed:', fallbackError);
-        return NextResponse.json(
-          { error: 'Fallback query failed', details: fallbackError.message },
-          { status: 500 }
-        );
-      }
-
-      console.log('[API_DEBUG] 📊 FALLBACK - All projects with gallery:', {
-        total: allProjectsWithGallery?.length || 0,
-        sample: allProjectsWithGallery?.map(p => ({ id: p.id, title: p.title, category: p.category }))
+    if (!data || data.length === 0) {
+      console.log('[FORCED_ALIGNMENT] ⚠️ ZERO RESULTS - Schema not being applied');
+      return NextResponse.json({
+        success: true,
+        projects: [],
+        count: 0,
+        debug: {
+          message: 'FORCED_ALIGNMENT_ZERO_RESULTS',
+          httpStatus: status,
+          httpStatusText: statusText
+        }
       });
-
-      // If still no projects, return the database mismatch error
-      if (!allProjectsWithGallery || allProjectsWithGallery.length === 0) {
-        console.log('[API_DEBUG] ❌ DATABASE_MISMATCH: FOUND 0 PROJECTS IN lmsy_archive.projects');
-        return NextResponse.json({
-          success: true,
-          projects: [],
-          count: 0,
-          debug: {
-            message: 'DATABASE_MISMATCH: FOUND 0 PROJECTS IN lmsy_archive.projects',
-            allProjectsCount: allProjects?.length || 0
-          }
-        });
-      }
-
-      // Use the fallback data
-      return processProjects(allProjectsWithGallery);
     }
 
-    console.log(`[API_DEBUG] ✅ Found ${projects.length} projects with category filter`);
+    console.log(`[FORCED_ALIGNMENT] ✅ Processing ${data.length} projects...`);
 
-    return processProjects(projects);
+    // Process projects with self-healing cover logic
+    const processedProjects = data.map((project: any) => {
+      const galleryImages = project.gallery || [];
+      const artifactCount = galleryImages.length;
+
+      let finalCoverUrl: string | null = null;
+      let coverSource: string = 'none';
+
+      if (project.cover_url) {
+        finalCoverUrl = getCdnUrl(project.cover_url);
+        coverSource = 'database';
+        console.log(`[COVER_STITCH] 📊 "${project.title}": Using database cover`);
+      } else {
+        finalCoverUrl = discoverCoverFromGallery(galleryImages);
+        coverSource = finalCoverUrl ? 'gallery_discovery' : 'empty_vault';
+
+        if (finalCoverUrl) {
+          console.log(`[COVER_STITCH] 🔄 "${project.title}": Self-healed from gallery (${coverSource})`);
+        } else {
+          console.log(`[COVER_STITCH] ⚠️ "${project.title}": No cover found (has ${artifactCount} gallery items)`);
+        }
+      }
+
+      return {
+        id: project.id,
+        title: project.title,
+        category: project.category,
+        cover_url: finalCoverUrl,
+        blur_data: project.blur_data,
+        release_date: project.release_date,
+        description: project.description,
+        catalog_id: project.catalog_id,
+        created_at: project.created_at,
+        artifact_count: artifactCount,
+        cover_source: coverSource,
+        gallery_images: galleryImages,
+      };
+    });
+
+    console.log(`[FORCED_ALIGNMENT] ✅ Returning ${processedProjects.length} projects to frontend`);
+
+    return NextResponse.json({
+      success: true,
+      projects: processedProjects,
+      count: processedProjects.length,
+    });
 
   } catch (error) {
-    console.error('[API_DEBUG] ❌ Error:', error);
+    console.error('[FORCED_ALIGNMENT] ❌ EXCEPTION:', JSON.stringify(error, null, 2));
     return NextResponse.json(
       {
-        error: 'API failed',
+        error: 'FORCED_ALIGNMENT_EXCEPTION',
         details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
   }
-}
-
-/**
- * Process projects and stitch with gallery data
- */
-function processProjects(projects: any[]) {
-  const processedProjects = projects.map((project: any) => {
-    const galleryImages = project.gallery || [];
-    const artifactCount = galleryImages.length;
-
-    console.log(`[DATA_STITCH] 📊 "${project.title}":`, {
-      cover_url: project.cover_url,
-      artifact_count: artifactCount,
-    });
-
-    // Determine final cover URL and source
-    let finalCoverUrl: string | null = null;
-    let coverSource: string = 'empty_vault';
-
-    if (project.cover_url) {
-      // Use database cover if exists
-      finalCoverUrl = getCdnUrl(project.cover_url);
-      coverSource = 'database';
-      console.log(`[DATA_STITCH] ✅ Using database cover for "${project.title}"`);
-    } else {
-      // Self-heal: discover from gallery
-      const discovered = discoverCoverFromGallery(galleryImages);
-      finalCoverUrl = discovered.imageUrl;
-      coverSource = discovered.source;
-
-      if (finalCoverUrl) {
-        console.log(`[DATA_STITCH] 🔄 Self-healed cover for "${project.title}" (source: ${coverSource})`);
-      } else {
-        console.log(`[DATA_STITCH] ⚠️ No cover found for "${project.title}" (source: ${coverSource})`);
-      }
-    }
-
-    return {
-      id: project.id,
-      title: project.title,
-      category: project.category,
-      cover_url: finalCoverUrl,
-      blur_data: project.blur_data,
-      release_date: project.release_date,
-      description: project.description,
-      catalog_id: project.catalog_id,
-      created_at: project.created_at,
-      artifact_count: artifactCount,
-      cover_source: coverSource,
-      gallery_images: galleryImages,
-    };
-  });
-
-  console.log(`[DATA_STITCH] ✅ Returning ${processedProjects.length} projects`);
-
-  return NextResponse.json({
-    success: true,
-    projects: processedProjects,
-    count: processedProjects.length,
-  });
 }

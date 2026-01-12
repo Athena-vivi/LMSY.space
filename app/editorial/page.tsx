@@ -6,6 +6,9 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/back-button';
 
+// 🚫 NO CACHE: Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // API Response Types
 interface Magazine {
   id: string;
@@ -78,12 +81,22 @@ export default function EditorialPage() {
 
         const data = await response.json();
 
-        console.log('[EDITORIAL_PAGE] ✅ API response:', {
-          success: data.success,
-          count: data.count || 0,
-          hasProjects: !!data.projects,
-          debug: data.debug
-        });
+        console.log('[FRONTEND_DATA] ========== DATA RECEIVED FROM API ==========');
+        console.log('[FRONTEND_DATA] 📊 Success:', data.success);
+        console.log('[FRONTEND_DATA] 📊 Count:', data.count || 0);
+        console.log('[FRONTEND_DATA] 📊 Projects Array Length:', data.projects?.length || 0);
+
+        if (data.success && data.projects && data.projects.length > 0) {
+          console.log('[FRONTEND_DATA] ✅ SUCCESS - Real projects received:', data.projects.map((p: Magazine) => ({
+            id: p.id,
+            title: p.title,
+            category: p.category,
+            cover_url: p.cover_url,
+            artifact_count: p.artifact_count
+          })));
+        } else {
+          console.log('[FRONTEND_DATA] ❌ NO DATA - Count:', data.count, 'Debug:', data.debug);
+        }
 
         if (!data.success || !data.projects) {
           setMagazines([]);
@@ -182,12 +195,12 @@ export default function EditorialPage() {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8 p-6 bg-red-950 border-2 border-red-500 rounded-lg"
+              className="mb-8 p-8 bg-red-950 border-4 border-red-500 rounded-lg"
             >
-              <p className="text-red-400 font-mono text-sm font-bold tracking-wider text-center">
+              <p className="text-red-500 font-mono text-2xl font-bold tracking-wider text-center">
                 {debugInfo}
               </p>
-              <p className="text-red-300/60 font-mono text-xs text-center mt-2">
+              <p className="text-red-400/80 font-mono text-sm text-center mt-4">
                 Check browser console for detailed API logs
               </p>
             </motion.div>
@@ -209,9 +222,14 @@ export default function EditorialPage() {
                       key="empty"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="col-span-full py-20 text-center"
+                      className="col-span-full py-32 text-center"
                     >
-                      <p className="text-white/30 font-light">No magazines in archive</p>
+                      <p className="text-red-500 font-mono text-xl font-bold tracking-wider">
+                        [ ARCHIVE_ERROR: DATABASE_SYNC_FAILED_FOR_LMSY_ARCHIVE ]
+                      </p>
+                      <p className="text-red-400/60 font-mono text-xs mt-4">
+                        Check browser console for API response details
+                      </p>
                     </motion.div>
                   ) : (
                     magazines.map((magazine, index) => (

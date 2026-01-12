@@ -28,26 +28,43 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('[ADMIN_EDITORIAL_API] Fetching editorial projects...');
+    console.log('[ADMIN_FORCED_ALIGNMENT] ========== ADMIN FORCED ALIGNMENT ==========');
+    console.log('[ADMIN_FORCED_ALIGNMENT] 🎯 Target: lmsy_archive.projects');
+    console.log('[ADMIN_FORCED_ALIGNMENT] 🎯 Expected: 7 editorial + 2 series projects');
+    console.log('[ADMIN_FORCED_ALIGNMENT] 📡 Query: .or("category.eq.editorial,category.eq.series")');
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
+    // 🔥 FORCED: Explicit schema + category filter matching database
+    const { data, error, status, statusText } = await supabaseAdmin
+      .schema('lmsy_archive')  // 🚨 MANDATORY EXPLICIT SCHEMA
       .from('projects')
       .select('*')
-      .eq('category', 'magazine')
+      .or('category.eq.editorial,category.eq.series')  // Match confirmed 7+2 projects
       .order('release_date', { ascending: false });
 
+    console.log('[ADMIN_FORCED_ALIGNMENT] ========== QUERY RESULT ==========');
+    console.log('[ADMIN_FORCED_ALIGNMENT] 📊 HTTP Status:', status, statusText);
+    console.log('[ADMIN_FORCED_ALIGNMENT] 📊 Data Length:', data?.length || 0);
+    console.log('[ADMIN_FORCED_ALIGNMENT] 📊 Error:', error ? JSON.stringify(error, null, 2) : 'NO_ERROR');
+
+    if (data && data.length > 0) {
+      console.log('[ADMIN_FORCED_ALIGNMENT] ✅ SUCCESS - Found projects:', data.map(p => ({
+        id: p.id,
+        title: p.title,
+        category: p.category
+      })));
+    }
+
     if (error) {
-      console.error('[ADMIN_EDITORIAL_API] ❌ Fetch failed:', error);
+      console.error('[ADMIN_FORCED_ALIGNMENT] ❌ CRITICAL ERROR:', JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { error: 'Failed to fetch editorial projects', details: error.message },
+        { error: 'FORCED_ALIGNMENT_FAILED', details: error.message, code: error.code, fullError: JSON.stringify(error, null, 2) },
         { status: 500 }
       );
     }
 
-    console.log('[ADMIN_EDITORIAL_API] ✅ Fetched', data?.length || 0, 'projects');
+    console.log('[ADMIN_FORCED_ALIGNMENT] ✅ Fetched', data?.length || 0, 'projects');
 
     return NextResponse.json({
       success: true,
