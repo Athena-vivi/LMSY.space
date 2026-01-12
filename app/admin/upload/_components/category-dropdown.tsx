@@ -77,54 +77,68 @@ export default function CategoryDropdown({ options, value, onChange }: CategoryD
               transformOrigin: 'top center',
             }}
           >
-            <div className="py-1">
-              {options.map((option) => {
-                const isSelected = option.value === value;
-                return (
-                  <motion.button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(option.value);
-                      setIsOpen(false);
-                    }}
-                    className="w-full px-4 py-3 text-left font-mono text-xs flex items-center gap-3 relative transition-all duration-150"
-                    style={{
-                      color: isSelected ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.5)',
-                      backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0)',
-                    }}
-                    whileHover={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      color: 'rgba(251, 191, 36, 0.9)',
-                    }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {/* Selection Indicator */}
-                    <motion.div
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 rounded-full"
+            {/* 🔒 INVISIBLE SCROLL: max-h with no-scrollbar class */}
+            <div className="max-h-[280px] overflow-y-auto no-scrollbar relative">
+              {/* Option List */}
+              <div className="py-1">
+                {options.map((option) => {
+                  const isSelected = option.value === value;
+                  return (
+                    <motion.button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(option.value);
+                        setIsOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left font-mono text-xs flex items-center gap-3 relative transition-all duration-150 whitespace-nowrap"
                       style={{
-                        background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.9), rgba(56, 189, 248, 0.9))',
+                        color: isSelected ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.5)',
+                        backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0)',
                       }}
-                      initial={isSelected ? { height: '16px' } : { height: '0px' }}
-                      animate={{
-                        height: isSelected ? '16px' : '0px',
+                      whileHover={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        color: 'rgba(251, 191, 36, 0.9)',
                       }}
-                      transition={{ duration: 0.2 }}
-                    />
-                    <span className="flex-1">{option.label}</span>
-                    {/* Prefix Badge */}
-                    <span
-                      className="text-[9px] px-2 py-0.5 rounded border opacity-60"
-                      style={{
-                        borderColor: isSelected ? 'rgba(251, 191, 36, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                        color: isSelected ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.4)',
-                      }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      {option.prefix}
-                    </span>
-                  </motion.button>
-                );
-              })}
+                      {/* Selection Indicator */}
+                      <motion.div
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 rounded-full"
+                        style={{
+                          background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.9), rgba(56, 189, 248, 0.9))',
+                        }}
+                        initial={isSelected ? { height: '16px' } : { height: '0px' }}
+                        animate={{
+                          height: isSelected ? '16px' : '0px',
+                        }}
+                        transition={{ duration: 0.2 }}
+                      />
+                      <span className="flex-1">{option.label}</span>
+                      {/* Prefix Badge */}
+                      <span
+                        className="text-[9px] px-2 py-0.5 rounded border opacity-60 flex-shrink-0"
+                        style={{
+                          borderColor: isSelected ? 'rgba(251, 191, 36, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                          color: isSelected ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.4)',
+                        }}
+                      >
+                        {option.prefix}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* 🌌 GRADIENT FADE HINT: Suggests more content below */}
+              {options.length > 5 && (
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(to top, rgba(10, 10, 10, 0.95) 0%, rgba(10, 10, 10, 0) 100%)',
+                  }}
+                />
+              )}
             </div>
           </motion.div>
         )}

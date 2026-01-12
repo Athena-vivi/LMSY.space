@@ -22,7 +22,7 @@ export interface Member {
 }
 
 // 项目表 (projects)
-export type ProjectCategory = 'series' | 'editorial' | 'appearance' | 'journal' | 'commercial';
+export type ProjectCategory = 'series' | 'editorial' | 'appearance' | 'daily' | 'travel' | 'commercial';
 
 export interface Project {
   id: string;

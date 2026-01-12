@@ -13,7 +13,7 @@ interface ExhibitionPageProps {
 }
 
 // Type to category/tag mapping
-const typeMapping: Record<string, { category?: string; tag?: string; title: string; description: string }> = {
+const typeMapping: Record<string, { category?: string; title: string; description: string }> = {
   drama: {
     category: 'series',
     title: 'DRAMA ARCHIVE',
@@ -25,14 +25,12 @@ const typeMapping: Record<string, { category?: string; tag?: string; title: stri
     description: 'Live performances, events, and public appearances',
   },
   travel: {
-    category: 'journal',
-    tag: 'travel',
+    category: 'travel',
     title: 'TRAVEL JOURNALS',
     description: 'Adventures and journeys across different landscapes',
   },
   daily: {
-    category: 'journal',
-    tag: 'daily',
+    category: 'daily',
     title: 'DAILY MOMENTS',
     description: 'Everyday moments and behind-the-scenes glimpses',
   },
@@ -104,7 +102,7 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
     .select('*')
     .order('release_date', { ascending: false });
 
-  // Apply category filter
+  // Apply category filter (direct category query, no tag filtering)
   if (mapping.category) {
     query = query.eq('category', mapping.category);
   }
@@ -112,16 +110,10 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
   const { data: projects } = await query;
 
   console.log('[ROUTE_CHECK] Projects found:', projects?.length || 0);
+  console.log('[ROUTE_CHECK] Category filter:', mapping.category);
 
-  // Filter by tag if specified
-  let filteredProjects = projects || [];
-  if (mapping.tag) {
-    filteredProjects = filteredProjects.filter((project) =>
-      project.tags?.includes(mapping.tag)
-    );
-  }
-
-  console.log('[ROUTE_CHECK] Filtered projects:', filteredProjects.length);
+  // No tag filtering needed - direct category queries
+  const filteredProjects = projects || [];
 
   // For projects without covers, fetch associated gallery images
   const projectIds = filteredProjects.map((p) => p.id);

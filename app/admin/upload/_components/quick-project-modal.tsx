@@ -17,7 +17,8 @@ const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string 
   { value: 'series', label: 'Series (TV/Drama)', prefix: 'STILL' },
   { value: 'editorial', label: 'Editorial (Magazine)', prefix: 'MAG' },
   { value: 'appearance', label: 'Appearance (Event/Stage)', prefix: 'STAGE' },
-  { value: 'journal', label: 'Journal (Daily/Travel)', prefix: 'JRN' },
+  { value: 'daily', label: 'Daily (日常)', prefix: 'DAILY' },
+  { value: 'travel', label: 'Travel (旅途)', prefix: 'TRV' },
   { value: 'commercial', label: 'Commercial (Ad/Brand)', prefix: 'AD' },
 ];
 

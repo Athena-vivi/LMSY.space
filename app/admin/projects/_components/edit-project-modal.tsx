@@ -11,7 +11,8 @@ const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string 
   { value: 'series', label: 'TV_SERIES', prefix: 'TV' },
   { value: 'editorial', label: 'EDITORIAL', prefix: 'ED' },
   { value: 'appearance', label: 'APPEARANCE', prefix: 'AP' },
-  { value: 'journal', label: 'JOURNAL', prefix: 'JR' },
+  { value: 'daily', label: 'DAILY', prefix: 'DAILY' },
+  { value: 'travel', label: 'TRAVEL', prefix: 'TRV' },
   { value: 'commercial', label: 'COMMERCIAL', prefix: 'CM' },
 ];
 

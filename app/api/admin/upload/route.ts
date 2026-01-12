@@ -73,7 +73,8 @@ export async function POST(request: NextRequest) {
     series: 'STILL',      // TV/Drama
     editorial: 'MAG',     // Magazine
     appearance: 'STAGE',  // Event/Stage
-    journal: 'JRN',       // Daily/Travel
+    daily: 'DAILY',       // Daily (日常)
+    travel: 'TRV',        // Travel (旅途)
     commercial: 'AD',     // Ad/Brand
   };
 

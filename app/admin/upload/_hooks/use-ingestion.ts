@@ -225,7 +225,8 @@ export function useIngestion() {
             series: 'STILL',
             editorial: 'MAG',
             appearance: 'STAGE',
-            journal: 'JRN',
+            daily: 'DAILY',
+            travel: 'TRV',
             commercial: 'AD',
           };
 
