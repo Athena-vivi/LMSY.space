@@ -58,30 +58,51 @@ export default function EditorialPage() {
   const [magazines, setMagazines] = useState<Magazine[]>([]);
   const [hoveredMagazine, setHoveredMagazine] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchMagazines() {
       try {
+        console.log('[EDITORIAL_PAGE] 📡 Fetching magazines...');
         const response = await fetch('/api/editorial', {
           cache: 'no-store',
         });
 
         if (!response.ok) {
+          console.error('[EDITORIAL_PAGE] ❌ API error:', response.status);
           setMagazines([]);
+          setDebugInfo(`API_ERROR: HTTP ${response.status}`);
+          setLoading(false);
           return;
         }
 
         const data = await response.json();
 
+        console.log('[EDITORIAL_PAGE] ✅ API response:', {
+          success: data.success,
+          count: data.count || 0,
+          hasProjects: !!data.projects,
+          debug: data.debug
+        });
+
         if (!data.success || !data.projects) {
           setMagazines([]);
+          // 🔴 RED DEBUG MESSAGE for database mismatch
+          if (data.debug?.message) {
+            setDebugInfo(data.debug.message);
+          } else if (data.count === 0) {
+            setDebugInfo('[ DATABASE_MISMATCH: FOUND 0 PROJECTS IN lmsy_archive ]');
+          }
           setLoading(false);
           return;
         }
 
         setMagazines(data.projects);
+        setDebugInfo(null);
       } catch (err) {
+        console.error('[EDITORIAL_PAGE] ❌ Exception:', err);
         setMagazines([]);
+        setDebugInfo(`FETCH_ERROR: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
@@ -156,6 +177,22 @@ export default function EditorialPage() {
       {/* Magazine Grid */}
       <main className="relative z-10 px-6 pb-20 md:px-12">
         <div className="max-w-7xl mx-auto">
+          {/* 🔴 DEBUG MESSAGE - Database Mismatch */}
+          {!loading && debugInfo && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-6 bg-red-950 border-2 border-red-500 rounded-lg"
+            >
+              <p className="text-red-400 font-mono text-sm font-bold tracking-wider text-center">
+                {debugInfo}
+              </p>
+              <p className="text-red-300/60 font-mono text-xs text-center mt-2">
+                Check browser console for detailed API logs
+              </p>
+            </motion.div>
+          )}
+
           {/* Asymmetric Vertical Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             <AnimatePresence mode="wait">
@@ -167,17 +204,28 @@ export default function EditorialPage() {
                   exit={{ opacity: 0 }}
                   className="contents"
                 >
-                  {magazines.map((magazine, index) => (
-                    <MagazineSlot
-                      key={magazine.id}
-                      magazine={magazine}
-                      index={index}
-                      catalogId={magazine.catalog_id || getCatalogId(index)}
-                      onHover={setHoveredMagazine}
-                      theme={getMagazineTheme(magazine)}
-                      isFirst={index === 0}
-                    />
-                  ))}
+                  {magazines.length === 0 && !debugInfo ? (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="col-span-full py-20 text-center"
+                    >
+                      <p className="text-white/30 font-light">No magazines in archive</p>
+                    </motion.div>
+                  ) : (
+                    magazines.map((magazine, index) => (
+                      <MagazineSlot
+                        key={magazine.id}
+                        magazine={magazine}
+                        index={index}
+                        catalogId={magazine.catalog_id || getCatalogId(index)}
+                        onHover={setHoveredMagazine}
+                        theme={getMagazineTheme(magazine)}
+                        isFirst={index === 0}
+                      />
+                    ))
+                  )}
                 </motion.div>
               ) : (
                 <motion.div

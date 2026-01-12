@@ -6,6 +6,17 @@ import { Plus, Edit2, Trash2, X, Save, Loader2, Calendar, Images } from 'lucide-
 import Image from 'next/image';
 import Link from 'next/link';
 import { type GalleryItem } from '@/lib/supabase';
+import { getImageUrl } from '@/lib/image-url';
+
+// 🚫 NO CACHE: Admin must always see real-time data
+// Note: 'use client' components cannot export revalidate, using fetch cache: 'no-store' instead
+
+// Helper function to get full CDN URL
+const getCdnUrl = (path: string | null) => {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `https://cdn.lmsy.space/${path}`;
+};
 
 interface EditorialArticle extends GalleryItem {
   title?: string;
@@ -48,18 +59,21 @@ export default function AdminEditorialPage() {
   const fetchArticles = async () => {
     setLoading(true);
     try {
-      // 🔒 SECURITY: Always use API route from client, never admin client directly
-      const response = await fetch('/api/admin/editorial');
+      console.log('[VAULT_CHECK] 📡 Fetching editorial magazines from API...');
+      const response = await fetch('/api/admin/editorial', {
+        cache: 'no-store',
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('[ADMIN_FETCH] API error:', errorData);
+        console.error('[VAULT_CHECK] ❌ API error:', errorData);
         throw new Error(errorData.error || 'Failed to fetch articles');
       }
 
       const result = await response.json();
 
-      console.log('[ADMIN_FETCH] Editorial magazines:', {
+      console.log('[VAULT_CHECK] ✅ Editorial response:', {
+        success: result.success,
         count: result.projects?.length || 0,
         sample: result.projects?.slice(0, 2)
       });
@@ -68,7 +82,7 @@ export default function AdminEditorialPage() {
         setArticles(result.projects);
       }
     } catch (err) {
-      console.error('[ADMIN_FETCH] Exception:', err);
+      console.error('[VAULT_CHECK] ❌ Exception:', err);
     } finally {
       setLoading(false);
     }
@@ -169,6 +183,13 @@ export default function AdminEditorialPage() {
     }
   };
 
+  // 🔍 RENDER DEBUG: Log what we're about to render
+  console.log('[RENDER_CHECK] Editorial vault status:', {
+    totalArticles: articles.length,
+    viewMode,
+    loading
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -223,7 +244,7 @@ export default function AdminEditorialPage() {
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-8 w-8 text-lmsy-yellow/60 animate-spin" />
               </div>
-            ) : articles.length === 0 ? (
+            ) : !loading && articles.length === 0 ? (
               <div className="text-center py-20 border border-dashed rounded-lg" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <p className="text-white/30 font-light">No magazines in archive</p>
               </div>
@@ -246,14 +267,22 @@ export default function AdminEditorialPage() {
                   <div className="col-span-4 flex items-center gap-3">
                     {/* Mini Thumbnail */}
                     <div className="relative w-12 h-16 flex-shrink-0 bg-white/5 rounded overflow-hidden">
-                      {article.cover_url && (
-                        <Image
-                          src={article.cover_url}
-                          alt={article.title || 'Cover'}
-                          fill
-                          className="object-cover"
-                        />
-                      )}
+                      {(() => {
+                        const coverUrl = getCdnUrl(article.cover_url || null);
+                        if (!coverUrl) return null;
+                        return (
+                          <Image
+                            src={coverUrl}
+                            alt={article.title || 'Cover'}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                            onError={(e) => {
+                              console.error('[EDITORIAL_IMAGE] Failed to load:', coverUrl);
+                            }}
+                          />
+                        );
+                      })()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm text-white/80 font-serif truncate">
@@ -399,18 +428,22 @@ export default function AdminEditorialPage() {
               <div className="sticky top-8 space-y-6">
                 {/* Cover Preview */}
                 <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-white/5 border" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-                  {formData.image_url ? (
-                    <Image
-                      src={formData.image_url}
-                      alt="Preview"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <p className="text-white/20 text-sm">Cover via upload</p>
-                    </div>
-                  )}
+                  {(() => {
+                    const previewUrl = getCdnUrl(formData.image_url || null);
+                    return previewUrl ? (
+                      <Image
+                        src={previewUrl}
+                        alt="Preview"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-white/20 text-sm">Cover via upload</p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Actions */}

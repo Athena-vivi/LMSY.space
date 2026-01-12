@@ -5,6 +5,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, Trash2, Search, Check, X } from 'lucide-react';
 import Image from 'next/image';
 import { type GalleryItem } from '@/lib/supabase';
+import { getImageUrl } from '@/lib/image-url';
+
+// 🚫 NO CACHE: Admin must always see real-time data
+// Note: 'use client' components cannot export revalidate, using fetch cache: 'no-store' instead
+
+// Helper function to get full CDN URL
+const getCdnUrl = (path: string | null) => {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `https://cdn.lmsy.space/${path}`;
+};
 
 export default function AdminGalleryPage() {
   const [images, setImages] = useState<GalleryItem[]>([]);
@@ -26,18 +37,21 @@ export default function AdminGalleryPage() {
   const fetchImages = async () => {
     setLoading(true);
     try {
-      // 🔒 SECURITY: Always use API route from client, never admin client directly
-      const response = await fetch('/api/admin/gallery');
+      console.log('[VAULT_CHECK] 📡 Fetching gallery from API...');
+      const response = await fetch('/api/admin/gallery', {
+        cache: 'no-store',
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('[ADMIN_FETCH] API error:', errorData);
+        console.error('[VAULT_CHECK] ❌ API error:', errorData);
         throw new Error(errorData.error || 'Failed to fetch images');
       }
 
       const result = await response.json();
 
-      console.log('[ADMIN_FETCH] Gallery images:', {
+      console.log('[VAULT_CHECK] ✅ Gallery response:', {
+        success: result.success,
         count: result.data?.length || 0,
         sample: result.data?.slice(0, 2)
       });
@@ -46,7 +60,7 @@ export default function AdminGalleryPage() {
         setImages(result.data);
       }
     } catch (err) {
-      console.error('[ADMIN_FETCH] Exception:', err);
+      console.error('[VAULT_CHECK] ❌ Exception:', err);
       showToast('FETCH_FAILED', 'error');
     } finally {
       setLoading(false);
@@ -130,12 +144,30 @@ export default function AdminGalleryPage() {
     }
   };
 
-  const filteredImages = images.filter(img =>
-    (img.caption?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
-    (img.tag?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
-  ).filter(img => !filterTag || img.tag === filterTag);
+  const filteredImages = images.filter(img => {
+    // Search filter - if empty, show all
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const captionMatch = img.caption?.toLowerCase().includes(query);
+      const tagMatch = img.tag?.toLowerCase().includes(query);
+      const catalogMatch = img.catalog_id?.toLowerCase().includes(query);
+      if (!captionMatch && !tagMatch && !catalogMatch) return false;
+    }
+    // Tag filter
+    if (filterTag && img.tag !== filterTag) return false;
+    return true;
+  });
 
   const uniqueTags = [...new Set(images.map(img => img.tag).filter(Boolean))];
+
+  // 🔍 RENDER DEBUG: Log what we're about to render
+  console.log('[RENDER_CHECK] Gallery vault status:', {
+    totalImages: images.length,
+    filteredImages: filteredImages.length,
+    searchQuery,
+    filterTag,
+    loading
+  });
 
   return (
     <div className="space-y-6">
@@ -244,7 +276,7 @@ export default function AdminGalleryPage() {
               <span className="h-1.5 w-1.5 bg-lmsy-yellow/60 animate-pulse" style={{ animationDelay: '300ms' }} />
             </div>
           </motion.div>
-        ) : filteredImages.length === 0 ? (
+        ) : !loading && filteredImages.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -272,7 +304,7 @@ export default function AdminGalleryPage() {
                   VAULT_EMPTY
                 </p>
                 <p className="text-[10px] font-mono text-white/10 tracking-wider">
-                  WAITING_FOR_SYNC
+                  {images.length === 0 ? 'WAITING_FOR_SYNC' : 'NO_MATCHING_RESULTS'}
                 </p>
               </div>
             </div>
@@ -283,7 +315,7 @@ export default function AdminGalleryPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px bg-white/5"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 bg-white/5"
           >
             {filteredImages.map((item, index) => (
               <motion.div
@@ -291,20 +323,21 @@ export default function AdminGalleryPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="relative aspect-[3/4 bg-black group overflow-hidden"
+                className="relative bg-black group overflow-hidden rounded-lg"
                 style={{
                   border: selectedIds.has(item.id)
-                    ? '1px solid rgba(251, 191, 36, 0.5)'
-                    : '1px solid rgba(255, 255, 255, 0.05)',
+                    ? '2px solid rgba(251, 191, 36, 0.8)'
+                    : '2px solid rgba(255, 255, 255, 0.1)',
                   boxShadow: selectedIds.has(item.id)
-                    ? '0 0 20px rgba(251, 191, 36, 0.1), inset 0 0 20px rgba(251, 191, 36, 0.05)'
+                    ? '0 0 20px rgba(251, 191, 36, 0.3), inset 0 0 20px rgba(251, 191, 36, 0.1)'
                     : 'none',
+                  minHeight: '200px',
                 }}
               >
                 {/* Checkbox */}
                 <button
                   onClick={() => toggleSelect(item.id)}
-                  className="absolute top-2 left-2 z-20 p-1.5 bg-black/80 backdrop-blur-sm border border-white/10 hover:border-lmsy-yellow/40 transition-all"
+                  className="absolute top-2 left-2 z-20 p-1.5 bg-black/80 backdrop-blur-sm border border-white/10 hover:border-lmsy-yellow/40 transition-all rounded"
                 >
                   {selectedIds.has(item.id) ? (
                     <Check className="h-3 w-3 text-lmsy-yellow" strokeWidth={2.5} />
@@ -313,15 +346,35 @@ export default function AdminGalleryPage() {
                   )}
                 </button>
 
-                {/* Image */}
-                {item.image_url && (
-                  <Image
-                    src={item.image_url}
-                    alt={item.caption || item.tag || 'Gallery image'}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                )}
+                {/* Image - Natural aspect ratio */}
+                {(() => {
+                  const imageUrl = getCdnUrl(item.image_url);
+                  if (!imageUrl) {
+                    console.log('[IMAGE_DEBUG] No URL for item:', item.id, item.catalog_id);
+                    return (
+                      <div className="w-full h-48 flex items-center justify-center bg-white/5">
+                        <span className="text-white/20 text-xs">No URL</span>
+                      </div>
+                    );
+                  }
+                  console.log('[IMAGE_DEBUG] Rendering image:', item.id, imageUrl);
+                  return (
+                    <div className="relative w-full">
+                      <Image
+                        src={imageUrl}
+                        alt={item.caption || item.tag || 'Gallery image'}
+                        width={0}
+                        height={0}
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
+                        unoptimized
+                        onError={(e) => {
+                          console.error('[IMAGE_DEBUG] Failed to load:', imageUrl, e);
+                        }}
+                      />
+                    </div>
+                  );
+                })()}
 
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">

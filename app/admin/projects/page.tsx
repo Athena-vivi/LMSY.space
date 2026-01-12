@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabase, type Project } from '@/lib/supabase';
 import EditProjectModal from './_components/edit-project-modal';
+import { getImageUrl } from '@/lib/image-url';
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -305,18 +306,22 @@ export default function AdminProjectsPage() {
                     <div className="flex items-start gap-3">
                       {/* Thumbnail */}
                       <div className="relative w-16 h-10 flex-shrink-0 bg-white/5 overflow-hidden">
-                        {project.cover_url ? (
-                          <Image
-                            src={project.cover_url}
-                            alt={project.title}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Play className="h-4 w-4 text-white/10" strokeWidth={1.5} />
-                          </div>
-                        )}
+                        {(() => {
+                          const coverUrl = getImageUrl(project.cover_url);
+                          return coverUrl ? (
+                            <Image
+                              src={coverUrl}
+                              alt={project.title}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="h-4 w-4 text-white/10" strokeWidth={1.5} />
+                            </div>
+                          );
+                        })()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm text-white/80 font-serif truncate">
