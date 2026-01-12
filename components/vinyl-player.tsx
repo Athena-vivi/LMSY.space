@@ -355,21 +355,25 @@ export function VinylPlayer() {
                     <div className="relative w-14 h-14 rounded-lg overflow-hidden border flex-shrink-0"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
                     >
-                      {currentTrack.cover ? (
-                        <Image
-                          src={getImageUrl(currentTrack.cover)}
-                          alt={currentTrack.title}
-                          fill
-                          className="object-cover"
-                          sizes="56px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20">
-                          <p className="font-serif text-lg font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                            {currentTrack.artist[0]}
-                          </p>
-                        </div>
-                      )}
+                      {(() => {
+                        const coverUrl = getImageUrl(currentTrack.cover);
+                        return coverUrl ? (
+                          <Image
+                            src={coverUrl}
+                            alt={currentTrack.title}
+                            fill
+                            className="object-cover"
+                            sizes="56px"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20">
+                            <p className="font-serif text-lg font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                              {currentTrack.artist[0]}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="flex-1 min-w-0">
