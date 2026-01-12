@@ -17,6 +17,7 @@ interface GalleryImage {
   category_tag: string | null;
   curator_note: string | null;
   is_featured: boolean;
+  event_date: string | null;
 }
 
 interface GroupedImages {
@@ -24,6 +25,15 @@ interface GroupedImages {
   official_stills: GalleryImage[];
   bts: GalleryImage[];
   press_events: GalleryImage[];
+}
+
+// Chapter interface for chronological display
+interface Chapter {
+  id: string;
+  title: string;
+  period: string;
+  images: GalleryImage[];
+  startIndex: number;
 }
 
 interface Project {
@@ -34,6 +44,9 @@ interface Project {
   description: string | null;
   cover_url: string | null;
   watch_url: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_ongoing?: boolean;
 }
 
 interface ProjectDetailClientProps {
@@ -59,8 +72,110 @@ const CURATOR_NOTES: Record<CategoryType, { title: string; note: string } | null
   },
 };
 
+/**
+ * Group images into chronological chapters based on event_date
+ * Chapters represent different phases of a project's lifecycle
+ */
+function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
+  if (images.length === 0) return [];
+
+  // Filter images with event_date
+  const datedImages = images.filter(img => img.event_date);
+  if (datedImages.length === 0) {
+    return [{
+      id: 'single-chapter',
+      title: 'The Collection',
+      period: 'All Works',
+      images,
+      startIndex: 0,
+    }];
+  }
+
+  // Sort by event_date
+  const sorted = [...datedImages].sort((a, b) => {
+    const dateA = new Date(a.event_date!).getTime();
+    const dateB = new Date(b.event_date!).getTime();
+    return dateA - dateB;
+  });
+
+  // Group by month
+  const chapters: Chapter[] = [];
+  let currentChapter: GalleryImage[] = [];
+  let currentMonth: string | null = null;
+  let globalIndex = 0;
+
+  for (const image of sorted) {
+    const date = new Date(image.event_date!);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+    if (currentMonth !== monthKey) {
+      if (currentChapter.length > 0) {
+        chapters.push({
+          id: monthKey,
+          title: getChapterTitle(monthKey, currentMonth),
+          period: formatPeriod(monthKey),
+          images: currentChapter,
+          startIndex: globalIndex - currentChapter.length,
+        });
+      }
+      currentChapter = [image];
+      currentMonth = monthKey;
+    } else {
+      currentChapter.push(image);
+    }
+    globalIndex++;
+  }
+
+  // Don't forget the last chapter
+  if (currentChapter.length > 0 && currentMonth) {
+    chapters.push({
+      id: currentMonth,
+      title: getChapterTitle(currentMonth, null),
+      period: formatPeriod(currentMonth),
+      images: currentChapter,
+      startIndex: globalIndex - currentChapter.length,
+    });
+  }
+
+  return chapters;
+}
+
+/**
+ * Generate chapter title based on month patterns
+ */
+function getChapterTitle(currentMonth: string, previousMonth: string | null): string {
+  const [year, month] = currentMonth.split('-');
+  const monthDate = new Date(parseInt(year), parseInt(month) - 1);
+  const monthName = monthDate.toLocaleDateString('en-US', { month: 'long' });
+
+  // Detect chapter type based on patterns
+  if (currentMonth === '2024-08' || currentMonth === '2024-09') {
+    return `Chapter I: The Premiere`;
+  }
+  if (currentMonth === '2024-10') {
+    return `Chapter II: The Resonance`;
+  }
+  if (currentMonth === '2024-12') {
+    return `Chapter III: The Aftermath`;
+  }
+
+  // Default: use month name
+  return `${monthName} ${year}`;
+}
+
+/**
+ * Format period string like "Aug 2024 - Sep 2024" or "Aug 2024"
+ */
+function formatPeriod(monthKey: string): string {
+  const [year, month] = monthKey.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1);
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
 export default function ProjectDetailClient({ project, images, categories }: ProjectDetailClientProps) {
   const [activeTab, setActiveTab] = useState<CategoryType>('all');
+  const currentImages = images[activeTab] || [];
+  const curatorNote = CURATOR_NOTES[activeTab];
 
   // Category config for badges
   const categoryConfig: Record<string, { label: string; className: string }> = {
@@ -86,8 +201,8 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
     },
   };
 
-  const currentImages = images[activeTab] || [];
-  const curatorNote = CURATOR_NOTES[activeTab];
+  // 🎯 CHAPTERS: Group images by event_date for chronological display
+  const chapters = groupImagesIntoChapters(currentImages);
 
   return (
     <>
@@ -287,7 +402,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
             )}
           </AnimatePresence>
 
-          {/* Masonry Gallery - True CSS Columns with Original Aspect Ratios */}
+          {/* 🎯 CHAPTERIZED GALLERY - Chronological Masonry Layout */}
           <AnimatePresence mode="wait">
             <motion.div
               key={`gallery-${activeTab}`}
@@ -295,58 +410,85 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6"
             >
-              {currentImages.map((image, index) => (
-                <motion.div
-                  key={image.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                  className="mb-4 md:mb-6 break-inside-avoid"
-                >
-                  <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                    {/* Image with original aspect ratio - no stretching, no cropping */}
-                    {(() => {
-                      const imageUrl = getImageUrl(image.image_url);
-                      return imageUrl ? (
-                        <Image
-                          src={imageUrl}
-                          alt={image.caption || image.catalog_id || ''}
-                          width={0}
-                          height={0}
-                          sizes="100vw"
-                          className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
-                          unoptimized
-                        />
-                      ) : null;
-                    })()}
-
-                    {/* Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                    {/* Caption */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                      {image.catalog_id && (
-                        <p className="text-[10px] font-mono text-lmsy-yellow/60 mb-1">
-                          {image.catalog_id}
+              {chapters.map((chapter, chapterIndex) => (
+                <div key={chapter.id} className="mb-12">
+                  {/* Chapter Header */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: chapterIndex * 0.1 }}
+                    className="mb-8"
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                      <div className="text-center px-6">
+                        <h3 className="font-serif text-xl md:text-2xl text-white/80">
+                          {chapter.title}
+                        </h3>
+                        <p className="font-mono text-[10px] text-lmsy-yellow/60 tracking-[0.2em] uppercase mt-1">
+                          {chapter.period}
                         </p>
-                      )}
-                      {image.caption && (
-                        <p className="text-sm text-white/80 line-clamp-2">
-                          {image.caption}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Featured Badge */}
-                    {image.is_featured && (
-                      <div className="absolute top-4 right-4 px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 rounded-full">
-                        <span className="text-[10px] font-mono font-bold text-lmsy-yellow">FEATURED</span>
                       </div>
-                    )}
+                      <div className="flex-1 h-px bg-gradient-to-l from-transparent via-white/20 to-transparent" />
+                    </div>
+                  </motion.div>
+
+                  {/* Chapter Images - Masonry Layout */}
+                  <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
+                    {chapter.images.map((image, index) => (
+                      <motion.div
+                        key={image.id}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.05 }}
+                        className="mb-4 md:mb-6 break-inside-avoid"
+                      >
+                        <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                          {/* Image with original aspect ratio - no stretching, no cropping */}
+                          {(() => {
+                            const imageUrl = getImageUrl(image.image_url);
+                            return imageUrl ? (
+                              <Image
+                                src={imageUrl}
+                                alt={image.caption || image.catalog_id || ''}
+                                width={0}
+                                height={0}
+                                sizes="100vw"
+                                className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                                unoptimized
+                              />
+                            ) : null;
+                          })()}
+
+                          {/* Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                          {/* Caption */}
+                          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                            {image.catalog_id && (
+                              <p className="text-[10px] font-mono text-lmsy-yellow/60 mb-1">
+                                {image.catalog_id}
+                              </p>
+                            )}
+                            {image.caption && (
+                              <p className="text-sm text-white/80 line-clamp-2">
+                                {image.caption}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Featured Badge */}
+                          {image.is_featured && (
+                            <div className="absolute top-4 right-4 px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 rounded-full">
+                              <span className="text-[10px] font-mono font-bold text-lmsy-yellow">FEATURED</span>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </motion.div>
+                </div>
               ))}
             </motion.div>
           </AnimatePresence>

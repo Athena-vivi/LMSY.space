@@ -66,6 +66,9 @@ export interface ProjectWithImage {
   title: string;
   category: string;
   release_date: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_ongoing: boolean | null;
   tags: string[] | null;
   cover_url: string | null;
   displayImage: string | null;

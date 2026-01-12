@@ -18,6 +18,51 @@ interface ExhibitionContentProps {
   type: string;
 }
 
+/**
+ * Format time period display for projects
+ * Shows range for ongoing projects, single date for one-time events
+ */
+function formatTimePeriod(project: ProjectWithImage): string {
+  // Use start_date if available, otherwise fall back to release_date
+  const baseDate = project.start_date || project.release_date;
+
+  if (!baseDate) {
+    return '';
+  }
+
+  // If it's an ongoing project with different start/end dates
+  if (project.is_ongoing && project.end_date) {
+    const start = new Date(baseDate);
+    const end = new Date(project.end_date);
+
+    const startStr = start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const endStr = end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+    // Show range if different, otherwise show "Ongoing"
+    return startStr === endStr
+      ? `${startStr} - Ongoing`
+      : `${startStr} - ${endStr}`;
+  }
+
+  // If start and end are different but not ongoing (multi-day event)
+  if (project.start_date && project.end_date && project.start_date !== project.end_date) {
+    const start = new Date(project.start_date);
+    const end = new Date(project.end_date);
+
+    const startStr = start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const endStr = end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+    return `${startStr} - ${endStr}`;
+  }
+
+  // Default: single date
+  return new Date(baseDate).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
 export function ExhibitionContent({ mapping, projects, type }: ExhibitionContentProps) {
   return (
     <>
@@ -118,14 +163,10 @@ export function ExhibitionContent({ mapping, projects, type }: ExhibitionContent
                             {project.title}
                           </h3>
 
-                          {/* Date */}
-                          {project.release_date && (
+                          {/* 🕐 Time Period Display */}
+                          {(project.start_date || project.release_date) && (
                             <p className="text-white/60 text-sm">
-                              {new Date(project.release_date).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })}
+                              {formatTimePeriod(project)}
                             </p>
                           )}
 
