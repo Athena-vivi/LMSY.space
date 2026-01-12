@@ -131,12 +131,22 @@ export async function POST(request: NextRequest) {
 
     // Generate presigned URL (valid for 5 minutes)
     const expiresIn = 300; // 5 minutes
+
+    console.log('[R2_SIGN] Generating presigned URL with config:', {
+      bucket: bucketName,
+      r2Path,
+      endpoint: endpoint!.substring(0, 50) + '...',
+      region: 'auto',
+      expiresIn,
+    });
+
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
 
     console.log('[R2_SIGN] ✅ Presigned URL generated successfully:', {
       catalogId,
       expiresIn: `${expiresIn}s`,
       urlPreview: uploadUrl.substring(0, 100) + '...',
+      urlHost: new URL(uploadUrl).hostname,
     });
 
     // Return presigned URL and public CDN URL

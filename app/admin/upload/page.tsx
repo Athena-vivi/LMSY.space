@@ -477,37 +477,109 @@ export default function AdminUploadPage() {
           // ========================================
           console.log(`[UPLOAD] Step 3: Requesting presigned URL...`);
 
-          const signResponse = await fetch('/api/admin/r2/sign', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...authHeaders,
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-              catalogId,
-              contentType: 'image/webp',
-            }),
-          });
+          let signData: { success: boolean; uploadUrl?: string; publicUrl?: string; expiresIn?: number; r2Path?: string; error?: string } | null = null;
+          let useFallbackUpload = false;
 
-          if (!signResponse.ok) {
-            const responseText = await signResponse.text();
-            console.error('[UPLOAD] Step 3: ❌ Presigned URL request failed:', {
-              status: signResponse.status,
-              statusText: signResponse.statusText,
-              body: responseText,
+          try {
+            const signResponse = await fetch('/api/admin/r2/sign', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders,
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                catalogId,
+                contentType: 'image/webp',
+              }),
             });
-            throw new Error(`Presigned URL request failed: ${signResponse.status} ${signResponse.statusText}\n\n${responseText}`);
+
+            if (!signResponse.ok) {
+              const responseText = await signResponse.text();
+              console.error('[UPLOAD] Step 3: ❌ Presigned URL request failed:', {
+                status: signResponse.status,
+                statusText: signResponse.statusText,
+                body: responseText,
+              });
+              console.warn('[UPLOAD] Step 3: 🔄 Switching to server-side fallback upload...');
+              useFallbackUpload = true;
+            } else {
+              const responseData = await signResponse.json();
+              signData = responseData;
+
+              if (!signData!.success) {
+                console.error('[UPLOAD] Step 3: ❌ Presigned URL API returned unsuccessful:', signData);
+                console.warn('[UPLOAD] Step 3: 🔄 Switching to server-side fallback upload...');
+                useFallbackUpload = true;
+              }
+            }
+
+            if (!useFallbackUpload && signData) {
+              console.log(`[UPLOAD] Step 3: ✅ Presigned URL obtained (expires in ${signData.expiresIn}s)`);
+              console.log(`[UPLOAD]    Upload URL: ${signData.uploadUrl?.substring(0, 80)}...`);
+              console.log(`[UPLOAD]    Public URL: ${signData!.publicUrl}`);
+            }
+          } catch (signError) {
+            console.error('[UPLOAD] Step 3: ❌ Presigned URL fetch failed:', {
+              error: signError,
+              name: signError instanceof Error ? signError.name : 'Unknown',
+              message: signError instanceof Error ? signError.message : String(signError),
+            });
+            console.warn('[UPLOAD] Step 3: 🔄 Switching to server-side fallback upload...');
+            useFallbackUpload = true;
           }
 
-          const signData = await signResponse.json();
+          if (useFallbackUpload) {
+            // ========================================
+            // FALLBACK: Server-side upload (no presigned URL needed)
+            // ========================================
+            console.log('[UPLOAD] Step 3b: Uploading via server fallback endpoint...');
 
-          if (!signData.success) {
-            console.error('[UPLOAD] Step 3: ❌ Presigned URL API returned unsuccessful:', signData);
-            throw new Error(`Presigned URL API failed: ${signData.error || 'Unknown error'}`);
+            const fallbackStartTime = Date.now();
+
+            // Prepare FormData for fallback upload
+            const formData = new FormData();
+            formData.append('file', file); // Original file, server will convert to WebP
+            formData.append('catalogId', catalogId);
+            formData.append('eventDate', targetDate); // 🔒 CRITICAL: Pass validated event date
+            formData.append('caption', title ? (i === 0 ? title : `${title} (${i + 1})`) : '');
+            formData.append('tag', selectedTags.length > 0 ? selectedTags[0] : '');
+            formData.append('projectId', selectedProject || '');
+            formData.append('isFeatured', String(i === 0));
+            formData.append('originalSize', String(file.size));
+
+            const fallbackResponse = await fetch('/api/admin/upload/fallback', {
+              method: 'POST',
+              headers: authHeaders,
+              credentials: 'include',
+              body: formData,
+            });
+
+            const fallbackDuration = Date.now() - fallbackStartTime;
+
+            if (!fallbackResponse.ok) {
+              const responseText = await fallbackResponse.text();
+              console.error('[UPLOAD] Step 3b: ❌ Fallback upload failed:', {
+                status: fallbackResponse.status,
+                statusText: fallbackResponse.statusText,
+                body: responseText,
+              });
+              throw new Error(`Fallback upload failed: ${fallbackResponse.status} ${fallbackResponse.statusText}\n\n${responseText}`);
+            }
+
+            const fallbackData = await fallbackResponse.json();
+
+            if (!fallbackData.success) {
+              console.error('[UPLOAD] Step 3b: ❌ Fallback API returned unsuccessful:', fallbackData);
+              throw new Error(`Fallback upload failed: ${fallbackData.error || 'Unknown error'}`);
+            }
+
+            console.log(`[UPLOAD] Step 3b: ✅ Fallback upload complete (${fallbackDuration}ms)`);
+
+            // Skip to next iteration (fallback handles database registration too)
+            uploadResults.push(fallbackData.data);
+            continue;
           }
-
-          console.log(`[UPLOAD] Step 3: ✅ Presigned URL obtained (expires in ${signData.expiresIn}s)`);
 
           // ========================================
           // STEP 4: Upload directly to R2
@@ -516,27 +588,93 @@ export default function AdminUploadPage() {
 
           const r2UploadStart = Date.now();
 
-          const r2Response = await fetch(signData.uploadUrl, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'image/webp',
-            },
-            body: webpBlob,
-          });
+          let useR2Fallback = false;
 
-          const r2UploadDuration = Date.now() - r2UploadStart;
-
-          if (!r2Response.ok) {
-            const responseText = await r2Response.text();
-            console.error('[UPLOAD] Step 4: ❌ R2 upload failed:', {
-              status: r2Response.status,
-              statusText: r2Response.statusText,
-              body: responseText,
-              duration: `${r2UploadDuration}ms`,
+          try {
+            const r2Response = await fetch(signData!.uploadUrl!, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'image/webp',
+              },
+              body: webpBlob,
             });
-            throw new Error(`R2 upload failed: ${r2Response.status} ${r2Response.statusText}\n\n${responseText}`);
+
+            // Check if R2 upload succeeded
+            if (!r2Response.ok) {
+              const responseText = await r2Response.text();
+              console.error('[UPLOAD] Step 4: ❌ R2 upload failed (HTTP error):', {
+                status: r2Response.status,
+                statusText: r2Response.statusText,
+                body: responseText,
+              });
+              console.warn('[UPLOAD] Step 4: 🔄 Switching to server-side fallback upload...');
+              useR2Fallback = true;
+            }
+          } catch (fetchError) {
+            console.error('[UPLOAD] Step 4: ❌ Direct R2 upload failed (network error):', {
+              error: fetchError,
+              name: fetchError instanceof Error ? fetchError.name : 'Unknown',
+              message: fetchError instanceof Error ? fetchError.message : String(fetchError),
+              uploadUrl: signData!.uploadUrl!.substring(0, 100) + '...',
+              blobSize: webpBlob.size,
+            });
+            console.warn('[UPLOAD] Step 4: 🔄 Switching to server-side fallback upload...');
+            useR2Fallback = true;
           }
 
+          if (useR2Fallback) {
+            // ========================================
+            // FALLBACK: Server-side upload
+            // ========================================
+            console.log('[UPLOAD] Step 4b: Uploading via server fallback endpoint...');
+
+            const fallbackStartTime = Date.now();
+
+            // Prepare FormData for fallback upload
+            const formData = new FormData();
+            formData.append('file', file); // Original file, server will convert to WebP
+            formData.append('catalogId', catalogId);
+            formData.append('imageUrl', signData!.publicUrl!); // Pre-determined public URL
+            formData.append('caption', title ? (i === 0 ? title : `${title} (${i + 1})`) : '');
+            formData.append('tag', selectedTags.length > 0 ? selectedTags[0] : '');
+            formData.append('projectId', selectedProject || '');
+            formData.append('isFeatured', String(i === 0));
+            formData.append('originalSize', String(file.size));
+
+            const fallbackResponse = await fetch('/api/admin/upload/fallback', {
+              method: 'POST',
+              headers: authHeaders,
+              credentials: 'include',
+              body: formData,
+            });
+
+            const fallbackDuration = Date.now() - fallbackStartTime;
+
+            if (!fallbackResponse.ok) {
+              const responseText = await fallbackResponse.text();
+              console.error('[UPLOAD] Step 4b: ❌ Fallback upload failed:', {
+                status: fallbackResponse.status,
+                statusText: fallbackResponse.statusText,
+                body: responseText,
+              });
+              throw new Error(`Fallback upload failed: ${fallbackResponse.status} ${fallbackResponse.statusText}\n\n${responseText}`);
+            }
+
+            const fallbackData = await fallbackResponse.json();
+
+            if (!fallbackData.success) {
+              console.error('[UPLOAD] Step 4b: ❌ Fallback API returned unsuccessful:', fallbackData);
+              throw new Error(`Fallback upload failed: ${fallbackData.error || 'Unknown error'}`);
+            }
+
+            console.log(`[UPLOAD] Step 4b: ✅ Fallback upload complete (${fallbackDuration}ms)`);
+
+            // Skip to next iteration (fallback handles database registration too)
+            uploadResults.push(fallbackData.data);
+            continue;
+          }
+
+          const r2UploadDuration = Date.now() - r2UploadStart;
           console.log(`[UPLOAD] Step 4: ✅ Uploaded to R2 successfully (${r2UploadDuration}ms)`);
 
           // ========================================
@@ -546,7 +684,8 @@ export default function AdminUploadPage() {
 
           const registerPayload = {
             catalogId,
-            imageUrl: signData.publicUrl,
+            imageUrl: signData!.publicUrl!,
+            eventDate: targetDate, // 🔒 CRITICAL: Pass validated event date
             caption: title ? (i === 0 ? title : `${title} (${i + 1})`) : null,
             tag: selectedTags.length > 0 ? selectedTags[0] : null,
             projectId: selectedProject || null,
@@ -584,7 +723,7 @@ export default function AdminUploadPage() {
           console.log(`[UPLOAD] Step 5: ✅ Registered in database`);
           console.log(`[UPLOAD] ✅ [${i + 1}/${uploadItems.length}] Complete: ${file.name}`);
           console.log(`[UPLOAD]    Catalog ID: ${catalogId}`);
-          console.log(`[UPLOAD]    Public URL: ${signData.publicUrl}`);
+          console.log(`[UPLOAD]    Public URL: ${signData!.publicUrl}`);
 
           // Collect result
           uploadResults.push({

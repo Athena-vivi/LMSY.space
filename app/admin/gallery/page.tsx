@@ -6,10 +6,6 @@ import { Edit2, Trash2, Search, Check, X } from 'lucide-react';
 import Image from 'next/image';
 import { type GalleryItem } from '@/lib/supabase';
 
-// Force dynamic rendering to prevent Vercel static caching
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export default function AdminGalleryPage() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,26 +26,28 @@ export default function AdminGalleryPage() {
   const fetchImages = async () => {
     setLoading(true);
     try {
-      // Import admin client for full data visibility
-      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-      const supabaseAdmin = getSupabaseAdmin();
+      // 🔒 SECURITY: Always use API route from client, never admin client directly
+      const response = await fetch('/api/admin/gallery');
 
-      const { data, error } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery')
-        .select('*')
-        .order('created_at', { ascending: false });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[ADMIN_FETCH] API error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch images');
+      }
+
+      const result = await response.json();
 
       console.log('[ADMIN_FETCH] Gallery images:', {
-        count: data?.length || 0,
-        error,
-        sample: data?.slice(0, 2)
+        count: result.data?.length || 0,
+        sample: result.data?.slice(0, 2)
       });
 
-      if (!error && data) setImages(data);
-      if (error) console.error('[ADMIN_FETCH] Error:', error);
+      if (result.success && result.data) {
+        setImages(result.data);
+      }
     } catch (err) {
       console.error('[ADMIN_FETCH] Exception:', err);
+      showToast('FETCH_FAILED', 'error');
     } finally {
       setLoading(false);
     }
@@ -62,26 +60,23 @@ export default function AdminGalleryPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-      const supabaseAdmin = getSupabaseAdmin();
+      // 🔒 SECURITY: Use API route for deletion
+      const response = await fetch(`/api/admin/gallery?ids=${id}`, {
+        method: 'DELETE',
+      });
 
-      const { error } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery')
-        .delete()
-        .eq('id', id);
-
-      if (!error) {
-        setImages(prev => prev.filter(img => img.id !== id));
-        setSelectedIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
-        showToast('IMAGE_DELETED_FROM_VAULT');
-      } else {
-        showToast('DELETE_OPERATION_FAILED', 'error');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Delete failed');
       }
+
+      setImages(prev => prev.filter(img => img.id !== id));
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+      showToast('IMAGE_DELETED_FROM_VAULT');
     } catch (err) {
       console.error('[ADMIN_DELETE] Error:', err);
       showToast('DELETE_OPERATION_FAILED', 'error');
@@ -92,23 +87,21 @@ export default function AdminGalleryPage() {
     if (selectedIds.size === 0) return;
 
     try {
-      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-      const supabaseAdmin = getSupabaseAdmin();
+      // 🔒 SECURITY: Use API route for batch deletion
+      const ids = Array.from(selectedIds).join(',');
+      const response = await fetch(`/api/admin/gallery?ids=${ids}`, {
+        method: 'DELETE',
+      });
 
-      const { error } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery')
-        .delete()
-        .in('id', Array.from(selectedIds));
-
-      if (!error) {
-        setImages(prev => prev.filter(img => !selectedIds.has(img.id)));
-        setSelectedIds(new Set());
-        setSelectedAll(false);
-        showToast(`${selectedIds.size}_IMAGES_PURGED`);
-      } else {
-        showToast('BATCH_DELETE_FAILED', 'error');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Batch delete failed');
       }
+
+      setImages(prev => prev.filter(img => !selectedIds.has(img.id)));
+      setSelectedIds(new Set());
+      setSelectedAll(false);
+      showToast(`${selectedIds.size}_IMAGES_PURGED`);
     } catch (err) {
       console.error('[ADMIN_BATCH_DELETE] Error:', err);
       showToast('BATCH_DELETE_FAILED', 'error');

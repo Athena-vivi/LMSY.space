@@ -7,10 +7,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { type GalleryItem } from '@/lib/supabase';
 
-// Force dynamic rendering to prevent Vercel static caching
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 interface EditorialArticle extends GalleryItem {
   title?: string;
   excerpt?: string;
@@ -52,28 +48,25 @@ export default function AdminEditorialPage() {
   const fetchArticles = async () => {
     setLoading(true);
     try {
-      // Import admin client for full data visibility
-      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-      const supabaseAdmin = getSupabaseAdmin();
+      // 🔒 SECURITY: Always use API route from client, never admin client directly
+      const response = await fetch('/api/admin/editorial');
 
-      // Fetch magazine projects (from projects table where category = 'magazine')
-      const { data: projects, error } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('*')
-        .eq('category', 'magazine')
-        .order('release_date', { ascending: false });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[ADMIN_FETCH] API error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch articles');
+      }
+
+      const result = await response.json();
 
       console.log('[ADMIN_FETCH] Editorial magazines:', {
-        count: projects?.length || 0,
-        error,
-        sample: projects?.slice(0, 2)
+        count: result.projects?.length || 0,
+        sample: result.projects?.slice(0, 2)
       });
 
-      if (!error && projects) {
-        setArticles(projects as EditorialArticle[]);
+      if (result.success && result.projects) {
+        setArticles(result.projects);
       }
-      if (error) console.error('[ADMIN_FETCH] Error:', error);
     } catch (err) {
       console.error('[ADMIN_FETCH] Exception:', err);
     } finally {
@@ -119,18 +112,17 @@ export default function AdminEditorialPage() {
     if (!confirm('Are you sure you want to delete this magazine? This will also delete all associated pages.')) return;
 
     try {
-      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-      const supabaseAdmin = getSupabaseAdmin();
+      // 🔒 SECURITY: Use API route for deletion
+      const response = await fetch(`/api/admin/editorial?id=${id}`, {
+        method: 'DELETE',
+      });
 
-      const { error } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .delete()
-        .eq('id', id);
-
-      if (!error) {
-        setArticles(prev => prev.filter(a => a.id !== id));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Delete failed');
       }
+
+      setArticles(prev => prev.filter(a => a.id !== id));
     } catch (err) {
       console.error('[ADMIN_DELETE] Error:', err);
     }
@@ -147,24 +139,26 @@ export default function AdminEditorialPage() {
     };
 
     try {
-      const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-      const supabaseAdmin = getSupabaseAdmin();
-
-      let error;
       if (viewMode === 'create') {
         // For new magazines, redirect to upload page
         window.location.href = `/admin/upload?type=magazine&title=${encodeURIComponent(formData.title)}&date=${formData.release_date}`;
         return;
       } else if (selectedArticle) {
-        const result = await supabaseAdmin
-          .schema('lmsy_archive')
-          .from('projects')
-          .update(payload)
-          .eq('id', selectedArticle.id);
-        error = result.error;
-      }
+        // 🔒 SECURITY: Use API route for update
+        const response = await fetch('/api/admin/editorial', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: selectedArticle.id,
+            ...payload,
+          }),
+        });
 
-      if (!error) {
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Update failed');
+        }
+
         await fetchArticles();
         setViewMode('list');
       }

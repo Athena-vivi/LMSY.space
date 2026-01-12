@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileText, PenTool, ArrowRight } from 'lucide-react';
+import { Upload, FileText, PenTool, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 interface SystemStatus {
@@ -16,6 +16,12 @@ interface CollectionStats {
   chronicle: number;
 }
 
+interface IntegrityStatus {
+  total: number;
+  broken: number;
+  valid: number;
+}
+
 export default function AdminDashboard() {
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({
     r2: 'checking',
@@ -26,10 +32,13 @@ export default function AdminDashboard() {
     projects: 0,
     chronicle: 0,
   });
+  const [integrityStatus, setIntegrityStatus] = useState<IntegrityStatus | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     checkSystemStatus();
     fetchCollectionStats();
+    fetchIntegrityStatus();
   }, []);
 
   const checkSystemStatus = async () => {
@@ -111,6 +120,50 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const fetchIntegrityStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/integrity');
+      if (!response.ok) {
+        console.error('Failed to fetch integrity status');
+        return;
+      }
+      const data = await response.json();
+      if (data.success) {
+        setIntegrityStatus(data.status);
+      }
+    } catch (error) {
+      console.error('Failed to fetch integrity status:', error);
+    }
+  };
+
+  const verifyIntegrity = async () => {
+    setIsVerifying(true);
+    try {
+      const response = await fetch('/api/admin/integrity', {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to verify integrity');
+      }
+      const data = await response.json();
+      if (data.success) {
+        const brokenLinksInfo = data.summary.brokenLinks && data.summary.brokenLinks.length > 0
+          ? `\n\nFirst ${data.summary.brokenLinks.length} broken IDs:\n${data.summary.brokenLinks.join(', ')}`
+          : '';
+        alert(`Integrity Check Complete\n\n${data.message}\n\nTotal: ${data.summary.total}\nValid: ${data.summary.valid}\nBroken: ${data.summary.broken}${brokenLinksInfo}`);
+        // Refresh integrity status
+        await fetchIntegrityStatus();
+        // Refresh collection stats
+        await fetchCollectionStats();
+      }
+    } catch (error) {
+      console.error('Failed to verify integrity:', error);
+      alert('Failed to verify integrity. Check console for details.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -356,6 +409,118 @@ export default function AdminDashboard() {
               </Link>
             );
           })}
+        </motion.div>
+
+        {/* 🔒 DATA INTEGRITY SECTION */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="relative"
+        >
+          <motion.div
+            onClick={!isVerifying ? verifyIntegrity : undefined}
+            className={`group relative bg-black border rounded-lg p-6 overflow-hidden cursor-pointer ${
+              isVerifying ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
+            style={{
+              borderColor: integrityStatus?.broken && integrityStatus.broken > 0
+                ? 'rgba(239, 68, 68, 0.3)'
+                : 'rgba(255, 255, 255, 0.08)',
+            }}
+            whileHover={!isVerifying ? {
+              scale: 1.02,
+              transition: { duration: 0.2 },
+            } : {}}
+          >
+            {/* Status-specific background gradient */}
+            {integrityStatus?.broken && integrityStatus.broken > 0 ? (
+              <div className="absolute inset-0 opacity-5 bg-red-500/10" />
+            ) : (
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%)',
+                    backgroundSize: '200% 200%',
+                    animation: 'gradient-flow 3s ease infinite',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="relative">
+              <div className="flex items-start justify-between mb-4">
+                <div className={`p-2.5 rounded-lg ${
+                  integrityStatus?.broken && integrityStatus.broken > 0
+                    ? 'bg-red-500/10'
+                    : 'bg-white/5 group-hover:bg-white/10'
+                } transition-colors`}>
+                  {isVerifying ? (
+                    <div className="h-5 w-5 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
+                  ) : (
+                    <ShieldCheck className={`h-5 w-5 ${
+                      integrityStatus?.broken && integrityStatus.broken > 0
+                        ? 'text-red-400/80'
+                        : 'text-white/60 group-hover:text-white/90'
+                    } transition-colors`} strokeWidth={1.5} />
+                  )}
+                </div>
+                {integrityStatus?.broken && integrityStatus.broken > 0 && !isVerifying && (
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-500/10 border border-red-500/20">
+                    <AlertCircle className="h-3 w-3 text-red-400" />
+                    <span className="text-[10px] font-mono text-red-400">
+                      {integrityStatus.broken} BROKEN
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <h3 className="font-serif text-lg font-medium text-white/90 mb-2">
+                Verify Integrity
+              </h3>
+              <p className="text-sm text-white/40 font-light mb-4">
+                Scan all gallery images and mark broken links
+              </p>
+
+              {/* Integrity Status */}
+              {integrityStatus && (
+                <div className="flex items-center gap-6 text-[10px] font-mono">
+                  <div>
+                    <span className="text-white/30">TOTAL:</span>
+                    <span className="ml-1 text-white/60">{integrityStatus.total}</span>
+                  </div>
+                  <div>
+                    <span className="text-white/30">VALID:</span>
+                    <span className="ml-1 text-green-400/80">{integrityStatus.valid}</span>
+                  </div>
+                  {integrityStatus.broken > 0 && (
+                    <div>
+                      <span className="text-white/30">BROKEN:</span>
+                      <span className="ml-1 text-red-400/80">{integrityStatus.broken}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Progressively lit border */}
+            {!isVerifying && (
+              <div
+                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  border: '1px solid transparent',
+                  background: integrityStatus?.broken && integrityStatus.broken > 0
+                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.3))'
+                    : 'linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(56, 189, 248, 0.3))',
+                  backgroundSize: 'border-box',
+                  WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  maskComposite: 'exclude',
+                }}
+              />
+            )}
+          </motion.div>
         </motion.div>
       </div>
     </div>

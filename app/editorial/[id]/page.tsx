@@ -41,8 +41,6 @@ export default function EditorialDetailPage() {
   useEffect(() => {
     async function fetchMagazineData() {
       try {
-        console.log('[EDITORIAL_DETAIL] Fetching magazine:', magazineId);
-
         // Fetch magazine project from lmsy_archive schema
         const { data: project, error: projectError } = await supabase
           .schema('lmsy_archive')
@@ -52,12 +50,10 @@ export default function EditorialDetailPage() {
           .eq('category', 'editorial')
           .single();
 
-        if (projectError) {
-          console.error('[EDITORIAL_DETAIL] ❌ Failed to fetch magazine:', projectError);
+        if (projectError || !project) {
           return;
         }
 
-        console.log('[EDITORIAL_DETAIL] ✅ Found magazine:', project?.title);
         setMagazine(project);
 
         // Fetch gallery images linked to this project
@@ -68,17 +64,14 @@ export default function EditorialDetailPage() {
           .eq('project_id', magazineId)
           .order('created_at', { ascending: true });
 
-        if (imagesError) {
-          console.error('[EDITORIAL_DETAIL] ❌ Failed to fetch gallery images:', imagesError);
-        } else {
-          console.log('[EDITORIAL_DETAIL] ✅ Found', images?.length || 0, 'gallery images');
-          setGalleryImages(images || []);
+        if (!imagesError && images) {
+          setGalleryImages(images);
         }
 
         // Set curator note (can be from project description or custom note)
         setCuratorNote(project.description);
       } catch (err) {
-        console.error('[EDITORIAL_DETAIL] ❌ Error fetching magazine data:', err);
+        // Silent error handling
       } finally {
         setLoading(false);
       }
@@ -198,17 +191,16 @@ export default function EditorialDetailPage() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="relative mb-16"
             >
-              <div className="relative aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
+              <div className="relative aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden rounded-lg border border-white/10">
                 <Image
-                  src={magazine.cover_url}
+                  src={`https://cdn.lmsy.space/${magazine.cover_url}`}
                   alt={magazine.title}
                   fill
                   className="object-contain"
-                  placeholder={magazine.blur_data ? "blur" : "empty"}
-                  blurDataURL={magazine.blur_data || undefined}
+                  placeholder="empty"
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority
-                  unoptimized={true}
+                  unoptimized
                 />
               </div>
             </motion.div>
@@ -236,31 +228,28 @@ export default function EditorialDetailPage() {
 
             {/* Masonry Grid using CSS Columns */}
             <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-              <AnimatePresence mode="wait">
-                {galleryImages.map((image, index) => (
-                  <motion.div
-                    key={image.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -30 }}
-                    transition={{ duration: 0.6, delay: 1 + index * 0.1 }}
-                    className="break-inside-avoid relative group cursor-pointer"
-                    onClick={() => setLightboxIndex(index)}
-                  >
+              {galleryImages.map((image, index) => (
+                <motion.div
+                  key={image.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 1 + index * 0.1 }}
+                  className="break-inside-avoid relative group cursor-pointer"
+                  onClick={() => setLightboxIndex(index)}
+                >
                     <div className="relative overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
                       {/* Image - fill mode with proper aspect ratio container */}
                       <div className="relative w-full aspect-[3/4]">
                         <Image
-                          src={image.image_url}
+                          src={`https://cdn.lmsy.space/${image.image_url}`}
                           alt={image.caption || `Page ${index + 1}`}
                           fill
                           className="object-contain"
-                          placeholder={image.blur_data ? "blur" : "empty"}
-                          blurDataURL={image.blur_data || undefined}
+                          placeholder="empty"
                           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           priority={index < 3}
                           fetchPriority={index < 3 ? "high" : "auto"}
-                          unoptimized={true}
+                          unoptimized
                         />
                       </div>
 
@@ -289,9 +278,8 @@ export default function EditorialDetailPage() {
                         </motion.div>
                       )}
                     </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>

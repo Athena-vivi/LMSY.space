@@ -25,6 +25,7 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthRe
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
 
   // 创建 Supabase SSR 客户端（Schema 锁定到 lmsy_archive）
+  // 使用完整的 cookie adapter 以避免 Supabase 警告
   const supabaseAuth = createServerClient(
     rawUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -32,6 +33,16 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthRe
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          // API routes 使用 NextRequest，无法直接设置 cookie
+          // 此方法仅为了满足 Supabase cookie adapter 接口要求
+          console.log(`[AUTH] ⚠️ Cookie set requested (not supported in API routes): ${name}`);
+        },
+        remove(name: string, options: any) {
+          // API routes 使用 NextRequest，无法直接删除 cookie
+          // 此方法仅为了满足 Supabase cookie adapter 接口要求
+          console.log(`[AUTH] ⚠️ Cookie remove requested (not supported in API routes): ${name}`);
         },
       },
       db: {

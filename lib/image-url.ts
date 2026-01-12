@@ -1,90 +1,62 @@
 /**
  * Image URL utilities for browser and server
  *
- * This file is safe to use in both browser and server code
- * It only uses public environment variables (NEXT_PUBLIC_*)
+ * 🔒 NO PLACEHOLDER, NO FAKE DATA - Direct CDN URL construction
  */
+
+// Debug counter to limit console output
+let debugCounter = 0;
+const MAX_DEBUG = 5; // Only print first 5 calls
 
 /**
  * Get the full image URL for display
- * Handles both relative paths (from R2) and legacy absolute URLs (from Supabase)
+ * Handles relative paths from R2 storage
  *
- * @param imageUrl - Image URL from database (can be relative path or absolute URL)
- * @returns Full URL to display in <img> tags
+ * @param imageUrl - Image URL from database (relative path or absolute URL)
+ * @returns Full URL to display, or null if no image
  *
  * @example
- * // R2 path (new)
+ * // R2 relative path
  * getImageUrl('gallery/photo.jpg') // => 'https://cdn.lmsy.space/gallery/photo.jpg'
  *
- * // Legacy Supabase URL (old)
- * getImageUrl('https://xyz.supabase.co/storage/v1/object/public/...') // => same URL
+ * // Already absolute URL
+ * getImageUrl('https://cdn.lmsy.space/gallery/photo.jpg') // => same
+ *
+ * // null input
+ * getImageUrl(null) // => null
  */
-export function getImageUrl(imageUrl: string | null | undefined): string {
+export function getImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) {
-    // Return placeholder if no image
-    return '/placeholder.jpg';
+    // 🔒 NO PLACEHOLDER: Return null, let the caller handle it
+    return null;
   }
 
-  // If it's already an absolute URL, return as is (legacy Supabase URLs)
+  // If it's already an absolute URL, return as is
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    if (debugCounter < MAX_DEBUG) {
+      console.log('[IMAGE_URL_DEBUG] Already absolute URL:', imageUrl);
+      debugCounter++;
+    }
     return imageUrl;
   }
 
   // Convert relative path to CDN URL
-  return getCdnUrl(imageUrl);
-}
-
-/**
- * Get the CDN base URL from environment variables
- * This is safe for browser use as it only uses NEXT_PUBLIC_ vars
- */
-function getCdnUrl(path: string): string {
   const cdnBaseUrl = process.env.NEXT_PUBLIC_CDN_URL || 'https://cdn.lmsy.space';
 
-  // If path already includes full URL, return as is
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
-  }
-
   // Remove leading slash if present
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const cleanPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
+  const finalUrl = `${cdnBaseUrl}/${cleanPath}`;
 
-  return `${cdnBaseUrl}/${cleanPath}`;
-}
-
-/**
- * Check if an image URL is from R2 (new) or Supabase (legacy)
- */
-export function isLegacyImageUrl(imageUrl: string): boolean {
-  return imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
-}
-
-/**
- * Get the relative path for database storage
- * Use this when you have a full URL and need to store just the path
- */
-export function getStoragePath(url: string): string {
-  if (isLegacyImageUrl(url)) {
-    return url; // Keep legacy URLs as is
+  if (debugCounter < MAX_DEBUG) {
+    console.log('[IMAGE_URL_DEBUG] Path construction:', {
+      input: imageUrl,
+      cleanPath,
+      cdnBaseUrl,
+      finalUrl,
+      hasLeadingSlash: imageUrl.startsWith('/'),
+    });
+    debugCounter++;
   }
 
-  // Already a relative path
-  return url.startsWith('/') ? url.slice(1) : url;
-}
-
-/**
- * Generate optimized image URL for Next.js Image component
- * This ensures all images use the CDN domain
- */
-export function getOptimizedImageUrl(
-  imageUrl: string | null | undefined,
-  width?: number,
-  quality?: number
-): string {
-  const fullUrl = getImageUrl(imageUrl);
-
-  // If it's our CDN, we could add optimization parameters
-  // For now, return the URL as-is
-  // You can extend this to add CDN-specific query parameters
-  return fullUrl;
+  return finalUrl;
 }

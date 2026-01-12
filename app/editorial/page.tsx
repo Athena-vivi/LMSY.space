@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/back-button';
-import { getImageUrl } from '@/lib/image-url';
 
 // API Response Types
 interface Magazine {
@@ -18,7 +17,7 @@ interface Magazine {
   description: string | null;
   catalog_id: string | null;
   artifact_count: number;
-  cover_source: string;
+  cover_source: 'database' | 'gallery_fallback' | 'empty_vault';
   gallery_images?: GalleryImage[];
 }
 
@@ -38,19 +37,19 @@ interface NebulaColors {
 // Magazine color themes for nebula sync
 const magazineThemes: Record<string, NebulaColors> = {
   'lookmhee': {
-    primary: 'rgba(245, 158, 11, 0.12)',   // Amber
+    primary: 'rgba(245, 158, 11, 0.12)',
     secondary: 'rgba(251, 191, 36, 0.08)',
   },
   'sonya': {
-    primary: 'rgba(59, 130, 246, 0.12)',    // Blue
+    primary: 'rgba(59, 130, 246, 0.12)',
     secondary: 'rgba(56, 189, 248, 0.08)',
   },
   'both': {
-    primary: 'rgba(139, 92, 246, 0.12)',    // Purple
+    primary: 'rgba(139, 92, 246, 0.12)',
     secondary: 'rgba(167, 139, 250, 0.08)',
   },
   'default': {
-    primary: 'rgba(251, 191, 36, 0.08)',    // Yellow
+    primary: 'rgba(251, 191, 36, 0.08)',
     secondary: 'rgba(56, 189, 248, 0.06)',
   },
 };
@@ -63,13 +62,11 @@ export default function EditorialPage() {
   useEffect(() => {
     async function fetchMagazines() {
       try {
-        console.log('[EDITORIAL] Fetching magazines from API...');
-
-        const response = await fetch('/api/editorial');
+        const response = await fetch('/api/editorial', {
+          cache: 'no-store',
+        });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          console.error('[EDITORIAL] ❌ API request failed:', errorData);
           setMagazines([]);
           return;
         }
@@ -77,16 +74,13 @@ export default function EditorialPage() {
         const data = await response.json();
 
         if (!data.success || !data.projects) {
-          console.log('[EDITORIAL] ⚠️ No editorial projects found');
           setMagazines([]);
           setLoading(false);
           return;
         }
 
-        console.log('[EDITORIAL] ✅ Successfully loaded', data.projects.length, 'magazines');
         setMagazines(data.projects);
       } catch (err) {
-        console.error('[EDITORIAL] ❌ Error fetching magazines:', err);
         setMagazines([]);
       } finally {
         setLoading(false);
@@ -166,7 +160,13 @@ export default function EditorialPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             <AnimatePresence mode="wait">
               {!loading ? (
-                <>
+                <motion.div
+                  key="magazines"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="contents"
+                >
                   {magazines.map((magazine, index) => (
                     <MagazineSlot
                       key={magazine.id}
@@ -178,17 +178,20 @@ export default function EditorialPage() {
                       isFirst={index === 0}
                     />
                   ))}
-
-                  {/* Only show empty slots when we have zero magazines */}
-                  {magazines.length === 0 && (
-                    <EmptySlot index={0} />
-                  )}
-                </>
+                </motion.div>
               ) : (
-                // Loading skeletons
-                [0, 1, 2, 3, 4, 5, 6, 7].map((index) => (
-                  <LoadingSlot key={`loading-${index}`} index={index} />
-                ))
+                <motion.div
+                  key="skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="contents"
+                >
+                  {/* Skeleton loading grid */}
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <SkeletonSlot key={index} index={index} />
+                  ))}
+                </motion.div>
               )}
             </AnimatePresence>
           </div>
@@ -207,6 +210,60 @@ export default function EditorialPage() {
   );
 }
 
+// Skeleton Loading - Breathing Effect
+function SkeletonSlot({ index }: { index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: index * 0.08 }}
+      className="relative"
+    >
+      {/* Skeleton Container with breathing effect */}
+      <motion.div
+        className="relative aspect-[3/4] overflow-hidden rounded-lg border border-dashed border-lmsy-yellow/20 bg-lmsy-yellow/5"
+        animate={{
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          delay: index * 0.2,
+        }}
+      >
+        {/* Corner markers */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-3 left-3 w-8 h-8 border-t border-l border-lmsy-yellow/30" />
+          <div className="absolute bottom-3 right-3 w-8 h-8 border-b border-r border-lmsy-blue/30" />
+        </div>
+
+        {/* Loading indicator */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            {/* Breathing dot */}
+            <motion.div
+              className="w-2 h-2 rounded-full bg-lmsy-yellow/40"
+              animate={{
+                scale: [1, 1.5, 1],
+                opacity: [0.4, 0.8, 0.4],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+            <p className="font-mono text-[8px] text-lmsy-yellow/30 tracking-[0.2em] uppercase">
+              Loading...
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 interface MagazineSlotProps {
   magazine: Magazine;
   index: number;
@@ -217,12 +274,23 @@ interface MagazineSlotProps {
 }
 
 function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: MagazineSlotProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // Use getImageUrl to ensure CDN URL is properly formatted
-  const coverUrl = magazine.cover_url ? getImageUrl(magazine.cover_url) : null;
-  const blurData = magazine.blur_data;
+  // Direct CDN URL - no placeholder masking
+  const coverUrl = magazine.cover_url
+    ? (magazine.cover_url.startsWith('http') ? magazine.cover_url : `https://cdn.lmsy.space/${magazine.cover_url}`)
+    : null;
+
+  const handleImageError = () => {
+    setIsLoading(false);
+    setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+  };
 
   return (
     <motion.div
@@ -244,32 +312,73 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
         <div className={`relative aspect-[3/4] overflow-hidden rounded-lg bg-white/[0.02] border border-white/10 transition-opacity duration-300 ${
           isNavigating ? 'opacity-50' : ''
         }`}>
-          {/* Corner Frame Decorations - Viewfinder Style */}
+          {/* Corner Frame Decorations */}
           <div className="absolute inset-0 pointer-events-none">
-            {/* Top-left corner */}
             <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-lmsy-yellow/40" />
-            {/* Bottom-right corner */}
             <div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-lmsy-blue/40" />
           </div>
 
-          {/* Cover Image with blur-up */}
-          {coverUrl ? (
+          {/* Skeleton Loading while image loads */}
+          {isLoading && coverUrl && !imageError && (
+            <motion.div
+              className="absolute inset-0 border border-dashed border-lmsy-yellow/20 bg-lmsy-yellow/5"
+              animate={{
+                opacity: [0.3, 0.5, 0.3],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  className="w-2 h-2 rounded-full bg-lmsy-yellow/40"
+                  animate={{
+                    scale: [1, 1.5, 1],
+                    opacity: [0.4, 0.8, 0.4],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Error State */}
+          {imageError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center border border-red-500/30 p-3">
+              <p className="text-red-400/50 font-mono text-[6px] break-all text-center leading-tight">
+                IMAGE_LOAD_FAILED
+              </p>
+            </div>
+          ) : coverUrl ? (
+            // Real CDN image
             <Image
               src={coverUrl}
               alt={magazine.title}
               fill
-              className={`object-cover transition-opacity duration-700 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              } group-hover:scale-105`}
-              placeholder={blurData ? "blur" : "empty"}
-              blurDataURL={blurData || undefined}
-              onLoad={() => setImageLoaded(true)}
+              className="object-cover group-hover:scale-105 transition-transform duration-700"
+              placeholder="empty"
+              onError={handleImageError}
+              onLoad={handleImageLoad}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               priority={isFirst}
+              unoptimized
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full border border-white/10 border-t-transparent animate-spin" />
+            // No cover available
+            <div className="absolute inset-0 flex flex-col items-center justify-center border border-white/10">
+              <div className="relative mb-3">
+                <div className="w-6 h-6 rotate-45 border border-white/20" />
+                <div className="absolute inset-0 w-6 h-6 border border-white/10 rotate-45 scale-75" />
+              </div>
+              <p className="font-mono text-[8px] text-white/10 tracking-[0.2em] uppercase text-center leading-relaxed">
+                NO_COVER
+              </p>
             </div>
           )}
 
@@ -278,14 +387,14 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
             className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           />
 
-          {/* Artifact Count Overlay - Always visible */}
+          {/* Artifact Count */}
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 rounded px-2 py-1">
             <span className="font-mono text-[8px] text-white/70 tracking-[0.15em] uppercase">
-              {magazine.artifact_count || 0} ARTIFACT{magazine.artifact_count !== 1 ? 'S' : ''} INSIDE
+              {magazine.artifact_count} ARTIFACT{magazine.artifact_count !== 1 ? 'S' : ''}
             </span>
           </div>
 
-          {/* View Magazine Indicator */}
+          {/* View Indicator */}
           <motion.div
             className="absolute bottom-4 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             initial={{ y: 10 }}
@@ -297,7 +406,7 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
           </motion.div>
         </div>
 
-        {/* Archival Label - Top Left */}
+        {/* Labels */}
         <motion.div
           className="absolute -top-3 -left-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-2 py-1"
           initial={{ opacity: 0, scale: 0.8 }}
@@ -310,123 +419,12 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
           </span>
         </motion.div>
 
-        {/* Magazine Name - Bottom Right */}
         <div className="absolute -bottom-3 -right-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-3 py-1.5">
           <span className="font-mono text-[10px] text-white/70 tracking-wide uppercase">
-            {magazine.title
-              .replace(/[^a-zA-Z0-9]/g, '_')
-              .toUpperCase()
-              .substring(0, 20)}
+            {magazine.title.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}
           </span>
         </div>
       </Link>
-    </motion.div>
-  );
-}
-
-interface EmptySlotProps {
-  index: number;
-}
-
-function EmptySlot({ index }: EmptySlotProps) {
-  const catalogId = `LMSY-ED-${String(index + 1).padStart(3, '0')}`;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.08 }}
-      className="relative"
-    >
-      {/* Empty Slot Container - 3:4 Aspect Ratio */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-white/[0.02] border border-white/5 border-dashed">
-        {/* Viewfinder Decorations */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Top-left corner */}
-          <div className="absolute top-3 left-3 w-8 h-8 border-t border-l border-white/10" />
-          {/* Top-right corner */}
-          <div className="absolute top-3 right-3 w-8 h-8 border-t border-r border-white/10" />
-          {/* Bottom-left corner */}
-          <div className="absolute bottom-3 left-3 w-8 h-8 border-b border-l border-white/10" />
-          {/* Bottom-right corner */}
-          <div className="absolute bottom-3 right-3 w-8 h-8 border-b border-r border-white/10" />
-        </div>
-
-        {/* Center Content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {/* Pending Label */}
-          <motion.div
-            animate={{
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            <p className="font-mono text-[10px] text-white/20 tracking-[0.2em] uppercase">
-              MAG_ISSUE_PENDING
-            </p>
-          </motion.div>
-
-          {/* Slot Number */}
-          <div className="absolute top-4 left-4">
-            <span className="font-mono text-[9px] text-white/10 tracking-wider">
-              #{catalogId}
-            </span>
-          </div>
-        </div>
-
-        {/* Scanning Line Effect */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          animate={{
-            y: ['-100%', '100%'],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: index * 0.5,
-          }}
-        >
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-}
-
-interface LoadingSlotProps {
-  index: number;
-}
-
-function LoadingSlot({ index }: LoadingSlotProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.08 }}
-      className="relative"
-    >
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-white/[0.02] border border-white/5">
-        {/* Shimmer Effect */}
-        <motion.div
-          className="absolute inset-0"
-          animate={{
-            x: ['-100%', '200%'],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: index * 0.2,
-          }}
-        >
-          <div className="h-full w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-        </motion.div>
-      </div>
     </motion.div>
   );
 }

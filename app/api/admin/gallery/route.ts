@@ -1,6 +1,6 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 
 /**
  * GET - Retrieve gallery images
@@ -8,44 +8,25 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
  * Returns all images including those linked to projects
  */
 export async function GET(request: NextRequest) {
-  try {
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+  // Authentication
+  const authResult = await getAuthenticatedUser(request);
 
-    // Auth with SSR client (Schema locked to lmsy_archive)
-    const supabaseAuth = createServerClient(
-      rawUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-        db: {
-          schema: 'lmsy_archive',
-        },
-      }
+  if (!authResult.user || authResult.error) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
     );
+  }
 
-    // Verify user authentication
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  if (authResult.user.email !== adminEmail) {
+    return NextResponse.json(
+      { error: 'Forbidden: Admin access required' },
+      { status: 403 }
+    );
+  }
 
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Double-check admin email
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
-
+  try {
     const supabaseAdmin = getSupabaseAdmin();
 
     // Get query parameters
@@ -67,12 +48,14 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching gallery:', error);
+      console.error('[ADMIN_GALLERY_API] ❌ Fetch failed:', error);
       return NextResponse.json(
-        { error: `Failed to fetch gallery: ${error.message}` },
+        { error: 'Failed to fetch gallery', details: error.message },
         { status: 500 }
       );
     }
+
+    console.log('[ADMIN_GALLERY_API] ✅ Fetched', data?.length || 0, 'images');
 
     return NextResponse.json({
       success: true,
@@ -80,71 +63,42 @@ export async function GET(request: NextRequest) {
       data: data || [],
     });
   } catch (error) {
-    console.error('Unexpected error in GET:', error);
+    console.error('[ADMIN_GALLERY_API] ❌ Error:', error);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
 }
 
-// POST - 图库入库
-// 使用馆长客户端进行管理操作
+/**
+ * POST - Add new gallery images
+ * Uses admin client for management operations
+ */
 export async function POST(request: NextRequest) {
-  try {
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+  // Authentication
+  const authResult = await getAuthenticatedUser(request);
 
-    // 使用 SSR 客户端进行身份验证（Schema 锁定到 lmsy_archive）
-    const supabaseAuth = createServerClient(
-      rawUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-        db: {
-          schema: 'lmsy_archive',
-        },
-      }
+  if (!authResult.user || authResult.error) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
     );
+  }
 
-    // 验证用户身份
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  if (authResult.user.email !== adminEmail) {
+    return NextResponse.json(
+      { error: 'Forbidden: Admin access required' },
+      { status: 403 }
+    );
+  }
 
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // 双重身份校验：硬编码检查 Email
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    // 检查是否为管理员（显式指定 schema，额外验证）
-    const { data: adminCheck, error: adminError } = await supabaseAuth
-      .schema('lmsy_archive')
-      .from('admin_users')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single();
-
-    if (adminError || !adminCheck) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
-
+  try {
     const body = await request.json();
     const { items } = body;
 
@@ -155,7 +109,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Schema 锁定：明确指向 gallery 表
     const supabaseAdmin = getSupabaseAdmin();
     const results = [];
 
@@ -183,9 +136,9 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
-        console.error('Error inserting gallery item:', error);
+        console.error('[ADMIN_GALLERY_API] ❌ Insert failed:', error);
         return NextResponse.json(
-          { error: `Failed to insert item: ${error.message}` },
+          { error: 'Failed to insert item', details: error.message },
           { status: 500 }
         );
       }
@@ -193,15 +146,94 @@ export async function POST(request: NextRequest) {
       results.push(data);
     }
 
+    console.log('[ADMIN_GALLERY_API] ✅ Inserted', results.length, 'items');
+
     return NextResponse.json({
       success: true,
       count: results.length,
       data: results,
     });
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('[ADMIN_GALLERY_API] ❌ Error:', error);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE - Delete gallery images
+ * Query params:
+ * - ids: comma-separated list of image IDs to delete
+ */
+export async function DELETE(request: NextRequest) {
+  // Authentication
+  const authResult = await getAuthenticatedUser(request);
+
+  if (!authResult.user || authResult.error) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
+    );
+  }
+
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  if (authResult.user.email !== adminEmail) {
+    return NextResponse.json(
+      { error: 'Forbidden: Admin access required' },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const ids = searchParams.get('ids');
+
+    if (!ids) {
+      return NextResponse.json(
+        { error: 'Missing required parameter: ids' },
+        { status: 400 }
+      );
+    }
+
+    const idArray = ids.split(',');
+    console.log('[ADMIN_GALLERY_API] Deleting', idArray.length, 'images:', idArray);
+
+    const supabaseAdmin = getSupabaseAdmin();
+
+    const { error } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery')
+      .delete()
+      .in('id', idArray);
+
+    if (error) {
+      console.error('[ADMIN_GALLERY_API] ❌ Delete failed:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete images', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    console.log('[ADMIN_GALLERY_API] ✅ Deleted', idArray.length, 'images');
+
+    return NextResponse.json({
+      success: true,
+      deleted: idArray.length,
+    });
+  } catch (error) {
+    console.error('[ADMIN_GALLERY_API] ❌ Error:', error);
+
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

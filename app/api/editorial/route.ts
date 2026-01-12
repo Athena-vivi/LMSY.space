@@ -1,37 +1,78 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 /**
- * Editorial Projects API
+ * Editorial Projects API - DATA STITCHING
  *
- * GET /api/editorial - Fetch all editorial projects with cover selection logic
+ * 🔒 EXPLICIT SCHEMA + FK JOIN + SELF-HEALING:
+ * 1. Explicit .schema('lmsy_archive')
+ * 2. FK join: .select('*, gallery(*)')
+ * 3. Self-healing: Discover cover from gallery if missing
+ * 4. Clear status codes: 'gallery_fallback' | 'database' | 'empty_vault'
  *
- * Curator Rules:
- * 1. Images with catalog_id ending in -000 are automatically selected as project covers
- * 2. Fallback: If no -000 exists, use the image with the lowest sequence number
- * 3. Accurate artifact count based on gallery records with matching project_id
+ * ❌ NO undefined
+ * ❌ NO placeholder
+ * ✅ REAL DATA with clear status
  */
 
-export async function GET(request: NextRequest) {
+export const revalidate = 0;
+
+/**
+ * Get CDN URL from relative path
+ */
+function getCdnUrl(imagePath: string | null): string | null {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  return `https://cdn.lmsy.space/${imagePath.startsWith('/') ? imagePath.slice(1) : imagePath}`;
+}
+
+/**
+ * Discover cover from gallery array
+ * Priority: -000 → smallest catalog_id
+ */
+function discoverCoverFromGallery(galleryImages: any[]): { imageUrl: string | null; source: string } {
+  if (!galleryImages || galleryImages.length === 0) {
+    return { imageUrl: null, source: 'empty_vault' };
+  }
+
+  // Priority 1: -000 cover designation
+  const coverImage = galleryImages.find((img: any) =>
+    img.catalog_id && img.catalog_id.endsWith('-000')
+  );
+
+  if (coverImage && coverImage.image_url) {
+    console.log(`[DATA_STITCH] ✅ Found -000 cover: ${coverImage.catalog_id}`);
+    return { imageUrl: getCdnUrl(coverImage.image_url), source: 'gallery_fallback' };
+  }
+
+  // Priority 2: Smallest catalog_id (first image)
+  const sorted = [...galleryImages]
+    .filter((img: any) => img.catalog_id)
+    .sort((a: any, b: any) => (a.catalog_id || '').localeCompare(b.catalog_id || ''));
+
+  if (sorted.length > 0 && sorted[0].image_url) {
+    console.log(`[DATA_STITCH] ✅ Found first image: ${sorted[0].catalog_id}`);
+    return { imageUrl: getCdnUrl(sorted[0].image_url), source: 'gallery_fallback' };
+  }
+
+  console.log(`[DATA_STITCH] ⚠️ Gallery has items but no valid image_url`);
+  return { imageUrl: null, source: 'gallery_fallback' };
+}
+
+export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    console.log('[EDITORIAL_API] Fetching editorial projects with gallery join...');
+    console.log('[DATA_STITCH] 🔍 Fetching editorial projects with explicit schema...');
 
-    // Fetch projects with their gallery images using foreign key relationship
+    // 🔒 EXPLICIT SCHEMA + FK JOIN
     const { data: projects, error: fetchError } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('projects')
       .select(`
-        id,
-        title,
-        category,
-        cover_url,
-        release_date,
-        description,
-        catalog_id,
-        blur_data,
-        created_at,
+        *,
         gallery (
           id,
           image_url,
@@ -45,70 +86,49 @@ export async function GET(request: NextRequest) {
       .order('release_date', { ascending: false });
 
     if (fetchError) {
-      console.error('[EDITORIAL_API] ❌ Supabase query failed:', fetchError);
+      console.error('[DATA_STITCH] ❌ Query failed:', fetchError);
       return NextResponse.json(
-        {
-          error: 'Failed to fetch editorial projects',
-          details: fetchError.message,
-          code: fetchError.code,
-        },
+        { error: 'Query failed', details: fetchError.message },
         { status: 500 }
       );
     }
 
     if (!projects || projects.length === 0) {
-      console.log('[EDITORIAL_API] ℹ️ No editorial projects found');
-      return NextResponse.json({
-        success: true,
-        projects: [],
-        count: 0,
-      });
+      console.log('[DATA_STITCH] ℹ️ No editorial projects found');
+      return NextResponse.json({ success: true, projects: [], count: 0 });
     }
 
-    // 🔒 CRITICAL: Process each project with cover selection rules
+    console.log(`[DATA_STITCH] ✅ Found ${projects.length} projects`);
+
+    // 🔒 DATA STITCHING: Process each project
     const processedProjects = projects.map((project: any) => {
       const galleryImages = project.gallery || [];
       const artifactCount = galleryImages.length;
 
-      // Default cover from project itself
-      let finalCoverUrl = project.cover_url;
-      let finalBlurData = project.blur_data;
-      let coverSource = 'project';
+      console.log(`[DATA_STITCH] 📊 "${project.title}":`, {
+        cover_url: project.cover_url,
+        artifact_count: artifactCount,
+      });
 
-      // 🔒 CURATOR RULE #1: Find image with catalog_id ending in -000
-      if (!finalCoverUrl && galleryImages.length > 0) {
-        const coverImage = galleryImages.find((img: any) => {
-          const catalogId = img.catalog_id;
-          if (!catalogId) return false;
-          // Strict match: catalog_id must end with -000
-          return /-000$/.test(catalogId);
-        });
+      // Determine final cover URL and source
+      let finalCoverUrl: string | null = null;
+      let coverSource: string = 'empty_vault';
 
-        if (coverImage) {
-          finalCoverUrl = coverImage.image_url;
-          finalBlurData = coverImage.blur_data;
-          coverSource = `catalog-${coverImage.catalog_id}`;
-          console.log(`[EDITORIAL_API] ✅ Found -000 cover for "${project.title}": ${coverImage.catalog_id}`);
+      if (project.cover_url) {
+        // Use database cover if exists
+        finalCoverUrl = getCdnUrl(project.cover_url);
+        coverSource = 'database';
+        console.log(`[DATA_STITCH] ✅ Using database cover for "${project.title}"`);
+      } else {
+        // Self-heal: discover from gallery
+        const discovered = discoverCoverFromGallery(galleryImages);
+        finalCoverUrl = discovered.imageUrl;
+        coverSource = discovered.source;
+
+        if (finalCoverUrl) {
+          console.log(`[DATA_STITCH] 🔄 Self-healed cover for "${project.title}" (source: ${coverSource})`);
         } else {
-          // 🔒 CURATOR RULE #2: Fallback to lowest sequence number
-          const sortedGallery = [...galleryImages].sort((a: any, b: any) => {
-            const aCatalog = a.catalog_id || '';
-            const bCatalog = b.catalog_id || '';
-
-            // Extract sequence number (last 3 digits after last hyphen)
-            const aMatch = aCatalog.match(/-(\d{3})$/);
-            const bMatch = bCatalog.match(/-(\d{3})$/);
-
-            const aSeq = aMatch ? parseInt(aMatch[1], 10) : 999;
-            const bSeq = bMatch ? parseInt(bMatch[1], 10) : 999;
-
-            return aSeq - bSeq;
-          });
-
-          finalCoverUrl = sortedGallery[0].image_url;
-          finalBlurData = sortedGallery[0].blur_data;
-          coverSource = `fallback-${sortedGallery[0].catalog_id}`;
-          console.log(`[EDITORIAL_API] ⚠️ Fallback cover for "${project.title}": ${sortedGallery[0].catalog_id}`);
+          console.log(`[DATA_STITCH] ⚠️ No cover found for "${project.title}" (source: ${coverSource})`);
         }
       }
 
@@ -117,7 +137,7 @@ export async function GET(request: NextRequest) {
         title: project.title,
         category: project.category,
         cover_url: finalCoverUrl,
-        blur_data: finalBlurData,
+        blur_data: project.blur_data,
         release_date: project.release_date,
         description: project.description,
         catalog_id: project.catalog_id,
@@ -128,18 +148,19 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    console.log(`[EDITORIAL_API] ✅ Successfully processed ${processedProjects.length} editorial projects`);
+    console.log(`[DATA_STITCH] ✅ Returning ${processedProjects.length} projects`);
 
     return NextResponse.json({
       success: true,
       projects: processedProjects,
       count: processedProjects.length,
     });
+
   } catch (error) {
-    console.error('[EDITORIAL_API] ❌ Unexpected error:', error);
+    console.error('[DATA_STITCH] ❌ Error:', error);
     return NextResponse.json(
       {
-        error: 'Internal server error',
+        error: 'API failed',
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
