@@ -226,57 +226,64 @@ export default function EditorialDetailPage() {
               </p>
             </motion.div>
 
-            {/* Masonry Grid using CSS Columns */}
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+            {/* 🖼️ GALLERY-GRADE MASONRY - Natural Aspect Ratios */}
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
               {galleryImages.map((image, index) => (
                 <motion.div
                   key={image.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1 + index * 0.1 }}
-                  className="break-inside-avoid relative group cursor-pointer"
+                  transition={{ duration: 0.6, delay: 1 + index * 0.08 }}
+                  className="mb-4 md:mb-6 break-inside-avoid relative group cursor-pointer"
                   onClick={() => setLightboxIndex(index)}
                 >
-                    <div className="relative overflow-hidden rounded-lg bg-white/[0.02] border border-white/10">
-                      {/* Image - fill mode with proper aspect ratio container */}
-                      <div className="relative w-full aspect-[3/4]">
-                        <Image
-                          src={`https://cdn.lmsy.space/${image.image_url}`}
-                          alt={image.caption || `Page ${index + 1}`}
-                          fill
-                          className="object-contain"
-                          placeholder="empty"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          priority={index < 3}
-                          fetchPriority={index < 3 ? "high" : "auto"}
-                          unoptimized
-                        />
+                  <div className="relative overflow-hidden rounded-xl bg-white/[0.02] border border-white/10">
+                    {/* 🎨 Image with NATURAL aspect ratio - no cropping, no stretching */}
+                    <Image
+                      src={`https://cdn.lmsy.space/${image.image_url}`}
+                      alt={image.caption || `Page ${index + 1}`}
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                      placeholder="empty"
+                      priority={index < 3}
+                      unoptimized
+                    />
+
+                    {/* 🌌 Nebula Hover Glow - Subtle backdrop */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                    {/* 📖 Catalog ID - Always visible at bottom right */}
+                    {image.catalog_id && (
+                      <div className="absolute bottom-3 right-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                        <span className="font-mono text-[10px] text-lmsy-yellow/80 bg-black/40 backdrop-blur-sm px-2 py-1 rounded">
+                          {image.catalog_id}
+                        </span>
                       </div>
+                    )}
 
-                      {/* Hover Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                      {/* Click to View Indicator */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-4">
-                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607zM10.5 7.5v6m3-3h-6" />
-                          </svg>
-                        </div>
+                    {/* 🔍 Click indicator */}
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-black/50 backdrop-blur-sm rounded-full p-2">
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607zM10.5 7.5v6m3-3h-6" />
+                        </svg>
                       </div>
+                    </div>
 
-                      {/* Caption */}
-                      {image.caption && (
-                        <motion.div
-                          className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                          initial={{ y: 10 }}
-                          whileHover={{ y: 0 }}
-                        >
-                          <p className="font-mono text-xs text-white/90">
-                            {image.caption}
-                          </p>
-                        </motion.div>
-                      )}
+                    {/* 📝 Caption - Slide up on hover */}
+                    {image.caption && (
+                      <motion.div
+                        className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        initial={{ y: 10 }}
+                        whileHover={{ y: 0 }}
+                      >
+                        <p className="font-serif text-sm text-white/90 line-clamp-2">
+                          {image.caption}
+                        </p>
+                      </motion.div>
+                    )}
                     </div>
                 </motion.div>
               ))}

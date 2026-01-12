@@ -160,64 +160,63 @@ export default function GalleryPage() {
                     className="break-inside-avoid"
                   >
                     <div
-                      className="group relative overflow-hidden rounded-lg border-2 border-border magazine-shadow cursor-pointer"
+                      className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] cursor-pointer magazine-shadow"
                       onClick={() => openLightbox(item)}
                     >
-                      {/* Image with Lazy Loading and Blur-up */}
-                      <div className="relative aspect-[3/4] bg-muted">
-                        {item.image_url ? (
-                          <Image
-                            src={item.image_url}
-                            alt={item.caption || item.tag || 'Gallery image'}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                            placeholder={item.blur_data ? "blur" : "empty"}
-                            blurDataURL={item.blur_data || undefined}
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            priority={index === 0}
-                            loading={index === 0 ? "eager" : "lazy"}
-                          />
-                        ) : (
-                          <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index % gradients.length]}`} />
-                        )}
+                      {/* 🎨 Image with NATURAL aspect ratio - Gallery Grade Masonry */}
+                      {item.image_url ? (
+                        <Image
+                          src={item.image_url}
+                          alt={item.caption || item.tag || 'Gallery image'}
+                          width={0}
+                          height={0}
+                          sizes="100vw"
+                          className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                          placeholder={item.blur_data ? "blur" : "empty"}
+                          blurDataURL={item.blur_data || undefined}
+                          priority={index === 0}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className={`w-full aspect-[3/4] bg-gradient-to-br ${gradients[index % gradients.length]}`} />
+                      )}
 
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {/* 🌌 Nebula Hover Glow */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                        {/* Catalog Number - Always Visible */}
-                        <div className="absolute bottom-2 right-2 opacity-60 hover:opacity-100 transition-opacity">
-                          <CompactCatalogNumber
-                            id={item.id}
-                            createdAt={item.created_at}
-                            index={index}
-                          />
-                        </div>
-
-                        {/* Tag Badge */}
-                        {item.tag && (
-                          <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <span className="px-3 py-1 text-xs font-medium bg-white/90 backdrop-blur rounded-full text-foreground">
-                              #{item.tag}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Zoom Icon on Hover */}
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="bg-white/90 backdrop-blur rounded-full p-2 shadow-lg">
-                            <ZoomIn className="h-4 w-4 text-foreground" />
-                          </div>
-                        </div>
-
-                        {/* Caption */}
-                        {item.caption && (
-                          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <p className="text-white font-serif text-lg drop-shadow-lg">
-                              {item.caption}
-                            </p>
-                          </div>
-                        )}
+                      {/* 📖 Catalog Number - Always visible */}
+                      <div className="absolute bottom-2 right-2 opacity-60 hover:opacity-100 transition-opacity">
+                        <CompactCatalogNumber
+                          id={item.id}
+                          createdAt={item.created_at}
+                          index={index}
+                        />
                       </div>
+
+                      {/* 🏷️ Tag Badge - Top Left */}
+                      {item.tag && (
+                        <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <span className="px-3 py-1 text-xs font-medium bg-black/50 backdrop-blur-sm rounded-full text-white/90 border border-white/10">
+                            #{item.tag}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 🔍 Zoom Icon - Top Right */}
+                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/10">
+                          <ZoomIn className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+
+                      {/* 📝 Caption - Bottom */}
+                      {item.caption && (
+                        <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                          <p className="text-white font-serif text-sm line-clamp-2 drop-shadow-lg">
+                            {item.caption}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}

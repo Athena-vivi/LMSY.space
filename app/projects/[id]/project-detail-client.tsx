@@ -434,21 +434,23 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                     </div>
                   </motion.div>
 
-                  {/* Chapter Images - Masonry Layout */}
+                  {/* Chapter Images - Gallery Grade Masonry */}
                   <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
-                    {chapter.images.map((image, index) => (
-                      <motion.div
-                        key={image.id}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: index * 0.05 }}
-                        className="mb-4 md:mb-6 break-inside-avoid"
-                      >
-                        <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                          {/* Image with original aspect ratio - no stretching, no cropping */}
-                          {(() => {
-                            const imageUrl = getImageUrl(image.image_url);
-                            return imageUrl ? (
+                    {chapter.images.map((image, index) => {
+                      const isCoverImage = image.catalog_id?.endsWith('-000');
+                      const imageUrl = getImageUrl(image.image_url);
+
+                      return (
+                        <motion.div
+                          key={image.id}
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: index * 0.05 }}
+                          className={`mb-4 md:mb-6 break-inside-avoid ${isCoverImage ? 'md:col-span-2 lg:col-span-1' : ''}`}
+                        >
+                          <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                            {/* 🎨 Image with NATURAL aspect ratio */}
+                            {imageUrl ? (
                               <Image
                                 src={imageUrl}
                                 alt={image.caption || image.catalog_id || ''}
@@ -458,35 +460,53 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                                 className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
                                 unoptimized
                               />
-                            ) : null;
-                          })()}
+                            ) : null}
 
-                          {/* Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            {/* 🌌 Nebula Hover Glow */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                          {/* Caption */}
-                          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                            {/* 📖 Catalog ID - Always visible */}
                             {image.catalog_id && (
-                              <p className="text-[10px] font-mono text-lmsy-yellow/60 mb-1">
-                                {image.catalog_id}
-                              </p>
+                              <div className="absolute bottom-3 right-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                                <span className={`font-mono text-[10px] ${isCoverImage ? 'text-lmsy-yellow' : 'text-lmsy-yellow/80'} bg-black/40 backdrop-blur-sm px-2 py-1 rounded`}>
+                                  {image.catalog_id}
+                                </span>
+                              </div>
                             )}
-                            {image.caption && (
-                              <p className="text-sm text-white/80 line-clamp-2">
-                                {image.caption}
-                              </p>
+
+                            {/* 👑 Cover Badge - Special privilege for -000 images */}
+                            {isCoverImage && (
+                              <div className="absolute top-3 left-3 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                                <span className="px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 rounded-full">
+                                  <span className="text-[10px] font-mono font-bold text-lmsy-yellow">COVER</span>
+                                </span>
+                              </div>
+                            )}
+
+                            {/* 📝 Caption - Slide up on hover */}
+                            <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                              {image.catalog_id && !isCoverImage && (
+                                <p className="text-[10px] font-mono text-lmsy-yellow/60 mb-1">
+                                  {image.catalog_id}
+                                </p>
+                              )}
+                              {image.caption && (
+                                <p className="text-sm text-white/80 line-clamp-2">
+                                  {image.caption}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Featured Badge */}
+                            {image.is_featured && !isCoverImage && (
+                              <div className="absolute top-4 right-4 px-2 py-1 bg-lmsy-blue/20 border border-lmsy-blue/40 rounded-full">
+                                <span className="text-[10px] font-mono font-bold text-lmsy-blue">FEATURED</span>
+                              </div>
                             )}
                           </div>
-
-                          {/* Featured Badge */}
-                          {image.is_featured && (
-                            <div className="absolute top-4 right-4 px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 rounded-full">
-                              <span className="text-[10px] font-mono font-bold text-lmsy-yellow">FEATURED</span>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
