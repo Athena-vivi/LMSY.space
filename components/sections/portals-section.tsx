@@ -6,12 +6,19 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getImageUrl } from '@/lib/image-url';
+
+interface PortalImage {
+  imageUrl: string | null;
+  blurData: string | null;
+  catalogId: string | null;
+}
 
 interface PortalCardProps {
   titleKey: string;
   descKey: string;
-  image: string;
+  image: PortalImage | null;
   href: string;
   index: number;
   gradient: string;
@@ -21,7 +28,6 @@ interface PortalCardProps {
 function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeatured }: PortalCardProps) {
   const { language } = useLanguage();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   // 🔥 AMBER GOLD theme for commercial cards
   const isCommercial = isFeatured || gradient.includes('amber');
@@ -36,6 +42,10 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
   const borderColor = isCommercial
     ? 'from-amber-400/40 via-yellow-500/30 to-amber-600/40'
     : 'from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30';
+
+  // 🔥 GET IMAGE URL: Process through getImageUrl for CDN path
+  const imageUrl = image?.imageUrl ? getImageUrl(image.imageUrl) : null;
+  const blurDataUrl = image?.blurData || undefined;
 
   return (
     <motion.div
@@ -53,42 +63,29 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
             borderColor: 'rgba(255, 255, 255, 0.05)',
           }}
         >
-          {/* Background Gradient */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-110`} />
-
-          {/* Image with Fade-in Effect */}
-          {!imageError && image && (
-            <div className={`absolute inset-0 transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
-              <Image
-                src={image}
-                alt={t(language, titleKey as any)}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                onLoad={() => setImageLoaded(true)}
-                onError={() => {
-                  setImageError(true);
-                  setImageLoaded(false);
-                }}
-              />
-            </div>
+          {/* 🔥 REAL IMAGE with Blur Placeholder */}
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={t(language, titleKey as any)}
+              fill
+              className={`object-cover transition-transform duration-700 group-hover:scale-105 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onLoad={() => setImageLoaded(true)}
+              unoptimized
+              priority={index < 2}
+              placeholder="blur"
+              blurDataURL={blurDataUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmNTlmMTYiIG9wYWNpdHk9IjAuMiIvPjwvc3ZnPg=='}
+            />
+          ) : (
+            /* Fallback Gradient Background */
+            <div className={`absolute inset-0 bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-110`} />
           )}
 
-          {/* Loading Placeholder or Error Fallback */}
-          {(!imageLoaded || imageError) && (
-            <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/70">
-              {/* Animated gradient pattern for missing images */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${gradient} animate-pulse opacity-50`} />
-            </div>
-          )}
-
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-
-          {/* Duo Color Border */}
-          <div className={`absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r p-[2px] ${isCommercial ? 'from-amber-400/40 via-yellow-500/30 to-amber-600/40' : 'from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30'}`}>
-            <div className="absolute inset-0 rounded-2xl bg-background/0" />
-          </div>
+          {/* 🌌 GRADIENT OVERLAY: From bottom to top for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500" />
 
           {/* Content */}
           <div className="absolute inset-0 flex flex-col justify-end p-8">
@@ -136,40 +133,61 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
 
 export function PortalsSection() {
   const { language } = useLanguage();
+  const [portalImages, setPortalImages] = useState<Record<string, PortalImage | null>>({});
+  const [loading, setLoading] = useState(true);
+
+  // 🔥 FETCH FEATURED IMAGES: Load latest featured images for each portal
+  useEffect(() => {
+    async function fetchPortalImages() {
+      try {
+        const response = await fetch('/api/home/portals');
+        if (response.ok) {
+          const data = await response.json();
+          setPortalImages(data);
+        }
+      } catch (error) {
+        console.error('[PORTALS] Failed to fetch portal images:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPortalImages();
+  }, []);
 
   const portals = [
     {
       titleKey: 'portal.drama',
       descKey: 'portal.dramaDesc',
-      image: '', // Temporarily disabled - using gradient background instead
+      image: portalImages.series || null,
       href: '/exhibitions/category/drama',
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
       titleKey: 'portal.live',
       descKey: 'portal.liveDesc',
-      image: '', // Temporarily disabled - using gradient background instead
+      image: portalImages.appearance || null,
       href: '/exhibitions/category/stage',
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
     {
       titleKey: 'portal.journey',
       descKey: 'portal.journeyDesc',
-      image: '', // Temporarily disabled - using gradient background instead
+      image: portalImages.travel || null,
       href: '/exhibitions/category/travel',
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
       titleKey: 'portal.daily',
       descKey: 'portal.dailyDesc',
-      image: '', // Temporarily disabled - using gradient background instead
+      image: portalImages.daily || null,
       href: '/exhibitions/category/daily',
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
     {
       titleKey: 'portal.commercial',
       descKey: 'portal.commercialDesc',
-      image: '',
+      image: portalImages.commercial || null,
       href: '/exhibitions/category/commercial',
       gradient: 'from-amber-400/30 via-yellow-500/20 to-amber-600/30',
       isFeatured: true, // Commercial gets special treatment
