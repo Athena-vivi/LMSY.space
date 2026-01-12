@@ -1,13 +1,12 @@
-'use client';
-
-import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import { BackButton } from '@/components/back-button';
-import { supabase } from '@/lib/supabase/client';
-import EditorialLightbox from '@/components/lightbox/editorial-lightbox';
+import { EditorialDetailContent } from './editorial-detail-content';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { notFound } from 'next/navigation';
+
+// 🚫 NO CACHE: Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 interface Magazine {
   id: string;
@@ -28,289 +27,112 @@ interface GalleryImage {
   catalog_id: string | null;
 }
 
-export default function EditorialDetailPage() {
-  const params = useParams();
-  const magazineId = params.id as string;
+/**
+ * Fetch magazine data with dual-query strategy (UUID + catalog_id)
+ * 🔒 IRON CURTAIN: NO DATE-BASED AUTO-ASSOCIATION
+ */
+async function getMagazineData(id: string): Promise<{
+  magazine: Magazine | null;
+  galleryImages: GalleryImage[];
+}> {
+  const supabaseAdmin = getSupabaseAdmin();
 
-  const [magazine, setMagazine] = useState<Magazine | null>(null);
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [curatorNote, setCuratorNote] = useState<string | null>(null);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  console.log('[IRON_CURTAIN] ========== STRICT PHYSICAL LINKAGE ==========');
+  console.log('[IRON_CURTAIN] 🔍 Input ID:', id);
 
-  useEffect(() => {
-    async function fetchMagazineData() {
-      try {
-        // Fetch magazine project from lmsy_archive schema
-        const { data: project, error: projectError } = await supabase
-          .schema('lmsy_archive')
-          .from('projects')
-          .select('*')
-          .eq('id', magazineId)
-          .eq('category', 'editorial')
-          .single();
+  // STRATEGY 1: Try UUID lookup first
+  console.log('[IRON_CURTAIN] 📡 Strategy 1: UUID lookup');
+  const { data: projectByUuid, error: uuidError } = await supabaseAdmin
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('*')
+    .eq('id', id)
+    .eq('category', 'editorial')
+    .maybeSingle();
 
-        if (projectError || !project) {
-          return;
-        }
+  let project: Magazine | null = null;
 
-        setMagazine(project);
+  if (!uuidError && projectByUuid) {
+    console.log('[IRON_CURTAIN] ✅ Strategy 1 SUCCESS: Found by UUID');
+    project = projectByUuid;
+  } else {
+    // STRATEGY 2: Try catalog_id lookup
+    console.log('[IRON_CURTAIN] 📡 Strategy 2: catalog_id lookup');
+    const { data: projectByCatalog, error: catalogError } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('*')
+      .eq('catalog_id', id)
+      .eq('category', 'editorial')
+      .maybeSingle();
 
-        // Fetch gallery images linked to this project
-        const { data: images, error: imagesError } = await supabase
-          .schema('lmsy_archive')
-          .from('gallery')
-          .select('id, image_url, caption, blur_data, catalog_id')
-          .eq('project_id', magazineId)
-          .order('created_at', { ascending: true });
-
-        if (!imagesError && images) {
-          setGalleryImages(images);
-        }
-
-        // Set curator note (can be from project description or custom note)
-        setCuratorNote(project.description);
-      } catch (err) {
-        // Silent error handling
-      } finally {
-        setLoading(false);
-      }
+    if (!catalogError && projectByCatalog) {
+      console.log('[IRON_CURTAIN] ✅ Strategy 2 SUCCESS: Found by catalog_id');
+      project = projectByCatalog;
+    } else {
+      console.log('[IRON_CURTAIN] ❌ ALL STRATEGIES FAILED: Project not found');
+      return { magazine: null, galleryImages: [] };
     }
-
-    if (magazineId) {
-      fetchMagazineData();
-    }
-  }, [magazineId]);
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'TBD';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-16 h-16 rounded-full border border-white/10 border-t-transparent animate-spin" />
-      </div>
-    );
   }
 
+  console.log('[IRON_CURTAIN] 📊 Project found:', {
+    id: project?.id,
+    title: project?.title,
+    catalog_id: project?.catalog_id,
+    release_date: project?.release_date,
+  });
+
+  // 🔒 CRITICAL: STRICT PHYSICAL LINKAGE ONLY - NO DATE-BASED QUERIES
+  console.log('[IRON_CURTAIN] 🔍 Fetching gallery via project_id ONLY...');
+
+  // Type guard: project is guaranteed to be non-null here because we return early if null
+  if (!project) {
+    return { magazine: null, galleryImages: [] };
+  }
+
+  const { data: linkedImages, error: imagesError } = await supabaseAdmin
+    .schema('lmsy_archive')
+    .from('gallery')
+    .select('id, image_url, caption, blur_data, catalog_id')
+    .eq('project_id', project.id)  // 🚨 STRICT: Only physical foreign key linkage
+    .order('catalog_id', { ascending: true });
+
+  let galleryImages: GalleryImage[] = [];
+
+  if (!imagesError && linkedImages && linkedImages.length > 0) {
+    console.log(`[IRON_CURTAIN] ✅ Found ${linkedImages.length} physically linked images`);
+    galleryImages = linkedImages;
+  } else {
+    console.log('[IRON_CURTAIN] ℹ️ No physically linked images found (this is OK)');
+    // ❌ NO SELF-HEALING: Do NOT attempt date-based auto-association
+    console.log('[IRON_CURTAIN] ❌ DATE-BASED AUTO-ASSOCIATION DISABLED');
+  }
+
+  return { magazine: project, galleryImages };
+}
+
+export default async function EditorialDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  // 🔒 CRITICAL: Use await params for Next.js 15+
+  const { id } = await params;
+  console.log('[IRON_CURTAIN] 🎯 Page loaded with ID:', id);
+
+  const { magazine, galleryImages } = await getMagazineData(id);
+
+  // 404 if project not found
   if (!magazine) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-white/60 mb-4">Magazine not found</p>
-          <Link href="/editorial" className="text-lmsy-yellow/80 hover:text-lmsy-yellow">
-            ← Back to Editorial
-          </Link>
-        </div>
-      </div>
-    );
+    console.log('[IRON_CURTAIN] ❌ 404: Magazine not found');
+    notFound();
   }
-
-  const totalArtifacts = galleryImages.length + 1; // +1 for cover
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <header className="relative z-10 px-6 py-8 md:px-12 md:py-12 border-b border-white/5">
-        <div className="flex items-start justify-between max-w-7xl mx-auto">
-          <BackButton />
-
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-right"
-          >
-            <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-white/90">
-              {magazine.title}
-            </h1>
-            <p className="font-mono text-xs text-white/40 tracking-[0.3em]">
-              {magazine.catalog_id || 'LMSY-ED'}
-            </p>
-          </motion.div>
-        </div>
-      </header>
-
-      {/* Magazine Header Section */}
-      <section className="relative px-6 py-16 md:px-12">
-        <div className="max-w-7xl mx-auto">
-          {/* Date and Artifact Count */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex items-center justify-between mb-8"
-          >
-            <div>
-              <p className="font-mono text-4xl md:text-6xl font-bold text-white/90 mb-2">
-                {formatDate(magazine.release_date)}
-              </p>
-              <p className="font-mono text-xs text-white/40 tracking-[0.2em] uppercase">
-                Release Date
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="font-mono text-3xl md:text-5xl font-bold text-lmsy-yellow/80">
-                {totalArtifacts}
-              </p>
-              <p className="font-mono text-xs text-white/40 tracking-[0.2em] uppercase">
-                Artifacts Preserved
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Curator's Note */}
-          {curatorNote && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mb-12 p-6 border border-white/10 rounded-lg bg-white/[0.02]"
-            >
-              <p className="font-mono text-[10px] text-lmsy-yellow/60 tracking-[0.2em] uppercase mb-3">
-                Curator's Note
-              </p>
-              <p className="font-serif text-lg md:text-xl text-white/80 leading-relaxed">
-                {curatorNote}
-              </p>
-            </motion.div>
-          )}
-
-          {/* Magazine Cover - Full Size */}
-          {magazine.cover_url && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="relative mb-16"
-            >
-              <div className="relative aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden rounded-lg border border-white/10">
-                <Image
-                  src={`https://cdn.lmsy.space/${magazine.cover_url}`}
-                  alt={magazine.title}
-                  fill
-                  className="object-contain"
-                  placeholder="empty"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
-                  unoptimized
-                />
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </section>
-
-      {/* Gallery Section - Masonry Layout */}
-      {galleryImages.length > 0 && (
-        <section className="relative px-6 pb-20 md:px-12">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="mb-8"
-            >
-              <h2 className="font-serif text-2xl md:text-3xl text-white/80 mb-2">
-                Inside This Issue
-              </h2>
-              <p className="font-mono text-xs text-white/40 tracking-[0.2em] uppercase">
-                {galleryImages.length} Pages Preserved
-              </p>
-            </motion.div>
-
-            {/* 🖼️ GALLERY-GRADE MASONRY - Natural Aspect Ratios */}
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
-              {galleryImages.map((image, index) => (
-                <motion.div
-                  key={image.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1 + index * 0.08 }}
-                  className="mb-4 md:mb-6 break-inside-avoid relative group cursor-pointer"
-                  onClick={() => setLightboxIndex(index)}
-                >
-                  <div className="relative overflow-hidden rounded-xl bg-white/[0.02] border border-white/10">
-                    {/* 🎨 Image with NATURAL aspect ratio - no cropping, no stretching */}
-                    <Image
-                      src={`https://cdn.lmsy.space/${image.image_url}`}
-                      alt={image.caption || `Page ${index + 1}`}
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
-                      placeholder="empty"
-                      priority={index < 3}
-                      unoptimized
-                    />
-
-                    {/* 🌌 Nebula Hover Glow - Subtle backdrop */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                    {/* 📖 Catalog ID - Always visible at bottom right */}
-                    {image.catalog_id && (
-                      <div className="absolute bottom-3 right-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                        <span className="font-mono text-[10px] text-lmsy-yellow/80 bg-black/40 backdrop-blur-sm px-2 py-1 rounded">
-                          {image.catalog_id}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* 🔍 Click indicator */}
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="bg-black/50 backdrop-blur-sm rounded-full p-2">
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607zM10.5 7.5v6m3-3h-6" />
-                        </svg>
-                      </div>
-                    </div>
-
-                    {/* 📝 Caption - Slide up on hover */}
-                    {image.caption && (
-                      <motion.div
-                        className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        initial={{ y: 10 }}
-                        whileHover={{ y: 0 }}
-                      >
-                        <p className="font-serif text-sm text-white/90 line-clamp-2">
-                          {image.caption}
-                        </p>
-                      </motion.div>
-                    )}
-                    </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Footer */}
-      <footer className="relative border-t border-white/5 py-12 px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="font-mono text-[10px] text-white/20 tracking-[0.3em] uppercase">
-            LMSY.SPACE · MAGAZINE_ARCHIVE · {magazine.catalog_id || 'LMSY-ED'} · {totalArtifacts} ARTIFACTS
-          </p>
-        </div>
-      </footer>
-
-      {/* Lightbox */}
-      <AnimatePresence>
-        {lightboxIndex !== null && (
-          <EditorialLightbox
-            images={galleryImages}
-            initialIndex={lightboxIndex}
-            onClose={() => setLightboxIndex(null)}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+    <EditorialDetailContent
+      magazine={magazine}
+      galleryImages={galleryImages}
+      selfHealed={false}  // ❌ Always false - no self-healing
+    />
   );
 }

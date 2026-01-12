@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/back-button';
+import { getImageUrl } from '@/lib/image-url';
 
 // 🚫 NO CACHE: Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -344,10 +345,17 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
   const [isLoading, setIsLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // Direct CDN URL - no placeholder masking
-  const coverUrl = magazine.cover_url
-    ? (magazine.cover_url.startsWith('http') ? magazine.cover_url : `https://cdn.lmsy.space/${magazine.cover_url}`)
-    : null;
+  // 🔒 CRITICAL: Use getImageUrl helper for full compatibility (old absolute + new relative)
+  // 🚨 STRICTLY FORBIDDEN: Do NOT manually construct URLs here
+  const coverUrl = getImageUrl(magazine.cover_url);
+
+  // 📊 PATH_SYNC DEBUG: Log final URL for馆长's inspection
+  console.log('[PATH_SYNC]', {
+    title: magazine.title,
+    finalSrc: coverUrl,
+    inputUrl: magazine.cover_url,
+    catalogId: magazine.catalog_id,
+  });
 
   const handleImageError = () => {
     setIsLoading(false);
@@ -414,14 +422,8 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
             </motion.div>
           )}
 
-          {/* Error State */}
-          {imageError ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center border border-red-500/30 p-3">
-              <p className="text-red-400/50 font-mono text-[6px] break-all text-center leading-tight">
-                IMAGE_LOAD_FAILED
-              </p>
-            </div>
-          ) : coverUrl ? (
+          {/* Image with no error placeholder */}
+          {!imageError && coverUrl ? (
             // Real CDN image
             <Image
               src={coverUrl}

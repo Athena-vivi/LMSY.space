@@ -10,6 +10,7 @@ import { supabase, type GalleryItem } from '@/lib/supabase';
 import Lightbox from './lightbox';
 import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
+import { getImageUrl } from '@/lib/image-url';
 
 const gradients = [
   'from-lmsy-yellow/20 to-lmsy-yellow/5',
@@ -164,22 +165,28 @@ export default function GalleryPage() {
                       onClick={() => openLightbox(item)}
                     >
                       {/* 🎨 Image with NATURAL aspect ratio - Gallery Grade Masonry */}
-                      {item.image_url ? (
-                        <Image
-                          src={item.image_url}
-                          alt={item.caption || item.tag || 'Gallery image'}
-                          width={0}
-                          height={0}
-                          sizes="100vw"
-                          className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
-                          placeholder={item.blur_data ? "blur" : "empty"}
-                          blurDataURL={item.blur_data || undefined}
-                          priority={index === 0}
-                          unoptimized
-                        />
-                      ) : (
-                        <div className={`w-full aspect-[3/4] bg-gradient-to-br ${gradients[index % gradients.length]}`} />
-                      )}
+                      {(() => {
+                        const imageUrl = getImageUrl(item.image_url);
+                        console.log('[PATH_SYNC] Gallery Item:', {
+                          id: item.id,
+                          finalSrc: imageUrl,
+                          inputUrl: item.image_url,
+                        });
+                        return imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={item.caption || item.tag || 'Gallery image'}
+                            width={0}
+                            height={0}
+                            sizes="100vw"
+                            className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                            placeholder="empty"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className={`w-full min-h-[200px] aspect-[3/4] bg-gradient-to-br ${gradients[index % gradients.length]}`} />
+                        );
+                      })()}
 
                       {/* 🌌 Nebula Hover Glow */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

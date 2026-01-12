@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 /**
- * Editorial Projects API - FORCED ALIGNMENT
+ * Editorial Projects API - SOVEREIGN BOUNDARY ENFORCEMENT
  *
+ * 🚨 CRITICAL: EDITORIAL展厅严控边界
+ * ❌ SERIES/STILL DATA ABSOLUTELY FORBIDDEN
+ * ✅ STRICT .eq('category', 'editorial') ONLY
  * 🔥 MANDATORY EXPLICIT .schema('lmsy_archive') ON EVERY QUERY
- * ✅ TARGET: 7 editorial + 2 series projects confirmed in database
- * ❌ NO RELIANCE ON "PRE-CONFIGURED" DEFAULTS
  */
 
 export const revalidate = 0;
@@ -50,12 +51,12 @@ export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    console.log('[FORCED_ALIGNMENT] ========== FORCED SCHEMA ALIGNMENT ==========');
-    console.log('[FORCED_ALIGNMENT] 🎯 Target: lmsy_archive.projects');
-    console.log('[FORCED_ALIGNMENT] 🎯 Expected: 7 editorial + 2 series projects');
-    console.log('[FORCED_ALIGNMENT] 📡 Query: .or("category.eq.editorial,category.eq.series")');
+    console.log('[SOVEREIGN_BOUNDARY] ========== EDITORIAL EXCLUSIVE ==========');
+    console.log('[SOVEREIGN_BOUNDARY] 🎯 Target: lmsy_archive.projects ONLY');
+    console.log('[SOVEREIGN_BOUNDARY] 🚨 FILTER: .eq("category", "editorial")');
+    console.log('[SOVEREIGN_BOUNDARY] ❌ FORBIDDEN: series, still, appearance, journal, commercial');
 
-    // 🔥 FORCED: Explicit schema + category filter matching database
+    // 🔥 SOVEREIGN: Strict editorial-only filter, NO .or() ALLOWED
     const { data, error, status, statusText } = await supabaseAdmin
       .schema('lmsy_archive')  // 🚨 MANDATORY EXPLICIT SCHEMA
       .from('projects')
@@ -78,16 +79,21 @@ export async function GET() {
           created_at
         )
       `)
-      .or('category.eq.editorial,category.eq.series')  // Match confirmed 7+2 projects
+      .eq('category', 'editorial')  // 🚨 STRICT EQUALITY ONLY - NO SERIES DATA
       .order('release_date', { ascending: false });
 
-    console.log('[FORCED_ALIGNMENT] ========== QUERY RESULT ==========');
-    console.log('[FORCED_ALIGNMENT] 📊 HTTP Status:', status, statusText);
-    console.log('[FORCED_ALIGNMENT] 📊 Data Length:', data?.length || 0);
-    console.log('[FORCED_ALIGNMENT] 📊 Error:', error ? JSON.stringify(error, null, 2) : 'NO_ERROR');
+    console.log('[SOVEREIGN_BOUNDARY] ========== QUERY RESULT ==========');
+    console.log('[SOVEREIGN_BOUNDARY] 📊 HTTP Status:', status, statusText);
+    console.log('[SOVEREIGN_BOUNDARY] 📊 Data Length:', data?.length || 0);
+    console.log('[SOVEREIGN_BOUNDARY] 📊 Error:', error ? JSON.stringify(error, null, 2) : 'NO_ERROR');
 
     if (data && data.length > 0) {
-      console.log('[FORCED_ALIGNMENT] ✅ SUCCESS - Found projects:', data.map(p => ({
+      // 🔴 VERIFY: Ensure no series data leaked through
+      const hasSeries = data.some(p => p.category === 'series');
+      if (hasSeries) {
+        console.error('[SOVEREIGN_BOUNDARY] ❌🔥🔥 CRITICAL BREACH: SERIES DATA DETECTED IN EDITORIAL');
+      }
+      console.log('[SOVEREIGN_BOUNDARY] ✅ SUCCESS - Found projects:', data.map(p => ({
         id: p.id,
         title: p.title,
         category: p.category,
@@ -96,7 +102,7 @@ export async function GET() {
     }
 
     if (error) {
-      console.error('[FORCED_ALIGNMENT] ❌ CRITICAL ERROR:', JSON.stringify(error, null, 2));
+      console.error('[SOVEREIGN_BOUNDARY] ❌ CRITICAL ERROR:', JSON.stringify(error, null, 2));
       return NextResponse.json(
         {
           error: 'FORCED_ALIGNMENT_FAILED',
@@ -110,23 +116,34 @@ export async function GET() {
     }
 
     if (!data || data.length === 0) {
-      console.log('[FORCED_ALIGNMENT] ⚠️ ZERO RESULTS - Schema not being applied');
+      console.log('[SOVEREIGN_BOUNDARY] ⚠️ ZERO RESULTS - No editorial projects found');
       return NextResponse.json({
         success: true,
         projects: [],
         count: 0,
         debug: {
-          message: 'FORCED_ALIGNMENT_ZERO_RESULTS',
+          message: 'SOVEREIGN_BOUNDARY_ZERO_RESULTS',
+          filter: 'category=editorial ONLY',
           httpStatus: status,
           httpStatusText: statusText
         }
       });
     }
 
-    console.log(`[FORCED_ALIGNMENT] ✅ Processing ${data.length} projects...`);
+    console.log(`[SOVEREIGN_BOUNDARY] ✅ Processing ${data.length} editorial projects...`);
+
+    // 🔒 SOVEREIGN GUARD: Final verification - filter out any non-editorial data
+    const editorialOnly = data.filter(p => p.category === 'editorial');
+    if (editorialOnly.length !== data.length) {
+      console.error('[SOVEREIGN_BOUNDARY] ❌ FILTERED OUT NON-EDITORIAL DATA:', {
+        original: data.length,
+        filtered: editorialOnly.length,
+        removed: data.length - editorialOnly.length
+      });
+    }
 
     // Process projects with self-healing cover logic
-    const processedProjects = data.map((project: any) => {
+    const processedProjects = editorialOnly.map((project: any) => {
       const galleryImages = project.gallery || [];
       const artifactCount = galleryImages.length;
 

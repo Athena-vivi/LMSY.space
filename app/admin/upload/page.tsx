@@ -631,10 +631,12 @@ export default function AdminUploadPage() {
             const fallbackStartTime = Date.now();
 
             // Prepare FormData for fallback upload
+            // 🔒 CRITICAL: All required fields must be present - NO NULL VALUES
             const formData = new FormData();
             formData.append('file', file); // Original file, server will convert to WebP
             formData.append('catalogId', catalogId);
             formData.append('imageUrl', signData!.publicUrl!); // Pre-determined public URL
+            formData.append('eventDate', targetDate); // 🔒 CRITICAL: Must pass event_date
             formData.append('caption', title ? (i === 0 ? title : `${title} (${i + 1})`) : '');
             formData.append('tag', selectedTags.length > 0 ? selectedTags[0] : '');
             formData.append('projectId', selectedProject || '');
@@ -724,6 +726,10 @@ export default function AdminUploadPage() {
           console.log(`[UPLOAD] ✅ [${i + 1}/${uploadItems.length}] Complete: ${file.name}`);
           console.log(`[UPLOAD]    Catalog ID: ${catalogId}`);
           console.log(`[UPLOAD]    Public URL: ${signData!.publicUrl}`);
+
+          // 🔒 ARCHIVE_SUCCESS LOG: 零误差上传确认
+          const r2Path = `magazines/${new Date(targetDate).getFullYear()}/${catalogId}.webp`;
+          console.log(`[ARCHIVE_SUCCESS] Physical: ${r2Path} | Logical: ${catalogId}`);
 
           // Collect result
           uploadResults.push({

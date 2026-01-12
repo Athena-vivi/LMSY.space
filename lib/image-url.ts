@@ -2,11 +2,8 @@
  * Image URL utilities for browser and server
  *
  * 🔒 NO PLACEHOLDER, NO FAKE DATA - Direct CDN URL construction
+ * 🚀 FULL COMPATIBILITY: Handles both old absolute URLs and new relative paths
  */
-
-// Debug counter to limit console output
-let debugCounter = 0;
-const MAX_DEBUG = 5; // Only print first 5 calls
 
 /**
  * Get the full image URL for display
@@ -16,11 +13,12 @@ const MAX_DEBUG = 5; // Only print first 5 calls
  * @returns Full URL to display, or null if no image
  *
  * @example
- * // R2 relative path
+ * // R2 relative path (NEW FORMAT)
  * getImageUrl('gallery/photo.jpg') // => 'https://cdn.lmsy.space/gallery/photo.jpg'
+ * getImageUrl('/gallery/photo.jpg') // => 'https://cdn.lmsy.space/gallery/photo.jpg'
  *
- * // Already absolute URL
- * getImageUrl('https://cdn.lmsy.space/gallery/photo.jpg') // => same
+ * // Already absolute URL (OLD FORMAT)
+ * getImageUrl('https://cdn.lmsy.space/gallery/photo.jpg') // => 'https://cdn.lmsy.space/gallery/photo.jpg'
  *
  * // null input
  * getImageUrl(null) // => null
@@ -31,32 +29,29 @@ export function getImageUrl(imageUrl: string | null | undefined): string | null 
     return null;
   }
 
-  // If it's already an absolute URL, return as is
+  // 🚨 CRITICAL: If already absolute URL (HTTP/HTTPS), return AS-IS without modification
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    if (debugCounter < MAX_DEBUG) {
-      console.log('[IMAGE_URL_DEBUG] Already absolute URL:', imageUrl);
-      debugCounter++;
-    }
     return imageUrl;
   }
 
-  // Convert relative path to CDN URL
+  // 🔧 Convert relative path to CDN URL
   const cdnBaseUrl = process.env.NEXT_PUBLIC_CDN_URL || 'https://cdn.lmsy.space';
 
-  // Remove leading slash if present
+  // 🩹 SLASH FIX: Remove leading slash if present to avoid double slashes
   const cleanPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
+
+  // 🔒 ENSURE SINGLE SLASH: cdnBaseUrl never ends with /, cleanPath never starts with /
   const finalUrl = `${cdnBaseUrl}/${cleanPath}`;
 
-  if (debugCounter < MAX_DEBUG) {
-    console.log('[IMAGE_URL_DEBUG] Path construction:', {
-      input: imageUrl,
-      cleanPath,
-      cdnBaseUrl,
-      finalUrl,
-      hasLeadingSlash: imageUrl.startsWith('/'),
-    });
-    debugCounter++;
-  }
+  // 📊 PATH_SYNC DEBUG: Log every URL transformation for馆长's inspection
+  console.log('[PATH_SYNC]', {
+    input: imageUrl,
+    cleanPath,
+    cdnBaseUrl,
+    finalUrl,
+    hasLeadingSlash: imageUrl.startsWith('/'),
+    protocol: imageUrl.startsWith('http') ? 'absolute' : 'relative',
+  });
 
   return finalUrl;
 }

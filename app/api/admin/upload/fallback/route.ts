@@ -7,16 +7,8 @@ import { convertToWebP, type ProcessedImageResult } from '@/lib/image-processing
 /**
  * POST - Fallback upload endpoint for when client-to-R2 direct upload fails
  *
- * This is a server-side upload endpoint that:
- * 1. Receives the file as FormData
- * 2. Converts to WebP on the server
- * 3. Uploads to R2 using server credentials
- * 4. Registers in database
- *
- * Use this when:
- * - CORS prevents client-side direct R2 upload
- * - Network issues prevent browser from reaching R2
- * - Debugging upload issues
+ * 🔒 HIGHEST PRECISION: All validation, no silent failures
+ * 🚀 PERFORMANCE: Skip R2 upload if file already exists
  */
 export async function POST(request: NextRequest) {
   // Authentication
@@ -50,7 +42,7 @@ export async function POST(request: NextRequest) {
     const isFeatured = formData.get('isFeatured') === 'true';
     const originalSize = formData.get('originalSize') as string | null;
 
-    console.log('[UPLOAD_FALLBACK] Processing request:', {
+    console.log('[UPLOAD_FALLBACK] 📋 Processing request:', {
       hasFile: !!file,
       catalogId,
       imageUrl,
@@ -62,6 +54,7 @@ export async function POST(request: NextRequest) {
       originalSize,
     });
 
+    // 🔒 CRITICAL: Validate required fields - NO NULL VALUES
     if (!file) {
       return NextResponse.json(
         { error: 'File is required for fallback upload' },
@@ -84,6 +77,84 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🔒 HIGHEST PRECISION: Robust catalog ID validation with strict regex
+    // Format: LMSY-XXX-YYYYMMDD-### where XXX is category code
+    const catalogStrictMatch = catalogId.match(/^LMSY-[A-Z]+-(\d{4})(\d{2})(\d{2})-(\d{3})$/);
+    if (!catalogStrictMatch) {
+      console.error('[UPLOAD_FALLBACK] ❌ INVALID CATALOG ID FORMAT:', catalogId);
+      return NextResponse.json(
+        {
+          error: 'Invalid catalog ID format',
+          details: `Expected format: LMSY-XXX-YYYYMMDD-###, got: ${catalogId}`,
+          received: catalogId,
+        },
+        { status: 400 }
+      );
+    }
+
+    const [, year, month, day, sequence] = catalogStrictMatch;
+    const r2Path = `magazines/${year}/${catalogId}.webp`;
+
+    console.log('[UPLOAD_FALLBACK] ✅ Catalog ID validated:', {
+      catalogId,
+      year,
+      month,
+      day,
+      sequence,
+      r2Path,
+    });
+
+    // 🔒 CRITICAL: Validate eventDate - MUST BE PROVIDED
+    if (!eventDate) {
+      console.error('[UPLOAD_FALLBACK] ❌ eventDate is null or empty');
+      return NextResponse.json(
+        {
+          error: 'eventDate is required',
+          details: 'The eventDate field must be provided. Cannot extract from catalog_id alone.',
+          hint: 'Ensure the frontend passes the selected date from the date picker.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate eventDate format (YYYY-MM-DD)
+    const eventDateMatch = eventDate.match(/^\d{4}-\d{2}-\d{2}$/);
+    if (!eventDateMatch) {
+      console.error('[UPLOAD_FALLBACK] ❌ INVALID eventDate FORMAT:', eventDate);
+      return NextResponse.json(
+        {
+          error: 'Invalid eventDate format',
+          details: `Expected format: YYYY-MM-DD, got: ${eventDate}`,
+          received: eventDate,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 🔒 CRITICAL: Year validation - catalog year must match event year
+    const eventYear = eventDate.substring(0, 4);
+    if (year !== eventYear) {
+      console.error('[UPLOAD_FALLBACK] ❌ YEAR MISMATCH:', {
+        catalogId,
+        catalogYear: year,
+        eventDate,
+        eventYear,
+      });
+      return NextResponse.json(
+        {
+          error: 'Year mismatch between catalog ID and event date',
+          details: `Catalog ID year (${year}) does not match event date year (${eventYear}). This prevents data integrity issues.`,
+          catalogId,
+          catalogYear: year,
+          eventDate,
+          eventYear,
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log('[UPLOAD_FALLBACK] ✅ Date validation passed:', { catalogYear: year, eventYear, eventDate });
+
     console.log('[UPLOAD_FALLBACK] Step 1: Converting to WebP...');
 
     // Convert to WebP on server
@@ -98,79 +169,48 @@ export async function POST(request: NextRequest) {
 
     console.log('[UPLOAD_FALLBACK] Step 2: Uploading to R2 via server...');
 
-    // Get R2 path from catalog ID
-    const catalogMatch = catalogId.match(/^LMSY-[A-Z]+-(\d{4})\d{4}-\d{3}$/);
-    if (!catalogMatch) {
-      return NextResponse.json(
-        { error: 'Invalid catalog ID format', catalogId },
-        { status: 400 }
-      );
+    // 🚀 PERFORMANCE: Check if file already exists in R2
+    const r2PublicUrl = `https://cdn.lmsy.space/${r2Path}`;
+    let skipR2Upload = false;
+
+    try {
+      const existingCheck = await fetch(r2PublicUrl, { method: 'HEAD' });
+      if (existingCheck.ok) {
+        console.log('[UPLOAD_FALLBACK] 🚀 File already exists in R2, skipping upload:', r2PublicUrl);
+        skipR2Upload = true;
+      }
+    } catch (checkError) {
+      // If check fails, proceed with upload
+      console.log('[UPLOAD_FALLBACK] ⚠️ R2 existence check failed, proceeding with upload');
     }
 
-    const year = catalogMatch[1];
-    const r2Path = `magazines/${year}/${catalogId}.webp`;
-
-    // Upload to R2 using server credentials
-    const r2Result = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
-    if (!r2Result.success || !r2Result.url) {
-      throw new Error(`R2 upload failed: ${r2Result.error || 'Unknown error'}`);
+    // Upload to R2 using server credentials (only if not already exists)
+    if (!skipR2Upload) {
+      const r2Result = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
+      if (!r2Result.success || !r2Result.url) {
+        throw new Error(`R2 upload failed: ${r2Result.error || 'Unknown error'}`);
+      }
+      console.log(`[UPLOAD_FALLBACK] Step 2: ✅ Uploaded to R2: ${r2Result.url}`);
+    } else {
+      console.log(`[UPLOAD_FALLBACK] Step 2: ⏭️ Skipped R2 upload (file exists)`);
     }
-
-    console.log(`[UPLOAD_FALLBACK] Step 2: ✅ Uploaded to R2: ${r2Result.url}`);
 
     console.log('[UPLOAD_FALLBACK] Step 3: Registering in database...');
 
-    // 🔒 HARDCORE YEAR VALIDATION: Extract year from catalog ID
-    const catalogYear = catalogMatch[1]; // YYYY from catalog ID
-
-    // Use provided eventDate or extract from catalog ID
-    let validatedEventDate: string;
-    if (eventDate) {
-      const eventYear = new Date(eventDate).getFullYear().toString();
-
-      // 🔒 CRITICAL: Years must match exactly
-      if (catalogYear !== eventYear) {
-        console.error('[UPLOAD_FALLBACK] ❌ YEAR MISMATCH DETECTED:', {
-          catalogId,
-          catalogYear,
-          eventDate,
-          eventYear,
-        });
-        return NextResponse.json(
-          {
-            error: 'Year mismatch between catalog ID and event date',
-            details: `Catalog ID year (${catalogYear}) does not match event date year (${eventYear}). This prevents data integrity issues.`,
-            catalogId,
-            catalogYear,
-            eventDate,
-            eventYear,
-          },
-          { status: 400 }
-        );
-      }
-      validatedEventDate = eventDate;
-      console.log('[UPLOAD_FALLBACK] ✅ Year validation passed (using provided eventDate):', { catalogYear, eventYear });
-    } else {
-      // Fallback to extracting from catalog ID (for backward compatibility)
-      const compactDate = catalogMatch[2]; // YYYYMMDD
-      validatedEventDate = `${compactDate.substring(0, 4)}-${compactDate.substring(4, 6)}-${compactDate.substring(6, 8)}`;
-      console.warn('[UPLOAD_FALLBACK] ⚠️ No eventDate provided, using catalog ID date (deprecated):', validatedEventDate);
-    }
-
-    // Register in database
+    // Register in database with validated eventDate
     const supabaseAdmin = getSupabaseAdmin();
 
     const insertData: Record<string, any> = {
-      image_url: r2Result.url,
+      image_url: r2PublicUrl, // Use the constructed CDN URL
       catalog_id: catalogId,
-      caption: caption,
-      tag: tag,
+      caption: caption || null,
+      tag: tag || null,
       is_featured: isFeatured,
       blur_data: null, // Could generate blur data if needed
-      event_date: validatedEventDate,
+      event_date: eventDate, // 🔒 CRITICAL: Use validated eventDate
     };
 
-    if (projectId) {
+    if (projectId && projectId !== '') {
       insertData.project_id = projectId;
     }
 
@@ -188,9 +228,12 @@ export async function POST(request: NextRequest) {
 
     console.log('[UPLOAD_FALLBACK] Step 3: ✅ Registered in database');
 
+    // 🔒 ARCHIVE_SUCCESS LOG: 零误差上传确认
+    console.log(`[ARCHIVE_SUCCESS] Physical: ${r2Path} | Logical: ${catalogId}`);
+
     // 🔒 AUTO-COVER LOGIC: Auto-set project cover if needed
     let coverSet = false;
-    if (projectId) {
+    if (projectId && projectId !== '') {
       console.log(`[UPLOAD_FALLBACK] 🔍 Checking project cover status...`);
 
       // Fetch project to check current cover
@@ -199,64 +242,56 @@ export async function POST(request: NextRequest) {
         .from('projects')
         .select('id, title, cover_url')
         .eq('id', projectId)
-        .single();
+        .maybeSingle();
 
-      if (projectError) {
-        console.warn('[UPLOAD_FALLBACK] ⚠️ Failed to fetch project for cover check:', projectError);
-      } else if (project) {
-        console.log(`[UPLOAD_FALLBACK] 📊 Project cover status:`, {
-          project: project.title,
-          hasCover: !!project.cover_url,
-          currentCover: project.cover_url,
-        });
-
-        // Auto-set cover in two cases:
-        // 1. This is a -000 cover designation (always set/replace cover)
-        // 2. Project has no cover at all (set first image as cover)
+      if (!projectError && project) {
+        // Auto-set cover if -000 image OR if project has no cover
         const shouldSetCover = catalogId.endsWith('-000') || !project.cover_url;
 
         if (shouldSetCover) {
-          console.log(`[UPLOAD_FALLBACK] 🎯 Auto-setting cover (${catalogId.endsWith('-000') ? '-000 designation' : 'first image for project'})...`);
+          const reason = catalogId.endsWith('-000')
+            ? `-000 designation (${project.cover_url ? 'updating existing' : 'setting new'})`
+            : 'first image for project';
+          console.log(`[UPLOAD_FALLBACK] 🎯 Auto-setting cover (${reason})...`);
 
           const { error: updateError } = await supabaseAdmin
             .schema('lmsy_archive')
             .from('projects')
-            .update({ cover_url: r2Result.url })
+            .update({ cover_url: r2PublicUrl })
             .eq('id', projectId);
 
-          if (updateError) {
-            console.warn('[UPLOAD_FALLBACK] ⚠️ Failed to auto-set cover:', updateError);
-          } else {
+          if (!updateError) {
             coverSet = true;
-            console.log(`[UPLOAD_FALLBACK] ✅ Auto-set project cover successfully`);
+            console.log('[UPLOAD_FALLBACK] ✅ Project cover updated');
+          } else {
+            console.error('[UPLOAD_FALLBACK] ⚠️ Failed to update project cover:', updateError);
           }
         }
+      } else {
+        console.error('[UPLOAD_FALLBACK] ⚠️ Failed to fetch project for cover check:', projectError);
       }
     }
 
-    console.log(`[UPLOAD_FALLBACK] ✅ Complete: ${catalogId} (cover set: ${coverSet})`);
+    console.log('[UPLOAD_FALLBACK] ✅ Fallback upload complete');
 
     return NextResponse.json({
       success: true,
       data: {
         id: data.id,
         catalog_id: catalogId,
-        image_url: r2Result.url,
-        event_date: validatedEventDate,
+        image_url: r2PublicUrl,
+        r2_path: r2Path,
+        event_date: eventDate,
         caption: data.caption,
         tag: data.tag,
         is_featured: data.is_featured,
-        project_id: projectId,
-        auto_cover_set: coverSet,
-        metadata: {
-          originalSize: originalSize ? parseInt(originalSize, 10) : file.size,
-          webpSize: webpResult.sizeBytes,
-        },
+        skipped_r2_upload: skipR2Upload,
+        cover_set: coverSet,
       },
     });
 
   } catch (error) {
-    console.error('[UPLOAD_FALLBACK] ❌ Error:', error);
+    console.error('[UPLOAD_FALLBACK] ❌ EXCEPTION:', error);
 
     return NextResponse.json(
       {

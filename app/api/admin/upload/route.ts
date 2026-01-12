@@ -244,6 +244,9 @@ export async function POST(request: NextRequest) {
 
     insertedItem = data;
     console.log(`[SYNC] Artifact ${catalogId} Uploaded Successfully`);
+
+    // 🔒 ARCHIVE_SUCCESS LOG: 零误差上传确认
+    console.log(`[ARCHIVE_SUCCESS] Physical: ${r2Path} | Logical: ${catalogId}`);
   } catch (error) {
     console.error('[UPLOAD] Database insert failed:', error);
     return NextResponse.json(

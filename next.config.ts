@@ -7,10 +7,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '**',
+        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'cdn.lmsy.space',
+        pathname: '/**',
       },
     ],
   },
