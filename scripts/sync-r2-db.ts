@@ -48,12 +48,12 @@ async function scanR2Files(): Promise<R2File[]> {
   let continuationToken: string | undefined = undefined;
 
   do {
-    const command = new ListObjectsV2Command({
+    const command: any = new ListObjectsV2Command({
       Bucket: BUCKET_NAME,
       ContinuationToken: continuationToken,
     });
 
-    const response = await r2Client.send(command);
+    const response: any = await r2Client.send(command);
 
     if (response.Contents) {
       for (const item of response.Contents) {
