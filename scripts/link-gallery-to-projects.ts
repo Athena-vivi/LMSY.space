@@ -41,7 +41,7 @@ async function linkGalleryToProjects() {
     .from('gallery')
     .select('id, image_url, catalog_id, event_date')
     .is('project_id', null)
-    .is('event_date', null, false)
+    .not('event_date', 'is', null)
     .order('event_date', { ascending: true });
 
   if (galleryError || !gallery) {
