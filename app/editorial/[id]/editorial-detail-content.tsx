@@ -120,18 +120,18 @@ export function EditorialDetailContent({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mb-12 p-6 border border-white/10 rounded-lg bg-white/[0.02]"
+              className="mb-12"
             >
               <p className="font-mono text-[10px] text-lmsy-yellow/60 tracking-[0.2em] uppercase mb-3">
                 Curator's Note
               </p>
-              <p className="font-serif text-lg md:text-xl text-white/80 leading-relaxed">
+              <p className="font-serif text-lg md:text-xl text-white/70 leading-relaxed">
                 {magazine.description}
               </p>
             </motion.div>
           )}
 
-          {/* Magazine Cover - Full Size */}
+          {/* Magazine Cover - Ratio Sovereignty Layout */}
           {magazine.cover_url && (() => {
             const coverUrl = getImageUrl(magazine.cover_url);
             console.log('[PATH_SYNC] Detail Cover:', {
@@ -144,16 +144,18 @@ export function EditorialDetailContent({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className="relative mb-16"
+                className="mb-16"
               >
-                <div className="relative aspect-[3/4] w-full max-w-2xl mx-auto overflow-hidden rounded-lg border border-white/10">
+                {/* 🔒 RATIO SOVEREIGNTY: No aspect-ratio, no fill mode */}
+                <div className="w-full max-w-5xl mx-auto">
                   <Image
                     src={coverUrl || ''}
                     alt={magazine.title}
-                    fill
-                    className="object-contain"
+                    width={1200}
+                    height={1600}
+                    className="w-full h-auto rounded-xl"
                     placeholder="empty"
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 1200px"
                     priority
                     unoptimized
                   />
@@ -171,7 +173,7 @@ export function EditorialDetailContent({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20 border border-white/10 rounded-lg bg-white/[0.02]"
+              className="text-center py-20"
             >
               <p className="font-mono text-lg text-lmsy-yellow/60 tracking-[0.2em] mb-4">
                 [ ARCHIVE_EMPTY: WAITING_FOR_CURATION ]
