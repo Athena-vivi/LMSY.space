@@ -145,8 +145,11 @@ export function VinylPlayer() {
   useEffect(() => {
     if (audioRef.current) {
       setProgress(0);
-      audioRef.current.src = getImageUrl(currentTrack.previewAudio);
-      audioRef.current.load();
+      const audioUrl = getImageUrl(currentTrack.previewAudio);
+      if (audioUrl) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.load();
+      }
     }
   }, [currentTrackIndex, currentTrack.previewAudio]);
 
