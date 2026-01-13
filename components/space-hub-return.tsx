@@ -1,43 +1,31 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 /**
- * 🌌 UNIFIED IMAGE LOGO - Return to Space Hub
+ * 🌌 SPACE HUB RETURN - Image Logo Anchor
  *
- * Uses the lmsy-logo.png image for all back buttons.
- * Used across: whispers, schedule, gallery, chronicle, resonance, editorial, exhibitions, projects, profiles, etc.
+ * A unified return component featuring the lmsy-logo.png image.
+ * Used across exhibition categories and project detail pages.
  *
  * Features:
  * - Default opacity 20%, 100% on hover
  * - "Back to Space Hub" text reveals on hover
  * - Warp-to-center animation on click
- * - Returns to previous page OR falls back to home
  */
-export function BackButton() {
-  const router = useRouter();
+export function SpaceHubReturn() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-    } else {
-      window.location.href = '/';
-    }
-  };
-
   return (
-    <motion.a
+    <Link
       href="/"
-      onClick={handleClick}
-      className="flex items-center gap-4"
+      className="fixed top-8 left-8 z-40"
     >
       <motion.div
         className="relative group cursor-pointer"
@@ -85,6 +73,6 @@ export function BackButton() {
           }}
         />
       </motion.div>
-    </motion.a>
+    </Link>
   );
 }

@@ -43,9 +43,19 @@ export async function convertToWebP(
     const originalHeight = metadata.height || 0;
 
     console.log(`[IMAGE_PROCESSING] Original: ${originalWidth}x${originalHeight}, quality: ${quality}, editorial: ${isEditorial}`);
+    console.log(`[IMAGE_PROCESSING] EXIF Orientation: ${metadata.orientation || 'none'}`);
 
     // Build sharp pipeline with archival quality settings
-    let pipeline = sharp(inputBuffer);
+    // 🔒 CRITICAL: Call rotate() with NO parameters to auto-orient based on EXIF
+    // This physically rotates the image to the correct orientation before WebP conversion
+    let pipeline = sharp(inputBuffer).rotate();
+
+    // Get corrected dimensions after rotation
+    const rotatedMetadata = await pipeline.metadata();
+    const correctedWidth = rotatedMetadata.width || originalWidth;
+    const correctedHeight = rotatedMetadata.height || originalHeight;
+
+    console.log(`[IMAGE_PROCESSING] Corrected: ${correctedWidth}x${correctedHeight}`);
 
     // 🔒 CRITICAL: For editorial content, NEVER resize - preserve original resolution
     // For regular content, we still preserve original (no resizing)
@@ -69,8 +79,8 @@ export async function convertToWebP(
 
     return {
       buffer: processedImage.data,
-      width: originalWidth,
-      height: originalHeight,
+      width: correctedWidth,
+      height: correctedHeight,
       format: 'webp',
       sizeBytes: processedImage.data.length,
     };
@@ -96,8 +106,9 @@ export async function generateBlurData(file: File | Buffer): Promise<string> {
       inputBuffer = file;
     }
 
-    // Resize to small thumbnail and convert to base64
+    // 🔒 CRITICAL: Apply auto-rotation for consistent blur data
     const thumbnail = await sharp(inputBuffer)
+      .rotate() // Auto-orient based on EXIF
       .resize(20, 20, { fit: 'cover' })
       .webp({ quality: 50 })
       .toBuffer();

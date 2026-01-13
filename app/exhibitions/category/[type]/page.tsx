@@ -77,6 +77,16 @@ export interface ProjectWithImage {
   displayImage: string | null;
 }
 
+// 🖼️ Gallery Image for Lightbox
+export interface GalleryImage {
+  id: string;
+  image_url: string;
+  caption: string | null;
+  blur_data: string | null;
+  catalog_id: string | null;
+  project_id: string | null;
+}
+
 export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
   const { type } = await params;
 
@@ -138,12 +148,21 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
     displayImage: project.cover_url || imageMap.get(project.id) || null,
   }));
 
+  // 🖼️ FETCH ALL GALLERY IMAGES for lightbox
+  const { data: allGalleryImages } = await supabaseAdmin
+    .schema('lmsy_archive')
+    .from('gallery')
+    .select('id, image_url, caption, blur_data, catalog_id, project_id')
+    .in('project_id', projectIds.length > 0 ? projectIds : ['__empty__'])
+    .order('created_at', { ascending: false });
+
   // Pass data to client component
   return (
     <ExhibitionContent
       mapping={mapping}
       projects={projectsWithImages}
       type={type}
+      allImages={(allGalleryImages as GalleryImage[]) || []}
     />
   );
 }

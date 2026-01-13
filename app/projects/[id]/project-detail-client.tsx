@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
 import { NebulaBackground } from '@/components/nebula-background';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
+import { SpaceHubReturn } from '@/components/space-hub-return';
 import { CATEGORIES, CategoryType } from './page';
 
 interface GalleryImage {
@@ -144,7 +145,7 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
 /**
  * Generate chapter title based on month patterns
  */
-function getChapterTitle(currentMonth: string, previousMonth: string | null): string {
+function getChapterTitle(currentMonth: string, _previousMonth: string | null): string {
   const [year, month] = currentMonth.split('-');
   const monthDate = new Date(parseInt(year), parseInt(month) - 1);
   const monthName = monthDate.toLocaleDateString('en-US', { month: 'long' });
@@ -207,22 +208,12 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
 
   return (
     <>
+      {/* 🌌 SPACE HUB RETURN - Glowing Bear-Rabbit Logo */}
+      <SpaceHubReturn />
+
       <NebulaBackground />
       <div className="min-h-screen">
-        {/* Back Button */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-32">
-          <Link href={`/exhibitions/category/${project.category === 'series' ? 'drama' : project.category === 'appearance' ? 'stage' : 'travel'}`}>
-            <motion.button
-              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm tracking-wider"
-              whileHover={{ x: -5 }}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              BACK TO EXHIBITION
-            </motion.button>
-          </Link>
-        </div>
-
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-24 md:pb-32">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-32 pb-24 md:pb-32">
           {/* Hero - Cover Image with Placeholder */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}

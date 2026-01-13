@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -42,38 +41,86 @@ export function SiteHeader() {
     >
       <div className={`${isHomePage ? 'container mx-auto px-4 sm:px-6 lg:px-8' : 'px-6 py-4'}`}>
         <div className={`flex ${isHomePage ? 'h-16' : 'h-auto'} items-center ${isHomePage ? 'justify-between' : 'justify-start'}`}>
-          {/* Logo */}
+          {/* 🌌 Logo - Bear-Rabbit Totem */}
           <div className="relative">
             <Link
               href="/"
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <div className="relative h-8 w-8 md:h-9 md:w-9">
-                {/* Glow effect */}
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(56, 189, 248, 0.3) 100%)',
-                    filter: 'blur(8px)',
-                  }}
-                  animate={{
-                    opacity: [0.3, 0.6, 0.3],
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                />
-                <Image
-                  src="/lmsy-logo.png"
-                  alt="LMSY Logo"
-                  fill
-                  className="object-contain relative z-10"
-                  sizes="32px"
-                  priority
-                />
+                {/* Bear-Rabbit Totem SVG */}
+                <svg
+                  viewBox="0 0 100 100"
+                  className="w-full h-full"
+                >
+                  <defs>
+                    {/* Portal-Bloom Filter */}
+                    <filter id="portal-bloom-header" x="-100%" y="-100%" width="300%" height="300%">
+                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                      <feGaussianBlur stdDeviation="5" result="glowBlur" />
+                      <feMerge>
+                        <feMergeNode in="glowBlur" />
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+
+                    {/* Horizon gradient */}
+                    <linearGradient id="horizon-grad-header" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="transparent" />
+                      <stop offset="50%" stopColor="white" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="transparent" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Arced horizon line */}
+                  <path
+                    d="M 5 82 Q 50 75 95 82"
+                    stroke="url(#horizon-grad-header)"
+                    strokeWidth="0.8"
+                    fill="none"
+                  />
+
+                  {/* Base reflection */}
+                  <ellipse cx="50" cy="80" rx="35" ry="5" fill="white" className="opacity-[0.03]" />
+
+                  {/* Dual Gates with Portal-Bloom */}
+                  <g style={{ mixBlendMode: 'screen' }} filter="url(#portal-bloom-header)">
+                    {/* Left: Bear Gate (Lookmhee) */}
+                    <motion.path
+                      d="M 18 80 C 18 30, 58 30, 58 80"
+                      stroke="#FBBF24"
+                      strokeWidth="2.8"
+                      strokeLinecap="round"
+                      fill="none"
+                      style={{ filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.4)) drop-shadow(0 0 16px rgba(251, 191, 36, 0.2))' }}
+                      animate={{
+                        opacity: [0.5, 0.9, 0.5],
+                        strokeWidth: [2.5, 2.8, 2.5]
+                      }}
+                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                    />
+
+                    {/* Right: Rabbit Gate (Sonya) */}
+                    <motion.path
+                      d="M 42 80 C 42 20, 82 20, 82 80"
+                      stroke="#38BDF8"
+                      strokeWidth="2.8"
+                      strokeLinecap="round"
+                      fill="none"
+                      style={{ filter: 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)) drop-shadow(0 0 16px rgba(56, 189, 248, 0.2))' }}
+                      animate={{
+                        opacity: [0.5, 0.9, 0.5],
+                        strokeWidth: [2.5, 2.8, 2.5]
+                      }}
+                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                    />
+                  </g>
+
+                  {/* Anchor stars */}
+                  <circle cx="18" cy="80" r="1" fill="#FBBF24" className="animate-pulse" />
+                  <circle cx="82" cy="80" r="1" fill="#38BDF8" className="animate-pulse" />
+                </svg>
               </div>
               {isHomePage && (
                 <span className="font-serif text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
