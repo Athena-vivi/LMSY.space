@@ -246,7 +246,7 @@ export async function downloadMedia(
       buffer,
       contentType,
       fileName,
-      extension,
+      extension: extension || undefined,
       size: buffer.length,
       fileHash,
       metadata,
