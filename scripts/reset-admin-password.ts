@@ -39,6 +39,12 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
+// Validate environment variables
+if (!SUPABASE_URL) {
+  console.error('❌ NEXT_PUBLIC_SUPABASE_URL is not set in .env.local');
+  process.exit(1);
+}
+
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   console.error('❌ Missing Supabase credentials in .env.local');
   process.exit(1);
@@ -137,7 +143,7 @@ async function main() {
     console.log(`  Password: ${newPassword}`);
     console.log('═══════════════════════════════════════════════════');
     console.log('\n⚠️  Please save this password securely and login at:');
-    console.log(`   ${SUPABASE_URL.replace('https://', 'https://').replace('/auth/v1', '')}/auth/login\n`);
+    console.log(`   ${SUPABASE_URL!.replace('https://', 'https://').replace('/auth/v1', '')}/auth/login\n`);
 
   } catch (error) {
     console.error('\n❌ Error:', error instanceof Error ? error.message : error);
