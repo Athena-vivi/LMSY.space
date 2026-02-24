@@ -17,12 +17,25 @@ import {
   ChevronRight,
   MessageSquare,
   Inbox,
+  type LucideIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/auth-provider';
 
-const navSections = [
+interface NavItem {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+  showBadge?: boolean;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
   {
     title: 'WORK 控制台',
     items: [
