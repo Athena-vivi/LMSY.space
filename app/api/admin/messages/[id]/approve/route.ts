@@ -38,7 +38,10 @@ export async function PATCH(
       );
     }
 
-    // 检查是否为管理员（显式指定 schema）
+    // 检查是否为管理员（两种方式：admin_users 表或邮箱匹配）
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+    // 方式1: 检查 admin_users 表
     const { data: adminCheck, error: adminError } = await supabaseAuth
       .schema('lmsy_archive')
       .from('admin_users')
@@ -47,11 +50,17 @@ export async function PATCH(
       .eq('is_active', true)
       .single();
 
+    // 方式2: 邮箱匹配（作为后备方案）
+    const isEmailAdmin = adminEmail && user.email === adminEmail;
+
     if (adminError || !adminCheck) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
+      // 如果 admin_users 检查失败，尝试邮箱匹配
+      if (!isEmailAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Admin access required' },
+          { status: 403 }
+        );
+      }
     }
 
     const body = await request.json();
@@ -131,7 +140,10 @@ export async function DELETE(
       );
     }
 
-    // 检查是否为管理员（显式指定 schema）
+    // 检查是否为管理员（两种方式：admin_users 表或邮箱匹配）
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+    // 方式1: 检查 admin_users 表
     const { data: adminCheck, error: adminError } = await supabaseAuth
       .schema('lmsy_archive')
       .from('admin_users')
@@ -140,11 +152,17 @@ export async function DELETE(
       .eq('is_active', true)
       .single();
 
+    // 方式2: 邮箱匹配（作为后备方案）
+    const isEmailAdmin = adminEmail && user.email === adminEmail;
+
     if (adminError || !adminCheck) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
+      // 如果 admin_users 检查失败，尝试邮箱匹配
+      if (!isEmailAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Admin access required' },
+          { status: 403 }
+        );
+      }
     }
 
     // 删除留言（显式指定 schema）

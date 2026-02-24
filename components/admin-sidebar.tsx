@@ -37,36 +37,28 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    title: 'WORK 控制台',
+    title: 'DASHBOARD',
     items: [
       { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-      { icon: Upload, label: 'Bulk Upload', href: '/admin/upload' },
     ],
   },
   {
-    title: 'COLLECTIONS 数据资产',
-    items: [
-      { icon: Images, label: 'Gallery', href: '/admin/gallery' },
-      { icon: FolderKanban, label: 'Projects', href: '/admin/projects' },
-    ],
-  },
-  {
-    title: 'CURATION 策展表达',
-    items: [
-      { icon: FileText, label: 'Chronicle', href: '/admin/chronicle' },
-      { icon: PenTool, label: 'Editorial', href: '/admin/editorial' },
-    ],
-  },
-  {
-    title: 'INGEST 摄入流水',
+    title: 'CONTENT FLOW',
     items: [
       { icon: Inbox, label: 'Draft Inbox', href: '/admin/drafts', showBadge: true },
+      { icon: Images, label: 'Asset Vault', href: '/admin/gallery' },
     ],
   },
   {
-    title: 'COMMUNITY 互动',
+    title: 'COLLECTIONS',
     items: [
-      { icon: MessageSquare, label: 'Messages', href: '/admin/messages' },
+      { icon: FolderKanban, label: 'Collections', href: '/admin/projects' },
+    ],
+  },
+  {
+    title: 'COMMUNITY',
+    items: [
+      { icon: MessageSquare, label: 'Community', href: '/admin/messages' },
     ],
   },
 ];
@@ -209,9 +201,9 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                               <motion.span
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="flex-shrink-0 px-1 py-0.5 bg-lmsy-blue/20 border border-lmsy-blue/30 rounded-sm"
+                                className="flex-shrink-0 px-1 pb-1 bg-lmsy-blue/20 border border-lmsy-blue/30 rounded-sm leading-none"
                               >
-                                <span className="text-[10px] font-mono font-light tracking-tighter text-lmsy-blue">
+                                <span className="text-[12px] font-mono font-light tracking-tighter text-lmsy-blue leading-none">
                                   {draftCount > 99 ? '99+' : draftCount}
                                 </span>
                               </motion.span>

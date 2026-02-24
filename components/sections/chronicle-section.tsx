@@ -6,7 +6,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { supabase } from '@/lib/supabase/client';
 
 interface MilestoneProps {
   year: string;
@@ -21,27 +20,24 @@ function Milestone({ year, titleKey, index, isLast, onHover }: MilestoneProps) {
   const [featuredImage, setFeaturedImage] = useState<string | null>(null);
   const isInfinity = year === '∞';
 
-  // Fetch featured image for the year
+  // Fetch milestone image for the year using public API
   useEffect(() => {
-    if (!isInfinity) {
-      const fetchFeaturedImage = async () => {
-        const { data } = await supabase
-          .from('gallery')
-          .select('image_url')
-          .eq('is_featured', true)
-          .like('event_date', `${year}-%`)
-          .order('event_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (data?.image_url) {
-          setFeaturedImage(data.image_url);
+    const fetchMilestoneImage = async () => {
+      try {
+        const response = await fetch('/api/milestones');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setFeaturedImage(result.data[year] || null);
+          }
         }
-      };
+      } catch (error) {
+        console.error(`[MILESTONE_${year}] Failed to fetch:`, error);
+      }
+    };
 
-      fetchFeaturedImage();
-    }
-  }, [year, isInfinity]);
+    fetchMilestoneImage();
+  }, [year]);
 
   const yearColors: Record<string, string> = {
     '2022': 'from-amber-600/20 to-orange-600/20',
@@ -81,13 +77,18 @@ function Milestone({ year, titleKey, index, isLast, onHover }: MilestoneProps) {
       </motion.div>
 
       {/* Preview Slot - 3:4 Aspect Ratio */}
-      {!isInfinity && (
-        <motion.div
-          className="relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-6 border border-white/10 bg-white/[0.03]"
-          whileHover={{ borderColor: 'rgba(255, 255, 255, 0.2)' }}
-          transition={{ duration: 0.3 }}
-        >
-          {featuredImage ? (
+      <motion.div
+        className={`relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-6 border ${
+          isInfinity
+            ? 'border-lmsy-yellow/30 bg-lmsy-yellow/5'
+            : 'border-white/10 bg-white/[0.03]'
+        }`}
+        whileHover={{ borderColor: isInfinity ? 'rgba(251, 191, 36, 0.5)' : 'rgba(255, 255, 255, 0.2)' }}
+        transition={{ duration: 0.3 }}
+      >
+        {featuredImage ? (
+          // Show configured image
+          <>
             <Image
               src={featuredImage}
               alt={`${year} featured`}
@@ -95,8 +96,74 @@ function Milestone({ year, titleKey, index, isLast, onHover }: MilestoneProps) {
               className="object-cover transition-transform duration-700 group-hover:scale-110"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
+            {/* Overlay on hover */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            />
+            <motion.div
+              className="absolute bottom-4 left-4 right-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={{ y: 10 }}
+              whileHover={{ y: 0 }}
+            >
+              <span className={`font-mono text-xs tracking-widest uppercase ${
+                isInfinity ? 'text-lmsy-yellow/90' : 'text-white/80'
+              }`}>
+                {isInfinity ? 'Story Continues →' : 'Enter Archive →'}
+              </span>
+            </motion.div>
+          </>
+        ) : (
+          // Show placeholder
+          <div className="absolute inset-0 flex items-center justify-center">
+            {isInfinity ? (
+              // Infinity symbol animation (no image configured)
+              <>
+                <motion.div
+                  className="relative"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                >
+                  <svg
+                    className="w-24 h-24 text-lmsy-yellow/80"
+                    viewBox="0 0 100 100"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path
+                      d="M 25 50 C 25 35, 45 35, 50 50 C 55 65, 75 65, 75 50 C 75 35, 55 35, 50 50 C 45 65, 25 65, 25 50 Z"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 blur-xl bg-lmsy-yellow/40" />
+                </motion.div>
+                {/* Pulsing rings */}
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute inset-0 rounded-full border border-lmsy-yellow/30"
+                    animate={{
+                      scale: [1, 1.5, 2],
+                      opacity: [0.6, 0.3, 0],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      delay: i * 1,
+                      ease: 'easeOut',
+                    }}
+                  />
+                ))}
+                <motion.div
+                  className="absolute bottom-4 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                >
+                  <span className="font-mono text-xs text-lmsy-yellow/90 tracking-widest uppercase">
+                    Story Continues →
+                  </span>
+                </motion.div>
+              </>
+            ) : (
+              // Loading spinner for years
               <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center">
                 <motion.div
                   className="w-12 h-12 rounded-full border border-white/20 border-t-transparent"
@@ -104,84 +171,10 @@ function Milestone({ year, titleKey, index, isLast, onHover }: MilestoneProps) {
                   transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                 />
               </div>
-            </div>
-          )}
-
-          {/* Overlay on hover */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          />
-
-          {/* Enter Archive indicator */}
-          <motion.div
-            className="absolute bottom-4 left-4 right-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            initial={{ y: 10 }}
-            whileHover={{ y: 0 }}
-          >
-            <span className="font-mono text-xs text-white/80 tracking-widest uppercase">
-              Enter Archive →
-            </span>
-          </motion.div>
-        </motion.div>
-      )}
-
-      {/* Infinity Symbol for last item */}
-      {isInfinity && (
-        <motion.div
-          className="relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-6 border border-lmsy-yellow/30 bg-lmsy-yellow/5 flex items-center justify-center"
-          whileHover={{ borderColor: 'rgba(251, 191, 36, 0.5)' }}
-          transition={{ duration: 0.3 }}
-        >
-          {/* Rotating Infinity Symbol */}
-          <motion.div
-            className="relative"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          >
-            <svg
-              className="w-24 h-24 text-lmsy-yellow/80"
-              viewBox="0 0 100 100"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <path
-                d="M 25 50 C 25 35, 45 35, 50 50 C 55 65, 75 65, 75 50 C 75 35, 55 35, 50 50 C 45 65, 25 65, 25 50 Z"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            {/* Glow */}
-            <div className="absolute inset-0 blur-xl bg-lmsy-yellow/40" />
-          </motion.div>
-
-          {/* Pulsing rings */}
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="absolute inset-0 rounded-full border border-lmsy-yellow/30"
-              animate={{
-                scale: [1, 1.5, 2],
-                opacity: [0.6, 0.3, 0],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: i * 1,
-                ease: 'easeOut',
-              }}
-            />
-          ))}
-
-          <motion.div
-            className="absolute bottom-4 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          >
-            <span className="font-mono text-xs text-lmsy-yellow/90 tracking-widest uppercase">
-              Story Continues →
-            </span>
-          </motion.div>
-        </motion.div>
-      )}
+            )}
+          </div>
+        )}
+      </motion.div>
 
       {/* Milestone Title */}
       <p className="font-serif text-lg md:text-xl text-white/70 text-center max-w-[200px] group-hover:text-white/90 transition-colors">

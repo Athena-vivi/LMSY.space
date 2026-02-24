@@ -39,6 +39,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     flowType: 'pkce', // 使用 PKCE 流程提高安全性
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    debug: false, // 关闭调试模式避免控制台噪音
   },
   global: {
     headers: {

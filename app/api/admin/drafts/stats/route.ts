@@ -9,11 +9,10 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export async function GET(request: NextRequest) {
   try {
-    // Count pending drafts (status = 'draft' or 'ready')
+    // Count all drafts
     const { count, error } = await supabaseAdmin
       .from('draft_items')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['draft', 'ready']);
+      .select('*', { count: 'exact', head: true });
 
     if (error) {
       console.error('[DRAFTS_STATS] Error:', error);

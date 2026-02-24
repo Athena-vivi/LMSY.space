@@ -6,6 +6,7 @@ import { Shield } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { AdminMobileNav } from '@/components/admin-mobile-nav';
+import { UploadProvider } from '@/components/upload';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout({
@@ -51,9 +52,10 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="relative min-h-screen">
-      {/* Desktop Sidebar */}
-      <AdminSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
+    <UploadProvider>
+      <div className="relative min-h-screen">
+        {/* Desktop Sidebar */}
+        <AdminSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
 
       {/* Mobile Navigation */}
       <AdminMobileNav />
@@ -81,6 +83,7 @@ export default function AdminLayout({
           }
         }
       `}</style>
-    </div>
+      </div>
+    </UploadProvider>
   );
 }

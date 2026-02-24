@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 检查是否为管理员（显式指定 schema）
+    // 检查是否为管理员（两种方式：admin_users 表或邮箱匹配）
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+    // 方式1: 检查 admin_users 表
     const { data: adminCheck, error: adminError } = await supabaseAuth
       .schema('lmsy_archive')
       .from('admin_users')
@@ -43,11 +46,17 @@ export async function GET(request: NextRequest) {
       .eq('is_active', true)
       .single();
 
+    // 方式2: 邮箱匹配（作为后备方案）
+    const isEmailAdmin = adminEmail && user.email === adminEmail;
+
     if (adminError || !adminCheck) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
+      // 如果 admin_users 检查失败，尝试邮箱匹配
+      if (!isEmailAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Admin access required' },
+          { status: 403 }
+        );
+      }
     }
 
     // 获取所有留言（显式指定 schema）

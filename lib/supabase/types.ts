@@ -38,6 +38,7 @@ export interface Project {
 
 // 图库表 (gallery)
 export type GalleryCategoryTag = 'official_stills' | 'bts' | 'press_events' | null;
+export type MilestonePriority = 1 | 2 | 3 | 4 | 5 | null;  // 1=2022, 2=2023, 3=2024, 4=2025, 5=∞
 
 export interface GalleryItem {
   id: string;
@@ -51,6 +52,7 @@ export interface GalleryItem {
   blur_data: string | null;  // Blur placeholder for image optimization
   category_tag: GalleryCategoryTag;  // 项目内分类标签 (stills/bts/press)
   project_id: string | null;  // 关联项目ID
+  milestone_priority: MilestonePriority;  // 首页里程碑显示优先级: 1=2022, 2=2023, 3=2024, 4=2025, 5=∞
   created_at: string;
 }
 

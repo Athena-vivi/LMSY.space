@@ -61,7 +61,15 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthRe
     }
 
     if (error) {
-      console.log('[AUTH] Cookie authentication failed:', error.message);
+      // 静默处理常见的并发刷新错误 - 这通常是无害的
+      if (
+        error.message.includes('Refresh Token Already Used') ||
+        error.message.includes('Invalid Refresh Token')
+      ) {
+        console.debug('[AUTH] Token refresh conflict (harmless, will auto-recover)');
+      } else {
+        console.log('[AUTH] Cookie authentication failed:', error.message);
+      }
     }
   } catch (err) {
     console.error('[AUTH] Cookie authentication exception:', err);
