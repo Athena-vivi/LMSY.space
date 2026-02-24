@@ -378,8 +378,8 @@ export async function translateDraftItem(
 
   // 计算总 token 使用量
   const totalTokensUsed =
-    (titleResult.status === 'fulfilled' ? titleResult.value.tokensUsed || 0 : 0) +
-    (descriptionResult.status === 'fulfilled' ? descriptionResult.value.tokensUsed || 0 : 0);
+    (titleResult.status === 'fulfilled' ? (titleResult.value as TranslationResult).tokensUsed || 0 : 0) +
+    (descriptionResult.status === 'fulfilled' ? (descriptionResult.value as TranslationResult).tokensUsed || 0 : 0);
 
   console.log(`[TRANSLATOR] Draft item translation complete. Total tokens: ${totalTokensUsed}`);
 
@@ -387,7 +387,7 @@ export async function translateDraftItem(
     success: true,
     title: titleResult.status === 'fulfilled' ? titleResult.value.translations : undefined,
     description: descriptionResult.status === 'fulfilled' ? descriptionResult.value.translations : undefined,
-    model: titleResult.status === 'fulfilled' ? titleResult.value.model : undefined,
+    model: titleResult.status === 'fulfilled' ? (titleResult.value as TranslationResult).model : undefined,
     totalTokensUsed,
   };
 }
