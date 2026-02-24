@@ -8,47 +8,62 @@ export interface TimelineEvent {
   description?: string;
   href: string; // Link to the content
   thumbnail?: string;
+  imageUrl?: string; // Draft item image URL
+  mediaType?: 'image' | 'video'; // Media type
 }
 
 /**
  * 合并并排序所有时间轴数据
+ * 从 draft_items 表获取已发布的项目
  */
 export async function getAllTimelineEvents(): Promise<TimelineEvent[]> {
-  // 这里需要从实际的数据源获取
-  // 暂时返回示例数据结构
-  const events: TimelineEvent[] = [
-    {
-      id: '1',
-      date: '2024-12-31',
-      eventDate: '2024.12.31',
-      title: 'Affair Series Premiere',
-      type: 'schedule',
-      archiveNumber: 'LMSY-S-001',
-      description: 'The first episode of Affair airs on GMMTV',
-      href: '/schedule',
-    },
-    {
-      id: '2',
-      date: '2024-12-25',
-      eventDate: '2024.12.25',
-      title: 'Christmas Special Photoshoot',
-      type: 'gallery',
-      archiveNumber: 'LMSY-G-001',
-      description: 'Exclusive holiday photoshoot for Besties',
-      thumbnail: '/lmsy-001.jpg',
-      href: '/gallery',
-    },
-    {
-      id: '3',
-      date: '2024-12-20',
-      eventDate: '2024.12.20',
-      title: 'Behind The Scenes Documentary',
-      type: 'project',
-      archiveNumber: 'LMSY-P-001',
-      description: 'Documentary short about the making of Affair',
-      href: '/projects',
-    },
-  ];
+  const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
+  const supabase = getSupabaseAdmin();
+
+  // 获取已发布的草稿项目
+  const { data: draftItems, error } = await supabase
+    .from('draft_items')
+    .select('*')
+    .eq('status', 'published')
+    .order('event_date', { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error('[TIMELINE] Failed to fetch draft items:', error);
+    return [];
+  }
+
+  if (!draftItems || draftItems.length === 0) {
+    return [];
+  }
+
+  // 转换为时间轴事件格式
+  const events: TimelineEvent[] = draftItems.map((item, index) => {
+    // 使用 event_date 或 created_at
+    const date = item.event_date || item.created_at;
+    const dateObj = new Date(date);
+
+    // 格式化显示日期 YYYY.MM.DD
+    const eventDate = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
+
+    // 生成馆藏编号 LMSY-D-XXX
+    const archiveNumber = `LMSY-D-${String(index + 1).padStart(3, '0')}`;
+
+    // 获取标题（多语言回退）
+    const title = item.title?.en || item.title?.zh || item.title?.th || 'Untitled';
+
+    return {
+      id: item.id,
+      date,
+      eventDate,
+      title,
+      type: 'gallery' as const,
+      archiveNumber,
+      description: item.description?.en || item.description?.zh || item.description?.th || undefined,
+      href: `/chronicle`, // 链接到 Chronicle 页面
+      imageUrl: item.r2_media_url || undefined,
+      mediaType: item.media_type === 'video' ? 'video' : 'image',
+    };
+  });
 
   // 按日期倒序排序（最新的在前）
   return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

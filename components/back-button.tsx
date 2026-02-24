@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
  * - Default opacity 20%, 100% on hover
  * - "Back to Space Hub" text reveals on hover
  * - Warp-to-center animation on click
- * - Returns to previous page OR falls back to home
+ * - Always returns to homepage
  */
 export function BackButton() {
   const router = useRouter();
@@ -26,11 +26,7 @@ export function BackButton() {
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-    } else {
-      window.location.href = '/';
-    }
+    router.push('/');
   };
 
   return (

@@ -163,6 +163,31 @@
   .body-lock {
     overflow: hidden;
   }
+
+  /* Custom Scrollbar for Modals - Gradient Thin Line */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(251, 191, 36, 0.5) rgba(255, 255, 255, 0.05);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.6) 0%, rgba(56, 189, 248, 0.6) 100%);
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.8) 0%, rgba(56, 189, 248, 0.8) 100%);
+  }
 }
 
 /* MDX / Editorial Prose Styles */

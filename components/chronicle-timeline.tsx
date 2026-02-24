@@ -1,199 +1,306 @@
 'use client';
 
-import { motion, Variants } from 'framer-motion';
-import { useInView } from 'framer-motion';
-import { useRef, useState } from 'react';
-import Link from 'next/link';
-import { Image, Film, Calendar, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback } from 'react';
+import Image from 'next/image';
+import { X, ZoomIn, Calendar } from 'lucide-react';
 import type { TimelineEvent } from '@/lib/timeline';
-import { getTypeColor } from '@/lib/timeline';
 
 interface ChronicleTimelineProps {
   events: TimelineEvent[];
 }
 
+interface LightboxImage {
+  url: string;
+  title: string;
+  description?: string;
+  type: 'image' | 'video';
+}
+
 export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(containerRef, { once: true, amount: 0.1 });
+  const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        duration: 0.5,
-      },
-    },
-  };
-
-  const getTypeIcon = (type: TimelineEvent['type']) => {
-    switch (type) {
-      case 'gallery':
-        return <Image className="w-3 h-3" />;
-      case 'project':
-        return <Film className="w-3 h-3" />;
-      case 'schedule':
-        return <Calendar className="w-3 h-3" />;
-      default:
-        return <Clock className="w-3 h-3" />;
+  const openLightbox = useCallback((event: TimelineEvent) => {
+    if (event.imageUrl) {
+      setLightboxImage({
+        url: event.imageUrl,
+        title: event.title,
+        description: event.description,
+        type: event.mediaType || 'image',
+      });
     }
-  };
+  }, []);
 
-  const scrollToElement = (href: string) => {
-    // 如果是当前页面的锚点，平滑滚动
-    if (href.startsWith('#')) {
-      const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-  };
+  const closeLightbox = useCallback(() => {
+    setLightboxImage(null);
+  }, []);
+
+  // Split events into left and right sides
+  const leftEvents = events.filter((_, index) => index % 2 === 0);
+  const rightEvents = events.filter((_, index) => index % 2 === 1);
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* 黄蓝渐变垂直线 */}
-      <div className="absolute left-[27px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-lmsy-yellow via-lmsy-blue to-lmsy-yellow opacity-30" />
+    <div className="relative min-h-screen">
+      {/* Center Timeline Line */}
+      <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-gradient-to-b from-lmsy-yellow via-lmsy-blue to-lmsy-yellow opacity-30 -translate-x-1/2" />
 
-      {/* 时间轴容器 */}
-      <motion.div
-        className="space-y-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate={isInView ? 'visible' : 'hidden'}
-      >
-        {events.map((event, index) => (
-          <motion.div
-            key={event.id}
-            variants={itemVariants}
-            className="relative flex items-start gap-6 group"
-            onMouseEnter={() => setHoveredId(event.id)}
-            onMouseLeave={() => setHoveredId(null)}
-          >
-            {/* 时间点圆点 */}
-            <div className="relative z-10 flex-shrink-0">
-              <motion.div
-                className={`w-14 h-14 rounded-full bg-background border-2 ${
-                  hoveredId === event.id
-                    ? 'border-lmsy-yellow scale-110'
-                    : 'border-border'
-                } flex items-center justify-center transition-all duration-300 shadow-lg`}
-                animate={hoveredId === event.id ? { scale: 1.1 } : { scale: 1 }}
-              >
-                {/* 类型图标 */}
-                <div className={`${getTypeColor(event.type)} transition-colors duration-300`}>
-                  {getTypeIcon(event.type)}
-                </div>
+      {/* Timeline Container */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+          {/* Left Side */}
+          <div className="space-y-8 md:pr-8">
+            {leftEvents.map((event, index) => (
+              <TimelineItem
+                key={event.id}
+                event={event}
+                position="left"
+                isHovered={hoveredId === event.id}
+                onHover={() => setHoveredId(event.id)}
+                onHoverEnd={() => setHoveredId(null)}
+                onClick={() => openLightbox(event)}
+              />
+            ))}
+          </div>
 
-                {/* 脉冲动画 */}
-                {hoveredId === event.id && (
-                  <motion.div
-                    className="absolute inset-0 rounded-full bg-lmsy-yellow/20"
-                    initial={{ scale: 1, opacity: 0.5 }}
-                    animate={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 0.6, repeat: Infinity }}
-                  />
-                )}
-              </motion.div>
-            </div>
+          {/* Right Side */}
+          <div className="space-y-8 md:pl-8 md:mt-16">
+            {rightEvents.map((event, index) => (
+              <TimelineItem
+                key={event.id}
+                event={event}
+                position="right"
+                isHovered={hoveredId === event.id}
+                onHover={() => setHoveredId(event.id)}
+                onHoverEnd={() => setHoveredId(null)}
+                onClick={() => openLightbox(event)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
 
-            {/* 卡片内容 */}
-            <Link
-              href={event.href}
-              onClick={() => scrollToElement(event.href)}
-              className="flex-1 min-w-0"
+      {/* Timeline Dots on Center Line */}
+      <div className="absolute left-1/2 top-0 bottom-0 w-4 -translate-x-1/2 pointer-events-none">
+        {events.map((event, index) => {
+          return (
+            <div
+              key={event.id}
+              className="absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2"
+              style={{ top: `${(index / Math.max(events.length - 1, 1)) * 100}%` }}
             >
               <motion.div
-                className={`relative bg-card border border-border rounded-lg p-5 transition-all duration-300 ${
+                className={`w-4 h-4 rounded-full border-2 bg-background transition-all duration-300 ${
                   hoveredId === event.id
-                    ? 'shadow-lg border-lmsy-yellow/50 -translate-y-1'
-                    : 'shadow-md hover:shadow-lg'
+                    ? 'border-lmsy-yellow scale-125'
+                    : 'border-border'
                 }`}
-                whileHover={{ y: -2 }}
+                animate={hoveredId === event.id ? { scale: 1.25 } : { scale: 1 }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm"
+              onClick={closeLightbox}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              onClick={closeLightbox}
+            >
+              <div
+                className="relative max-w-5xl max-h-[90vh] w-full"
+                onClick={(e) => e.stopPropagation()}
               >
-                {/* 顶部信息栏 */}
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  {/* 左侧：日期 + 馆藏编号 */}
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="font-mono text-xs text-muted-foreground tracking-wider">
-                        {event.eventDate}
-                      </div>
-                      <div className="font-mono text-[10px] text-lmsy-blue/80 tracking-widest uppercase">
-                        {event.archiveNumber}
-                      </div>
-                    </div>
+                {/* Close Button */}
+                <button
+                  onClick={closeLightbox}
+                  className="absolute -top-12 right-0 p-2 text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="h-6 w-6" strokeWidth={1.5} />
+                </button>
 
-                    {/* 分隔线 */}
-                    <div className="h-8 w-px bg-border/50" />
-
-                    {/* 类型标签 */}
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50 ${getTypeColor(event.type)} text-xs font-medium uppercase tracking-wider`}>
-                      {getTypeIcon(event.type)}
-                      <span>{event.type}</span>
-                    </div>
-                  </div>
-
-                  {/* 右侧：箭头 */}
-                  <motion.div
-                    className="text-muted-foreground"
-                    animate={hoveredId === event.id ? { x: 3 } : { x: 0 }}
-                  >
-                    →
-                  </motion.div>
+                {/* Image/Video Container */}
+                <div className="relative bg-black rounded-lg overflow-hidden border border-white/10">
+                  {lightboxImage.type === 'video' ? (
+                    <video
+                      src={lightboxImage.url}
+                      controls
+                      autoPlay
+                      className="w-full max-h-[80vh] object-contain"
+                    />
+                  ) : (
+                    <Image
+                      src={lightboxImage.url}
+                      alt={lightboxImage.title}
+                      width={1200}
+                      height={800}
+                      className="w-full max-h-[80vh] object-contain"
+                      unoptimized
+                    />
+                  )}
                 </div>
 
-                {/* 标题 */}
-                <h3 className={`font-serif text-lg font-semibold mb-2 transition-colors duration-300 ${
-                  hoveredId === event.id ? 'text-lmsy-yellow' : 'text-foreground'
-                }`}>
-                  {event.title}
-                </h3>
+                {/* Info */}
+                <div className="mt-4 text-center">
+                  <h3 className="font-serif text-xl text-white/90 mb-2">
+                    {lightboxImage.title}
+                  </h3>
+                  {lightboxImage.description && (
+                    <p className="text-sm text-white/60">
+                      {lightboxImage.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-                {/* 描述（如果有） */}
-                {event.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                    {event.description}
-                  </p>
-                )}
-
-                {/* 悬停时的渐变高光 */}
-                {hoveredId === event.id && (
-                  <motion.div
-                    className="absolute inset-0 rounded-lg bg-gradient-to-r from-lmsy-yellow/5 via-lmsy-blue/5 to-transparent pointer-events-none"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                )}
-              </motion.div>
-            </Link>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* 底部装饰 */}
-      <div className="mt-12 flex items-center justify-center gap-4">
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border/50" />
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-full">
-          <Clock className="w-4 h-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground font-mono">
-            {events.length} EVENTS ARCHIVED
-          </span>
+      {/* Empty State */}
+      {events.length === 0 && (
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <Calendar className="h-12 w-12 text-white/20 mx-auto mb-4" strokeWidth={1} />
+            <p className="text-white/40 text-sm font-mono">
+              NO_EVENTS_RECORDED
+            </p>
+            <p className="text-white/20 text-xs font-mono mt-2">
+              Published items will appear here
+            </p>
+          </div>
         </div>
-        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border/50" />
-      </div>
+      )}
     </div>
+  );
+}
+
+interface TimelineItemProps {
+  event: TimelineEvent;
+  position: 'left' | 'right';
+  isHovered: boolean;
+  onHover: () => void;
+  onHoverEnd: () => void;
+  onClick: () => void;
+}
+
+function TimelineItem({ event, position, isHovered, onHover, onHoverEnd, onClick }: TimelineItemProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      onMouseEnter={onHover}
+      onMouseLeave={onHoverEnd}
+      className="relative"
+    >
+      {/* Connector Line to Center */}
+      <div
+        className={`absolute top-8 bottom-0 w-[2px] bg-gradient-to-b from-lmsy-yellow/30 to-transparent ${
+          position === 'left' ? 'right-0 translate-x-1/2 md:right-auto md:left-auto md:right-0 md:translate-x-1/2' : 'left-0 -translate-x-1/2 md:left-auto md:right-auto md:left-0 md:-translate-x-1/2'
+        } hidden md:block`}
+      />
+
+      {/* Card */}
+      <motion.div
+        className={`relative bg-card border border-border rounded-lg overflow-hidden transition-all duration-300 cursor-pointer ${
+          isHovered
+            ? 'shadow-xl border-lmsy-yellow/50 -translate-y-1'
+            : 'shadow-lg hover:shadow-xl'
+        }`}
+        whileHover={{ y: -4 }}
+        onClick={onClick}
+      >
+        {/* Image */}
+        {event.imageUrl && (
+          <div className="relative w-full bg-black/50 overflow-hidden group">
+            {event.mediaType === 'video' ? (
+              <video
+                src={event.imageUrl}
+                className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                muted
+              />
+            ) : (
+              <Image
+                src={event.imageUrl}
+                alt={event.title}
+                width={0}
+                height={0}
+                sizes="100vw"
+                className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                unoptimized
+              />
+            )}
+
+            {/* Overlay on Hover */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="p-3 rounded-full bg-black/60 backdrop-blur-sm border border-white/20">
+                <ZoomIn className="h-6 w-6 text-white" strokeWidth={1.5} />
+              </div>
+            </div>
+
+            {/* Video Indicator */}
+            {event.mediaType === 'video' && (
+              <div className="absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-sm border border-white/20">
+                <div className="w-0 h-0 border-l-8 border-l-white border-t-5 border-t-transparent border-b-5 border-b-transparent" />
+              </div>
+            )}
+
+            {/* Date Badge */}
+            <div className="absolute top-3 left-3 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full">
+              <span className="text-xs font-mono text-white/90">
+                {event.eventDate}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="p-4">
+          {/* Archive Number */}
+          <div className="mb-2">
+            <span className="text-[10px] font-mono text-lmsy-blue/80 tracking-widest uppercase">
+              {event.archiveNumber}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h3 className={`font-serif text-base font-semibold mb-2 transition-colors duration-300 ${
+            isHovered ? 'text-lmsy-yellow' : 'text-foreground'
+          }`}>
+            {event.title}
+          </h3>
+
+          {/* Description */}
+          {event.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {event.description}
+            </p>
+          )}
+        </div>
+
+        {/* Gradient Overlay on Hover */}
+        {isHovered && (
+          <motion.div
+            className="absolute inset-0 rounded-lg bg-gradient-to-r from-lmsy-yellow/5 via-lmsy-blue/5 to-transparent pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
+      </motion.div>
+    </motion.div>
   );
 }

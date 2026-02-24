@@ -63,34 +63,9 @@ export default async function ChroniclePage() {
         </div>
       </section>
 
-      {/* Timeline Section */}
+      {/* Timeline Section - Full Width */}
       <section className="py-16 md:py-24">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-16">
-              <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">
-                Timeline
-              </h2>
-              <p className="text-muted-foreground text-lg">
-                Explore the complete archive chronologically
-              </p>
-            </div>
-
-            {/* Timeline */}
-            <ChronicleTimeline events={events} />
-          </div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="py-16 border-t border-border">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <p className="font-mono text-xs text-muted-foreground/60 tracking-widest">
-              ARCHIVE CURATED BY <span className="text-lmsy-yellow">ASTRA</span> © 2025
-            </p>
-          </div>
-        </div>
+        <ChronicleTimeline events={events} />
       </section>
     </div>
   );

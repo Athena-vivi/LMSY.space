@@ -127,7 +127,8 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/admin/integrity');
       if (!response.ok) {
-        console.error('Failed to fetch integrity status');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[INTEGRITY] Failed to fetch status:', response.status, errorData);
         return;
       }
       const data = await response.json();
@@ -135,7 +136,7 @@ export default function AdminDashboard() {
         setIntegrityStatus(data.status);
       }
     } catch (error) {
-      console.error('Failed to fetch integrity status:', error);
+      console.error('[INTEGRITY] Network error:', error);
     }
   };
 

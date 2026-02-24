@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
+  Inbox,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,12 @@ const navSections = [
     ],
   },
   {
+    title: 'INGEST 摄入流水',
+    items: [
+      { icon: Inbox, label: 'Draft Inbox', href: '/admin/drafts', showBadge: true },
+    ],
+  },
+  {
     title: 'COMMUNITY 互动',
     items: [
       { icon: MessageSquare, label: 'Messages', href: '/admin/messages' },
@@ -59,6 +66,27 @@ interface AdminSidebarProps {
 export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const [draftCount, setDraftCount] = useState(0);
+
+  // Fetch draft count for badge
+  useEffect(() => {
+    const fetchDraftCount = async () => {
+      try {
+        const response = await fetch('/api/admin/drafts/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setDraftCount(data.pendingCount || 0);
+        }
+      } catch (error) {
+        console.error('[SIDEBAR] Failed to fetch draft count:', error);
+      }
+    };
+
+    fetchDraftCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchDraftCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
@@ -153,15 +181,29 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                       <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
                       <AnimatePresence mode="wait">
                         {!isCollapsed && (
-                          <motion.span
+                          <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -10 }}
                             transition={{ duration: 0.2 }}
-                            className="font-light text-sm whitespace-nowrap"
+                            className="flex items-center gap-2 flex-1 min-w-0"
                           >
-                            {item.label}
-                          </motion.span>
+                            <span className="font-light text-sm whitespace-nowrap">
+                              {item.label}
+                            </span>
+                            {/* Draft Inbox Badge */}
+                            {item.showBadge && draftCount > 0 && (
+                              <motion.span
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="flex-shrink-0 px-1 py-0.5 bg-lmsy-blue/20 border border-lmsy-blue/30 rounded-sm"
+                              >
+                                <span className="text-[10px] font-mono font-light tracking-tighter text-lmsy-blue">
+                                  {draftCount > 99 ? '99+' : draftCount}
+                                </span>
+                              </motion.span>
+                            )}
+                          </motion.div>
                         )}
                       </AnimatePresence>
                     </Link>
