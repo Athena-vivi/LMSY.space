@@ -34,8 +34,16 @@ export async function POST(request: NextRequest) {
     console.log('[TRANSLATE_API] Translating to:', targetLang);
 
     // Translate both title and description
+    const textToTranslate = title || description || '';
+    if (!textToTranslate) {
+      return NextResponse.json(
+        { success: false, error: 'No text to translate' },
+        { status: 400 }
+      );
+    }
+
     const result = await translateText({
-      text: title || description,
+      text: textToTranslate,
       targetLanguages: ['en', targetLang],
       context: {
         contentType: title ? 'title' : 'description',
