@@ -360,8 +360,10 @@ export async function translateDraftItem(
     const errors = results
       .map((r, i) => {
         if (r.status === 'rejected') return `${i === 0 ? 'Title' : 'Description'}: ${r.reason}`;
-        if (!r.value.success && r.value.error) return `${i === 0 ? 'Title' : 'Description'}: ${r.value.error}`;
-        if (!r.value.success) return `${i === 0 ? 'Title' : 'Description'}: Unknown error`;
+        if (!r.value.success) {
+          const error = (r.value as TranslationResult).error;
+          return `${i === 0 ? 'Title' : 'Description'}: ${error || 'Unknown error'}`;
+        }
         return null;
       })
       .filter(Boolean);
