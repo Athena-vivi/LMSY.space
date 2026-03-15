@@ -47,6 +47,10 @@ export default function EditProjectModal({
   const [referenceUrl, setReferenceUrl] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [portalVisible, setPortalVisible] = useState(false);
+  const [portalPriority, setPortalPriority] = useState(0);
+  const [themeStatement, setThemeStatement] = useState('');
+  const [curationStatus, setCurationStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load project data when modal opens
@@ -58,6 +62,10 @@ export default function EditProjectModal({
       setDescription(project.description || '');
       setReferenceUrl(project.watch_url || '');
       setTags(project.tags || []);
+      setPortalVisible(!!project.portal_visible);
+      setPortalPriority(project.portal_priority || 0);
+      setThemeStatement(project.theme_statement || '');
+      setCurationStatus(project.curation_status || 'draft');
     }
   }, [project]);
 
@@ -108,6 +116,10 @@ export default function EditProjectModal({
         description: description || null,
         watch_url: referenceUrl || null,
         tags: tags.length > 0 ? tags : null,
+        portal_visible: portalVisible,
+        portal_priority: portalPriority,
+        theme_statement: themeStatement || null,
+        curation_status: curationStatus,
       };
 
       // Update via API
@@ -162,7 +174,7 @@ export default function EditProjectModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="relative w-full max-w-lg bg-black border rounded-lg overflow-hidden"
+              className="relative w-full max-w-lg max-h-[90vh] bg-black border rounded-lg overflow-hidden flex flex-col"
               style={{
                 borderColor: 'rgba(251, 191, 36, 0.2)',
                 boxShadow: '0 0 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(251, 191, 36, 0.1)',
@@ -171,7 +183,7 @@ export default function EditProjectModal({
               }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+              <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <div>
                   <h2 className="text-lg font-serif text-white/90">EDIT_PROJECT_RECORD</h2>
                   <p className="text-[10px] font-mono text-white/30 tracking-wider uppercase mt-0.5">
@@ -189,7 +201,7 @@ export default function EditProjectModal({
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-5 custom-scrollbar">
                 {/* Title */}
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
@@ -245,6 +257,66 @@ export default function EditProjectModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Project description..."
+                    rows={3}
+                    className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  />
+                </div>
+
+                {/* Portal Controls */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      PORTAL_VISIBLE
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-white/70">
+                      <input
+                        type="checkbox"
+                        checked={portalVisible}
+                        onChange={(e) => setPortalVisible(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      Use for homepage portal
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      PORTAL_PRIORITY
+                    </label>
+                    <input
+                      type="number"
+                      value={portalPriority}
+                      onChange={(e) => setPortalPriority(Number(e.target.value) || 0)}
+                      className="w-full px-3 py-2 bg-transparent text-white/70 font-mono text-sm focus:outline-none border"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    CURATION_STATUS
+                  </label>
+                  <select
+                    value={curationStatus}
+                    onChange={(e) => setCurationStatus(e.target.value as 'draft' | 'published' | 'archived')}
+                    className="w-full px-3 py-2 bg-black text-white/70 font-mono text-sm focus:outline-none border"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  >
+                    <option value="draft">draft</option>
+                    <option value="published">published</option>
+                    <option value="archived">archived</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    THEME_STATEMENT
+                  </label>
+                  <textarea
+                    value={themeStatement}
+                    onChange={(e) => setThemeStatement(e.target.value)}
+                    placeholder="Curatorial theme statement for exhibitions and themed presentation..."
                     rows={3}
                     className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
@@ -360,7 +432,7 @@ export default function EditProjectModal({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 sticky bottom-0 bg-black/95 pb-1">
                   <motion.button
                     type="button"
                     onClick={onClose}

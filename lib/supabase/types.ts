@@ -33,6 +33,13 @@ export interface Project {
   cover_url: string | null;
   watch_url: string | null;
   tags: string[] | null;
+  portal_visible?: boolean | null;
+  portal_priority?: number | null;
+  homepage_featured?: boolean | null;
+  homepage_excerpt?: string | null;
+  homepage_cover_url?: string | null;
+  theme_statement?: string | null;
+  curation_status?: 'draft' | 'published' | 'archived' | null;
   created_at: string;
 }
 
@@ -53,6 +60,11 @@ export interface GalleryItem {
   category_tag: GalleryCategoryTag;  // 项目内分类标签 (stills/bts/press)
   project_id: string | null;  // 关联项目ID
   milestone_priority: MilestonePriority;  // 首页里程碑显示优先级: 1=2022, 2=2023, 3=2024, 4=2025, 5=∞
+  display_role?: 'regular' | 'cover' | 'milestone' | 'editorial' | 'portal' | null;
+  integrity_status?: 'unchecked' | 'ok' | 'broken' | 'missing' | 'hidden' | null;
+  is_cover?: boolean | null;
+  is_portal_candidate?: boolean | null;
+  rotation?: 0 | 90 | 180 | 270 | null;
   created_at: string;
 }
 
@@ -179,6 +191,9 @@ export interface DraftItem {
   tags: string[];
   is_featured: boolean;
   sequence_order: number | null;  // 用于同组内容的排序
+  chronicle_visible?: boolean;
+  chronicle_title?: string | null;
+  chronicle_excerpt?: string | null;
 
   // 审计字段
   created_at: string;

@@ -28,6 +28,7 @@ import { VAULT_TABS, type VaultTabId } from './constants';
 export default function AssetVaultPage() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as VaultTabId | null;
+  const projectIdParam = searchParams.get('projectId') || '';
 
   const [activeTab, setActiveTab] = useState<VaultTabId>(
     tabParam && VAULT_TABS.some(t => t.id === tabParam) ? tabParam : 'all'
@@ -43,10 +44,14 @@ export default function AssetVaultPage() {
   }, [tabParam]);
 
   // Fetch all vault data in parallel
-  const { data, loading } = useVaultData();
+  const { data, debug, loading, error, refetch } = useVaultData();
 
   // Apply filters based on active tab - use 'as' to narrow the type for each view
-  const filteredData = useVaultFilters(data, activeTab, { searchQuery, filterTag });
+  const filteredData = useVaultFilters(data, activeTab, {
+    searchQuery,
+    filterTag,
+    projectId: activeTab === 'all' ? projectIdParam : undefined,
+  });
 
   // Get unique tags for the filter dropdown
   const uniqueTags = useMemo(() => {
@@ -58,6 +63,30 @@ export default function AssetVaultPage() {
       {/* Header - dynamic based on active tab */}
       <VaultHeader activeTab={activeTab} />
 
+      {error && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-xs font-mono text-red-300/80">
+              {error}
+            </p>
+            <button
+              onClick={refetch}
+              className="shrink-0 border border-red-400/30 px-3 py-1 text-[10px] font-mono text-red-200/80 transition-colors hover:border-red-300/50 hover:text-red-100"
+            >
+              RETRY
+            </button>
+          </div>
+        </div>
+      )}
+
+      {debug && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3">
+          <p className="text-[10px] font-mono text-white/35">
+            GALLERY {debug.gallery_count} · PROJECTS {debug.projects_count} · CHRONICLE {debug.chronicle_count} · MILESTONES {debug.milestone_count}
+          </p>
+        </div>
+      )}
+
       {/* Tab Navigation */}
       <VaultTabs
         activeTab={activeTab}
@@ -66,19 +95,25 @@ export default function AssetVaultPage() {
       />
 
       {/* Search and Filter Bar */}
-      <VaultFilterBar
-        activeTab={activeTab}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        filterTag={filterTag}
-        setFilterTag={setFilterTag}
-        uniqueTags={uniqueTags}
-      />
+        <VaultFilterBar
+          activeTab={activeTab}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterTag={filterTag}
+          setFilterTag={setFilterTag}
+          uniqueTags={uniqueTags}
+          projectId={activeTab === 'all' ? projectIdParam : ''}
+        />
 
       {/* Content Views */}
       <AnimatePresence mode="wait">
         {activeTab === 'all' && (
-          <AllAssetsView key="all" data={filteredData as { gallery: any[]; projects: any[] }} loading={loading} />
+          <AllAssetsView
+            key="all"
+            data={filteredData as { gallery: any[]; projects: any[] }}
+            loading={loading}
+            projectFiltered={Boolean(projectIdParam)}
+          />
         )}
         {activeTab === 'chronicle' && (
           <ChronicleView key="chronicle" data={filteredData as unknown as { events: any[]; gallery: any[] }} loading={loading} />

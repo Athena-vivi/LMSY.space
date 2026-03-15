@@ -25,6 +25,7 @@ export async function getAllTimelineEvents(): Promise<TimelineEvent[]> {
     .from('draft_items')
     .select('*')
     .eq('status', 'published')
+    .eq('chronicle_visible', true)
     .order('event_date', { ascending: false, nullsFirst: false });
 
   if (error) {
@@ -49,7 +50,13 @@ export async function getAllTimelineEvents(): Promise<TimelineEvent[]> {
     const archiveNumber = `LMSY-D-${String(index + 1).padStart(3, '0')}`;
 
     // 获取标题（多语言回退）
-    const title = item.title?.en || item.title?.zh || item.title?.th || 'Untitled';
+    const title = item.chronicle_title || item.title?.en || item.title?.zh || item.title?.th || 'Untitled';
+    const description =
+      item.chronicle_excerpt ||
+      item.description?.en ||
+      item.description?.zh ||
+      item.description?.th ||
+      undefined;
 
     return {
       id: item.id,
@@ -58,7 +65,7 @@ export async function getAllTimelineEvents(): Promise<TimelineEvent[]> {
       title,
       type: 'gallery' as const,
       archiveNumber,
-      description: item.description?.en || item.description?.zh || item.description?.th || undefined,
+      description: description,
       href: `/chronicle`, // 链接到 Chronicle 页面
       imageUrl: item.r2_media_url || undefined,
       mediaType: item.media_type === 'video' ? 'video' : 'image',

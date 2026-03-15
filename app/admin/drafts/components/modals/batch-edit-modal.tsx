@@ -17,6 +17,9 @@ interface BatchEditForm {
   tags: string[];
   is_featured: boolean;
   event_date: string;
+  chronicle_visible: boolean;
+  chronicle_title: string;
+  chronicle_excerpt: string;
 }
 
 interface BatchEditModalProps {
@@ -220,6 +223,32 @@ export function BatchEditModal({
                   <label htmlFor="batch_is_featured" className="text-xs font-mono text-white/60">
                     FEATURED_ITEMS
                   </label>
+                </div>
+
+                <div className="space-y-3 rounded border border-white/10 p-4">
+                  <label className="flex items-center gap-2 text-xs font-mono text-white/60">
+                    <input
+                      type="checkbox"
+                      checked={batchEditForm.chronicle_visible}
+                      onChange={(e) => setBatchEditForm(prev => ({ ...prev, chronicle_visible: e.target.checked }))}
+                      className="w-4 h-4 rounded border-white/20 bg-white/5 focus:ring-lmsy-yellow/40"
+                    />
+                    SHOW_IN_CHRONICLE
+                  </label>
+                  <input
+                    type="text"
+                    value={batchEditForm.chronicle_title}
+                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, chronicle_title: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    placeholder="Chronicle title override"
+                  />
+                  <textarea
+                    value={batchEditForm.chronicle_excerpt}
+                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, chronicle_excerpt: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    placeholder="Chronicle excerpt override"
+                  />
                 </div>
               </div>
 

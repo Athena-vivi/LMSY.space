@@ -62,10 +62,16 @@ export default async function ProjectPage({ params }: PageProps) {
   // Fetch gallery images for this project
   const { data: galleryImages } = await supabaseAdmin
     .schema('lmsy_archive')
-    .from('gallery')
+    .from('gallery_assets')
     .select('*')
     .eq('project_id', id)
     .order('created_at', { ascending: true });
+
+  const coverRotation =
+    (galleryImages || []).find((img) => img.image_url === project.cover_url)?.rotation
+    ?? (galleryImages || []).find((img) => img.is_cover)?.rotation
+    ?? (galleryImages || []).find((img) => img.catalog_id?.endsWith('-000'))?.rotation
+    ?? 0;
 
   // Group images by category
   const groupedImages = {
@@ -77,7 +83,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <ProjectDetailClient
-      project={project}
+      project={{ ...project, cover_rotation: coverRotation }}
       images={groupedImages}
       categories={CATEGORIES}
     />

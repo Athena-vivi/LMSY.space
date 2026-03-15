@@ -1,17 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight, Loader2, X, Images } from 'lucide-react';
+import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { supabase, type Project } from '@/lib/supabase';
 import EditProjectModal from './_components/edit-project-modal';
 import { getImageUrl } from '@/lib/image-url';
 
+interface ProjectPreviewAsset {
+  id: string;
+  image_url: string;
+  project_id: string | null;
+  catalog_id: string | null;
+  rotation: number | null;
+}
+
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | Project['category']>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived' | 'available'>('all');
+  const [projectAssets, setProjectAssets] = useState<Record<string, ProjectPreviewAsset[]>>({});
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
     show: false,
     message: '',
@@ -40,13 +52,29 @@ export default function AdminProjectsPage() {
 
   const fetchProjects = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .order('release_date', { ascending: false });
+    const [{ data: projectData, error: projectError }, { data: assetData, error: assetError }] = await Promise.all([
+      supabase
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('*')
+        .order('release_date', { ascending: false }),
+      supabase
+        .schema('lmsy_archive')
+        .from('gallery_assets')
+        .select('id, image_url, project_id, catalog_id, rotation')
+        .order('created_at', { ascending: true }),
+    ]);
 
-    if (!error && data) setProjects(data);
+    if (!projectError && projectData) setProjects(projectData);
+    if (!assetError && assetData) {
+      const grouped = assetData.reduce<Record<string, ProjectPreviewAsset[]>>((acc, asset) => {
+        if (!asset.project_id) return acc;
+        if (!acc[asset.project_id]) acc[asset.project_id] = [];
+        acc[asset.project_id].push(asset);
+        return acc;
+      }, {});
+      setProjectAssets(grouped);
+    }
     setLoading(false);
   };
 
@@ -72,6 +100,119 @@ export default function AdminProjectsPage() {
       projectId: project.id,
       projectTitle: project.title,
     });
+  };
+
+  const getAuthHeaders = async () => {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      alert('Authentication required. Please log in again.');
+      window.location.href = '/admin/login';
+      throw new Error('Authentication required');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    };
+  };
+
+  const handleMerge = async (project: Project) => {
+    const input = prompt('Merge into which project? Enter target project title or ID.');
+    if (!input) return;
+
+    const target = projects.find((item) =>
+      item.id === input.trim() || item.title.trim().toLowerCase() === input.trim().toLowerCase()
+    );
+
+    if (!target) {
+      showToast('TARGET_PROJECT_NOT_FOUND', 'error');
+      return;
+    }
+
+    if (target.id === project.id) {
+      showToast('CANNOT_MERGE_INTO_SELF', 'error');
+      return;
+    }
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/projects/${project.id}/merge`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ targetProjectId: target.id }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Merge failed');
+      }
+
+      showToast('PROJECTS_MERGED');
+      fetchProjects();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'MERGE_FAILED', 'error');
+    }
+  };
+
+  const handleSplit = async (project: Project) => {
+    const title = prompt('New split project title');
+    if (!title?.trim()) return;
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/projects/${project.id}/split`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ title: title.trim() }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Split failed');
+      }
+
+      showToast('PROJECT_SPLIT_CREATED');
+      fetchProjects();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'SPLIT_FAILED', 'error');
+    }
+  };
+
+  const handleRotateAsset = async (asset: ProjectPreviewAsset, direction: 'left' | 'right') => {
+    try {
+      const headers = await getAuthHeaders();
+      const currentRotation = asset.rotation ?? 0;
+      const nextRotation = direction === 'left'
+        ? (currentRotation + 270) % 360
+        : (currentRotation + 90) % 360;
+
+      const response = await fetch('/api/admin/gallery', {
+        method: 'PATCH',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ id: asset.id, rotation: nextRotation }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'ROTATE_FAILED');
+      }
+
+      setProjectAssets((prev) => {
+        const next = { ...prev };
+        const items = next[asset.project_id || ''] || [];
+        next[asset.project_id || ''] = items.map((item) =>
+          item.id === asset.id ? { ...item, rotation: nextRotation } : item
+        );
+        return next;
+      });
+      showToast('ASSET_ROTATION_UPDATED');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'ROTATE_FAILED', 'error');
+    }
   };
 
   const confirmDelete = async () => {
@@ -172,6 +313,34 @@ export default function AdminProjectsPage() {
       className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
     },
   };
+
+  const categoryOptions = useMemo(
+    () => ['all', ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean)))],
+    [projects]
+  );
+
+  const filteredProjects = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return projects.filter((project) => {
+      const matchesQuery = normalizedQuery.length === 0 || [
+        project.title,
+        project.description,
+        project.id,
+      ]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(normalizedQuery));
+
+      const matchesCategory = categoryFilter === 'all' || project.category === categoryFilter;
+
+      const normalizedStatus = project.curation_status ?? (project.watch_url ? 'published' : 'archived');
+      const matchesStatus = statusFilter === 'all'
+        || normalizedStatus === statusFilter
+        || (statusFilter === 'available' && Boolean(project.watch_url));
+
+      return matchesQuery && matchesCategory && matchesStatus;
+    });
+  }, [projects, searchQuery, categoryFilter, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -278,6 +447,47 @@ export default function AdminProjectsPage() {
             exit={{ opacity: 0 }}
             className="space-y-1"
           >
+            <div className="flex flex-col gap-3 border px-4 py-4 md:flex-row md:items-center md:justify-between"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+            >
+              <div className="flex flex-1 flex-col gap-3 md:flex-row">
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="SEARCH_PROJECTS"
+                  className="w-full border bg-transparent px-3 py-2 font-mono text-xs tracking-wider text-white/80 outline-none transition-colors placeholder:text-white/20 md:max-w-sm"
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                />
+                <select
+                  value={categoryFilter}
+                  onChange={(event) => setCategoryFilter(event.target.value as 'all' | Project['category'])}
+                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-white/70 outline-none transition-colors"
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                >
+                  {categoryOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option === 'all' ? 'ALL_CATEGORIES' : option.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value as 'all' | 'published' | 'draft' | 'archived' | 'available')}
+                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-white/70 outline-none transition-colors"
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                >
+                  <option value="all">ALL_STATUS</option>
+                  <option value="published">PUBLISHED</option>
+                  <option value="draft">DRAFT</option>
+                  <option value="archived">ARCHIVED</option>
+                  <option value="available">AVAILABLE</option>
+                </select>
+              </div>
+              <div className="text-xs font-mono tracking-wider text-white/30">
+                {filteredProjects.length} / {projects.length}
+              </div>
+            </div>
+
             {/* Table Header */}
             <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b text-xs font-mono font-medium tracking-wider"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
@@ -290,8 +500,9 @@ export default function AdminProjectsPage() {
             </div>
 
             {/* Table Rows */}
-            {projects.map((project, index) => {
+            {filteredProjects.map((project, index) => {
               const config = categoryConfig[project.category] || categoryConfig.series;
+              const previewAssets = projectAssets[project.id] || [];
               return (
                 <motion.div
                   key={project.id}
@@ -305,7 +516,11 @@ export default function AdminProjectsPage() {
                   <div className="col-span-4">
                     <div className="flex items-start gap-3">
                       {/* Thumbnail */}
-                      <div className="relative w-16 h-10 flex-shrink-0 bg-white/5 overflow-hidden">
+                      <Link
+                        href={`/admin/projects/${project.id}/curate`}
+                        className="relative block w-16 h-10 flex-shrink-0 bg-white/5 overflow-hidden transition-opacity hover:opacity-80"
+                        title="Preview, reorder and rotate project images"
+                      >
                         {(() => {
                           const coverUrl = getImageUrl(project.cover_url);
                           return coverUrl ? (
@@ -315,14 +530,14 @@ export default function AdminProjectsPage() {
                               fill
                               className="object-cover"
                               unoptimized
-                            />
+                              />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <Play className="h-4 w-4 text-white/10" strokeWidth={1.5} />
                             </div>
                           );
                         })()}
-                      </div>
+                      </Link>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm text-white/80 font-serif truncate">
                           {project.title}
@@ -331,6 +546,47 @@ export default function AdminProjectsPage() {
                           <p className="text-[10px] text-white/30 font-mono truncate mt-0.5">
                             {project.description}
                           </p>
+                        )}
+                        {previewAssets.length > 0 && (
+                          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                            {previewAssets.map((asset) => {
+                              const imageUrl = getImageUrl(asset.image_url);
+                              return (
+                                <div
+                                  key={asset.id}
+                                  className="relative h-24 w-20 flex-shrink-0 overflow-hidden border bg-black/30"
+                                  style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+                                >
+                                  {imageUrl ? (
+                                    <Image
+                                      src={imageUrl}
+                                      alt={asset.catalog_id || project.title}
+                                      fill
+                                      className="object-contain p-1"
+                                      style={{ transform: `rotate(${asset.rotation ?? 0}deg)` }}
+                                      unoptimized
+                                    />
+                                  ) : null}
+                                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/70 px-1 py-1">
+                                    <button
+                                      onClick={() => handleRotateAsset(asset, 'left')}
+                                      className="text-white/60 transition-colors hover:text-white"
+                                      title="Rotate Left"
+                                    >
+                                      <RotateCcw className="h-3 w-3" strokeWidth={1.8} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleRotateAsset(asset, 'right')}
+                                      className="text-white/60 transition-colors hover:text-white"
+                                      title="Rotate Right"
+                                    >
+                                      <RotateCw className="h-3 w-3" strokeWidth={1.8} />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -387,12 +643,35 @@ export default function AdminProjectsPage() {
                   {/* Actions */}
                   <div className="col-span-1 flex items-center justify-end gap-2">
                     <Link
-                      href={`/admin/projects/${project.id}/curate`}
+                      href={`/projects/${project.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 text-white/20 hover:text-lmsy-blue/80 hover:bg-lmsy-blue/5 transition-all"
+                      title="View Live"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </Link>
+                    <Link
+                      href={`/admin/gallery?tab=all&projectId=${project.id}`}
                       className="p-1.5 text-white/20 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all"
-                      title="Curate Gallery"
+                      title="View Assets"
                     >
                       <Images className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </Link>
+                    <button
+                      onClick={() => handleMerge(project)}
+                      className="p-1.5 text-white/20 hover:text-white/70 hover:bg-white/5 transition-all"
+                      title="Merge Project"
+                    >
+                      <ArrowRightLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
+                    <button
+                      onClick={() => handleSplit(project)}
+                      className="p-1.5 text-white/20 hover:text-white/70 hover:bg-white/5 transition-all"
+                      title="Split Project"
+                    >
+                      <SplitSquareVertical className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
                     <button
                       onClick={() => handleEdit(project)}
                       className="p-1.5 text-white/20 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
@@ -414,6 +693,15 @@ export default function AdminProjectsPage() {
                 </motion.div>
               );
             })}
+
+            {filteredProjects.length === 0 && (
+              <div
+                className="border px-4 py-10 text-center text-xs font-mono tracking-wider text-white/25"
+                style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
+              >
+                NO_MATCHING_PROJECTS
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

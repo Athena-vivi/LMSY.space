@@ -12,7 +12,7 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('id, image_url, milestone_priority')
       .not('milestone_priority', 'is', null)
       .order('milestone_priority', { ascending: true });

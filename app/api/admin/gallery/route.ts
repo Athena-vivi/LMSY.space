@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // Build query
     let query = supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -115,22 +115,25 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const { data, error } = await supabaseAdmin
         .schema('lmsy_archive')
-        .from('gallery')
+        .from('gallery_assets')
         .insert({
           image_url: item.image_url,
           title: item.title,
-          description: item.description || null,
+          excerpt: item.description || null,
           tag: item.tag || null,
           caption: item.caption || '',
           is_featured: item.is_featured || false,
-          archive_number: item.archive_number || null,
           event_date: item.event_date || null,
           project_id: item.project_id || null,
-          member_id: item.member_id || null,
           blur_data: item.blur_data || null,
           credits: item.credits || null,
           catalog_id: item.catalog_id || null,
           magazine_issue: item.magazine_issue || null,
+          integrity_status: item.integrity_status || 'ok',
+          display_role: item.display_role || 'regular',
+          is_cover: item.is_cover || false,
+          is_portal_candidate: item.is_portal_candidate || false,
+          rotation: item.rotation || 0,
         })
         .select()
         .single();
@@ -208,7 +211,7 @@ export async function DELETE(request: NextRequest) {
 
     const { error } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .delete()
       .in('id', idArray);
 
@@ -229,6 +232,82 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN_GALLERY_API] ❌ Error:', error);
 
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH - Update single gallery asset fields
+ */
+export async function PATCH(request: NextRequest) {
+  const authResult = await getAuthenticatedUser(request);
+
+  if (!authResult.user || authResult.error) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
+    );
+  }
+
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  if (authResult.user.email !== adminEmail) {
+    return NextResponse.json(
+      { error: 'Forbidden: Admin access required' },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const body = await request.json();
+    const { id, rotation, project_id, is_cover } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Missing required field: id' },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Record<string, unknown> = {};
+
+    if (rotation !== undefined) updateData.rotation = rotation ?? 0;
+    if (project_id !== undefined) updateData.project_id = project_id;
+    if (is_cover !== undefined) updateData.is_cover = !!is_cover;
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No update fields provided' },
+        { status: 400 }
+      );
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to update asset', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
     return NextResponse.json(
       {
         error: 'Internal server error',

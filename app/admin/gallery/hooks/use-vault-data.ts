@@ -1,12 +1,7 @@
-/**
- * useVaultData Hook
- *
- * Unified data fetching for Asset Vault
- */
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import type { GalleryItem, Project } from '@/lib/supabase';
 
 export interface MilestoneImage {
@@ -24,6 +19,9 @@ export interface ChronicleEvent {
   event_date: string;
   event_type: 'gallery' | 'project' | 'custom';
   image_ids: string[];
+  image_url?: string | null;
+  chronicle_visible?: boolean;
+  project_id?: string | null;
 }
 
 export interface VaultData {
@@ -33,6 +31,27 @@ export interface VaultData {
   milestones: Record<string, MilestoneImage>;
 }
 
+export interface VaultDebug {
+  gallery_count: number;
+  projects_count: number;
+  chronicle_count: number;
+  milestone_count: number;
+  first_gallery_id: string | null;
+  first_gallery_project_id: string | null;
+}
+
+async function getAuthHeaders() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  if (error || !session?.access_token) {
+    throw new Error('Admin session not available');
+  }
+
+  return {
+    Authorization: `Bearer ${session.access_token}`,
+  };
+}
+
 export function useVaultData() {
   const [data, setData] = useState<VaultData>({
     gallery: [],
@@ -40,6 +59,7 @@ export function useVaultData() {
     events: [],
     milestones: {},
   });
+  const [debug, setDebug] = useState<VaultDebug | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,58 +68,24 @@ export function useVaultData() {
     setError(null);
 
     try {
-      console.log('[VAULT_DATA] 📡 Fetching all vault data...');
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/admin/vault', {
+        cache: 'no-store',
+        credentials: 'include',
+        headers,
+      });
 
-      const [galleryRes, projectsRes, eventsRes, milestonesRes] = await Promise.all([
-        fetch('/api/admin/gallery', { cache: 'no-store' }),
-        fetch('/api/admin/projects', { cache: 'no-store' }),
-        fetch('/api/admin/chronicle', { cache: 'no-store' }),
-        fetch('/api/admin/gallery/milestone', { cache: 'no-store' }),
-      ]);
+      const payload = await response.json();
 
-      // Parse gallery
-      if (galleryRes.ok) {
-        const galleryResult = await galleryRes.json();
-        if (galleryResult.success) {
-          setData(prev => ({ ...prev, gallery: galleryResult.data || [] }));
-          console.log('[VAULT_DATA] ✅ Gallery:', galleryResult.data?.length || 0);
-        }
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.details || payload.error || 'Failed to fetch Asset Vault data');
       }
 
-      // Parse projects
-      if (projectsRes.ok) {
-        const projectsResult = await projectsRes.json();
-        if (projectsResult.success) {
-          setData(prev => ({ ...prev, projects: projectsResult.projects || [] }));
-          console.log('[VAULT_DATA] ✅ Projects:', projectsResult.projects?.length || 0);
-        }
-      }
-
-      // Parse events
-      if (eventsRes.ok) {
-        const eventsResult = await eventsRes.json();
-        if (eventsResult.success) {
-          setData(prev => ({ ...prev, events: eventsResult.events || [] }));
-          console.log('[VAULT_DATA] ✅ Events:', eventsResult.events?.length || 0);
-        }
-      }
-
-      // Parse milestones
-      if (milestonesRes.ok) {
-        const milestonesResult = await milestonesRes.json();
-        if (milestonesResult.success && milestonesResult.data) {
-          const milestonesMap: Record<string, MilestoneImage> = {};
-          milestonesResult.data.forEach((m: MilestoneImage) => {
-            milestonesMap[m.year] = m;
-          });
-          setData(prev => ({ ...prev, milestones: milestonesMap }));
-          console.log('[VAULT_DATA] ✅ Milestones:', Object.keys(milestonesMap).length);
-        }
-      }
-
+      setData(payload.data);
+      setDebug(payload.debug || null);
     } catch (err) {
-      console.error('[VAULT_DATA] ❌ Fetch error:', err);
-      setError('Failed to fetch vault data');
+      console.error('[VAULT_DATA] Failed to fetch vault data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch vault data');
     } finally {
       setLoading(false);
     }
@@ -109,5 +95,5 @@ export function useVaultData() {
     fetchData();
   }, []);
 
-  return { data, loading, error, refetch: fetchData };
+  return { data, debug, loading, error, refetch: fetchData };
 }

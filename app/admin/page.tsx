@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, FileText, PenTool, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 interface SystemStatus {
   r2: 'checking' | 'connected' | 'error';
@@ -40,6 +41,21 @@ export default function AdminDashboard() {
     fetchCollectionStats();
     fetchIntegrityStatus();
   }, []);
+
+  const getAuthHeaders = async (includeJson = false) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+
+    if (includeJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+
+    return headers;
+  };
 
   const checkSystemStatus = async () => {
     // Check R2 configuration and connection (通过 API)
@@ -125,7 +141,11 @@ export default function AdminDashboard() {
 
   const fetchIntegrityStatus = async () => {
     try {
-      const response = await fetch('/api/admin/integrity');
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/admin/integrity', {
+        headers,
+        credentials: 'include',
+      });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('[INTEGRITY] Failed to fetch status:', response.status, errorData);
@@ -143,8 +163,11 @@ export default function AdminDashboard() {
   const verifyIntegrity = async () => {
     setIsVerifying(true);
     try {
+      const headers = await getAuthHeaders(true);
       const response = await fetch('/api/admin/integrity', {
         method: 'POST',
+        headers,
+        credentials: 'include',
       });
       if (!response.ok) {
         throw new Error('Failed to verify integrity');

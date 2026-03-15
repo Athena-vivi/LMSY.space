@@ -1,16 +1,11 @@
-/**
- * Editorial View Component
- *
- * Magazine project management
- */
-
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, X, Save, Loader2, Calendar, Images } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Loader2, Calendar, Images, Home } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { getCdnUrl, formatDate } from '../../utils';
 import type { Project } from '@/lib/supabase';
 
@@ -21,20 +16,22 @@ interface EditorialViewProps {
   loading: boolean;
 }
 
-type ViewMode = 'list' | 'create' | 'edit';
+type ViewMode = 'grid' | 'create' | 'edit';
 
 export function EditorialView({ data, loading }: EditorialViewProps) {
-  const articles = data.projects.filter(p => p.category === 'editorial' || p.category === 'series');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const articles = data.projects.filter((p) => p.category === 'editorial');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedArticle, setSelectedArticle] = useState<Project | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState({
     title: '',
     excerpt: '',
-    category: 'magazine',
+    category: 'editorial',
     release_date: new Date().toISOString().split('T')[0],
+    homepage_featured: false,
+    homepage_excerpt: '',
+    homepage_cover_url: '',
   });
 
   const handleCreate = () => {
@@ -42,8 +39,11 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
     setFormData({
       title: '',
       excerpt: '',
-      category: 'magazine',
+      category: 'editorial',
       release_date: new Date().toISOString().split('T')[0],
+      homepage_featured: false,
+      homepage_excerpt: '',
+      homepage_cover_url: '',
     });
     setViewMode('create');
   };
@@ -53,29 +53,82 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
     setFormData({
       title: article.title || '',
       excerpt: article.description || '',
-      category: article.category || 'magazine',
+      category: article.category || 'editorial',
       release_date: article.release_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+      homepage_featured: !!article.homepage_featured,
+      homepage_excerpt: article.homepage_excerpt || '',
+      homepage_cover_url: article.homepage_cover_url || '',
     });
     setViewMode('edit');
   };
 
+  const getAuthHeaders = async (includeJson = false) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (includeJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    return headers;
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this magazine? This will also delete all associated pages.')) return;
+    if (!confirm('Delete this editorial project?')) return;
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/admin/editorial?id=${id}`, {
         method: 'DELETE',
+        headers,
+        credentials: 'include',
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Delete failed');
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Delete failed');
       }
 
       window.location.reload();
     } catch (err) {
       console.error('[ADMIN_DELETE] Error:', err);
-      alert('Failed to delete magazine');
+      alert('Failed to delete editorial');
+    }
+  };
+
+  const handleSetHomepageFeature = async (article: Project) => {
+    setSaving(true);
+
+    try {
+      const headers = await getAuthHeaders(true);
+      const response = await fetch('/api/admin/editorial', {
+        method: 'PUT',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          id: article.id,
+          title: article.title,
+          description: article.description,
+          category: article.category,
+          release_date: article.release_date,
+          homepage_featured: !article.homepage_featured,
+          homepage_excerpt: article.homepage_excerpt || article.description || '',
+          homepage_cover_url: article.homepage_cover_url || article.cover_url || '',
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update Featured Interview');
+      }
+
+      window.location.reload();
+    } catch (err) {
+      console.error('[EDITORIAL_FEATURE] Error:', err);
+      alert('Failed to update Featured Interview');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -84,25 +137,31 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
 
     try {
       if (viewMode === 'create') {
-        // For new magazines, redirect to upload page
         window.location.href = `/admin/upload?type=magazine&title=${encodeURIComponent(formData.title)}&date=${formData.release_date}`;
         return;
-      } else if (selectedArticle) {
+      }
+
+      if (selectedArticle) {
+        const headers = await getAuthHeaders(true);
         const response = await fetch('/api/admin/editorial', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
+          credentials: 'include',
           body: JSON.stringify({
             id: selectedArticle.id,
             title: formData.title,
             description: formData.excerpt,
             category: formData.category,
             release_date: formData.release_date,
+            homepage_featured: formData.homepage_featured,
+            homepage_excerpt: formData.homepage_excerpt,
+            homepage_cover_url: formData.homepage_cover_url,
           }),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Update failed');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Update failed');
         }
 
         window.location.reload();
@@ -125,15 +184,15 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
 
   return (
     <AnimatePresence mode="wait">
-      {viewMode === 'list' && (
+      {viewMode === 'grid' && (
         <motion.div
-          key="list"
+          key="grid"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
+          className="space-y-4"
         >
-          {/* Header Actions */}
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end">
             <motion.button
               onClick={handleCreate}
               className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-lmsy-yellow/30 rounded-lg text-lmsy-yellow/90 transition-all duration-200"
@@ -145,139 +204,113 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
             </motion.button>
           </div>
 
-          {/* List Header */}
-          <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b text-xs font-mono font-medium tracking-wider mb-2"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-          >
-            <div className="col-span-1 text-white/40">#</div>
-            <div className="col-span-4 text-white/40">TITLE</div>
-            <div className="col-span-2 text-white/40">DATE</div>
-            <div className="col-span-2 text-white/40">TAGS</div>
-            <div className="col-span-3 text-white/40 text-right">ACTIONS</div>
-          </div>
-
           {articles.length === 0 ? (
             <div className="text-center py-20 border border-dashed rounded-lg" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
               <p className="text-white/30 font-light">No magazines in archive</p>
             </div>
           ) : (
-            articles.map((article, index) => (
-              <motion.div
-                key={article.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.03 }}
-                className="group relative grid grid-cols-12 gap-4 px-4 py-3 border items-center hover:bg-white/[0.02] transition-colors"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-              >
-                {/* Index */}
-                <div className="col-span-1 text-white/30 font-mono text-sm">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {articles.map((article, index) => {
+                const coverUrl = getCdnUrl(article.homepage_cover_url || article.cover_url || null);
+                const summary = article.homepage_excerpt || article.description || '';
 
-                {/* Thumbnail + Title */}
-                <div className="col-span-4 flex items-center gap-3">
-                  <div className="relative w-12 h-16 flex-shrink-0 bg-white/5 rounded overflow-hidden">
-                    {(() => {
-                      const coverUrl = getCdnUrl(article.cover_url || null);
-                      if (!coverUrl) return null;
-                      return (
+                return (
+                  <motion.div
+                    key={article.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.04 }}
+                    className="group overflow-hidden rounded-xl border border-white/10 bg-black"
+                  >
+                    <div className="relative aspect-[4/5] bg-white/5">
+                      {coverUrl ? (
                         <Image
                           src={coverUrl}
-                          alt={article.title || 'Cover'}
+                          alt={article.title || 'Editorial cover'}
                           fill
-                          className="object-cover"
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
                           unoptimized
                         />
-                      );
-                    })()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm text-white/80 font-serif truncate">
-                      {article.title || 'Untitled Magazine'}
-                    </h3>
-                    {article.description && (
-                      <p className="text-[10px] text-white/30 font-mono truncate mt-0.5">
-                        {article.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-[11px] font-mono text-white/20">
+                          NO_COVER
+                        </div>
+                      )}
 
-                {/* Date */}
-                <div className="col-span-2">
-                  {article.release_date ? (
-                    <div className="flex items-center gap-2 text-xs text-white/40">
-                      <Calendar className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
-                      <span className="font-mono tracking-wide">
-                        {formatDate(article.release_date)}
-                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
+
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        {article.homepage_featured && (
+                          <span className="px-2 py-1 border border-lmsy-yellow/40 bg-lmsy-yellow/15 text-[10px] font-mono text-lmsy-yellow">
+                            FEATURED_INTERVIEW
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                        <h3 className="font-serif text-xl text-white/90">
+                          {article.title || 'Untitled Magazine'}
+                        </h3>
+                        {article.release_date && (
+                          <div className="flex items-center gap-2 text-[11px] font-mono text-white/50">
+                            <Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />
+                            <span>{formatDate(article.release_date)}</span>
+                          </div>
+                        )}
+                        {summary && (
+                          <p className="line-clamp-2 text-sm text-white/55">
+                            {summary}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <span className="text-xs text-white/20 font-mono">—</span>
-                  )}
-                </div>
 
-                {/* Tags */}
-                <div className="col-span-2">
-                  {article.tags && article.tags.length > 0 ? (
-                    <div className="flex gap-1">
-                      {article.tags.slice(0, 2).map((tag, i) => (
-                        <span
-                          key={i}
-                          className="text-xs font-mono text-white/30 tracking-wider"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+                    <div className="grid grid-cols-2 gap-2 p-3 border-t border-white/10 bg-black/90">
+                      <button
+                        onClick={() => handleSetHomepageFeature(article)}
+                        disabled={saving}
+                        className={`inline-flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono border transition-all ${
+                          article.homepage_featured
+                            ? 'border-lmsy-yellow/40 text-lmsy-yellow bg-lmsy-yellow/10'
+                            : 'border-white/15 text-white/60 hover:border-lmsy-yellow/30 hover:text-lmsy-yellow/80'
+                        }`}
+                      >
+                        <Home className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        {article.homepage_featured ? 'UNSET_FEATURED' : 'SET_FEATURED'}
+                      </button>
+
+                      <Link
+                        href={`/admin/editorial/${article.id}/curate`}
+                        className="inline-flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono border border-white/15 text-white/60 hover:border-lmsy-blue/30 hover:text-lmsy-blue/80 transition-all"
+                      >
+                        <Images className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        CURATE
+                      </Link>
+
+                      <button
+                        onClick={() => handleEdit(article)}
+                        className="inline-flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono border border-white/15 text-white/60 hover:border-lmsy-yellow/30 hover:text-lmsy-yellow/80 transition-all"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        EDIT
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(article.id)}
+                        className="inline-flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono border border-white/15 text-white/60 hover:border-red-400/30 hover:text-red-400/80 transition-all"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        DELETE
+                      </button>
                     </div>
-                  ) : (
-                    <span className="text-xs text-white/20 font-mono">—</span>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-3 flex items-center justify-end gap-1">
-                  <Link
-                    href={`/admin/editorial/${article.id}/curate`}
-                    className="p-1.5 text-white/20 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all rounded"
-                    title="Curate Pages"
-                  >
-                    <Images className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </Link>
-
-                  <button
-                    onClick={() => handleEdit(article)}
-                    className="p-1.5 text-white/20 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all rounded"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(article.id)}
-                    className="p-1.5 text-white/20 hover:text-red-400/80 hover:bg-red-500/5 transition-all rounded"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </button>
-                </div>
-
-                {/* Hover Border */}
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded"
-                  style={{
-                    border: '1px solid transparent',
-                    background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(56, 189, 248, 0.15)) border-box',
-                    WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
-                    WebkitMaskComposite: 'xor',
-                    maskComposite: 'exclude',
-                  }}
-                />
-              </motion.div>
-            ))
+                  </motion.div>
+                );
+              })}
+            </div>
           )}
         </motion.div>
       )}
 
-      {/* Create/Edit View */}
       {(viewMode === 'create' || viewMode === 'edit') && (
         <motion.div
           key="editor"
@@ -287,7 +320,6 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
           className="grid grid-cols-12 gap-8"
         >
           <div className="col-span-12 lg:col-span-7 space-y-6">
-            {/* Title */}
             <div>
               <label className="block text-xs font-mono text-white/30 tracking-wider uppercase mb-3">
                 Magazine Title
@@ -302,7 +334,6 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
               />
             </div>
 
-            {/* Description/Excerpt */}
             <div>
               <label className="block text-xs font-mono text-white/30 tracking-wider uppercase mb-3">
                 Description
@@ -317,7 +348,6 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
               />
             </div>
 
-            {/* Release Date */}
             <div>
               <label className="block text-xs font-mono text-white/30 tracking-wider uppercase mb-3">
                 Release Date
@@ -330,24 +360,43 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
               />
             </div>
 
-            {/* Note about upload */}
-            <div className="p-4 bg-lmsy-yellow/5 border border-lmsy-yellow/20 rounded-lg">
-              <p className="text-xs text-lmsy-yellow/80 font-mono">
-                ℹ️ For new magazines, click Save to proceed to the upload page where you can add the cover image and additional pages.
-              </p>
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-xs font-mono text-white/40 tracking-wider uppercase">
+                <input
+                  type="checkbox"
+                  checked={formData.homepage_featured}
+                  onChange={(e) => setFormData({ ...formData, homepage_featured: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                Homepage Featured Interview
+              </label>
+              <input
+                type="text"
+                value={formData.homepage_excerpt}
+                onChange={(e) => setFormData({ ...formData, homepage_excerpt: e.target.value })}
+                placeholder="Homepage excerpt override..."
+                className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors"
+                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+              />
+              <input
+                type="text"
+                value={formData.homepage_cover_url}
+                onChange={(e) => setFormData({ ...formData, homepage_cover_url: e.target.value })}
+                placeholder="Homepage cover URL override..."
+                className="w-full px-0 py-2 bg-transparent text-white/90 font-light focus:outline-none border-b focus:border-lmsy-yellow/60 transition-colors"
+                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+              />
             </div>
           </div>
 
           <div className="col-span-12 lg:col-span-5">
             <div className="sticky top-8 space-y-6">
-              {/* Cover Preview */}
               <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-white/5 border" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <p className="text-white/20 text-sm">Cover via upload</p>
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3">
                 <motion.button
                   onClick={handleSave}
@@ -368,7 +417,7 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
                   <span>{viewMode === 'create' ? 'Continue to Upload' : 'Save Changes'}</span>
                 </motion.button>
                 <button
-                  onClick={() => setViewMode('list')}
+                  onClick={() => setViewMode('grid')}
                   className="px-4 py-3 rounded-lg border border-white/10 text-white/40 hover:text-white/60 hover:bg-white/5 transition-all duration-200"
                 >
                   <X className="h-4 w-4" strokeWidth={1.5} />

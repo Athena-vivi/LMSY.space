@@ -20,6 +20,7 @@ interface GalleryImage {
   curator_note: string | null;
   is_featured: boolean;
   event_date: string | null;
+  rotation?: number | null;
 }
 
 interface GroupedImages {
@@ -45,6 +46,7 @@ interface Project {
   release_date: string | null;
   description: string | null;
   cover_url: string | null;
+  cover_rotation?: number | null;
   watch_url: string | null;
   start_date?: string | null;
   end_date?: string | null;
@@ -229,7 +231,8 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                     src={coverUrl}
                     alt={project.title}
                     fill
-                    className="object-cover"
+                    className="object-contain bg-black/30"
+                    style={{ transform: `rotate(${project.cover_rotation ?? 0}deg)` }}
                     priority
                     unoptimized
                   />
@@ -455,6 +458,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                                 height={0}
                                 sizes="100vw"
                                 className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                                style={{ transform: `rotate(${image.rotation ?? 0}deg)` }}
                                 unoptimized
                               />
                             ) : null}

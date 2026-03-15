@@ -117,7 +117,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, title, description, release_date } = body;
+    const { id, title, description, release_date, homepage_featured, homepage_excerpt, homepage_cover_url } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -130,6 +130,23 @@ export async function PUT(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
+    if (homepage_featured === true) {
+      const { error: clearError } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .update({ homepage_featured: false })
+        .eq('category', 'editorial')
+        .eq('homepage_featured', true)
+        .neq('id', id);
+
+      if (clearError) {
+        return NextResponse.json(
+          { error: 'Failed to clear previous homepage feature', details: clearError.message },
+          { status: 500 }
+        );
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('projects')
@@ -137,6 +154,9 @@ export async function PUT(request: NextRequest) {
         title,
         description,
         release_date,
+        homepage_featured: !!homepage_featured,
+        homepage_excerpt: homepage_excerpt || null,
+        homepage_cover_url: homepage_cover_url || null,
       })
       .eq('id', id)
       .select()

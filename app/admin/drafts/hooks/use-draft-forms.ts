@@ -15,6 +15,9 @@ interface DraftFormState {
   tags: string[];
   is_featured: boolean;
   event_date: string;
+  chronicle_visible: boolean;
+  chronicle_title: string;
+  chronicle_excerpt: string;
 }
 
 const emptyFormState: DraftFormState = {
@@ -23,6 +26,9 @@ const emptyFormState: DraftFormState = {
   tags: [],
   is_featured: false,
   event_date: '',
+  chronicle_visible: true,
+  chronicle_title: '',
+  chronicle_excerpt: '',
 };
 
 interface UseDraftFormsProps {
@@ -70,6 +76,9 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       tags: draft.tags || [],
       is_featured: draft.is_featured || false,
       event_date: draft.event_date || '',
+      chronicle_visible: draft.chronicle_visible ?? true,
+      chronicle_title: draft.chronicle_title || '',
+      chronicle_excerpt: draft.chronicle_excerpt || '',
     });
   }, []);
 
@@ -166,6 +175,9 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       tags: firstItem.tags || [],
       is_featured: firstItem.is_featured || false,
       event_date: firstItem.event_date || '',
+      chronicle_visible: firstItem.chronicle_visible ?? true,
+      chronicle_title: firstItem.chronicle_title || '',
+      chronicle_excerpt: firstItem.chronicle_excerpt || '',
     });
     setBatchOrder(Array.from(selectedIds));
     setBatchEditing(true);

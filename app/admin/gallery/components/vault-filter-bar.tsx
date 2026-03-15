@@ -8,6 +8,7 @@
 
 import { motion } from 'framer-motion';
 import { Search, X } from 'lucide-react';
+import Link from 'next/link';
 import type { VaultTabId } from '../constants';
 
 interface VaultFilterBarProps {
@@ -17,6 +18,7 @@ interface VaultFilterBarProps {
   filterTag: string;
   setFilterTag: (value: string) => void;
   uniqueTags?: string[];
+  projectId?: string;
 }
 
 export function VaultFilterBar({
@@ -26,6 +28,7 @@ export function VaultFilterBar({
   filterTag,
   setFilterTag,
   uniqueTags = [],
+  projectId,
 }: VaultFilterBarProps) {
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -76,8 +79,18 @@ export function VaultFilterBar({
       )}
 
       {/* Status indicator */}
-      <div className="text-xs font-mono text-white/20 tracking-wider">
-        {activeTab.toUpperCase()}
+      <div className="flex items-center gap-3 text-xs font-mono tracking-wider">
+        <span className="text-white/20">
+          {projectId ? `${activeTab.toUpperCase()} · PROJECT_FILTERED` : activeTab.toUpperCase()}
+        </span>
+        {projectId && (
+          <Link
+            href="/admin/gallery?tab=all"
+            className="text-lmsy-blue/70 transition-colors hover:text-lmsy-blue"
+          >
+            CLEAR_FILTER
+          </Link>
+        )}
       </div>
     </motion.div>
   );

@@ -9,10 +9,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, Trash2, Check, Calendar, Link2 } from 'lucide-react';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { getCdnUrl } from '../../utils';
 import type { GalleryItem } from '@/lib/supabase';
 import type { Project } from '@/lib/supabase';
-import { useState } from 'react';
 
 interface AllAssetsViewProps {
   data: {
@@ -20,9 +21,10 @@ interface AllAssetsViewProps {
     projects: Project[];
   };
   loading: boolean;
+  projectFiltered?: boolean;
 }
 
-export function AllAssetsView({ data, loading }: AllAssetsViewProps) {
+export function AllAssetsView({ data, loading, projectFiltered = false }: AllAssetsViewProps) {
   const { gallery, projects } = data;
   const editorialProjects = projects.filter(p => p.category === 'editorial' || p.category === 'series');
 
@@ -40,10 +42,16 @@ export function AllAssetsView({ data, loading }: AllAssetsViewProps) {
   const [transferring, setTransferring] = useState(false);
 
   // Fetch projects for transfer modal
-  useState(() => {
+  useEffect(() => {
     const fetchProjectsForTransfer = async () => {
       try {
-        const response = await fetch('/api/admin/projects', { cache: 'no-store' });
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
+
+        const response = await fetch('/api/admin/projects', { cache: 'no-store', headers });
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.projects) {
@@ -55,7 +63,7 @@ export function AllAssetsView({ data, loading }: AllAssetsViewProps) {
       }
     };
     fetchProjectsForTransfer();
-  });
+  }, []);
 
   // Toggle selection
   const toggleSelect = (id: string) => {
@@ -83,8 +91,15 @@ export function AllAssetsView({ data, loading }: AllAssetsViewProps) {
 
   const handleDelete = async (id: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/admin/gallery?ids=${id}`, {
         method: 'DELETE',
+        headers,
       });
 
       if (!response.ok) {
@@ -106,8 +121,15 @@ export function AllAssetsView({ data, loading }: AllAssetsViewProps) {
 
     try {
       const ids = Array.from(selectedIds).join(',');
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/admin/gallery?ids=${ids}`, {
         method: 'DELETE',
+        headers,
       });
 
       if (!response.ok) {
@@ -127,9 +149,17 @@ export function AllAssetsView({ data, loading }: AllAssetsViewProps) {
 
     setTransferring(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch('/api/admin/gallery/transfer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           ids: Array.from(selectedIds),
           projectId: selectedProject,
@@ -189,10 +219,10 @@ export function AllAssetsView({ data, loading }: AllAssetsViewProps) {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center space-y-2">
                 <p className="text-xs font-mono text-white/20 tracking-widest">
-                  VAULT_EMPTY
+                  {projectFiltered ? 'NO_ASSETS_FOR_THIS_PROJECT' : 'VAULT_EMPTY'}
                 </p>
                 <p className="text-[10px] font-mono text-white/10 tracking-wider">
-                  WAITING_FOR_SYNC
+                  {projectFiltered ? 'CLEAR_FILTER_TO_VIEW_ALL_ASSETS' : 'WAITING_FOR_SYNC'}
                 </p>
               </div>
             </div>

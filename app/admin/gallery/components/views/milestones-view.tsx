@@ -7,9 +7,10 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Calendar } from 'lucide-react';
+import { Star, Calendar, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { getCdnUrl, milestoneYearToApi } from '../../utils';
 import { YEARS } from '../../constants';
 import type { MilestoneImage } from '../../hooks/use-vault-data';
@@ -43,10 +44,18 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
     setSettingMilestone(true);
     try {
       const apiYear = milestoneYearToApi(year);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
 
       const response = await fetch('/api/admin/gallery/milestone', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({ imageId, year: apiYear }),
       });
 
@@ -60,6 +69,38 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
     } catch (err) {
       console.error('[SET_MILESTONE] Error:', err);
       alert('Failed to set milestone');
+    } finally {
+      setSettingMilestone(false);
+    }
+  };
+
+  const clearMilestone = async (imageId: string) => {
+    setSettingMilestone(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch('/api/admin/gallery/milestone', {
+        method: 'PATCH',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ imageId, year: null }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to clear milestone');
+      }
+
+      window.location.reload();
+    } catch (err) {
+      console.error('[CLEAR_MILESTONE] Error:', err);
+      alert('Failed to clear milestone');
     } finally {
       setSettingMilestone(false);
     }
@@ -132,10 +173,23 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                   </div>
                 </div>
                 {milestone && (
-                  <div className="absolute top-2 left-2">
+                  <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-2">
                     <span className="px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 text-lmsy-yellow/90 text-[10px] font-mono tracking-wider">
                       {year}
                     </span>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        clearMilestone(milestone.id);
+                      }}
+                      disabled={settingMilestone}
+                      className="px-2 py-1 bg-black/70 border border-red-400/30 text-red-300/80 text-[10px] font-mono tracking-wider hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <X className="h-3 w-3" strokeWidth={2} />
+                        CLEAR
+                      </span>
+                    </button>
                   </div>
                 )}
               </motion.div>

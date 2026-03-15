@@ -7,7 +7,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Edit2, Trash2, Play, RotateCcw } from 'lucide-react';
+import { Check, Edit2, Trash2, Play, RotateCcw, ImagePlus, Star } from 'lucide-react';
 import Image from 'next/image';
 import { platformIcons, platformColors, statusBadges, stageBadges } from '../constants';
 import { formatRelativeTime, getDisplayTitle } from '../utils';
@@ -25,6 +25,8 @@ interface DraftCardProps {
     ingestion_stage: string;
     is_featured: boolean;
     created_at: string;
+    event_date?: string | null;
+    project_id?: string | null;
   };
   isSelected: boolean;
   isVideoHovered: boolean;
@@ -33,6 +35,9 @@ interface DraftCardProps {
   onVideoHoverEnd: () => void;
   onPublish: (id: string) => void;
   onUnpublish: (id: string) => void;
+  onCreateProject: (id: string) => void;
+  onAddToAssets: (id: string) => void;
+  onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
   onDelete: (id: string, r2Key: string | null) => void;
 }
@@ -46,10 +51,15 @@ export function DraftCard({
   onVideoHoverEnd,
   onPublish,
   onUnpublish,
+  onCreateProject,
+  onAddToAssets,
+  onSetMilestone,
   onEdit,
   onDelete,
 }: DraftCardProps) {
   const isVideo = draft.media_type === 'video';
+  const canCreateAsset = draft.media_type === 'image' && !!draft.r2_media_url;
+  const hasProject = !!draft.project_id;
 
   return (
     <motion.div
@@ -220,6 +230,44 @@ export function DraftCard({
               <Trash2 className="h-3 w-3" strokeWidth={2} />
               <span>DELETE</span>
             </button>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-white/10">
+            <button
+              onClick={() => onCreateProject(draft.id)}
+              disabled={hasProject}
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-blue/10 border border-lmsy-blue/30 text-lmsy-blue/80 text-[10px] font-mono hover:bg-lmsy-blue/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Check className="h-3 w-3" strokeWidth={2} />
+              <span>{hasProject ? 'PROJECT_LINKED' : 'NEW_PROJECT'}</span>
+            </button>
+            <button
+              onClick={() => onAddToAssets(draft.id)}
+              disabled={!canCreateAsset}
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-yellow/10 border border-lmsy-yellow/30 text-lmsy-yellow/80 text-[10px] font-mono hover:bg-lmsy-yellow/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ImagePlus className="h-3 w-3" strokeWidth={2} />
+              <span>WRITE_TO_ASSETS</span>
+            </button>
+            <div className="grid grid-cols-5 gap-1">
+              {[
+                ['2022', '22'],
+                ['2023', '23'],
+                ['2024', '24'],
+                ['2025', '25'],
+                ['infinity', 'INF'],
+              ].map(([year, label]) => (
+                <button
+                  key={year}
+                  onClick={() => onSetMilestone(draft.id, year as '2022' | '2023' | '2024' | '2025' | 'infinity')}
+                  disabled={!canCreateAsset}
+                  className="flex items-center justify-center gap-1 px-1 py-1 bg-white/8 border border-white/15 text-white/70 text-[9px] font-mono hover:bg-white/12 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Star className="h-2.5 w-2.5" strokeWidth={2} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

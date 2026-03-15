@@ -28,6 +28,45 @@ export function useDraftActions({
   updateDraftOptimistically,
   removeDraftOptimistically,
 }: UseDraftActionsProps) {
+  const ensureProjectForDraft = async (id: string) => {
+    const draft = drafts.find((item) => item.id === id);
+    if (draft?.project_id) {
+      return draft.project_id;
+    }
+
+    const response = await fetch(`/api/admin/drafts/${id}/create-project`, {
+      method: 'POST',
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.data?.id) {
+      throw new Error(result.error || 'Create project failed');
+    }
+
+    updateDraftOptimistically(id, { project_id: result.data.id });
+    return result.data.id as string;
+  };
+
+  const ensureMilestoneProjectForDraft = async (id: string) => {
+    const draft = drafts.find((item) => item.id === id);
+    if (draft?.project_id) {
+      return draft.project_id;
+    }
+
+    const response = await fetch(`/api/admin/drafts/${id}/link-milestone-project`, {
+      method: 'POST',
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.data?.id) {
+      throw new Error(result.error || 'Link milestone project failed');
+    }
+
+    updateDraftOptimistically(id, { project_id: result.data.id });
+    return result.data.id as string;
+  };
 
   /**
    * Publish single item
@@ -102,6 +141,83 @@ export function useDraftActions({
     }
   };
 
+  const handleAddToAssets = async (id: string) => {
+    try {
+      const draft = drafts.find((item) => item.id === id);
+      if (!draft?.project_id) {
+        throw new Error('Create or link a project first');
+      }
+
+      const response = await fetch(`/api/admin/drafts/${id}/to-gallery`, {
+        method: 'POST',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Add to assets failed');
+      }
+
+      showToast(result.created ? 'ADDED_TO_ASSETS' : 'ALREADY_IN_ASSETS');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'ADD_TO_ASSETS_FAILED';
+      showToast(message, 'error');
+    }
+  };
+
+  const handleCreateProject = async (id: string) => {
+    try {
+      const existingDraft = drafts.find((draft) => draft.id === id);
+      if (existingDraft?.project_id) {
+        showToast('PROJECT_ALREADY_LINKED');
+        return;
+      }
+
+      await ensureProjectForDraft(id);
+      showToast('PROJECT_CREATED');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'CREATE_PROJECT_FAILED';
+      showToast(message, 'error');
+    }
+  };
+
+  const handleSetMilestone = async (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => {
+    try {
+      await ensureMilestoneProjectForDraft(id);
+
+      const assetResponse = await fetch(`/api/admin/drafts/${id}/to-gallery`, {
+        method: 'POST',
+      });
+      const assetResult = await assetResponse.json();
+
+      if (!assetResponse.ok || !assetResult.success) {
+        throw new Error(assetResult.error || 'Failed to create asset');
+      }
+
+      const imageId = assetResult.data?.id;
+      if (!imageId) {
+        throw new Error('Missing asset id');
+      }
+
+      const milestoneResponse = await fetch('/api/admin/gallery/milestone', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId, year }),
+      });
+
+      const milestoneResult = await milestoneResponse.json();
+
+      if (!milestoneResponse.ok || !milestoneResult.success) {
+        throw new Error(milestoneResult.details || milestoneResult.error || 'Failed to set milestone');
+      }
+
+      showToast(`MILESTONE_${year.toUpperCase()}_SET`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'SET_MILESTONE_FAILED';
+      showToast(message, 'error');
+    }
+  };
+
   /**
    * Delete single item (with confirmation)
    */
@@ -164,6 +280,9 @@ export function useDraftActions({
     handlePublish,
     handleUnpublish,
     handleBatchPublish,
+    handleCreateProject,
+    handleAddToAssets,
+    handleSetMilestone,
     handleDelete,
     executeDelete,
     handleBatchDelete,

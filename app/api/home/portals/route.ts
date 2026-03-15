@@ -34,27 +34,55 @@ export async function GET() {
      * Priority 2: is_featured = true (fallback)
      */
     async function fetchPortalImage(category: string, portalName: string) {
-      // Step 1: Try to get latest project in this category
-      const { data: latestProject, error: projectError } = await supabaseAdmin
+      const { data: prioritizedProject, error: projectError } = await supabaseAdmin
         .schema('lmsy_archive')
         .from('projects')
-        .select('id')
+        .select('id, cover_url')
         .eq('category', category)
+        .eq('portal_visible', true)
+        .order('portal_priority', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (projectError || !latestProject) {
+      let selectedProject = prioritizedProject;
+
+      if (projectError) {
+        console.log(`[PORTAL_SYNC] ${portalName} | Portal selection lookup failed | Category: ${category}`);
+      }
+
+      if (!selectedProject) {
+        const { data: latestProject } = await supabaseAdmin
+          .schema('lmsy_archive')
+          .from('projects')
+          .select('id, cover_url')
+          .eq('category', category)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        selectedProject = latestProject;
+      }
+
+      if (!selectedProject) {
         console.log(`[PORTAL_SYNC] ${portalName} | No project found | Category: ${category}`);
         return null;
+      }
+
+      if (selectedProject.cover_url) {
+        return {
+          imageUrl: selectedProject.cover_url,
+          blurData: null,
+          catalogId: null,
+        };
       }
 
       // Step 2: Try to get cover image (-000) for this project
       const { data: coverImage } = await supabaseAdmin
         .schema('lmsy_archive')
-        .from('gallery')
+        .from('gallery_assets')
         .select('id, image_url, blur_data, catalog_id, project_id')
-        .eq('project_id', latestProject.id)
+        .eq('project_id', selectedProject.id)
         .like('catalog_id', '%-000')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -72,9 +100,9 @@ export async function GET() {
       // Step 3: Fallback to any featured image in this project
       const { data: featuredImage } = await supabaseAdmin
         .schema('lmsy_archive')
-        .from('gallery')
+        .from('gallery_assets')
         .select('id, image_url, blur_data, catalog_id, project_id')
-        .eq('project_id', latestProject.id)
+        .eq('project_id', selectedProject.id)
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -92,9 +120,9 @@ export async function GET() {
       // Step 4: Last resort - any image in this project
       const { data: anyImage } = await supabaseAdmin
         .schema('lmsy_archive')
-        .from('gallery')
+        .from('gallery_assets')
         .select('id, image_url, blur_data, catalog_id, project_id')
-        .eq('project_id', latestProject.id)
+        .eq('project_id', selectedProject.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -108,7 +136,7 @@ export async function GET() {
         };
       }
 
-      console.log(`[PORTAL_SYNC] ${portalName} | No images found | Project_ID: ${latestProject.id} | Category: ${category}`);
+      console.log(`[PORTAL_SYNC] ${portalName} | No images found | Project_ID: ${selectedProject.id} | Category: ${category}`);
       return null;
     }
 

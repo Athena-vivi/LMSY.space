@@ -16,6 +16,9 @@ interface DraftForm {
   tags: string[];
   is_featured: boolean;
   event_date: string;
+  chronicle_visible: boolean;
+  chronicle_title: string;
+  chronicle_excerpt: string;
 }
 
 interface EditModalProps {
@@ -221,6 +224,41 @@ export function EditModal({
                   className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   placeholder="tag1, tag2, tag3"
                 />
+              </div>
+
+              {/* Chronicle Controls */}
+              <div className="space-y-3 rounded border border-white/10 p-4">
+                <label className="flex items-center gap-2 text-xs font-mono text-white/60">
+                  <input
+                    type="checkbox"
+                    checked={editForm.chronicle_visible}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, chronicle_visible: e.target.checked }))}
+                    className="w-4 h-4"
+                  />
+                  SHOW_IN_CHRONICLE
+                </label>
+
+                <div>
+                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_TITLE</label>
+                  <input
+                    type="text"
+                    value={editForm.chronicle_title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, chronicle_title: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    placeholder="Optional override for Chronicle title"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_EXCERPT</label>
+                  <textarea
+                    value={editForm.chronicle_excerpt}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, chronicle_excerpt: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    placeholder="Optional override for Chronicle excerpt"
+                  />
+                </div>
               </div>
 
               {/* Is Featured */}

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Build query
     let query = supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true });

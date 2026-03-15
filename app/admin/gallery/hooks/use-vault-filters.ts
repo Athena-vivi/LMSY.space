@@ -13,6 +13,7 @@ import { groupEventsByYear } from '../utils';
 export interface VaultFilters {
   searchQuery: string;
   filterTag: string;
+  projectId?: string;
 }
 
 export function useVaultFilters(
@@ -21,11 +22,12 @@ export function useVaultFilters(
   filters: VaultFilters
 ) {
   const { searchQuery, filterTag } = filters;
+  const { projectId } = filters;
 
   return useMemo(() => {
     switch (activeTab) {
       case 'all':
-        return filterAllAssets(data, searchQuery, filterTag);
+        return filterAllAssets(data, searchQuery, filterTag, projectId);
 
       case 'chronicle':
         return filterChronicle(data, searchQuery);
@@ -39,19 +41,23 @@ export function useVaultFilters(
       default:
         return data.gallery;
     }
-  }, [data, activeTab, searchQuery, filterTag]);
+  }, [data, activeTab, searchQuery, filterTag, projectId]);
 }
 
 // Filter All Assets (gallery + editorial projects)
 function filterAllAssets(
   data: VaultData,
   searchQuery: string,
-  filterTag: string
+  filterTag: string,
+  projectId?: string
 ) {
   const { gallery, projects } = data;
 
   // Filter gallery items
   let filteredGallery = gallery;
+  if (projectId) {
+    filteredGallery = filteredGallery.filter(item => item.project_id === projectId);
+  }
   if (searchQuery) {
     const query = searchQuery.toLowerCase();
     filteredGallery = filteredGallery.filter(item => {
@@ -67,8 +73,11 @@ function filterAllAssets(
 
   // Filter editorial projects
   let filteredProjects = projects.filter(p =>
-    p.category === 'editorial' || p.category === 'series'
+    p.category === 'editorial'
   );
+  if (projectId) {
+    filteredProjects = filteredProjects.filter(p => p.id === projectId);
+  }
   if (searchQuery) {
     const query = searchQuery.toLowerCase();
     filteredProjects = filteredProjects.filter(p => {
@@ -100,7 +109,7 @@ function filterChronicle(data: VaultData, searchQuery: string) {
 // Filter Editorial projects - returns shape expected by EditorialView
 function filterEditorial(data: VaultData, searchQuery: string) {
   let filtered = data.projects.filter(p =>
-    p.category === 'editorial' || p.category === 'series'
+    p.category === 'editorial'
   );
 
   if (searchQuery) {

@@ -5,12 +5,55 @@ import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { ArrowRight, Quote } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/image-url';
+
+interface FeaturedEditorial {
+  id: string;
+  title: string;
+  description: string | null;
+  cover_url: string | null;
+  homepage_featured: boolean;
+  homepage_excerpt: string | null;
+  homepage_cover_url: string | null;
+}
 
 export function LongformSection() {
   const { language } = useLanguage();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [featuredEditorial, setFeaturedEditorial] = useState<FeaturedEditorial | null>(null);
+
+  useEffect(() => {
+    async function fetchFeaturedEditorial() {
+      try {
+        const response = await fetch('/api/editorial', { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success || !Array.isArray(data.projects)) return;
+
+        const featured = data.projects.find((project: FeaturedEditorial) => project.homepage_featured);
+        if (featured) {
+          setFeaturedEditorial(featured);
+        }
+      } catch (error) {
+        console.error('[HOMEPAGE_FEATURED] Failed to fetch featured editorial:', error);
+      }
+    }
+
+    fetchFeaturedEditorial();
+  }, []);
+
+  const featuredTitle = featuredEditorial?.title || t(language, 'longform.subtitle');
+  const featuredExcerpt =
+    featuredEditorial?.homepage_excerpt ||
+    featuredEditorial?.description ||
+    t(language, 'longform.excerpt');
+  const featuredHref = featuredEditorial ? `/editorial/${featuredEditorial.id}` : '/chronicle';
+  const featuredImageUrl = featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url
+    ? getImageUrl(featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url || '')
+    : null;
 
   return (
     <section className="relative py-24 md:py-32 overflow-hidden">
@@ -28,22 +71,22 @@ export function LongformSection() {
             transition={{ duration: 0.8 }}
           >
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-muted/30">
-              {/* Temporary: Image commented out due to missing file causing 404s */}
-              {/* Image with Fade-in */}
-              {/* <div className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
-                <Image
-                  src="/lmsy-interview-001.jpg"
-                  alt="Interview Feature"
-                  fill
-                  className="object-cover"
-                  onLoad={() => setImageLoaded(true)}
-                />
-              </div> */}
+              {featuredImageUrl ? (
+                <div className={`absolute inset-0 transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                  <Image
+                    src={featuredImageUrl}
+                    alt={featuredTitle}
+                    fill
+                    className="object-cover"
+                    onLoad={() => setImageLoaded(true)}
+                    unoptimized
+                  />
+                </div>
+              ) : null}
 
-              {/* Loading Placeholder - Now used as primary background */}
-              {/* {!imageLoaded && ( */}
+              {(!featuredImageUrl || !imageLoaded) && (
                 <div className="absolute inset-0 bg-gradient-to-br from-lmsy-yellow/20 via-lmsy-blue/20 to-lmsy-yellow/20 animate-pulse" />
-              {/* )} */}
+              )}
 
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -98,7 +141,7 @@ export function LongformSection() {
               >
                 <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
                   <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                    {t(language, 'longform.subtitle')}
+                    {featuredTitle}
                   </span>
                 </h2>
               </motion.div>
@@ -123,7 +166,7 @@ export function LongformSection() {
 
               <blockquote className="relative z-10">
                 <p className="font-serif text-lg md:text-xl lg:text-2xl leading-relaxed text-foreground/90 pl-6">
-                  {t(language, 'longform.excerpt')}
+                  {featuredExcerpt}
                 </p>
               </blockquote>
 
@@ -152,7 +195,7 @@ export function LongformSection() {
               transition={{ delay: 0.6 }}
             >
               <Link
-                href="/chronicle"
+                href={featuredHref}
                 className="inline-flex items-center gap-3 group"
               >
                 <span className="text-sm font-medium tracking-wider text-foreground/80 group-hover:text-foreground transition-colors">

@@ -5,9 +5,82 @@ import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 /**
  * Projects Management API
  *
+ * GET /api/admin/projects/[id] - Fetch a project
  * DELETE /api/admin/projects/[id] - Delete a project
  * PATCH /api/admin/projects/[id] - Update a project
  */
+
+// ========================================
+// GET - Fetch Project
+// ========================================
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const authResult = await getAuthenticatedUser(request);
+
+    if (!authResult.user || authResult.error) {
+      return NextResponse.json(
+        { error: 'Unauthorized', details: authResult.error },
+        { status: 401 }
+      );
+    }
+
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    if (authResult.user.email !== adminEmail) {
+      return NextResponse.json(
+        { error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+
+    const { data, error } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to fetch project', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch project',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
 
 // ========================================
 // DELETE - Delete Project
@@ -147,6 +220,10 @@ export async function PATCH(
     if (body.description !== undefined) updateData.description = body.description || null;
     if (body.watch_url !== undefined) updateData.watch_url = body.watch_url || null;
     if (body.tags !== undefined) updateData.tags = body.tags && body.tags.length > 0 ? body.tags : null;
+    if (body.portal_visible !== undefined) updateData.portal_visible = !!body.portal_visible;
+    if (body.portal_priority !== undefined) updateData.portal_priority = Number(body.portal_priority) || 0;
+    if (body.theme_statement !== undefined) updateData.theme_statement = body.theme_statement || null;
+    if (body.curation_status !== undefined) updateData.curation_status = body.curation_status || 'draft';
 
     console.log('[PROJECTS_PATCH] Update data:', updateData);
 

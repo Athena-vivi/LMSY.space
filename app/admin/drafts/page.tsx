@@ -69,6 +69,9 @@ export default function DraftsPage() {
         onToggleSelect={draftsState.toggleSelect}
         onPublish={actions.handlePublish}
         onUnpublish={actions.handleUnpublish}
+        onCreateProject={actions.handleCreateProject}
+        onAddToAssets={actions.handleAddToAssets}
+        onSetMilestone={actions.handleSetMilestone}
         onEdit={forms.handleOpenEdit}
         onDelete={(id, r2Key) => {
           const result = actions.handleDelete(id, r2Key);
