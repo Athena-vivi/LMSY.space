@@ -504,7 +504,6 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
           <button
             onClick={() => {
               setSelectedIds(new Set());
-              setSelectedAll(false);
             }}
             className="p-1.5 text-white/40 hover:text-white/60 transition-all"
           >
