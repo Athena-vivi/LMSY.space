@@ -33,6 +33,15 @@ const emptyFormState: DraftFormState = {
   chronicle_excerpt: { en: '', zh: '', th: '' },
 };
 
+function toStrictLocalizedStrings(value: unknown, fallback = ''): { en: string; zh: string; th: string } {
+  const normalized = normalizeLocalizedText(value, fallback);
+  return {
+    en: normalized.en || fallback || '',
+    zh: normalized.zh || '',
+    th: normalized.th || '',
+  };
+}
+
 function buildDraftPayload(form: DraftFormState) {
   return {
     ...form,
@@ -89,8 +98,8 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       is_featured: draft.is_featured || false,
       event_date: draft.event_date || '',
       chronicle_visible: draft.chronicle_visible ?? true,
-      chronicle_title: normalizeLocalizedText(draft.chronicle_title_i18n, draft.chronicle_title || ''),
-      chronicle_excerpt: normalizeLocalizedText(draft.chronicle_excerpt_i18n, draft.chronicle_excerpt || ''),
+      chronicle_title: toStrictLocalizedStrings(draft.chronicle_title_i18n, draft.chronicle_title || ''),
+      chronicle_excerpt: toStrictLocalizedStrings(draft.chronicle_excerpt_i18n, draft.chronicle_excerpt || ''),
     });
   }, []);
 
@@ -117,7 +126,7 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       await fetchDrafts();
       handleCloseEdit();
       showToast('ITEM_UPDATED');
-    } catch (error) {
+    } catch {
       showToast('UPDATE_FAILED', 'error');
     }
   }, [editingItem, editForm, fetchDrafts, handleCloseEdit, showToast]);
@@ -166,7 +175,7 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
         chronicle_excerpt: { ...prev.chronicle_excerpt, [targetLang]: translated.chronicleExcerpt || '' },
       }));
       showToast('TRANSLATION_SUCCESS');
-    } catch (error) {
+    } catch {
       showToast('TRANSLATION_FAILED', 'error');
     } finally {
       setTranslating(false);
@@ -197,8 +206,8 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       is_featured: firstItem.is_featured || false,
       event_date: firstItem.event_date || '',
       chronicle_visible: firstItem.chronicle_visible ?? true,
-      chronicle_title: normalizeLocalizedText(firstItem.chronicle_title_i18n, firstItem.chronicle_title || ''),
-      chronicle_excerpt: normalizeLocalizedText(firstItem.chronicle_excerpt_i18n, firstItem.chronicle_excerpt || ''),
+      chronicle_title: toStrictLocalizedStrings(firstItem.chronicle_title_i18n, firstItem.chronicle_title || ''),
+      chronicle_excerpt: toStrictLocalizedStrings(firstItem.chronicle_excerpt_i18n, firstItem.chronicle_excerpt || ''),
     });
     setBatchOrder(Array.from(selectedIds));
     setBatchEditing(true);
@@ -241,7 +250,7 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       await fetchDrafts();
       handleCloseBatchEdit();
       showToast('BATCH_UPDATE_SUCCESS');
-    } catch (error) {
+    } catch {
       showToast('BATCH_UPDATE_FAILED', 'error');
     }
   }, [batchEditForm, drafts, fetchDrafts, handleCloseBatchEdit, showToast]);
