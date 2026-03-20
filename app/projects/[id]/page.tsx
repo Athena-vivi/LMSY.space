@@ -12,8 +12,12 @@ interface PageProps {
 interface ProjectGalleryImage {
   id: string;
   image_url: string;
+  caption: string | null;
   catalog_id: string | null;
   category_tag: string | null;
+  curator_note: string | null;
+  is_featured: boolean;
+  event_date: string | null;
   created_at: string;
   is_cover?: boolean | null;
   rotation?: number | null;
