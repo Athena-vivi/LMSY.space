@@ -81,7 +81,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { block_key, content_i18n, is_active = true } = body;
+    const { block_key, content_i18n, image_url = null, is_active = true } = body;
 
     if (!block_key || !content_i18n) {
       return NextResponse.json(
@@ -98,6 +98,7 @@ export async function PUT(request: NextRequest) {
         {
           block_key,
           content_i18n,
+          image_url,
           is_active,
           updated_at: new Date().toISOString(),
         },

@@ -8,19 +8,49 @@ interface ImmersiveLoadingProps {
   loading: boolean;
 }
 
+const DEFAULT_SPLASH_IMAGE = '/hero-reveal.jpg';
+
 export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadingProps) {
-  const [showContent, setShowContent] = useState(false);
+  const [splashImageUrl, setSplashImageUrl] = useState(DEFAULT_SPLASH_IMAGE);
 
   useEffect(() => {
     if (!loading) {
       // Start exit sequence
       const exitTimer = setTimeout(() => {
-        setShowContent(true);
         onComplete();
       }, 2800);
       return () => clearTimeout(exitTimer);
     }
   }, [loading, onComplete]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchSplashImage() {
+      try {
+        const response = await fetch('/api/site-content?key=homepage_hero', { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const imageUrl =
+          typeof data?.block?.image_url === 'string' && data.block.image_url.trim()
+            ? data.block.image_url
+            : DEFAULT_SPLASH_IMAGE;
+
+        if (active) {
+          setSplashImageUrl(imageUrl);
+        }
+      } catch (error) {
+        console.error('[SITE_CONTENT] Failed to fetch homepage_hero splash image:', error);
+      }
+    }
+
+    fetchSplashImage();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <motion.div
@@ -39,17 +69,17 @@ export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadi
           initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
           animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           transition={{ duration: 1.5, ease: 'easeOut' }}
-          className="font-serif font-black select-none pointer-events-none leading-none tracking-tighter"
+          className="relative font-sans font-[800] select-none pointer-events-none leading-none tracking-[-0.08em]"
           style={{
             fontSize: 'clamp(8rem, 22vw, 24rem)',
-            backgroundImage: `url(/hero-reveal.jpg)`,
+            backgroundImage: `url(${splashImageUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center 30%',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             color: 'transparent',
-            filter: 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.15)) brightness(1.1)',
+            filter: 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.15)) brightness(1.08) contrast(1.04)',
           }}
         >
           LMSY

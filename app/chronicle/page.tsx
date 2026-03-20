@@ -9,64 +9,64 @@ export const metadata = {
 
 export default async function ChroniclePage() {
   const events = await getAllTimelineEvents();
+  const eventCount = events.length;
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative py-24 md:py-32 overflow-hidden border-b border-border">
-        {/* Ambient background */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[50vw] h-[80vw] bg-gradient-radial from-lmsy-yellow/5 via-lmsy-yellow/0 to-transparent rounded-full blur-3xl" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[50vw] h-[80vw] bg-gradient-radial from-lmsy-blue/5 via-lmsy-blue/0 to-transparent rounded-full blur-3xl" />
-        </div>
+      <div className="w-full px-4 pt-14 pb-24 sm:px-6 md:pt-20 md:pb-32 lg:px-10 xl:px-14">
+        <div className="relative xl:min-h-[calc(100vh-7rem)]">
+          <aside className="mb-12 xl:fixed xl:top-28 xl:left-14 xl:w-[220px] xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto xl:pr-3">
+            <div className="mb-8">
+              <BackButton />
+            </div>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          {/* Back Button */}
-          <div className="mb-8">
-            <BackButton />
-          </div>
-
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Label */}
-            <div className="mb-6">
-              <span className="inline-block px-4 py-2 text-sm font-medium tracking-widest uppercase bg-lmsy-yellow/20 text-lmsy-yellow rounded-full">
+            <div className="mb-5 max-w-[220px]">
+              <span className="inline-flex items-center rounded-full border border-lmsy-yellow/25 bg-lmsy-yellow/10 px-3 py-1 text-[10px] font-mono tracking-[0.22em] uppercase text-lmsy-yellow">
                 Archive Timeline
               </span>
             </div>
 
-            {/* Title */}
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6">
-              Chronicle
-            </h1>
+            <div className="mb-5 max-w-[220px]">
+              <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground md:text-3xl xl:text-[2rem]">
+                Chronicle
+              </h1>
+            </div>
 
-            {/* Subtitle */}
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
-              A visual journey through time, documenting every milestone, photoshoot, and memorable moment in the LMSY universe.
-            </p>
+            <div className="mb-6 h-0.5 w-24 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
 
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-8 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-lmsy-yellow" />
-                <span className="text-muted-foreground">Gallery</span>
+            <div className="mb-6 max-w-[220px]">
+              <p className="text-sm leading-7 text-muted-foreground">
+                A visual journey through time, gathering milestones, shoots, and quiet archive moments into one continuous record.
+              </p>
+            </div>
+
+            <div className="mb-6 max-w-[220px] border-l border-lmsy-blue/25 pl-4">
+              <p className="text-sm leading-relaxed text-white/45">
+                The right column holds the image-led sequence. Each entry can be opened for a closer look.
+              </p>
+            </div>
+
+            <div className="max-w-[220px] space-y-3 border-t border-white/10 pt-5">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/35">
+                <span>Entries</span>
+                <span className="text-white/65">{eventCount}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-lmsy-blue" />
-                <span className="text-muted-foreground">Projects</span>
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/35">
+                <span>Type</span>
+                <span className="text-white/65">Published</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-foreground" />
-                <span className="text-muted-foreground">Schedule</span>
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/35">
+                <span>View</span>
+                <span className="text-white/65">Image First</span>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </aside>
 
-      {/* Timeline Section - Full Width */}
-      <section className="py-16 md:py-24">
-        <ChronicleTimeline events={events} />
-      </section>
+          <section className="xl:pl-[260px]">
+            <ChronicleTimeline events={events} />
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

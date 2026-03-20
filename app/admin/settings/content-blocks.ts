@@ -49,6 +49,8 @@ export const EMPTY_HERO_FIELDS: HeroFields = {
   universeSubtitle: '',
 };
 
+export const DEFAULT_HERO_SECTION_IMAGE = '/lmsy-001.jpg';
+
 export const DEFAULT_PREFACE_CONTENT: PrefaceContent = {
   en: { ...EMPTY_PREFACE_FIELDS },
   zh: { ...EMPTY_PREFACE_FIELDS },
@@ -138,22 +140,29 @@ export function normalizePrefaceContent(value: unknown): PrefaceContent {
     return DEFAULT_PREFACE_CONTENT;
   }
 
-  const input = value as Record<string, any>;
-  const normalizeLang = (langValue: any): PrefaceFields => ({
-    title: langValue?.title || '',
-    subtitle: langValue?.subtitle || '',
-    prefaceLabel: langValue?.prefaceLabel || '',
-    paragraph1: langValue?.paragraphs?.[0] || '',
-    paragraph2: langValue?.paragraphs?.[1] || '',
-    paragraph3: langValue?.paragraphs?.[2] || '',
-    bestiesMessage: langValue?.bestiesMessage || '',
-    welcome: langValue?.welcome || '',
-    siteName: langValue?.siteName || '',
-    siteDesc: langValue?.siteDesc || '',
-    curatorTitle: langValue?.curatorTitle || '',
-    curatorSignature: langValue?.curatorSignature || '',
-    date: langValue?.date || '',
-  });
+  const input = value as Record<string, unknown>;
+  const normalizeLang = (langValue: unknown): PrefaceFields => {
+    const record = langValue && typeof langValue === 'object' && !Array.isArray(langValue)
+      ? langValue as Record<string, unknown>
+      : {};
+    const paragraphs = Array.isArray(record.paragraphs) ? record.paragraphs : [];
+
+    return {
+      title: typeof record.title === 'string' ? record.title : '',
+      subtitle: typeof record.subtitle === 'string' ? record.subtitle : '',
+      prefaceLabel: typeof record.prefaceLabel === 'string' ? record.prefaceLabel : '',
+      paragraph1: typeof paragraphs[0] === 'string' ? paragraphs[0] : '',
+      paragraph2: typeof paragraphs[1] === 'string' ? paragraphs[1] : '',
+      paragraph3: typeof paragraphs[2] === 'string' ? paragraphs[2] : '',
+      bestiesMessage: typeof record.bestiesMessage === 'string' ? record.bestiesMessage : '',
+      welcome: typeof record.welcome === 'string' ? record.welcome : '',
+      siteName: typeof record.siteName === 'string' ? record.siteName : '',
+      siteDesc: typeof record.siteDesc === 'string' ? record.siteDesc : '',
+      curatorTitle: typeof record.curatorTitle === 'string' ? record.curatorTitle : '',
+      curatorSignature: typeof record.curatorSignature === 'string' ? record.curatorSignature : '',
+      date: typeof record.date === 'string' ? record.date : '',
+    };
+  };
 
   return {
     en: normalizeLang(input.en),
@@ -167,14 +176,20 @@ export function normalizeLongformContent(value: unknown): LongformContent {
     return DEFAULT_LONGFORM_CONTENT;
   }
 
-  const input = value as Record<string, any>;
-  const normalizeLang = (langValue: any, fallback: LongformFields): LongformFields => ({
-    eyebrow: langValue?.eyebrow || fallback.eyebrow,
-    fallbackTitle: langValue?.fallbackTitle || fallback.fallbackTitle,
-    fallbackExcerpt: langValue?.fallbackExcerpt || fallback.fallbackExcerpt,
-    source: langValue?.source || fallback.source,
-    readMoreLabel: langValue?.readMoreLabel || fallback.readMoreLabel,
-  });
+  const input = value as Record<string, unknown>;
+  const normalizeLang = (langValue: unknown, fallback: LongformFields): LongformFields => {
+    const record = langValue && typeof langValue === 'object' && !Array.isArray(langValue)
+      ? langValue as Record<string, unknown>
+      : {};
+
+    return {
+      eyebrow: typeof record.eyebrow === 'string' ? record.eyebrow : fallback.eyebrow,
+      fallbackTitle: typeof record.fallbackTitle === 'string' ? record.fallbackTitle : fallback.fallbackTitle,
+      fallbackExcerpt: typeof record.fallbackExcerpt === 'string' ? record.fallbackExcerpt : fallback.fallbackExcerpt,
+      source: typeof record.source === 'string' ? record.source : fallback.source,
+      readMoreLabel: typeof record.readMoreLabel === 'string' ? record.readMoreLabel : fallback.readMoreLabel,
+    };
+  };
 
   return {
     en: normalizeLang(input.en, DEFAULT_LONGFORM_CONTENT.en),
@@ -188,16 +203,22 @@ export function normalizeMilestonesContent(value: unknown): MilestonesContent {
     return DEFAULT_MILESTONES_CONTENT;
   }
 
-  const input = value as Record<string, any>;
-  const normalizeLang = (langValue: any, fallback: MilestonesFields): MilestonesFields => ({
-    sectionTitle: langValue?.sectionTitle || fallback.sectionTitle,
-    year2022: langValue?.year2022 || fallback.year2022,
-    year2023: langValue?.year2023 || fallback.year2023,
-    year2024: langValue?.year2024 || fallback.year2024,
-    year2025: langValue?.year2025 || fallback.year2025,
-    ongoing: langValue?.ongoing || fallback.ongoing,
-    bottomNote: langValue?.bottomNote || fallback.bottomNote,
-  });
+  const input = value as Record<string, unknown>;
+  const normalizeLang = (langValue: unknown, fallback: MilestonesFields): MilestonesFields => {
+    const record = langValue && typeof langValue === 'object' && !Array.isArray(langValue)
+      ? langValue as Record<string, unknown>
+      : {};
+
+    return {
+      sectionTitle: typeof record.sectionTitle === 'string' ? record.sectionTitle : fallback.sectionTitle,
+      year2022: typeof record.year2022 === 'string' ? record.year2022 : fallback.year2022,
+      year2023: typeof record.year2023 === 'string' ? record.year2023 : fallback.year2023,
+      year2024: typeof record.year2024 === 'string' ? record.year2024 : fallback.year2024,
+      year2025: typeof record.year2025 === 'string' ? record.year2025 : fallback.year2025,
+      ongoing: typeof record.ongoing === 'string' ? record.ongoing : fallback.ongoing,
+      bottomNote: typeof record.bottomNote === 'string' ? record.bottomNote : fallback.bottomNote,
+    };
+  };
 
   return {
     en: normalizeLang(input.en, DEFAULT_MILESTONES_CONTENT.en),
@@ -211,18 +232,46 @@ export function normalizeHeroContent(value: unknown): HeroContent {
     return DEFAULT_HERO_CONTENT;
   }
 
-  const input = value as Record<string, any>;
-  const normalizeLang = (langValue: any, fallback: HeroFields): HeroFields => ({
-    preface: langValue?.preface || fallback.preface,
-    universeTitle: langValue?.universeTitle || fallback.universeTitle,
-    universeSubtitle: langValue?.universeSubtitle || fallback.universeSubtitle,
-  });
+  const input = value as Record<string, unknown>;
+  const normalizeLang = (langValue: unknown, fallback: HeroFields): HeroFields => {
+    const record = langValue && typeof langValue === 'object' && !Array.isArray(langValue)
+      ? langValue as Record<string, unknown>
+      : {};
+
+    return {
+      preface: typeof record.preface === 'string' ? record.preface : fallback.preface,
+      universeTitle: typeof record.universeTitle === 'string' ? record.universeTitle : fallback.universeTitle,
+      universeSubtitle: typeof record.universeSubtitle === 'string' ? record.universeSubtitle : fallback.universeSubtitle,
+    };
+  };
 
   return {
     en: normalizeLang(input.en, DEFAULT_HERO_CONTENT.en),
     zh: normalizeLang(input.zh, DEFAULT_HERO_CONTENT.zh),
     th: normalizeLang(input.th, DEFAULT_HERO_CONTENT.th),
   };
+}
+
+export function getHeroSectionImageUrl(value: unknown): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return DEFAULT_HERO_SECTION_IMAGE;
+  }
+
+  const input = value as Record<string, unknown>;
+  const assets = input.assets;
+
+  if (assets && typeof assets === 'object' && !Array.isArray(assets)) {
+    const heroImageUrl = (assets as Record<string, unknown>).heroImageUrl;
+    if (typeof heroImageUrl === 'string' && heroImageUrl.trim()) {
+      return heroImageUrl;
+    }
+  }
+
+  if (typeof input.heroImageUrl === 'string' && input.heroImageUrl.trim()) {
+    return input.heroImageUrl;
+  }
+
+  return DEFAULT_HERO_SECTION_IMAGE;
 }
 
 export function toPrefacePayload(content: PrefaceContent) {
@@ -281,7 +330,7 @@ export function toMilestonesPayload(content: MilestonesContent) {
   };
 }
 
-export function toHeroPayload(content: HeroContent) {
+export function toHeroPayload(content: HeroContent, heroImageUrl = DEFAULT_HERO_SECTION_IMAGE) {
   const buildLang = (lang: HeroFields) => ({
     preface: lang.preface,
     universeTitle: lang.universeTitle,
@@ -292,5 +341,8 @@ export function toHeroPayload(content: HeroContent) {
     en: buildLang(content.en),
     zh: buildLang(content.zh),
     th: buildLang(content.th),
+    assets: {
+      heroImageUrl: heroImageUrl || DEFAULT_HERO_SECTION_IMAGE,
+    },
   };
 }

@@ -49,53 +49,59 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
       <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-gradient-to-b from-lmsy-yellow via-lmsy-blue to-lmsy-yellow opacity-30 -translate-x-1/2" />
 
       {/* Timeline Container */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+      <div className="relative mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-8 xl:gap-10">
           {/* Left Side */}
-          <div className="space-y-8 md:pr-8">
-            {leftEvents.map((event, index) => (
-              <TimelineItem
-                key={event.id}
-                event={event}
-                language={language}
-                position="left"
-                isHovered={hoveredId === event.id}
-                onHover={() => setHoveredId(event.id)}
-                onHoverEnd={() => setHoveredId(null)}
-                onClick={() => openLightbox(event)}
-              />
+          <div className="md:pr-3 xl:pr-4">
+            <div className="grid grid-cols-1 gap-6 xl:justify-items-end">
+            {leftEvents.map((event) => (
+              <div key={event.id} className="w-full xl:flex xl:justify-end">
+                <TimelineItem
+                  event={event}
+                  language={language}
+                  position="left"
+                  isHovered={hoveredId === event.id}
+                  onHover={() => setHoveredId(event.id)}
+                  onHoverEnd={() => setHoveredId(null)}
+                  onClick={() => openLightbox(event)}
+                />
+              </div>
             ))}
+            </div>
           </div>
 
           {/* Right Side */}
-          <div className="space-y-8 md:pl-8 md:mt-16">
-            {rightEvents.map((event, index) => (
-              <TimelineItem
-                key={event.id}
-                event={event}
-                language={language}
-                position="right"
-                isHovered={hoveredId === event.id}
-                onHover={() => setHoveredId(event.id)}
-                onHoverEnd={() => setHoveredId(null)}
-                onClick={() => openLightbox(event)}
-              />
+          <div className="md:mt-16 md:pl-3 xl:pl-4">
+            <div className="grid grid-cols-1 gap-6 xl:justify-items-start">
+            {rightEvents.map((event) => (
+              <div key={event.id} className="w-full xl:flex xl:justify-start">
+                <TimelineItem
+                  event={event}
+                  language={language}
+                  position="right"
+                  isHovered={hoveredId === event.id}
+                  onHover={() => setHoveredId(event.id)}
+                  onHoverEnd={() => setHoveredId(null)}
+                  onClick={() => openLightbox(event)}
+                />
+              </div>
             ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Timeline Dots on Center Line */}
-      <div className="absolute left-1/2 top-0 bottom-0 w-4 -translate-x-1/2 pointer-events-none">
+      <div className="pointer-events-none absolute left-1/2 top-0 bottom-0 w-4 -translate-x-1/2">
         {events.map((event, index) => {
           return (
             <div
               key={event.id}
-              className="absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2"
+              className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2"
               style={{ top: `${(index / Math.max(events.length - 1, 1)) * 100}%` }}
             >
               <motion.div
-                className={`w-4 h-4 rounded-full border-2 bg-background transition-all duration-300 ${
+                className={`h-4 w-4 rounded-full border-2 bg-background transition-all duration-300 ${
                   hoveredId === event.id
                     ? 'border-lmsy-yellow scale-125'
                     : 'border-border'
@@ -213,18 +219,19 @@ function TimelineItem({ event, language, position, isHovered, onHover, onHoverEn
       animate={{ opacity: 1, y: 0 }}
       onMouseEnter={onHover}
       onMouseLeave={onHoverEnd}
-      className="relative"
+      className="relative w-full md:w-[340px] xl:w-[260px] 2xl:w-[280px]"
     >
       {/* Connector Line to Center */}
       <div
-        className={`absolute top-8 bottom-0 w-[2px] bg-gradient-to-b from-lmsy-yellow/30 to-transparent ${
-          position === 'left' ? 'right-0 translate-x-1/2 md:right-auto md:left-auto md:right-0 md:translate-x-1/2' : 'left-0 -translate-x-1/2 md:left-auto md:right-auto md:left-0 md:-translate-x-1/2'
-        } hidden md:block`}
+        className={`absolute top-8 bottom-0 hidden w-[2px] bg-gradient-to-b from-lmsy-yellow/30 to-transparent md:block ${
+          position === 'left'
+            ? 'right-0 translate-x-1/2 md:right-auto md:left-auto md:right-0 md:translate-x-1/2'
+            : 'left-0 -translate-x-1/2 md:left-auto md:right-auto md:left-0 md:-translate-x-1/2'
+        }`}
       />
 
-      {/* Card */}
       <motion.div
-        className={`relative bg-card border border-border rounded-lg overflow-hidden transition-all duration-300 cursor-pointer ${
+        className={`relative cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 ${
           isHovered
             ? 'shadow-xl border-lmsy-yellow/50 -translate-y-1'
             : 'shadow-lg hover:shadow-xl'
@@ -234,11 +241,11 @@ function TimelineItem({ event, language, position, isHovered, onHover, onHoverEn
       >
         {/* Image */}
         {event.imageUrl && (
-          <div className="relative w-full bg-black/50 overflow-hidden group">
+          <div className="group relative w-full overflow-hidden bg-black/50">
             {event.mediaType === 'video' ? (
               <video
                 src={event.imageUrl}
-                className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 muted
               />
             ) : (
@@ -248,62 +255,57 @@ function TimelineItem({ event, language, position, isHovered, onHover, onHoverEn
                 width={0}
                 height={0}
                 sizes="100vw"
-                className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 unoptimized
               />
             )}
 
             {/* Overlay on Hover */}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <div className="p-3 rounded-full bg-black/60 backdrop-blur-sm border border-white/20">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="rounded-full border border-white/20 bg-black/60 p-3 backdrop-blur-sm">
                 <ZoomIn className="h-6 w-6 text-white" strokeWidth={1.5} />
               </div>
             </div>
 
             {/* Video Indicator */}
             {event.mediaType === 'video' && (
-              <div className="absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-sm border border-white/20">
-                <div className="w-0 h-0 border-l-8 border-l-white border-t-5 border-t-transparent border-b-5 border-b-transparent" />
+              <div className="absolute top-3 right-3 rounded-full border border-white/20 bg-black/60 p-2 backdrop-blur-sm">
+                <div className="h-0 w-0 border-l-8 border-t-5 border-b-5 border-l-white border-t-transparent border-b-transparent" />
               </div>
             )}
 
             {/* Date Badge */}
-            <div className="absolute top-3 left-3 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full">
+            <div className="absolute top-3 left-3 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-sm">
               <span className="text-xs font-mono text-white/90">
                 {event.eventDate}
               </span>
             </div>
+
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-4">
+              <div className="mb-2">
+                <span className="text-[10px] font-mono tracking-widest uppercase text-lmsy-blue/80">
+                  {event.archiveNumber}
+                </span>
+              </div>
+
+              <h3 className={`mb-1 font-serif text-base font-semibold transition-colors duration-300 ${
+                isHovered ? 'text-lmsy-yellow' : 'text-white'
+              }`}>
+                {displayTitle}
+              </h3>
+
+              {displayDescription && (
+                <p className="line-clamp-2 text-xs text-white/75">
+                  {displayDescription}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Content */}
-        <div className="p-4">
-          {/* Archive Number */}
-          <div className="mb-2">
-            <span className="text-[10px] font-mono text-lmsy-blue/80 tracking-widest uppercase">
-              {event.archiveNumber}
-            </span>
-          </div>
-
-          {/* Title */}
-          <h3 className={`font-serif text-base font-semibold mb-2 transition-colors duration-300 ${
-            isHovered ? 'text-lmsy-yellow' : 'text-foreground'
-          }`}>
-            {displayTitle}
-          </h3>
-
-          {/* Description */}
-          {displayDescription && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {displayDescription}
-            </p>
-          )}
-        </div>
-
-        {/* Gradient Overlay on Hover */}
         {isHovered && (
           <motion.div
-            className="absolute inset-0 rounded-lg bg-gradient-to-r from-lmsy-yellow/5 via-lmsy-blue/5 to-transparent pointer-events-none"
+            className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-lmsy-yellow/5 via-lmsy-blue/5 to-transparent"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}

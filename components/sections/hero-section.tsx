@@ -7,11 +7,18 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { ArrowDown, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { DEFAULT_HERO_CONTENT, normalizeHeroContent } from '@/app/admin/settings/content-blocks';
+import {
+  DEFAULT_HERO_CONTENT,
+  DEFAULT_HERO_SECTION_IMAGE,
+  getHeroSectionImageUrl,
+  normalizeHeroContent,
+} from '@/app/admin/settings/content-blocks';
+import { getImageUrl } from '@/lib/image-url';
 
 export function HeroSection() {
   const { language } = useLanguage();
   const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);
+  const [heroImageUrl, setHeroImageUrl] = useState(DEFAULT_HERO_SECTION_IMAGE);
 
   useEffect(() => {
     async function fetchHeroContent() {
@@ -23,6 +30,7 @@ export function HeroSection() {
         if (!data.success || !data.block?.content_i18n) return;
 
         setHeroContent(normalizeHeroContent(data.block.content_i18n));
+        setHeroImageUrl(getHeroSectionImageUrl(data.block.content_i18n));
       } catch (error) {
         console.error('[SITE_CONTENT] Failed to fetch homepage_hero:', error);
       }
@@ -129,7 +137,7 @@ export function HeroSection() {
                 }}
               >
                 <Image
-                  src="/lmsy-001.jpg"
+                  src={getImageUrl(heroImageUrl) || heroImageUrl || DEFAULT_HERO_SECTION_IMAGE}
                   alt="Lookmhee & Sonya"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
