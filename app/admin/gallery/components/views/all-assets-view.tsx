@@ -27,15 +27,12 @@ interface AllAssetsViewProps {
 }
 
 export function AllAssetsView({ data, loading, projectFiltered = false }: AllAssetsViewProps) {
-  const { gallery, projects } = data;
-  const editorialProjects = projects.filter(p => p.category === 'editorial' || p.category === 'series');
+  const { gallery } = data;
 
   // Combined items for display
   const displayGallery = gallery; // Can be filtered by props
-  const displayProjects = editorialProjects; // Can be filtered by props
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectedAll, setSelectedAll] = useState(false);
 
   // For batch operations
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -56,6 +53,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
     excerpt_zh: '',
     excerpt_th: '',
   });
+  const editingAssetImageUrl = editingAsset ? getCdnUrl(editingAsset.image_url) : null;
 
   // Fetch projects for transfer modal
   useEffect(() => {
@@ -92,17 +90,6 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
       }
       return newSet;
     });
-    setSelectedAll(false);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedAll) {
-      setSelectedIds(new Set());
-      setSelectedAll(false);
-    } else {
-      setSelectedIds(new Set(displayGallery.map(img => img.id)));
-      setSelectedAll(true);
-    }
   };
 
   const handleDelete = async (id: string) => {
@@ -622,14 +609,20 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                   <div className="border-b border-white/10 bg-white/[0.02] p-6 lg:border-b-0 lg:border-r">
                     <div className="space-y-4">
                       <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                        <Image
-                          src={getCdnUrl(editingAsset.image_url)}
-                          alt={getLocalizedText(editingAsset.caption_i18n, 'en', editingAsset.caption) || 'Asset'}
-                          width={640}
-                          height={860}
-                          className="h-auto w-full"
-                          unoptimized
-                        />
+                        {editingAssetImageUrl ? (
+                          <Image
+                            src={editingAssetImageUrl}
+                            alt={getLocalizedText(editingAsset.caption_i18n, 'en', editingAsset.caption) || 'Asset'}
+                            width={640}
+                            height={860}
+                            className="h-auto w-full"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="flex min-h-[18rem] items-center justify-center text-xs font-mono tracking-wider text-white/25">
+                            NO_IMAGE_URL
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2 text-[11px] font-mono tracking-wider text-white/35">
                         <div>CATALOG {editingAsset.catalog_id || 'UNSET'}</div>
