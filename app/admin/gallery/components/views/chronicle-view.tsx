@@ -50,6 +50,15 @@ const emptyFormState: DraftFormState = {
   chronicle_excerpt: { en: '', zh: '', th: '' },
 };
 
+function toStrictLocalizedStrings(value: unknown, fallback = ''): { en: string; zh: string; th: string } {
+  const normalized = normalizeLocalizedText(value, fallback);
+  return {
+    en: normalized.en || fallback || '',
+    zh: normalized.zh || '',
+    th: normalized.th || '',
+  };
+}
+
 function buildDraftPayload(form: DraftFormState) {
   return {
     ...form,
@@ -146,8 +155,8 @@ export function ChronicleView({ data, loading }: ChronicleViewProps) {
         is_featured: draft.is_featured || false,
         event_date: draft.event_date || '',
         chronicle_visible: draft.chronicle_visible ?? true,
-        chronicle_title: normalizeLocalizedText(draft.chronicle_title_i18n, draft.chronicle_title || ''),
-        chronicle_excerpt: normalizeLocalizedText(draft.chronicle_excerpt_i18n, draft.chronicle_excerpt || ''),
+        chronicle_title: toStrictLocalizedStrings(draft.chronicle_title_i18n, draft.chronicle_title || ''),
+        chronicle_excerpt: toStrictLocalizedStrings(draft.chronicle_excerpt_i18n, draft.chronicle_excerpt || ''),
       });
     } catch (error) {
       console.error('[CHRONICLE_VIEW] Failed to open edit modal:', error);
