@@ -8,7 +8,6 @@
 'use client';
 
 import { useState } from 'react';
-import type { DraftItem } from '@/lib/supabase/types';
 import {
   DraftsHeader,
   DraftsFilterBar,
@@ -18,6 +17,7 @@ import {
   DeleteConfirmModal,
   EditModal,
   BatchEditModal,
+  LinkProjectModal,
 } from './components';
 import { useDrafts } from './hooks/use-drafts';
 import { useDraftActions } from './hooks/use-draft-actions';
@@ -37,8 +37,7 @@ export default function DraftsPage() {
     showToast: draftsState.showToast,
   });
 
-  // Local video hover state
-  const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null);
+  const [linkProjectDraftId, setLinkProjectDraftId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -70,6 +69,7 @@ export default function DraftsPage() {
         onPublish={actions.handlePublish}
         onUnpublish={actions.handleUnpublish}
         onCreateProject={actions.handleCreateProject}
+        onLinkExistingProject={setLinkProjectDraftId}
         onAddToAssets={actions.handleAddToAssets}
         onSetMilestone={actions.handleSetMilestone}
         onEdit={forms.handleOpenEdit}
@@ -118,6 +118,13 @@ export default function DraftsPage() {
         onSave={() => forms.handleSaveBatchEdit(draftsState.selectedIds)}
         onTranslate={forms.handleTranslate}
         onMoveItem={forms.handleMoveItem}
+      />
+
+      <LinkProjectModal
+        draftId={linkProjectDraftId}
+        isOpen={linkProjectDraftId !== null}
+        onClose={() => setLinkProjectDraftId(null)}
+        onSelect={actions.handleLinkExistingProject}
       />
 
       {/* Delete Confirmation Modal */}

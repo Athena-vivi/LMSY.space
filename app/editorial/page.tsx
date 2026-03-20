@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/back-button';
 import { getImageUrl } from '@/lib/image-url';
+import { useLanguage } from '@/components/language-provider';
+import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 
 // 🚫 NO CACHE: Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -14,14 +16,17 @@ export const dynamic = 'force-dynamic';
 interface Magazine {
   id: string;
   title: string;
+  title_i18n?: LocalizedText | null;
   category: string;
   cover_url: string | null;
   blur_data: string | null;
   release_date: string | null;
   description: string | null;
+  description_i18n?: LocalizedText | null;
   catalog_id: string | null;
   artifact_count: number;
   cover_source: 'database' | 'gallery_fallback' | 'empty_vault';
+  homepage_excerpt_i18n?: LocalizedText | null;
   gallery_images?: GalleryImage[];
 }
 
@@ -59,6 +64,7 @@ const magazineThemes: Record<string, NebulaColors> = {
 };
 
 export default function EditorialPage() {
+  const { language } = useLanguage();
   const [magazines, setMagazines] = useState<Magazine[]>([]);
   const [hoveredMagazine, setHoveredMagazine] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -237,6 +243,7 @@ export default function EditorialPage() {
                       <MagazineSlot
                         key={magazine.id}
                         magazine={magazine}
+                        language={language}
                         index={index}
                         catalogId={magazine.catalog_id || getCatalogId(index)}
                         onHover={setHoveredMagazine}
@@ -333,6 +340,7 @@ function SkeletonSlot({ index }: { index: number }) {
 
 interface MagazineSlotProps {
   magazine: Magazine;
+  language: 'en' | 'zh' | 'th';
   index: number;
   catalogId: string;
   onHover: (id: string | null) => void;
@@ -340,10 +348,11 @@ interface MagazineSlotProps {
   isFirst: boolean;
 }
 
-function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: MagazineSlotProps) {
+function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }: MagazineSlotProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const localizedTitle = getLocalizedText(magazine.title_i18n, language, magazine.title);
 
   // 🔒 CRITICAL: Use getImageUrl helper for full compatibility (old absolute + new relative)
   // 🚨 STRICTLY FORBIDDEN: Do NOT manually construct URLs here
@@ -351,7 +360,7 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
 
   // 📊 PATH_SYNC DEBUG: Log final URL for馆长's inspection
   console.log('[PATH_SYNC]', {
-    title: magazine.title,
+    title: localizedTitle,
     finalSrc: coverUrl,
     inputUrl: magazine.cover_url,
     catalogId: magazine.catalog_id,
@@ -427,7 +436,7 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
             // Real CDN image
             <Image
               src={coverUrl}
-              alt={magazine.title}
+              alt={localizedTitle}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-700"
               placeholder="empty"
@@ -489,7 +498,7 @@ function MagazineSlot({ magazine, index, catalogId, onHover, isFirst }: Magazine
 
         <div className="absolute -bottom-3 -right-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-3 py-1.5">
           <span className="font-mono text-[10px] text-white/70 tracking-wide uppercase">
-            {magazine.title.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}
+            {localizedTitle.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}
           </span>
         </div>
       </Link>

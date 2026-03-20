@@ -8,6 +8,8 @@
 
 import { useState, useCallback } from 'react';
 import type { DraftItem } from '@/lib/supabase/types';
+import { normalizeLocalizedText } from '@/lib/localized-content';
+import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
 
 interface DraftFormState {
   title: { en: string; zh: string; th: string };
@@ -16,8 +18,8 @@ interface DraftFormState {
   is_featured: boolean;
   event_date: string;
   chronicle_visible: boolean;
-  chronicle_title: string;
-  chronicle_excerpt: string;
+  chronicle_title: { en: string; zh: string; th: string };
+  chronicle_excerpt: { en: string; zh: string; th: string };
 }
 
 const emptyFormState: DraftFormState = {
@@ -27,9 +29,19 @@ const emptyFormState: DraftFormState = {
   is_featured: false,
   event_date: '',
   chronicle_visible: true,
-  chronicle_title: '',
-  chronicle_excerpt: '',
+  chronicle_title: { en: '', zh: '', th: '' },
+  chronicle_excerpt: { en: '', zh: '', th: '' },
 };
+
+function buildDraftPayload(form: DraftFormState) {
+  return {
+    ...form,
+    chronicle_title: form.chronicle_title.en || form.chronicle_title.zh || form.chronicle_title.th || '',
+    chronicle_excerpt: form.chronicle_excerpt.en || form.chronicle_excerpt.zh || form.chronicle_excerpt.th || '',
+    chronicle_title_i18n: form.chronicle_title,
+    chronicle_excerpt_i18n: form.chronicle_excerpt,
+  };
+}
 
 interface UseDraftFormsProps {
   drafts: DraftItem[];
@@ -77,8 +89,8 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       is_featured: draft.is_featured || false,
       event_date: draft.event_date || '',
       chronicle_visible: draft.chronicle_visible ?? true,
-      chronicle_title: draft.chronicle_title || '',
-      chronicle_excerpt: draft.chronicle_excerpt || '',
+      chronicle_title: normalizeLocalizedText(draft.chronicle_title_i18n, draft.chronicle_title || ''),
+      chronicle_excerpt: normalizeLocalizedText(draft.chronicle_excerpt_i18n, draft.chronicle_excerpt || ''),
     });
   }, []);
 
@@ -96,7 +108,7 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       const response = await fetch(`/api/admin/drafts/${editingItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(buildDraftPayload(editForm)),
       });
 
       if (!response.ok) throw new Error('Update failed');
@@ -113,38 +125,47 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
   /**
    * Translation function
    */
-  const handleTranslate = useCallback(async (targetLang: 'zh' | 'th', isBatch = false) => {
+  const handleTranslate = useCallback(async (targetLang: AdminTranslateTarget, isBatch = false) => {
     const form = isBatch ? batchEditForm : editForm;
 
-    if (!form.title.en && !form.description.en) {
+    const hasEnglishSource =
+      !!form.title.en.trim() ||
+      !!form.description.en.trim() ||
+      !!form.chronicle_title.en.trim() ||
+      !!form.chronicle_excerpt.en.trim();
+
+    if (!hasEnglishSource) {
       showToast('NO_ENG_CONTENT', 'error');
       return;
     }
 
     setTranslating(true);
     try {
-      const response = await fetch('/api/admin/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const translated = await translateFieldMap(
+        {
           title: form.title.en,
           description: form.description.en,
-          targetLang,
-        }),
-      });
+          chronicleTitle: form.chronicle_title.en,
+          chronicleExcerpt: form.chronicle_excerpt.en,
+        },
+        targetLang,
+        {
+          title: 'title',
+          description: 'description',
+          chronicleTitle: 'title',
+          chronicleExcerpt: 'description',
+        }
+      );
 
-      if (!response.ok) throw new Error('Translation failed');
-
-      const result = await response.json();
-      if (result.success) {
-        const setter = isBatch ? setBatchEditForm : setEditForm;
-        setter(prev => ({
-          ...prev,
-          title: { ...prev.title, [targetLang]: result.data.title || '' },
-          description: { ...prev.description, [targetLang]: result.data.description || '' },
-        }));
-        showToast('TRANSLATION_SUCCESS');
-      }
+      const setter = isBatch ? setBatchEditForm : setEditForm;
+      setter(prev => ({
+        ...prev,
+        title: { ...prev.title, [targetLang]: translated.title || '' },
+        description: { ...prev.description, [targetLang]: translated.description || '' },
+        chronicle_title: { ...prev.chronicle_title, [targetLang]: translated.chronicleTitle || '' },
+        chronicle_excerpt: { ...prev.chronicle_excerpt, [targetLang]: translated.chronicleExcerpt || '' },
+      }));
+      showToast('TRANSLATION_SUCCESS');
     } catch (error) {
       showToast('TRANSLATION_FAILED', 'error');
     } finally {
@@ -176,8 +197,8 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
       is_featured: firstItem.is_featured || false,
       event_date: firstItem.event_date || '',
       chronicle_visible: firstItem.chronicle_visible ?? true,
-      chronicle_title: firstItem.chronicle_title || '',
-      chronicle_excerpt: firstItem.chronicle_excerpt || '',
+      chronicle_title: normalizeLocalizedText(firstItem.chronicle_title_i18n, firstItem.chronicle_title || ''),
+      chronicle_excerpt: normalizeLocalizedText(firstItem.chronicle_excerpt_i18n, firstItem.chronicle_excerpt || ''),
     });
     setBatchOrder(Array.from(selectedIds));
     setBatchEditing(true);
@@ -207,7 +228,7 @@ export function useDraftForms({ drafts, fetchDrafts, showToast }: UseDraftFormsP
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...batchEditForm,
+            ...buildDraftPayload(batchEditForm),
             sequence_order: index,
           }),
         });

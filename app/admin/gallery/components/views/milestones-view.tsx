@@ -227,7 +227,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto grid grid-cols-4 gap-3 p-2">
+                <div className="custom-scrollbar flex-1 overflow-y-auto grid grid-cols-4 gap-3 p-2">
                   {gallery.map((item) => {
                     const imageUrl = getCdnUrl(item.image_url);
                     if (!imageUrl) return null;

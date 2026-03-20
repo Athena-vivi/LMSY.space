@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { normalizeLocalizedText } from '@/lib/localized-content';
 
 /**
  * GET /api/admin/editorial - Fetch all editorial projects (Admin Only)
@@ -117,7 +118,18 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, title, description, release_date, homepage_featured, homepage_excerpt, homepage_cover_url } = body;
+    const {
+      id,
+      title,
+      title_i18n,
+      description,
+      description_i18n,
+      release_date,
+      homepage_featured,
+      homepage_excerpt,
+      homepage_excerpt_i18n,
+      homepage_cover_url,
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -147,15 +159,25 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    const normalizedTitle = normalizeLocalizedText(title_i18n, title || '');
+    const normalizedDescription = normalizeLocalizedText(description_i18n, description || '');
+    const normalizedHomepageExcerpt = normalizeLocalizedText(
+      homepage_excerpt_i18n,
+      homepage_excerpt || ''
+    );
+
     const { data, error } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('projects')
       .update({
-        title,
-        description,
+        title: normalizedTitle.en || title || '',
+        title_i18n: normalizedTitle,
+        description: normalizedDescription.en || description || '',
+        description_i18n: normalizedDescription,
         release_date,
         homepage_featured: !!homepage_featured,
-        homepage_excerpt: homepage_excerpt || null,
+        homepage_excerpt: normalizedHomepageExcerpt.en || homepage_excerpt || null,
+        homepage_excerpt_i18n: normalizedHomepageExcerpt,
         homepage_cover_url: homepage_cover_url || null,
       })
       .eq('id', id)
@@ -230,10 +252,10 @@ export async function DELETE(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // First, delete associated gallery images
+    // First, delete associated gallery assets
     const { error: galleryError } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .delete()
       .eq('project_id', id);
 

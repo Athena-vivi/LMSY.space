@@ -6,7 +6,6 @@
 
 'use client';
 
-import { useCallback } from 'react';
 import type { DraftItem } from '@/lib/supabase/types';
 
 interface UseDraftActionsProps {
@@ -83,7 +82,7 @@ export function useDraftActions({
       const response = await fetch(`/api/admin/drafts/${id}/publish`, { method: 'POST' });
       if (!response.ok) throw new Error('Publish failed');
       showToast('ITEM_PUBLISHED');
-    } catch (error) {
+    } catch {
       await fetchDrafts(); // Revert on error
       showToast('PUBLISH_FAILED', 'error');
     }
@@ -103,7 +102,7 @@ export function useDraftActions({
       const response = await fetch(`/api/admin/drafts/${id}/unpublish`, { method: 'POST' });
       if (!response.ok) throw new Error('Unpublish failed');
       showToast('ITEM_UNPUBLISHED');
-    } catch (error) {
+    } catch {
       await fetchDrafts(); // Revert on error
       showToast('UNPUBLISH_FAILED', 'error');
     }
@@ -135,7 +134,7 @@ export function useDraftActions({
 
       const result = await response.json();
       showToast(`${result.published || 0}_ITEMS_PUBLISHED`);
-    } catch (error) {
+    } catch {
       await fetchDrafts(); // Revert on error
       showToast('BATCH_PUBLISH_FAILED', 'error');
     }
@@ -178,6 +177,30 @@ export function useDraftActions({
     } catch (error) {
       const message = error instanceof Error ? error.message : 'CREATE_PROJECT_FAILED';
       showToast(message, 'error');
+    }
+  };
+
+  const handleLinkExistingProject = async (id: string, projectId: string) => {
+    try {
+      const response = await fetch(`/api/admin/drafts/${id}/link-project`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success || !result.data?.id) {
+        throw new Error(result.error || 'Link project failed');
+      }
+
+      updateDraftOptimistically(id, { project_id: result.data.id });
+      showToast(result.relinked ? 'PROJECT_RELINKED' : 'PROJECT_LINKED');
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'LINK_PROJECT_FAILED';
+      showToast(message, 'error');
+      return false;
     }
   };
 
@@ -237,7 +260,7 @@ export function useDraftActions({
       if (!response.ok) throw new Error('Delete failed');
 
       showToast('ITEM_DELETED');
-    } catch (error) {
+    } catch {
       await fetchDrafts(); // Revert on error
       showToast('DELETE_FAILED', 'error');
     }
@@ -270,7 +293,7 @@ export function useDraftActions({
       if (!response.ok) throw new Error('Batch delete failed');
 
       showToast(`${ids.length}_ITEMS_DELETED`);
-    } catch (error) {
+    } catch {
       await fetchDrafts(); // Revert on error
       showToast('BATCH_DELETE_FAILED', 'error');
     }
@@ -281,6 +304,7 @@ export function useDraftActions({
     handleUnpublish,
     handleBatchPublish,
     handleCreateProject,
+    handleLinkExistingProject,
     handleAddToAssets,
     handleSetMilestone,
     handleDelete,

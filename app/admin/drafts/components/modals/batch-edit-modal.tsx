@@ -1,9 +1,3 @@
-/**
- * Batch Edit Modal Component
- *
- * Modal for editing multiple draft items at once
- */
-
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
@@ -18,8 +12,8 @@ interface BatchEditForm {
   is_featured: boolean;
   event_date: string;
   chronicle_visible: boolean;
-  chronicle_title: string;
-  chronicle_excerpt: string;
+  chronicle_title: { en: string; zh: string; th: string };
+  chronicle_excerpt: { en: string; zh: string; th: string };
 }
 
 interface BatchEditModalProps {
@@ -34,6 +28,28 @@ interface BatchEditModalProps {
   onSave: () => void;
   onTranslate: (lang: 'zh' | 'th') => void;
   onMoveItem: (index: number, direction: 'up' | 'down') => void;
+}
+
+function TranslateButton({
+  lang,
+  translating,
+  onTranslate,
+}: {
+  lang: 'zh' | 'th';
+  translating: boolean;
+  onTranslate: (lang: 'zh' | 'th') => void;
+}) {
+  return (
+    <button
+      onClick={() => onTranslate(lang)}
+      disabled={translating}
+      className="px-3 py-2 bg-lmsy-blue/20 border border-lmsy-blue/40 text-lmsy-blue rounded hover:bg-lmsy-blue/30 transition-all disabled:opacity-50"
+      title={lang === 'zh' ? 'Translate to Chinese' : 'Translate to Thai'}
+      type="button"
+    >
+      <Languages className="h-4 w-4" strokeWidth={1.5} />
+    </button>
+  );
 }
 
 export function BatchEditModal({
@@ -66,158 +82,129 @@ export function BatchEditModal({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-4xl max-h-[85vh] overflow-hidden flex bg-black border border-white/10 rounded-lg"
           >
-            {/* Left Panel - Form */}
             <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
-              {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-serif text-white/90">BATCH_EDIT ({selectedIds.size} ITEMS)</h2>
-                <button
-                  onClick={onClose}
-                  className="p-2 text-white/30 hover:text-white/60 transition-colors"
-                >
+                <button onClick={onClose} className="p-2 text-white/30 hover:text-white/60 transition-colors">
                   <X className="h-5 w-5" strokeWidth={1.5} />
                 </button>
               </div>
 
-              {/* Form */}
               <div className="space-y-4">
-                {/* Title EN */}
                 <div>
                   <label className="block text-xs font-mono text-white/40 mb-1">TITLE_EN</label>
                   <input
                     type="text"
                     value={batchEditForm.title.en}
-                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, title: { ...prev.title, en: e.target.value } }))}
+                    onChange={(e) => setBatchEditForm((prev) => ({ ...prev, title: { ...prev.title, en: e.target.value } }))}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   />
                 </div>
 
-                {/* Title ZH */}
                 <div>
                   <label className="block text-xs font-mono text-white/40 mb-1">TITLE_ZH</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={batchEditForm.title.zh}
-                      onChange={(e) => setBatchEditForm(prev => ({ ...prev, title: { ...prev.title, zh: e.target.value } }))}
+                      onChange={(e) => setBatchEditForm((prev) => ({ ...prev, title: { ...prev.title, zh: e.target.value } }))}
                       className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                     />
-                    <button
-                      onClick={() => onTranslate('zh')}
-                      disabled={translating}
-                      className="px-3 py-2 bg-lmsy-blue/20 border border-lmsy-blue/40 text-lmsy-blue rounded hover:bg-lmsy-blue/30 transition-all disabled:opacity-50"
-                      title="翻译为中文"
-                    >
-                      <Languages className="h-4 w-4" strokeWidth={1.5} />
-                    </button>
+                    <TranslateButton lang="zh" translating={translating} onTranslate={onTranslate} />
                   </div>
                 </div>
 
-                {/* Title TH */}
                 <div>
                   <label className="block text-xs font-mono text-white/40 mb-1">TITLE_TH</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={batchEditForm.title.th}
-                      onChange={(e) => setBatchEditForm(prev => ({ ...prev, title: { ...prev.title, th: e.target.value } }))}
+                      onChange={(e) => setBatchEditForm((prev) => ({ ...prev, title: { ...prev.title, th: e.target.value } }))}
                       className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                     />
-                    <button
-                      onClick={() => onTranslate('th')}
-                      disabled={translating}
-                      className="px-3 py-2 bg-lmsy-blue/20 border border-lmsy-blue/40 text-lmsy-blue rounded hover:bg-lmsy-blue/30 transition-all disabled:opacity-50"
-                      title="翻译为泰文"
-                    >
-                      <Languages className="h-4 w-4" strokeWidth={1.5} />
-                    </button>
+                    <TranslateButton lang="th" translating={translating} onTranslate={onTranslate} />
                   </div>
                 </div>
 
-                {/* Description EN */}
                 <div>
                   <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_EN</label>
                   <textarea
                     value={batchEditForm.description.en}
-                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, description: { ...prev.description, en: e.target.value } }))}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({ ...prev, description: { ...prev.description, en: e.target.value } }))
+                    }
                     rows={3}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                   />
                 </div>
 
-                {/* Description ZH */}
                 <div>
                   <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_ZH</label>
                   <div className="flex gap-2">
                     <textarea
                       value={batchEditForm.description.zh}
-                      onChange={(e) => setBatchEditForm(prev => ({ ...prev, description: { ...prev.description, zh: e.target.value } }))}
+                      onChange={(e) =>
+                        setBatchEditForm((prev) => ({ ...prev, description: { ...prev.description, zh: e.target.value } }))
+                      }
                       rows={3}
                       className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                     />
-                    <button
-                      onClick={() => onTranslate('zh')}
-                      disabled={translating}
-                      className="px-3 py-2 bg-lmsy-blue/20 border border-lmsy-blue/40 text-lmsy-blue rounded hover:bg-lmsy-blue/30 transition-all disabled:opacity-50 self-start"
-                      title="翻译为中文"
-                    >
-                      <Languages className="h-4 w-4" strokeWidth={1.5} />
-                    </button>
+                    <TranslateButton lang="zh" translating={translating} onTranslate={onTranslate} />
                   </div>
                 </div>
 
-                {/* Description TH */}
                 <div>
                   <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_TH</label>
                   <div className="flex gap-2">
                     <textarea
                       value={batchEditForm.description.th}
-                      onChange={(e) => setBatchEditForm(prev => ({ ...prev, description: { ...prev.description, th: e.target.value } }))}
+                      onChange={(e) =>
+                        setBatchEditForm((prev) => ({ ...prev, description: { ...prev.description, th: e.target.value } }))
+                      }
                       rows={3}
                       className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                     />
-                    <button
-                      onClick={() => onTranslate('th')}
-                      disabled={translating}
-                      className="px-3 py-2 bg-lmsy-blue/20 border border-lmsy-blue/40 text-lmsy-blue rounded hover:bg-lmsy-blue/30 transition-all disabled:opacity-50 self-start"
-                      title="翻译为泰文"
-                    >
-                      <Languages className="h-4 w-4" strokeWidth={1.5} />
-                    </button>
+                    <TranslateButton lang="th" translating={translating} onTranslate={onTranslate} />
                   </div>
                 </div>
 
-                {/* Event Date */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">EVENT_DATE (图片发生时间)</label>
+                  <label className="block text-xs font-mono text-white/40 mb-1">EVENT_DATE (when the image happened)</label>
                   <input
                     type="date"
                     value={batchEditForm.event_date}
-                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, event_date: e.target.value }))}
+                    onChange={(e) => setBatchEditForm((prev) => ({ ...prev, event_date: e.target.value }))}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   />
-                  <p className="text-[10px] text-white/30 mt-1">留空则使用抓取时间</p>
+                  <p className="text-[10px] text-white/30 mt-1">Leave blank to use the ingest time.</p>
                 </div>
 
-                {/* Tags */}
                 <div>
                   <label className="block text-xs font-mono text-white/40 mb-1">TAGS (comma-separated)</label>
                   <input
                     type="text"
                     value={batchEditForm.tags.join(', ')}
-                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }))}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({
+                        ...prev,
+                        tags: e.target.value
+                          .split(',')
+                          .map((t) => t.trim())
+                          .filter(Boolean),
+                      }))
+                    }
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                     placeholder="tag1, tag2, tag3"
                   />
                 </div>
 
-                {/* Is Featured */}
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="batch_is_featured"
                     checked={batchEditForm.is_featured}
-                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, is_featured: e.target.checked }))}
+                    onChange={(e) => setBatchEditForm((prev) => ({ ...prev, is_featured: e.target.checked }))}
                     className="w-4 h-4 rounded border-white/20 bg-white/5 focus:ring-lmsy-yellow/40"
                   />
                   <label htmlFor="batch_is_featured" className="text-xs font-mono text-white/60">
@@ -230,29 +217,77 @@ export function BatchEditModal({
                     <input
                       type="checkbox"
                       checked={batchEditForm.chronicle_visible}
-                      onChange={(e) => setBatchEditForm(prev => ({ ...prev, chronicle_visible: e.target.checked }))}
+                      onChange={(e) => setBatchEditForm((prev) => ({ ...prev, chronicle_visible: e.target.checked }))}
                       className="w-4 h-4 rounded border-white/20 bg-white/5 focus:ring-lmsy-yellow/40"
                     />
                     SHOW_IN_CHRONICLE
                   </label>
                   <input
                     type="text"
-                    value={batchEditForm.chronicle_title}
-                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, chronicle_title: e.target.value }))}
+                    value={batchEditForm.chronicle_title.en}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({ ...prev, chronicle_title: { ...prev.chronicle_title, en: e.target.value } }))
+                    }
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
-                    placeholder="Chronicle title override"
+                    placeholder="Chronicle title EN"
+                  />
+                  <input
+                    type="text"
+                    value={batchEditForm.chronicle_title.zh}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({ ...prev, chronicle_title: { ...prev.chronicle_title, zh: e.target.value } }))
+                    }
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    placeholder="Chronicle title ZH"
+                  />
+                  <input
+                    type="text"
+                    value={batchEditForm.chronicle_title.th}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({ ...prev, chronicle_title: { ...prev.chronicle_title, th: e.target.value } }))
+                    }
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    placeholder="Chronicle title TH"
                   />
                   <textarea
-                    value={batchEditForm.chronicle_excerpt}
-                    onChange={(e) => setBatchEditForm(prev => ({ ...prev, chronicle_excerpt: e.target.value }))}
+                    value={batchEditForm.chronicle_excerpt.en}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({
+                        ...prev,
+                        chronicle_excerpt: { ...prev.chronicle_excerpt, en: e.target.value },
+                      }))
+                    }
                     rows={2}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
-                    placeholder="Chronicle excerpt override"
+                    placeholder="Chronicle excerpt EN"
+                  />
+                  <textarea
+                    value={batchEditForm.chronicle_excerpt.zh}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({
+                        ...prev,
+                        chronicle_excerpt: { ...prev.chronicle_excerpt, zh: e.target.value },
+                      }))
+                    }
+                    rows={2}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    placeholder="Chronicle excerpt ZH"
+                  />
+                  <textarea
+                    value={batchEditForm.chronicle_excerpt.th}
+                    onChange={(e) =>
+                      setBatchEditForm((prev) => ({
+                        ...prev,
+                        chronicle_excerpt: { ...prev.chronicle_excerpt, th: e.target.value },
+                      }))
+                    }
+                    rows={2}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    placeholder="Chronicle excerpt TH"
                   />
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
                 <motion.button
                   onClick={onSave}
@@ -273,22 +308,17 @@ export function BatchEditModal({
               </div>
             </div>
 
-            {/* Right Panel - Item List with Order */}
             <div className="w-80 border-l border-white/10 p-4 overflow-y-auto custom-scrollbar bg-white/5">
               <h3 className="text-xs font-mono text-white/60 mb-4 sticky top-0 bg-white/5 pb-2 border-b border-white/10">
                 SEQUENCE_ORDER
               </h3>
               <div className="space-y-2">
                 {batchOrder.map((id, index) => {
-                  const item = drafts.find(d => d.id === id);
+                  const item = drafts.find((draft) => draft.id === id);
                   if (!item) return null;
 
                   return (
-                    <motion.div
-                      key={id}
-                      layout
-                      className="flex items-center gap-2 p-2 bg-black/50 border border-white/10 rounded"
-                    >
+                    <motion.div key={id} layout className="flex items-center gap-2 p-2 bg-black/50 border border-white/10 rounded">
                       <span className="text-xs font-mono text-white/40 w-6">{index + 1}</span>
                       {item.r2_media_url && (
                         <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
@@ -303,9 +333,7 @@ export function BatchEditModal({
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-white/80 truncate">
-                          {item.title.en || 'Untitled'}
-                        </p>
+                        <p className="text-xs text-white/80 truncate">{item.title.en || 'Untitled'}</p>
                       </div>
                       <div className="flex flex-col gap-1">
                         <button

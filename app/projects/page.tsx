@@ -11,6 +11,7 @@ import { t } from '@/lib/languages';
 import { supabase, type Project } from '@/lib/supabase';
 import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
+import { getLocalizedText } from '@/lib/localized-content';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   series: Play,
@@ -153,12 +154,12 @@ export default function ProjectsPage() {
                           )}
 
                           <h3 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
-                            {project.title}
+                            {getLocalizedText(project.title_i18n, language, project.title)}
                           </h3>
 
-                          {project.description && (
+                          {getLocalizedText(project.description_i18n, language, project.description) && (
                             <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-6">
-                              {project.description}
+                              {getLocalizedText(project.description_i18n, language, project.description)}
                             </p>
                           )}
 

@@ -9,6 +9,17 @@ interface PageProps {
   }>;
 }
 
+interface ProjectGalleryImage {
+  id: string;
+  image_url: string;
+  catalog_id: string | null;
+  category_tag: string | null;
+  created_at: string;
+  is_cover?: boolean | null;
+  rotation?: number | null;
+  sequence?: number | null;
+}
+
 // Tab categories configuration
 export const CATEGORIES = [
   { value: 'all', label: 'ALL' },
@@ -47,6 +58,30 @@ export default async function ProjectPage({ params }: PageProps) {
   const { id } = await params;
   const supabaseAdmin = getSupabaseAdmin();
 
+  const sortProjectImages = (items: ProjectGalleryImage[]) => {
+    return [...items].sort((a, b) => {
+      const aCoverRank = a.is_cover || a.catalog_id?.endsWith('-000') ? 0 : 1;
+      const bCoverRank = b.is_cover || b.catalog_id?.endsWith('-000') ? 0 : 1;
+      if (aCoverRank !== bCoverRank) {
+        return aCoverRank - bCoverRank;
+      }
+
+      const seqA = typeof a.sequence === 'number' ? a.sequence : Number.MAX_SAFE_INTEGER;
+      const seqB = typeof b.sequence === 'number' ? b.sequence : Number.MAX_SAFE_INTEGER;
+      if (seqA !== seqB) {
+        return seqA - seqB;
+      }
+
+      const catalogA = a.catalog_id || '';
+      const catalogB = b.catalog_id || '';
+      if (catalogA && catalogB && catalogA !== catalogB) {
+        return catalogA.localeCompare(catalogB);
+      }
+
+      return (a.created_at || '').localeCompare(b.created_at || '');
+    });
+  };
+
   // Fetch project details
   const { data: project, error: projectError } = await supabaseAdmin
     .schema('lmsy_archive')
@@ -67,18 +102,20 @@ export default async function ProjectPage({ params }: PageProps) {
     .eq('project_id', id)
     .order('created_at', { ascending: true });
 
+  const sortedGalleryImages = sortProjectImages(galleryImages || []);
+
   const coverRotation =
-    (galleryImages || []).find((img) => img.image_url === project.cover_url)?.rotation
-    ?? (galleryImages || []).find((img) => img.is_cover)?.rotation
-    ?? (galleryImages || []).find((img) => img.catalog_id?.endsWith('-000'))?.rotation
+    sortedGalleryImages.find((img) => img.image_url === project.cover_url)?.rotation
+    ?? sortedGalleryImages.find((img) => img.is_cover)?.rotation
+    ?? sortedGalleryImages.find((img) => img.catalog_id?.endsWith('-000'))?.rotation
     ?? 0;
 
   // Group images by category
   const groupedImages = {
-    all: galleryImages || [],
-    official_stills: (galleryImages || []).filter(img => !img.category_tag || img.category_tag === 'official_stills'),
-    bts: (galleryImages || []).filter(img => img.category_tag === 'bts'),
-    press_events: (galleryImages || []).filter(img => img.category_tag === 'press_events'),
+    all: sortedGalleryImages,
+    official_stills: sortedGalleryImages.filter(img => !img.category_tag || img.category_tag === 'official_stills'),
+    bts: sortedGalleryImages.filter(img => img.category_tag === 'bts'),
+    press_events: sortedGalleryImages.filter(img => img.category_tag === 'press_events'),
   };
 
   return (

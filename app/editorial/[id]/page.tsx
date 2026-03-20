@@ -4,6 +4,7 @@ import { BackButton } from '@/components/back-button';
 import { EditorialDetailContent } from './editorial-detail-content';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
+import type { LocalizedText } from '@/lib/localized-content';
 
 // 🚫 NO CACHE: Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -11,10 +12,12 @@ export const dynamic = 'force-dynamic';
 interface Magazine {
   id: string;
   title: string;
+  title_i18n?: LocalizedText | null;
   category: string;
   cover_url: string | null;
   release_date: string | null;
   description: string | null;
+  description_i18n?: LocalizedText | null;
   catalog_id: string | null;
   blur_data: string | null;
 }
@@ -92,7 +95,7 @@ async function getMagazineData(id: string): Promise<{
 
   const { data: linkedImages, error: imagesError } = await supabaseAdmin
     .schema('lmsy_archive')
-    .from('gallery')
+    .from('gallery_assets')
     .select('id, image_url, caption, blur_data, catalog_id')
     .eq('project_id', project.id)  // 🚨 STRICT: Only physical foreign key linkage
     .order('catalog_id', { ascending: true });

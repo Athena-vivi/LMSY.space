@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@/lib/localized-content';
+
 /**
  * Supabase 数据库类型定义
  *
@@ -27,9 +29,11 @@ export type ProjectCategory = 'series' | 'editorial' | 'appearance' | 'daily' | 
 export interface Project {
   id: string;
   title: string;
+  title_i18n?: LocalizedText | null;
   category: ProjectCategory;
   release_date: string | null;
   description: string | null;
+  description_i18n?: LocalizedText | null;
   cover_url: string | null;
   watch_url: string | null;
   tags: string[] | null;
@@ -37,8 +41,10 @@ export interface Project {
   portal_priority?: number | null;
   homepage_featured?: boolean | null;
   homepage_excerpt?: string | null;
+  homepage_excerpt_i18n?: LocalizedText | null;
   homepage_cover_url?: string | null;
   theme_statement?: string | null;
+  theme_statement_i18n?: LocalizedText | null;
   curation_status?: 'draft' | 'published' | 'archived' | null;
   created_at: string;
 }
@@ -50,7 +56,12 @@ export type MilestonePriority = 1 | 2 | 3 | 4 | 5 | null;  // 1=2022, 2=2023, 3=
 export interface GalleryItem {
   id: string;
   image_url: string;
+  title?: string | null;
+  title_i18n?: LocalizedText | null;
+  excerpt?: string | null;
+  excerpt_i18n?: LocalizedText | null;
   caption: string | null;
+  caption_i18n?: LocalizedText | null;
   tag: string | null;
   is_featured: boolean;
   catalog_id: string | null;  // LMSY-2026-XXX
@@ -193,7 +204,10 @@ export interface DraftItem {
   sequence_order: number | null;  // 用于同组内容的排序
   chronicle_visible?: boolean;
   chronicle_title?: string | null;
+  chronicle_visible?: boolean;
   chronicle_excerpt?: string | null;
+  chronicle_title_i18n?: LocalizedText | null;
+  chronicle_excerpt_i18n?: LocalizedText | null;
 
   // 审计字段
   created_at: string;

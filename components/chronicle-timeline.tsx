@@ -5,6 +5,8 @@ import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { X, ZoomIn, Calendar } from 'lucide-react';
 import type { TimelineEvent } from '@/lib/timeline';
+import { useLanguage } from '@/components/language-provider';
+import { getLocalizedText } from '@/lib/localized-content';
 
 interface ChronicleTimelineProps {
   events: TimelineEvent[];
@@ -20,17 +22,18 @@ interface LightboxImage {
 export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
   const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const { language } = useLanguage();
 
   const openLightbox = useCallback((event: TimelineEvent) => {
     if (event.imageUrl) {
       setLightboxImage({
         url: event.imageUrl,
-        title: event.title,
-        description: event.description,
+        title: getLocalizedText(event.titleI18n, language, event.title),
+        description: getLocalizedText(event.descriptionI18n, language, event.description),
         type: event.mediaType || 'image',
       });
     }
-  }, []);
+  }, [language]);
 
   const closeLightbox = useCallback(() => {
     setLightboxImage(null);
@@ -54,6 +57,7 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
               <TimelineItem
                 key={event.id}
                 event={event}
+                language={language}
                 position="left"
                 isHovered={hoveredId === event.id}
                 onHover={() => setHoveredId(event.id)}
@@ -69,6 +73,7 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
               <TimelineItem
                 key={event.id}
                 event={event}
+                language={language}
                 position="right"
                 isHovered={hoveredId === event.id}
                 onHover={() => setHoveredId(event.id)}
@@ -190,6 +195,7 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
 
 interface TimelineItemProps {
   event: TimelineEvent;
+  language: 'en' | 'zh' | 'th';
   position: 'left' | 'right';
   isHovered: boolean;
   onHover: () => void;
@@ -197,7 +203,10 @@ interface TimelineItemProps {
   onClick: () => void;
 }
 
-function TimelineItem({ event, position, isHovered, onHover, onHoverEnd, onClick }: TimelineItemProps) {
+function TimelineItem({ event, language, position, isHovered, onHover, onHoverEnd, onClick }: TimelineItemProps) {
+  const displayTitle = getLocalizedText(event.titleI18n, language, event.title);
+  const displayDescription = getLocalizedText(event.descriptionI18n, language, event.description);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -235,7 +244,7 @@ function TimelineItem({ event, position, isHovered, onHover, onHoverEnd, onClick
             ) : (
               <Image
                 src={event.imageUrl}
-                alt={event.title}
+                alt={displayTitle}
                 width={0}
                 height={0}
                 sizes="100vw"
@@ -280,13 +289,13 @@ function TimelineItem({ event, position, isHovered, onHover, onHoverEnd, onClick
           <h3 className={`font-serif text-base font-semibold mb-2 transition-colors duration-300 ${
             isHovered ? 'text-lmsy-yellow' : 'text-foreground'
           }`}>
-            {event.title}
+            {displayTitle}
           </h3>
 
           {/* Description */}
-          {event.description && (
+          {displayDescription && (
             <p className="text-xs text-muted-foreground line-clamp-2">
-              {event.description}
+              {displayDescription}
             </p>
           )}
         </div>

@@ -63,17 +63,20 @@ export async function GET() {
       .select(`
         id,
         title,
+        title_i18n,
         description,
+        description_i18n,
         category,
         cover_url,
         homepage_featured,
         homepage_excerpt,
+        homepage_excerpt_i18n,
         homepage_cover_url,
         blur_data,
         release_date,
         catalog_id,
         created_at,
-        gallery (
+        gallery_assets (
           id,
           image_url,
           blur_data,
@@ -100,7 +103,7 @@ export async function GET() {
         id: p.id,
         title: p.title,
         category: p.category,
-        gallery_count: p.gallery?.length || 0
+        gallery_count: p.gallery_assets?.length || 0
       })));
     }
 
@@ -147,7 +150,7 @@ export async function GET() {
 
     // Process projects with self-healing cover logic
     const processedProjects = editorialOnly.map((project: any) => {
-      const galleryImages = project.gallery || [];
+      const galleryImages = project.gallery_assets || [];
       const artifactCount = galleryImages.length;
 
       let finalCoverUrl: string | null = null;
@@ -171,14 +174,17 @@ export async function GET() {
       return {
         id: project.id,
         title: project.title,
+        title_i18n: project.title_i18n || null,
         category: project.category,
         cover_url: finalCoverUrl,
         homepage_featured: project.homepage_featured || false,
         homepage_excerpt: project.homepage_excerpt || null,
+        homepage_excerpt_i18n: project.homepage_excerpt_i18n || null,
         homepage_cover_url: project.homepage_cover_url || null,
         blur_data: project.blur_data,
         release_date: project.release_date,
         description: project.description,
+        description_i18n: project.description_i18n || null,
         catalog_id: project.catalog_id,
         created_at: project.created_at,
         artifact_count: artifactCount,

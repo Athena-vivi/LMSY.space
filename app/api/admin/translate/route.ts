@@ -7,15 +7,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { translateText } from '@/lib/ai-translator';
 
 interface TranslateRequest {
+  text?: string;
   title?: string;
   description?: string;
+  contentType?: 'title' | 'description';
   targetLang: 'zh' | 'th';
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: TranslateRequest = await request.json();
-    const { title, description, targetLang } = body;
+    const { text, title, description, contentType, targetLang } = body;
 
     if (!targetLang || (targetLang !== 'zh' && targetLang !== 'th')) {
       return NextResponse.json(
@@ -24,9 +26,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!title && !description) {
+    if (!text && !title && !description) {
       return NextResponse.json(
-        { success: false, error: 'Either title or description is required' },
+        { success: false, error: 'Either text, title or description is required' },
         { status: 400 }
       );
     }
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
     console.log('[TRANSLATE_API] Translating to:', targetLang);
 
     // Translate both title and description
-    const textToTranslate = title || description || '';
+    const textToTranslate = text || title || description || '';
     if (!textToTranslate) {
       return NextResponse.json(
         { success: false, error: 'No text to translate' },
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
       text: textToTranslate,
       targetLanguages: ['en', targetLang],
       context: {
-        contentType: title ? 'title' : 'description',
+        contentType: contentType || (title ? 'title' : 'description'),
       },
     });
 
@@ -61,6 +63,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
+        text: text ? result.translations[targetLang] : '',
         title: title ? result.translations[targetLang] : '',
         description: description ? result.translations[targetLang] : '',
       },

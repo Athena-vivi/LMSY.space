@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
+import { normalizeLocalizedText } from '@/lib/localized-content';
 
 /**
  * GET - Retrieve gallery images
@@ -119,9 +120,12 @@ export async function POST(request: NextRequest) {
         .insert({
           image_url: item.image_url,
           title: item.title,
+          title_i18n: normalizeLocalizedText(item.title_i18n, item.title || ''),
           excerpt: item.description || null,
+          excerpt_i18n: normalizeLocalizedText(item.excerpt_i18n, item.description || ''),
           tag: item.tag || null,
           caption: item.caption || '',
+          caption_i18n: normalizeLocalizedText(item.caption_i18n, item.caption || ''),
           is_featured: item.is_featured || false,
           event_date: item.event_date || null,
           project_id: item.project_id || null,
@@ -265,7 +269,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, rotation, project_id, is_cover } = body;
+    const { id, rotation, project_id, is_cover, title, title_i18n, caption, caption_i18n, excerpt, excerpt_i18n } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -279,6 +283,12 @@ export async function PATCH(request: NextRequest) {
     if (rotation !== undefined) updateData.rotation = rotation ?? 0;
     if (project_id !== undefined) updateData.project_id = project_id;
     if (is_cover !== undefined) updateData.is_cover = !!is_cover;
+    if (title !== undefined) updateData.title = title || null;
+    if (title_i18n !== undefined) updateData.title_i18n = title_i18n || null;
+    if (caption !== undefined) updateData.caption = caption || null;
+    if (caption_i18n !== undefined) updateData.caption_i18n = caption_i18n || null;
+    if (excerpt !== undefined) updateData.excerpt = excerpt || null;
+    if (excerpt_i18n !== undefined) updateData.excerpt_i18n = excerpt_i18n || null;
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

@@ -36,8 +36,6 @@ export const translations = {
     'hero.scroll': 'SCROLL',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
-    'hero.universeTitle': 'The Universe is Expanding.',
-    'hero.universeSubtitle': 'Welcome to this starry sky that belongs to them, dear Bestie. Astra is carefully collecting, making this place shine brighter, bit by bit.',
     'hero.besties': 'A dedicated space for LMSY and their Besties.',
 
     // Quote
@@ -106,7 +104,6 @@ export const translations = {
     'banner.status': 'UNDER CONSTRUCTION',
 
     // Hero Section
-    'hero.preface': 'Some encounters are written in the stars.',
     'hero.curator': 'Curated by Astra',
     'hero.portalsTitle': 'Portals',
     'hero.portalsSubtitle': 'Enter different dimensions of their story',
@@ -124,19 +121,9 @@ export const translations = {
     'portal.commercialDesc': 'Where inspiration meets value',
 
     // Longform
-    'longform.title': 'Chronicle',
-    'longform.subtitle': 'Featured Interview',
-    'longform.excerpt': '"Every role is a piece of my heart. When I portray a character, I pour my soul into making them breathe, into making them real. Lookmhee teaches me that every day—how to be vulnerable, how to be brave enough to show the world who we truly are."',
-    'longform.source': '— Sonya, Vogue Thailand Interview 2024',
-    'longform.readMore': 'Read Full Story',
 
     // Micro-Chronicle
     'chronicle.title': 'Milestones',
-    'chronicle.2022': 'First Meeting',
-    'chronicle.2023': 'Affair Series',
-    'chronicle.2024': 'Fan Meet Tour',
-    'chronicle.2025': 'New Chapter',
-    'chronicle.ongoing': 'Story Continues',
 
     // Editorial
     'editorial.title': 'Editorial',
@@ -207,8 +194,6 @@ export const translations = {
     'hero.scroll': '滚动',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
-    'hero.universeTitle': 'The Universe is Expanding.',
-    'hero.universeSubtitle': '欢迎来到这片专属于她们的星空，亲爱的 Bestie。Astra 正在细心采集，这里正一点点变得璀璨。',
     'hero.besties': '属于 LMSY 和她们的 Besties 专属空间。',
 
     // Quote
@@ -277,7 +262,6 @@ export const translations = {
     'banner.status': '施工中',
 
     // Hero Section
-    'hero.preface': '有些相遇，早已写在星空中。',
     'hero.curator': 'Astra 策展',
     'hero.portalsTitle': '多维入口',
     'hero.portalsSubtitle': '走进她们故事的不同维度',
@@ -295,19 +279,9 @@ export const translations = {
     'portal.commercialDesc': '品牌灵感的碰撞',
 
     // Longform
-    'longform.title': '纪事',
-    'longform.subtitle': '精选访谈',
-    'longform.excerpt': '"每个角色都是我心的一部分。当我塑造一个角色时，我将灵魂倾注其中，让她们呼吸、让她们真实。Lookmhee 每天都在教会我——如何脆弱，如何勇敢地向世界展示真实的我们。"',
-    'longform.source': '— Sonya，《Vogue Thailand》访谈 2024',
-    'longform.readMore': '阅读全文',
 
     // Micro-Chronicle
     'chronicle.title': '里程碑',
-    'chronicle.2022': '初次相遇',
-    'chronicle.2023': 'Affair 剧集',
-    'chronicle.2024': '粉丝见面会',
-    'chronicle.2025': '新篇章',
-    'chronicle.ongoing': '故事继续',
 
     // Editorial
     'editorial.title': '杂志特辑',
@@ -378,8 +352,6 @@ export const translations = {
     'hero.scroll': 'เลื่อน',
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
-    'hero.universeTitle': 'The Universe is Expanding.',
-    'hero.universeSubtitle': 'ยินดีต้อนรับสู่ท้องฟ้าที่เป็นของพวกเธอ เบสตี้ที่รัก แอสตรากำลังรวบรวมอย่างประณีต ที่นี่กำลังค่อยๆ เรืองแสงยิ่งขึ้น',
     'hero.besties': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
 
     // Quote
@@ -448,7 +420,6 @@ export const translations = {
     'banner.status': 'กำลังก่อสร้าง',
 
     // Hero Section
-    'hero.preface': 'การพบกันบางครั้งถูกเขียนไว้บนดาว',
     'hero.curator': 'จัดทำโดย Astra',
     'hero.portalsTitle': 'ประตูมิติ',
     'hero.portalsSubtitle': 'เดินทางเข้าสู่มิติต่างๆ ของเรื่องราวพวกเธอ',
@@ -466,19 +437,9 @@ export const translations = {
     'portal.commercialDesc': 'จุดบรรจบของแรงบันดาลความคุณค่า',
 
     // Longform
-    'longform.title': 'บันทึก',
-    'longform.subtitle': 'บทสัมภาษณ์พิเศษ',
-    'longform.excerpt': '"ทุกบทบาทคือส่วนหนึ่งของหัวใจฉัน เมื่อฉันสร้างตัวละคร ฉันเทใจชีวิตให้พวกเธอหายใจ ให้พวกเธอเป็นจริง Lookmhee สอนฉันทุกวัน — วิธีที่จะอ่อนแอ วิธีที่จงมีความกล้าพอที่จะแสดงให้โลกเห็นว่าเราคือใคร"',
-    'longform.source': '— Sonya, บทสัมภาษณ์ Vogue Thailand 2024',
-    'longform.readMore': 'อ่านต่อ',
 
     // Micro-Chronicle
     'chronicle.title': 'ช่วงเวลาสำคัญ',
-    'chronicle.2022': 'การพบกันครั้งแรก',
-    'chronicle.2023': 'ซีรีส์ Affair',
-    'chronicle.2024': 'ทัวร์พบแฟนคลับ',
-    'chronicle.2025': 'บทใหม่',
-    'chronicle.ongoing': 'เรื่องราวต่อไป',
 
     // Editorial
     'editorial.title': 'นิตยสาร',

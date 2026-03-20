@@ -1,4 +1,5 @@
 /**
+ * GET /api/admin/drafts/[id] - Fetch a single draft item
  * PATCH /api/admin/drafts/[id] - Update a draft item
  * DELETE /api/admin/drafts/[id] - Delete a single draft item (with R2 cleanup)
  */
@@ -9,6 +10,48 @@ import { deleteFromR2 } from '@/lib/r2-client';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
+}
+
+// =====================================================
+// GET - Fetch a draft item
+// =====================================================
+export async function GET(
+  request: NextRequest,
+  { params }: RouteContext
+) {
+  try {
+    const { id } = await params;
+
+    const { data, error } = await supabaseAdmin
+      .from('draft_items')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { success: false, error: 'Draft item not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data,
+    });
+  } catch {
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
 // =====================================================

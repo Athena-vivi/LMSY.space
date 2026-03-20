@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { normalizeLocalizedText } from '@/lib/localized-content';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -24,7 +25,7 @@ export async function POST(
 
     const { data: draft, error: draftError } = await supabaseAdmin
       .from('draft_items')
-      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt')
+      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt,chronicle_excerpt_i18n')
       .eq('id', id)
       .single();
 
@@ -80,6 +81,10 @@ export async function POST(
 
     const title = pickLocalizedText(draft.title);
     const description = pickLocalizedText(draft.description);
+    const chronicleExcerptI18n = normalizeLocalizedText(
+      draft.chronicle_excerpt_i18n || draft.description,
+      draft.chronicle_excerpt || description || ''
+    );
     const primaryTag = Array.isArray(draft.tags) && draft.tags.length > 0 ? draft.tags[0] : null;
 
     const { data: insertedAsset, error: insertError } = await supabaseAdmin
@@ -88,8 +93,11 @@ export async function POST(
       .insert({
         image_url: draft.r2_media_url,
         title: title || null,
+        title_i18n: draft.title || null,
         excerpt: draft.chronicle_excerpt || description || null,
+        excerpt_i18n: chronicleExcerptI18n,
         caption: title || description || '',
+        caption_i18n: draft.title || draft.description || null,
         tag: primaryTag,
         is_featured: draft.is_featured ?? false,
         project_id: draft.project_id,

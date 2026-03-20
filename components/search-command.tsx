@@ -218,7 +218,7 @@ export function SearchCommand() {
                 </div>
 
                 {/* Search Results */}
-                <div className="max-h-[400px] overflow-y-auto">
+                <div className="custom-scrollbar max-h-[400px] overflow-y-auto">
                   {isLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />

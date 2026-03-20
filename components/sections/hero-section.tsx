@@ -6,9 +6,32 @@ import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { ArrowDown, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { DEFAULT_HERO_CONTENT, normalizeHeroContent } from '@/app/admin/settings/content-blocks';
 
 export function HeroSection() {
   const { language } = useLanguage();
+  const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);
+
+  useEffect(() => {
+    async function fetchHeroContent() {
+      try {
+        const response = await fetch('/api/site-content?key=homepage_hero', { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success || !data.block?.content_i18n) return;
+
+        setHeroContent(normalizeHeroContent(data.block.content_i18n));
+      } catch (error) {
+        console.error('[SITE_CONTENT] Failed to fetch homepage_hero:', error);
+      }
+    }
+
+    fetchHeroContent();
+  }, []);
+
+  const currentHeroContent = heroContent[language] || heroContent.en;
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -36,7 +59,7 @@ export function HeroSection() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              {t(language, 'hero.preface')}
+              {currentHeroContent.preface}
             </motion.p>
 
             {/* Main Title */}
@@ -66,10 +89,10 @@ export function HeroSection() {
               }}
             >
               <h3 className="font-serif font-light text-2xl md:text-3xl text-foreground/80 tracking-wide">
-                {t(language, 'hero.universeTitle')}
+                {currentHeroContent.universeTitle}
               </h3>
               <p className="font-serif text-sm md:text-base text-foreground/70 leading-relaxed max-w-md mx-auto lg:mx-0 italic">
-                {t(language, 'hero.universeSubtitle')}
+                {currentHeroContent.universeSubtitle}
               </p>
             </motion.div>
           </motion.div>

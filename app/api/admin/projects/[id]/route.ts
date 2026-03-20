@@ -218,11 +218,15 @@ export async function PATCH(
     // Optional fields
     if (body.release_date !== undefined) updateData.release_date = body.release_date || null;
     if (body.description !== undefined) updateData.description = body.description || null;
+    if (body.title_i18n !== undefined) updateData.title_i18n = body.title_i18n || null;
+    if (body.description_i18n !== undefined) updateData.description_i18n = body.description_i18n || null;
     if (body.watch_url !== undefined) updateData.watch_url = body.watch_url || null;
     if (body.tags !== undefined) updateData.tags = body.tags && body.tags.length > 0 ? body.tags : null;
     if (body.portal_visible !== undefined) updateData.portal_visible = !!body.portal_visible;
     if (body.portal_priority !== undefined) updateData.portal_priority = Number(body.portal_priority) || 0;
     if (body.theme_statement !== undefined) updateData.theme_statement = body.theme_statement || null;
+    if (body.theme_statement_i18n !== undefined) updateData.theme_statement_i18n = body.theme_statement_i18n || null;
+    if (body.homepage_excerpt_i18n !== undefined) updateData.homepage_excerpt_i18n = body.homepage_excerpt_i18n || null;
     if (body.curation_status !== undefined) updateData.curation_status = body.curation_status || 'draft';
 
     console.log('[PROJECTS_PATCH] Update data:', updateData);

@@ -66,6 +66,7 @@ interface DraftsGridProps {
   onPublish: (id: string) => void;
   onUnpublish: (id: string) => void;
   onCreateProject: (id: string) => void;
+  onLinkExistingProject: (id: string) => void;
   onAddToAssets: (id: string) => void;
   onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
@@ -82,6 +83,7 @@ export function DraftsGrid({
   onPublish,
   onUnpublish,
   onCreateProject,
+  onLinkExistingProject,
   onAddToAssets,
   onSetMilestone,
   onEdit,
@@ -111,6 +113,7 @@ export function DraftsGrid({
             onPublish={onPublish}
             onUnpublish={onUnpublish}
             onCreateProject={onCreateProject}
+            onLinkExistingProject={onLinkExistingProject}
             onAddToAssets={onAddToAssets}
             onSetMilestone={onSetMilestone}
             onEdit={onEdit}

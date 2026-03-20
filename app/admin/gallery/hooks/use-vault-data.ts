@@ -9,6 +9,7 @@ export interface MilestoneImage {
   image_url: string;
   year: string;
   caption: string | null;
+  caption_i18n?: { en?: string | null; zh?: string | null; th?: string | null } | null;
   tag: string | null;
 }
 

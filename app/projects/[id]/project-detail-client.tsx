@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { ArrowLeft, Calendar, ExternalLink, Play, Quote } from 'lucide-react';
+import { Calendar, ExternalLink, Play } from 'lucide-react';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
 import { NebulaBackground } from '@/components/nebula-background';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
 import { SpaceHubReturn } from '@/components/space-hub-return';
 import { CATEGORIES, CategoryType } from './page';
+import { useLanguage } from '@/components/language-provider';
+import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 
 interface GalleryImage {
   id: string;
@@ -42,15 +43,19 @@ interface Chapter {
 interface Project {
   id: string;
   title: string;
+  title_i18n?: LocalizedText | null;
   category: string;
   release_date: string | null;
   description: string | null;
+  description_i18n?: LocalizedText | null;
   cover_url: string | null;
   cover_rotation?: number | null;
   watch_url: string | null;
   start_date?: string | null;
   end_date?: string | null;
   is_ongoing?: boolean;
+  theme_statement?: string | null;
+  theme_statement_i18n?: LocalizedText | null;
 }
 
 interface ProjectDetailClientProps {
@@ -116,7 +121,7 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
       if (currentChapter.length > 0) {
         chapters.push({
           id: monthKey,
-          title: getChapterTitle(monthKey, currentMonth),
+          title: getChapterTitle(monthKey),
           period: formatPeriod(monthKey),
           images: currentChapter,
           startIndex: globalIndex - currentChapter.length,
@@ -134,7 +139,7 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
   if (currentChapter.length > 0 && currentMonth) {
     chapters.push({
       id: currentMonth,
-      title: getChapterTitle(currentMonth, null),
+      title: getChapterTitle(currentMonth),
       period: formatPeriod(currentMonth),
       images: currentChapter,
       startIndex: globalIndex - currentChapter.length,
@@ -147,7 +152,7 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
 /**
  * Generate chapter title based on month patterns
  */
-function getChapterTitle(currentMonth: string, _previousMonth: string | null): string {
+function getChapterTitle(currentMonth: string): string {
   const [year, month] = currentMonth.split('-');
   const monthDate = new Date(parseInt(year), parseInt(month) - 1);
   const monthName = monthDate.toLocaleDateString('en-US', { month: 'long' });
@@ -177,9 +182,13 @@ function formatPeriod(monthKey: string): string {
 }
 
 export default function ProjectDetailClient({ project, images, categories }: ProjectDetailClientProps) {
+  const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryType>('all');
   const currentImages = images[activeTab] || [];
   const curatorNote = CURATOR_NOTES[activeTab];
+  const localizedTitle = getLocalizedText(project.title_i18n, language, project.title);
+  const localizedDescription = getLocalizedText(project.description_i18n, language, project.description);
+  const localizedThemeStatement = getLocalizedText(project.theme_statement_i18n, language, project.theme_statement);
 
   // Category config for badges
   const categoryConfig: Record<string, { label: string; className: string }> = {
@@ -215,73 +224,23 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
 
       <NebulaBackground />
       <div className="min-h-screen">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-32 pb-24 md:pb-32">
-          {/* Hero - Cover Image with Placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-12"
-          >
-            {(() => {
-              const coverUrl = getImageUrl(project.cover_url);
-              return coverUrl ? (
-                <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-white/10">
-                  <Image
-                    src={coverUrl}
-                    alt={project.title}
-                    fill
-                    className="object-contain bg-black/30"
-                    style={{ transform: `rotate(${project.cover_rotation ?? 0}deg)` }}
-                    priority
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                /* Glowing text logo placeholder */
-                <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-white/10 bg-gradient-to-br from-lmsy-yellow/10 via-lmsy-blue/10 to-black flex items-center justify-center">
-                  <div className="text-center">
-                    <motion.h1
-                      className="font-serif text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter"
-                      style={{
-                        background: 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 50%, rgb(251, 191, 36) 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        filter: 'drop-shadow(0 0 30px rgba(251, 191, 36, 0.3))',
-                      }}
-                      animate={{
-                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                      }}
-                      transition={{
-                        duration: 5,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                    >
-                      {project.title.split(' ').map(word => word[0]).join('') || project.title.substring(0, 3).toUpperCase()}
-                    </motion.h1>
-                    <p className="text-white/40 text-sm mt-4 tracking-widest uppercase">Coming Soon</p>
-                  </div>
-                </div>
-              );
-            })()}
-          </motion.div>
-
+        <div className="w-full px-4 pt-14 pb-24 sm:px-6 md:pt-20 md:pb-32 lg:px-10 xl:px-14">
+          <div className="relative">
+            <aside className="xl:fixed xl:top-28 xl:left-14 xl:w-[220px] xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto xl:pr-3">
           {/* Title and Category */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="mb-8"
+            className="mb-6 max-w-[220px]"
           >
-            <div className="flex flex-wrap items-center gap-4 mb-4">
+            <div className="mb-4 flex flex-col items-start gap-3">
               <span className={`px-3 py-1 text-[10px] font-mono tracking-[0.1em] uppercase border ${categoryConfig[project.category]?.className || categoryConfig.series.className}`}>
                 {categoryConfig[project.category]?.label || 'Uncategorized'}
               </span>
               {project.release_date && (
                 <div className="flex items-center gap-2 text-white/60">
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="h-4 w-4" />
                   <span className="text-sm">
                     {new Date(project.release_date).toLocaleDateString('en-US', {
                       year: 'numeric',
@@ -293,28 +252,41 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               )}
             </div>
 
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
-              {project.title}
+            <h1 className="mb-4 font-serif text-2xl font-bold tracking-tight text-white md:text-3xl xl:text-[2rem]">
+              {localizedTitle}
             </h1>
 
             {/* 🔒 ARCHIVE CREDIT - Dynamic Gratitude based on category */}
-            <div className="mb-4">
+            <div className="mb-5">
               <ArchiveCreditCompact category={project.category} />
             </div>
 
-            <div className="w-24 h-0.5 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
+            <div className="h-0.5 w-24 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
           </motion.div>
 
           {/* Description */}
-          {project.description && (
+          {localizedDescription && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-12 max-w-3xl"
+              className="mb-6 max-w-[220px]"
             >
-              <p className="text-lg leading-relaxed text-white/60 whitespace-pre-line">
-                {project.description}
+              <p className="text-sm leading-7 text-white/60 whitespace-pre-line">
+                {localizedDescription}
+              </p>
+            </motion.div>
+          )}
+
+          {localizedThemeStatement && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.22 }}
+              className="mb-6 max-w-[220px]"
+            >
+              <p className="border-l border-lmsy-yellow/30 pl-4 text-sm leading-relaxed text-white/45 whitespace-pre-line">
+                {localizedThemeStatement}
               </p>
             </motion.div>
           )}
@@ -325,7 +297,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="mb-12"
+              className="mb-8 max-w-[220px]"
             >
               <a
                 href={project.watch_url}
@@ -345,7 +317,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-12"
+            className="mb-8 max-w-[220px]"
           >
             <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
               {categories.map((cat) => {
@@ -385,11 +357,10 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4 }}
-                className="mb-12 max-w-3xl"
+                className="mb-8 max-w-[220px]"
               >
                 <div className="relative p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm">
-                  <Quote className="absolute top-4 left-4 h-8 w-8 text-lmsy-yellow/20" />
-                  <div className="pl-8">
+                  <div>
                     <h4 className="text-xs font-mono text-lmsy-yellow/60 tracking-wider uppercase mb-2">
                       {curatorNote.title}
                     </h4>
@@ -403,37 +374,19 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
           </AnimatePresence>
 
           {/* 🎯 CHAPTERIZED GALLERY - Chronological Masonry Layout */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`gallery-${activeTab}`}
+            </aside>
+
+          <section className="xl:pl-[260px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`gallery-${activeTab}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {chapters.map((chapter, chapterIndex) => (
+              {chapters.map((chapter) => (
                 <div key={chapter.id} className="mb-12">
-                  {/* Chapter Header */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: chapterIndex * 0.1 }}
-                    className="mb-8"
-                  >
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                      <div className="text-center px-6">
-                        <h3 className="font-serif text-xl md:text-2xl text-white/80">
-                          {chapter.title}
-                        </h3>
-                        <p className="font-mono text-[10px] text-lmsy-yellow/60 tracking-[0.2em] uppercase mt-1">
-                          {chapter.period}
-                        </p>
-                      </div>
-                      <div className="flex-1 h-px bg-gradient-to-l from-transparent via-white/20 to-transparent" />
-                    </div>
-                  </motion.div>
-
                   {/* Chapter Images - Gallery Grade Masonry */}
                   <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
                     {chapter.images.map((image, index) => {
@@ -512,7 +465,9 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                 </div>
               ))}
             </motion.div>
-          </AnimatePresence>
+            </AnimatePresence>
+          </section>
+          </div>
 
           {/* Empty State */}
           {currentImages.length === 0 && (

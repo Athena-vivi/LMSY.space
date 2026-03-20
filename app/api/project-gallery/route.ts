@@ -44,20 +44,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const sortedData = [...(data || [])].sort((a, b) => {
+      const aCoverRank = a.is_cover || a.catalog_id?.endsWith('-000') ? 0 : 1;
+      const bCoverRank = b.is_cover || b.catalog_id?.endsWith('-000') ? 0 : 1;
+      if (aCoverRank !== bCoverRank) {
+        return aCoverRank - bCoverRank;
+      }
+
+      const seqA = typeof a.sequence === 'number' ? a.sequence : Number.MAX_SAFE_INTEGER;
+      const seqB = typeof b.sequence === 'number' ? b.sequence : Number.MAX_SAFE_INTEGER;
+      if (seqA !== seqB) {
+        return seqA - seqB;
+      }
+
+      const catalogA = a.catalog_id || '';
+      const catalogB = b.catalog_id || '';
+      if (catalogA && catalogB && catalogA !== catalogB) {
+        return catalogA.localeCompare(catalogB);
+      }
+
+      return (a.created_at || '').localeCompare(b.created_at || '');
+    });
+
     // Group by category for organized display
     const grouped = {
-      all: data || [],
-      official_stills: (data || []).filter(img => img.category_tag === 'official_stills' || !img.category_tag),
-      bts: (data || []).filter(img => img.category_tag === 'bts'),
-      press_events: (data || []).filter(img => img.category_tag === 'press_events'),
+      all: sortedData,
+      official_stills: sortedData.filter(img => img.category_tag === 'official_stills' || !img.category_tag),
+      bts: sortedData.filter(img => img.category_tag === 'bts'),
+      press_events: sortedData.filter(img => img.category_tag === 'press_events'),
     };
 
     return NextResponse.json({
       success: true,
       project_id: projectId,
       category,
-      count: data?.length || 0,
-      data: data || [],
+      count: sortedData.length,
+      data: sortedData,
       grouped,
     });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { normalizeLocalizedText } from '@/lib/localized-content';
 
 type DraftPayload = {
   id: string;
@@ -8,6 +9,8 @@ type DraftPayload = {
   description?: { en?: string; zh?: string; th?: string } | string | null;
   chronicle_title?: string | null;
   chronicle_excerpt?: string | null;
+  chronicle_title_i18n?: { en?: string; zh?: string; th?: string } | null;
+  chronicle_excerpt_i18n?: { en?: string; zh?: string; th?: string } | null;
   r2_media_url?: string | null;
   event_date?: string | null;
   chronicle_visible?: boolean;
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
         .order('release_date', { ascending: false }),
       supabaseAdmin
         .from('draft_items')
-        .select('id,title,description,chronicle_title,chronicle_excerpt,r2_media_url,event_date,chronicle_visible,project_id')
+        .select('id,title,description,chronicle_title,chronicle_excerpt,chronicle_title_i18n,chronicle_excerpt_i18n,r2_media_url,event_date,chronicle_visible,project_id')
         .eq('status', 'published')
         .order('event_date', { ascending: false }),
     ]);
@@ -111,17 +114,30 @@ export async function GET(request: NextRequest) {
 
     const chronicle = drafts
       .filter((item) => item.event_date)
-      .map((item) => ({
-        id: item.id,
-        title: item.chronicle_title || extractLocalizedText(item.title) || 'Untitled',
-        description: item.chronicle_excerpt || extractLocalizedText(item.description) || '',
-        event_date: item.event_date,
-        event_type: 'custom',
-        image_ids: [],
-        image_url: item.r2_media_url || null,
-        chronicle_visible: item.chronicle_visible ?? true,
-        project_id: item.project_id || null,
-      }));
+      .map((item) => {
+        const titleI18n = normalizeLocalizedText(
+          item.chronicle_title_i18n || item.title,
+          item.chronicle_title || extractLocalizedText(item.title) || 'Untitled'
+        );
+        const excerptI18n = normalizeLocalizedText(
+          item.chronicle_excerpt_i18n || item.description,
+          item.chronicle_excerpt || extractLocalizedText(item.description) || ''
+        );
+
+        return {
+          id: item.id,
+          title: titleI18n.en || titleI18n.zh || titleI18n.th || 'Untitled',
+          title_i18n: titleI18n,
+          description: excerptI18n.en || excerptI18n.zh || excerptI18n.th || '',
+          description_i18n: excerptI18n,
+          event_date: item.event_date,
+          event_type: 'custom',
+          image_ids: [],
+          image_url: item.r2_media_url || null,
+          chronicle_visible: item.chronicle_visible ?? true,
+          project_id: item.project_id || null,
+        };
+      });
 
     return NextResponse.json({
       success: true,

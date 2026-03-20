@@ -7,9 +7,6 @@ import {
   LayoutDashboard,
   Images,
   FolderKanban,
-  FileText,
-  PenTool,
-  Upload,
   LogOut,
   Shield,
   X,
@@ -17,6 +14,7 @@ import {
   ChevronRight,
   MessageSquare,
   Inbox,
+  Settings,
   type LucideIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -70,7 +68,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const [draftCount, setDraftCount] = useState(0);
 
   // Fetch draft count for badge
@@ -140,7 +138,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+        <nav className="custom-scrollbar flex-1 overflow-y-auto py-4 px-3 space-y-6">
           {navSections.map((section) => (
             <div key={section.title}>
               {!isCollapsed && (
@@ -219,17 +217,29 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
           ))}
         </nav>
 
-        {/* Sign Out - Minimal */}
-        <div className="border-t p-3" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-          <button
-            onClick={signOut}
+        <div className="px-3 pb-3">
+          <Link
+            href="/admin/settings"
             className={cn(
-              'w-full flex items-center justify-center gap-2 p-2 rounded-lg text-white/30 hover:text-red-400/80 hover:bg-red-500/5 transition-all duration-200',
-              !isCollapsed && 'px-4'
+              'flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 relative overflow-hidden group',
+              pathname?.startsWith('/admin/settings')
+                ? 'text-white/90 font-medium'
+                : 'text-white/40 hover:text-white/70'
             )}
-            aria-label="Sign out"
           >
-            <LogOut className="h-3.5 w-3.5" strokeWidth={1.5} />
+            {pathname?.startsWith('/admin/settings') && (
+              <motion.div
+                layoutId="activeGlow"
+                className="absolute inset-0 bg-gradient-to-r from-lmsy-yellow/5 to-lmsy-blue/5 rounded-lg"
+                style={{
+                  boxShadow: '0 0 20px rgba(251, 191, 36, 0.1), 0 0 40px rgba(56, 189, 248, 0.05)',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            )}
+            <Settings className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
             <AnimatePresence mode="wait">
               {!isCollapsed && (
                 <motion.span
@@ -237,7 +247,34 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="text-xs font-mono tracking-wider whitespace-nowrap"
+                  className="text-sm font-light whitespace-nowrap"
+                >
+                  Settings
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </Link>
+        </div>
+
+        {/* Sign Out - Minimal */}
+        <div className="border-t p-3" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+          <button
+            onClick={signOut}
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg px-3 py-2 text-white/30 hover:text-red-400/80 hover:bg-red-500/5 transition-all duration-200',
+              isCollapsed && 'justify-center px-2'
+            )}
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
+            <AnimatePresence mode="wait">
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-sm font-light whitespace-nowrap"
                 >
                   SIGN OUT
                 </motion.span>

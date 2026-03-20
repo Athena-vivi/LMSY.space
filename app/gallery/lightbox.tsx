@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { useState, useCallback, useEffect } from 'react';
 import { type GalleryItem } from '@/lib/supabase';
 import ReactMarkdown from 'react-markdown';
+import { useLanguage } from '@/components/language-provider';
+import { getLocalizedText } from '@/lib/localized-content';
 
 interface LightboxProps {
   image: GalleryItem;
@@ -14,6 +16,7 @@ interface LightboxProps {
 }
 
 export default function Lightbox({ image, images, onClose }: LightboxProps) {
+  const { language } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Find current image index
@@ -43,6 +46,9 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
 
   const currentImage = images[currentIndex];
   const isEditorial = currentImage?.is_editorial;
+  const localizedCaption = currentImage
+    ? getLocalizedText(currentImage.caption_i18n, language, currentImage.caption)
+    : '';
 
   if (!currentImage) return null;
 
@@ -82,7 +88,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                   {currentImage.image_url ? (
                     <Image
                       src={currentImage.image_url}
-                      alt={currentImage.caption || 'Curatorial feature'}
+                      alt={localizedCaption || 'Curatorial feature'}
                       width={800}
                       height={1000}
                       className="w-auto h-auto max-h-[70vh] object-contain"
@@ -97,7 +103,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
               </div>
 
               {/* Curator's Note - Right/Bottom */}
-              {(currentImage.caption || currentImage.curator_note) && (
+              {(localizedCaption || currentImage.curator_note) && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -120,9 +126,9 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                   </div>
 
                   {/* Caption */}
-                  {currentImage.caption && (
+                  {localizedCaption && (
                     <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-6 leading-relaxed">
-                      {currentImage.caption}
+                      {localizedCaption}
                     </h2>
                   )}
 
@@ -221,7 +227,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
               {currentImage.image_url ? (
                 <Image
                   src={currentImage.image_url}
-                  alt={currentImage.caption || currentImage.tag || 'Gallery image'}
+                  alt={localizedCaption || currentImage.tag || 'Gallery image'}
                   fill
                   className="object-contain"
                   priority
@@ -234,7 +240,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
               )}
 
               {/* Caption Overlay */}
-              {(currentImage.caption || currentImage.tag || currentImage.catalog_id) && (
+              {(localizedCaption || currentImage.tag || currentImage.catalog_id) && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -251,9 +257,9 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                       #{currentImage.tag}
                     </span>
                   )}
-                  {currentImage.caption && (
+                  {localizedCaption && (
                     <p className="text-white font-serif text-xl md:text-2xl">
-                      {currentImage.caption}
+                      {localizedCaption}
                     </p>
                   )}
                 </motion.div>

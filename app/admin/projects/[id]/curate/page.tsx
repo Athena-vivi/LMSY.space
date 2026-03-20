@@ -1,8 +1,7 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, ExternalLink, Loader2, GripVertical, RotateCcw, RotateCw } from 'lucide-react';
+import { use, useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, ExternalLink, Loader2, GripVertical, RotateCcw, RotateCw, Trash2, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -17,9 +16,9 @@ import {
 import {
   arrayMove,
   SortableContext,
+  rectSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getImageUrl } from '@/lib/image-url';
@@ -31,6 +30,8 @@ interface GalleryImage {
   caption: string;
   catalog_id: string;
   sequence?: number;
+  created_at?: string;
+  is_cover?: boolean | null;
   rotation?: number | null;
 }
 
@@ -46,10 +47,14 @@ function SortableImage({
   image,
   index,
   onRotate,
+  onDelete,
+  onSetCover,
 }: {
   image: GalleryImage;
   index: number;
   onRotate: (image: GalleryImage, direction: 'left' | 'right') => void;
+  onDelete: (image: GalleryImage) => void;
+  onSetCover: (image: GalleryImage) => void;
 }) {
   const {
     attributes,
@@ -66,7 +71,7 @@ function SortableImage({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const isCover = image.catalog_id?.endsWith('-000');
+  const isCover = Boolean(image.is_cover || image.catalog_id?.endsWith('-000'));
   const imageUrl = getImageUrl(image.image_url);
 
   return (
@@ -81,7 +86,7 @@ function SortableImage({
       </div>
 
       {/* Image Container - Smaller Scale */}
-      <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-white/5 border border-white/10 hover:border-lmsy-yellow/30 transition-all duration-200">
+      <div className="relative aspect-[3/4] overflow-hidden bg-white/5 transition-all duration-200">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -103,7 +108,7 @@ function SortableImage({
         {isCover && (
           <div className="absolute top-2 right-2 px-3 py-1 bg-lmsy-yellow/20 backdrop-blur-sm border border-lmsy-yellow/40 rounded-full">
             <span className="text-[10px] font-mono font-bold text-lmsy-yellow tracking-wider">
-              COVER_000
+              COVER
             </span>
           </div>
         )}
@@ -134,6 +139,26 @@ function SortableImage({
               >
                 <RotateCw className="h-3 w-3" strokeWidth={1.8} />
               </button>
+              <button
+                type="button"
+                onClick={() => onDelete(image)}
+                className="rounded bg-black/70 p-1 text-red-300/70 transition-colors hover:text-red-200"
+                title="Delete Image"
+              >
+                <Trash2 className="h-3 w-3" strokeWidth={1.8} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetCover(image)}
+                className={`rounded bg-black/70 p-1 transition-colors ${
+                  isCover
+                    ? 'text-lmsy-yellow'
+                    : 'text-lmsy-yellow/75 hover:text-lmsy-yellow'
+                }`}
+                title={isCover ? 'Current Cover' : 'Set as Cover'}
+              >
+                <Star className="h-3 w-3" strokeWidth={1.8} />
+              </button>
             </div>
           </div>
         </div>
@@ -158,10 +183,6 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
     })
   );
 
-  useEffect(() => {
-    fetchProjectAndImages();
-  }, [id]);
-
   const getAuthHeaders = async () => {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -175,7 +196,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
     };
   };
 
-  const fetchProjectAndImages = async () => {
+  const fetchProjectAndImages = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
 
@@ -199,10 +220,26 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
       });
       const galleryJson = await galleryResponse.json();
       if (galleryResponse.ok && galleryJson.data) {
-        const sortedImages = galleryJson.data.sort((a: GalleryImage, b: GalleryImage) => {
-          const seqA = a.sequence ?? 999;
-          const seqB = b.sequence ?? 999;
-          return seqA - seqB;
+        const sortedImages = [...galleryJson.data].sort((a: GalleryImage, b: GalleryImage) => {
+          const aCoverRank = a.is_cover || a.catalog_id?.endsWith('-000') ? 0 : 1;
+          const bCoverRank = b.is_cover || b.catalog_id?.endsWith('-000') ? 0 : 1;
+          if (aCoverRank !== bCoverRank) {
+            return aCoverRank - bCoverRank;
+          }
+
+          const seqA = a.sequence ?? Number.MAX_SAFE_INTEGER;
+          const seqB = b.sequence ?? Number.MAX_SAFE_INTEGER;
+          if (seqA !== seqB) {
+            return seqA - seqB;
+          }
+
+          const catalogA = a.catalog_id || '';
+          const catalogB = b.catalog_id || '';
+          if (catalogA && catalogB && catalogA !== catalogB) {
+            return catalogA.localeCompare(catalogB);
+          }
+
+          return (a.created_at || '').localeCompare(b.created_at || '');
         });
         setImages(sortedImages);
       } else if (!galleryResponse.ok) {
@@ -214,7 +251,11 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchProjectAndImages();
+  }, [fetchProjectAndImages]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -302,6 +343,86 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleDeleteImage = async (image: GalleryImage) => {
+    const confirmed = window.confirm(
+      `Delete this image from gallery assets?\n\n${image.catalog_id || image.id}\n\nThis removes it from the project curation view as well.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSaveStatus('DELETING...');
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/gallery?ids=${image.id}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'DELETE_FAILED');
+      }
+
+      setImages((prev) => prev.filter((item) => item.id !== image.id));
+      setSaveStatus('DELETED');
+      setTimeout(() => setSaveStatus(null), 1500);
+    } catch (error) {
+      console.error('Failed to delete image:', error);
+      setSaveStatus('DELETE_ERROR');
+    }
+  };
+
+  const handleSetCover = async (image: GalleryImage) => {
+    setSaveStatus('SETTING_COVER...');
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/projects/${id}/cover`, {
+        method: 'PATCH',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ imageId: image.id }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'SET_COVER_FAILED');
+      }
+
+      setImages((prev) => {
+        const updated = prev.map((item) => ({
+          ...item,
+          is_cover: item.id === image.id,
+        }));
+
+        return [...updated].sort((a, b) => {
+          const aCoverRank = a.is_cover || a.catalog_id?.endsWith('-000') ? 0 : 1;
+          const bCoverRank = b.is_cover || b.catalog_id?.endsWith('-000') ? 0 : 1;
+          if (aCoverRank !== bCoverRank) {
+            return aCoverRank - bCoverRank;
+          }
+
+          const seqA = a.sequence ?? Number.MAX_SAFE_INTEGER;
+          const seqB = b.sequence ?? Number.MAX_SAFE_INTEGER;
+          if (seqA !== seqB) {
+            return seqA - seqB;
+          }
+
+          return (a.created_at || '').localeCompare(b.created_at || '');
+        });
+      });
+      setSaveStatus('COVER_SET');
+      setTimeout(() => setSaveStatus(null), 1500);
+    } catch (error) {
+      console.error('Failed to set cover:', error);
+      setSaveStatus('COVER_ERROR');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -372,6 +493,9 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
             <p className="mt-3 text-xs font-mono text-white/30">
               This page only shows gallery images whose <span className="text-white/50">project_id</span> matches this project.
             </p>
+            <p className="mt-2 text-xs font-mono text-white/25">
+              If your images are still in Draft Inbox, use <span className="text-white/45">LINK_EXISTING</span> and then <span className="text-white/45">WRITE_TO_ASSETS</span> first.
+            </p>
           </div>
         ) : (
           <DndContext
@@ -381,11 +505,10 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
           >
             <SortableContext
               items={images.map(img => img.id)}
-              strategy={verticalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
               <div
-                className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10"
-                style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}
+                className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
               >
                 {images.map((image, index) => (
                   <SortableImage
@@ -393,6 +516,8 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
                     image={image}
                     index={index}
                     onRotate={handleRotate}
+                    onDelete={handleDeleteImage}
+                    onSetCover={handleSetCover}
                   />
                 ))}
               </div>

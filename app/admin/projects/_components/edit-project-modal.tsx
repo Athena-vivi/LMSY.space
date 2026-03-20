@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Languages } from 'lucide-react';
 import { supabase, type Project } from '@/lib/supabase';
 import { type ProjectCategory } from '@/lib/supabase/types';
 import CategoryDropdown from '@/app/admin/upload/_components/category-dropdown';
+import { normalizeLocalizedText } from '@/lib/localized-content';
+import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
 
 const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string }[] = [
   { value: 'series', label: 'TV_SERIES', prefix: 'TV' },
@@ -41,30 +43,47 @@ export default function EditProjectModal({
   onUpdate,
 }: EditProjectModalProps) {
   const [title, setTitle] = useState('');
+  const [titleZh, setTitleZh] = useState('');
+  const [titleTh, setTitleTh] = useState('');
   const [category, setCategory] = useState<ProjectCategory>('series');
   const [releaseDate, setReleaseDate] = useState('');
   const [description, setDescription] = useState('');
+  const [descriptionZh, setDescriptionZh] = useState('');
+  const [descriptionTh, setDescriptionTh] = useState('');
   const [referenceUrl, setReferenceUrl] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [portalVisible, setPortalVisible] = useState(false);
   const [portalPriority, setPortalPriority] = useState(0);
   const [themeStatement, setThemeStatement] = useState('');
+  const [themeStatementZh, setThemeStatementZh] = useState('');
+  const [themeStatementTh, setThemeStatementTh] = useState('');
   const [curationStatus, setCurationStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [translatingLang, setTranslatingLang] = useState<AdminTranslateTarget | null>(null);
 
   // Load project data when modal opens
   useEffect(() => {
     if (project) {
+      const titleI18n = normalizeLocalizedText(project.title_i18n, project.title);
+      const descriptionI18n = normalizeLocalizedText(project.description_i18n, project.description || '');
+      const themeStatementI18n = normalizeLocalizedText(project.theme_statement_i18n, project.theme_statement || '');
+
       setTitle(project.title);
+      setTitleZh(titleI18n.zh || '');
+      setTitleTh(titleI18n.th || '');
       setCategory(project.category);
       setReleaseDate(project.release_date || '');
       setDescription(project.description || '');
+      setDescriptionZh(descriptionI18n.zh || '');
+      setDescriptionTh(descriptionI18n.th || '');
       setReferenceUrl(project.watch_url || '');
       setTags(project.tags || []);
       setPortalVisible(!!project.portal_visible);
       setPortalPriority(project.portal_priority || 0);
       setThemeStatement(project.theme_statement || '');
+      setThemeStatementZh(themeStatementI18n.zh || '');
+      setThemeStatementTh(themeStatementI18n.th || '');
       setCurationStatus(project.curation_status || 'draft');
     }
   }, [project]);
@@ -111,14 +130,29 @@ export default function EditProjectModal({
       // Prepare update data
       const updateData = {
         title: title.trim(),
+        title_i18n: {
+          en: title.trim(),
+          zh: titleZh.trim(),
+          th: titleTh.trim(),
+        },
         category,
         release_date: releaseDate || null,
         description: description || null,
+        description_i18n: {
+          en: description || '',
+          zh: descriptionZh || '',
+          th: descriptionTh || '',
+        },
         watch_url: referenceUrl || null,
         tags: tags.length > 0 ? tags : null,
         portal_visible: portalVisible,
         portal_priority: portalPriority,
         theme_statement: themeStatement || null,
+        theme_statement_i18n: {
+          en: themeStatement || '',
+          zh: themeStatementZh || '',
+          th: themeStatementTh || '',
+        },
         curation_status: curationStatus,
       };
 
@@ -151,6 +185,44 @@ export default function EditProjectModal({
       alert(`Error: ${error instanceof Error ? error.message : 'Update failed'}`);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleAutoTranslate = async (targetLang: AdminTranslateTarget) => {
+    if (!title.trim() && !description.trim() && !themeStatement.trim()) {
+      alert('Please enter English content first.');
+      return;
+    }
+
+    setTranslatingLang(targetLang);
+    try {
+      const translated = await translateFieldMap(
+        {
+          title,
+          description,
+          themeStatement,
+        },
+        targetLang,
+        {
+          title: 'title',
+          description: 'description',
+          themeStatement: 'description',
+        }
+      );
+
+      if (targetLang === 'zh') {
+        setTitleZh(translated.title);
+        setDescriptionZh(translated.description);
+        setThemeStatementZh(translated.themeStatement);
+      } else {
+        setTitleTh(translated.title);
+        setDescriptionTh(translated.description);
+        setThemeStatementTh(translated.themeStatement);
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Translation failed');
+    } finally {
+      setTranslatingLang(null);
     }
   };
 
@@ -205,7 +277,7 @@ export default function EditProjectModal({
                 {/* Title */}
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
-                    TITLE *
+                    TITLE_EN *
                   </label>
                   <input
                     type="text"
@@ -220,6 +292,53 @@ export default function EditProjectModal({
                     }}
                     required
                   />
+                  <div className="flex gap-2 pt-2">
+                    {(['zh', 'th'] as const).map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => handleAutoTranslate(lang)}
+                        disabled={translatingLang !== null}
+                        className="inline-flex items-center gap-2 rounded border border-lmsy-blue/30 bg-lmsy-blue/10 px-3 py-1.5 text-[10px] font-mono tracking-wider text-lmsy-blue transition-all hover:bg-lmsy-blue/20 disabled:opacity-50"
+                      >
+                        {translatingLang === lang ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Languages className="h-3.5 w-3.5" />
+                        )}
+                        AUTO_{lang.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      TITLE_ZH
+                    </label>
+                    <input
+                      type="text"
+                      value={titleZh}
+                      onChange={(e) => setTitleZh(e.target.value)}
+                      placeholder="Chinese title..."
+                      className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      TITLE_TH
+                    </label>
+                    <input
+                      type="text"
+                      value={titleTh}
+                      onChange={(e) => setTitleTh(e.target.value)}
+                      placeholder="Thai title..."
+                      className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  </div>
                 </div>
 
                 {/* Category */}
@@ -251,7 +370,7 @@ export default function EditProjectModal({
                 {/* Description */}
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
-                    DESCRIPTION
+                    DESCRIPTION_EN
                   </label>
                   <textarea
                     value={description}
@@ -261,6 +380,35 @@ export default function EditProjectModal({
                     className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      DESCRIPTION_ZH
+                    </label>
+                    <textarea
+                      value={descriptionZh}
+                      onChange={(e) => setDescriptionZh(e.target.value)}
+                      placeholder="Project description in Chinese..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      DESCRIPTION_TH
+                    </label>
+                    <textarea
+                      value={descriptionTh}
+                      onChange={(e) => setDescriptionTh(e.target.value)}
+                      placeholder="Project description in Thai..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  </div>
                 </div>
 
                 {/* Portal Controls */}
@@ -311,7 +459,7 @@ export default function EditProjectModal({
 
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
-                    THEME_STATEMENT
+                    THEME_STATEMENT_EN
                   </label>
                   <textarea
                     value={themeStatement}
@@ -321,6 +469,35 @@ export default function EditProjectModal({
                     className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      THEME_STATEMENT_ZH
+                    </label>
+                    <textarea
+                      value={themeStatementZh}
+                      onChange={(e) => setThemeStatementZh(e.target.value)}
+                      placeholder="Curatorial theme statement in Chinese..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                      THEME_STATEMENT_TH
+                    </label>
+                    <textarea
+                      value={themeStatementTh}
+                      onChange={(e) => setThemeStatementTh(e.target.value)}
+                      placeholder="Curatorial theme statement in Thai..."
+                      rows={3}
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    />
+                  </div>
                 </div>
 
                 {/* Tags */}

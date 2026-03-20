@@ -3,19 +3,23 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
-import { t } from '@/lib/languages';
 import { ArrowRight, Quote } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
+import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
+import { DEFAULT_LONGFORM_CONTENT, normalizeLongformContent } from '@/app/admin/settings/content-blocks';
 
 interface FeaturedEditorial {
   id: string;
   title: string;
+  title_i18n?: LocalizedText | null;
   description: string | null;
+  description_i18n?: LocalizedText | null;
   cover_url: string | null;
   homepage_featured: boolean;
   homepage_excerpt: string | null;
+  homepage_excerpt_i18n?: LocalizedText | null;
   homepage_cover_url: string | null;
 }
 
@@ -23,6 +27,7 @@ export function LongformSection() {
   const { language } = useLanguage();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [featuredEditorial, setFeaturedEditorial] = useState<FeaturedEditorial | null>(null);
+  const [longformContent, setLongformContent] = useState(DEFAULT_LONGFORM_CONTENT);
 
   useEffect(() => {
     async function fetchFeaturedEditorial() {
@@ -45,11 +50,40 @@ export function LongformSection() {
     fetchFeaturedEditorial();
   }, []);
 
-  const featuredTitle = featuredEditorial?.title || t(language, 'longform.subtitle');
-  const featuredExcerpt =
-    featuredEditorial?.homepage_excerpt ||
-    featuredEditorial?.description ||
-    t(language, 'longform.excerpt');
+  useEffect(() => {
+    async function fetchLongformContent() {
+      try {
+        const response = await fetch('/api/site-content?key=homepage_longform', { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success || !data.block?.content_i18n) return;
+
+        setLongformContent(normalizeLongformContent(data.block.content_i18n));
+      } catch (error) {
+        console.error('[SITE_CONTENT] Failed to fetch homepage_longform:', error);
+      }
+    }
+
+    fetchLongformContent();
+  }, []);
+
+  const currentLongformContent = longformContent[language] || longformContent.en;
+
+  const featuredTitle = featuredEditorial
+    ? getLocalizedText(featuredEditorial.title_i18n, language, featuredEditorial.title)
+    : currentLongformContent.fallbackTitle;
+  const featuredExcerpt = featuredEditorial
+    ? getLocalizedText(
+        featuredEditorial.homepage_excerpt_i18n,
+        language,
+        getLocalizedText(
+          featuredEditorial.description_i18n,
+          language,
+          featuredEditorial.homepage_excerpt || featuredEditorial.description
+        )
+      )
+    : currentLongformContent.fallbackExcerpt;
   const featuredHref = featuredEditorial ? `/editorial/${featuredEditorial.id}` : '/chronicle';
   const featuredImageUrl = featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url
     ? getImageUrl(featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url || '')
@@ -131,7 +165,7 @@ export function LongformSection() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
               >
-                {t(language, 'longform.title')}
+                {currentLongformContent.eyebrow}
               </motion.span>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -182,9 +216,9 @@ export function LongformSection() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-            >
-              {t(language, 'longform.source')}
+            transition={{ delay: 0.5 }}
+          >
+              {currentLongformContent.source}
             </motion.p>
 
             {/* CTA Button */}
@@ -199,7 +233,7 @@ export function LongformSection() {
                 className="inline-flex items-center gap-3 group"
               >
                 <span className="text-sm font-medium tracking-wider text-foreground/80 group-hover:text-foreground transition-colors">
-                  {t(language, 'longform.readMore')}
+                  {currentLongformContent.readMoreLabel}
                 </span>
                 <motion.div
                   className="w-10 h-10 rounded-full border-2 border-lmsy-yellow/50 flex items-center justify-center group-hover:border-lmsy-yellow transition-colors"

@@ -1,26 +1,26 @@
+import type { LocalizedText } from '@/lib/localized-content';
+import { normalizeLocalizedText } from '@/lib/localized-content';
+
 export interface TimelineEvent {
   id: string;
-  date: string; // ISO date string
-  eventDate: string; // Display date (e.g., "2024.12.31")
+  date: string;
+  eventDate: string;
   title: string;
+  titleI18n?: LocalizedText;
   type: 'gallery' | 'project' | 'schedule';
-  archiveNumber: string; // 馆藏编号，如 "LMSY-G-001"
+  archiveNumber: string;
   description?: string;
-  href: string; // Link to the content
+  descriptionI18n?: LocalizedText;
+  href: string;
   thumbnail?: string;
-  imageUrl?: string; // Draft item image URL
-  mediaType?: 'image' | 'video'; // Media type
+  imageUrl?: string;
+  mediaType?: 'image' | 'video';
 }
 
-/**
- * 合并并排序所有时间轴数据
- * 从 draft_items 表获取已发布的项目
- */
 export async function getAllTimelineEvents(): Promise<TimelineEvent[]> {
   const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
   const supabase = getSupabaseAdmin();
 
-  // 获取已发布的草稿项目
   const { data: draftItems, error } = await supabase
     .from('draft_items')
     .select('*')
@@ -37,48 +37,40 @@ export async function getAllTimelineEvents(): Promise<TimelineEvent[]> {
     return [];
   }
 
-  // 转换为时间轴事件格式
   const events: TimelineEvent[] = draftItems.map((item, index) => {
-    // 使用 event_date 或 created_at
     const date = item.event_date || item.created_at;
     const dateObj = new Date(date);
-
-    // 格式化显示日期 YYYY.MM.DD
     const eventDate = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
-
-    // 生成馆藏编号 LMSY-D-XXX
     const archiveNumber = `LMSY-D-${String(index + 1).padStart(3, '0')}`;
 
-    // 获取标题（多语言回退）
-    const title = item.chronicle_title || item.title?.en || item.title?.zh || item.title?.th || 'Untitled';
-    const description =
-      item.chronicle_excerpt ||
-      item.description?.en ||
-      item.description?.zh ||
-      item.description?.th ||
-      undefined;
+    const titleI18n = normalizeLocalizedText(
+      item.chronicle_title_i18n || item.title,
+      item.chronicle_title || item.title?.en || item.title?.zh || item.title?.th || 'Untitled'
+    );
+    const descriptionI18n = normalizeLocalizedText(
+      item.chronicle_excerpt_i18n || item.description,
+      item.chronicle_excerpt || item.description?.en || item.description?.zh || item.description?.th || ''
+    );
 
     return {
       id: item.id,
       date,
       eventDate,
-      title,
-      type: 'gallery' as const,
+      title: titleI18n.en || titleI18n.zh || titleI18n.th || 'Untitled',
+      titleI18n,
+      type: 'gallery',
       archiveNumber,
-      description: description,
-      href: `/chronicle`, // 链接到 Chronicle 页面
+      description: descriptionI18n.en || descriptionI18n.zh || descriptionI18n.th || undefined,
+      descriptionI18n,
+      href: '/chronicle',
       imageUrl: item.r2_media_url || undefined,
       mediaType: item.media_type === 'video' ? 'video' : 'image',
     };
   });
 
-  // 按日期倒序排序（最新的在前）
   return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-/**
- * 根据类型获取图标颜色
- */
 export function getTypeColor(type: TimelineEvent['type']): string {
   switch (type) {
     case 'gallery':
@@ -92,9 +84,6 @@ export function getTypeColor(type: TimelineEvent['type']): string {
   }
 }
 
-/**
- * 根据类型获取图标组件名称
- */
 export function getTypeIcon(type: TimelineEvent['type']): string {
   switch (type) {
     case 'gallery':

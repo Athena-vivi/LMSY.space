@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { VaultHeader } from './components/vault-header';
 import { VaultTabs } from './components/vault-tabs';
@@ -10,7 +10,7 @@ import { AllAssetsView } from './components/views/all-assets-view';
 import { ChronicleView } from './components/views/chronicle-view';
 import { EditorialView } from './components/views/editorial-view';
 import { MilestonesView } from './components/views/milestones-view';
-import { useVaultData } from './hooks/use-vault-data';
+import { useVaultData, type ChronicleEvent, type VaultData } from './hooks/use-vault-data';
 import { useVaultFilters } from './hooks/use-vault-filters';
 import { VAULT_TABS, type VaultTabId } from './constants';
 
@@ -26,22 +26,15 @@ import { VAULT_TABS, type VaultTabId } from './constants';
  * Supports ?tab= URL parameter for direct tab linking.
  */
 export default function AssetVaultPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as VaultTabId | null;
   const projectIdParam = searchParams.get('projectId') || '';
-
-  const [activeTab, setActiveTab] = useState<VaultTabId>(
-    tabParam && VAULT_TABS.some(t => t.id === tabParam) ? tabParam : 'all'
-  );
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState('');
-
-  // Update tab when URL param changes
-  useEffect(() => {
-    if (tabParam && VAULT_TABS.some(t => t.id === tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
+  const activeTab: VaultTabId =
+    tabParam && VAULT_TABS.some((tab) => tab.id === tabParam) ? tabParam : 'all';
 
   // Fetch all vault data in parallel
   const { data, debug, loading, error, refetch } = useVaultData();
@@ -57,6 +50,17 @@ export default function AssetVaultPage() {
   const uniqueTags = useMemo(() => {
     return [...new Set(data.gallery.map(img => img.tag).filter((tag): tag is string => Boolean(tag)))];
   }, [data.gallery]);
+
+  const handleTabChange = (tab: VaultTabId) => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set('tab', tab);
+    router.replace(`${pathname}?${nextParams.toString()}`);
+  };
+
+  const allAssetsData = filteredData as { gallery: VaultData['gallery']; projects: VaultData['projects'] };
+  const chronicleData = filteredData as { events: ChronicleEvent[]; gallery: VaultData['gallery'] };
+  const editorialData = filteredData as { projects: VaultData['projects'] };
+  const milestoneData = filteredData as { milestones: VaultData['milestones']; gallery: VaultData['gallery'] };
 
   return (
     <div className="space-y-6">
@@ -90,7 +94,7 @@ export default function AssetVaultPage() {
       {/* Tab Navigation */}
       <VaultTabs
         activeTab={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
         data={data}
       />
 
@@ -110,19 +114,19 @@ export default function AssetVaultPage() {
         {activeTab === 'all' && (
           <AllAssetsView
             key="all"
-            data={filteredData as { gallery: any[]; projects: any[] }}
+            data={allAssetsData}
             loading={loading}
             projectFiltered={Boolean(projectIdParam)}
           />
         )}
         {activeTab === 'chronicle' && (
-          <ChronicleView key="chronicle" data={filteredData as unknown as { events: any[]; gallery: any[] }} loading={loading} />
+          <ChronicleView key="chronicle" data={chronicleData} loading={loading} />
         )}
         {activeTab === 'editorial' && (
-          <EditorialView key="editorial" data={filteredData as unknown as { projects: any[] }} loading={loading} />
+          <EditorialView key="editorial" data={editorialData} loading={loading} />
         )}
         {activeTab === 'milestones' && (
-          <MilestonesView key="milestones" data={filteredData as unknown as { milestones: Record<string, any>; gallery: any[] }} loading={loading} />
+          <MilestonesView key="milestones" data={milestoneData} loading={loading} />
         )}
       </AnimatePresence>
     </div>

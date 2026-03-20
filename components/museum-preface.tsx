@@ -2,9 +2,25 @@
 
 import { motion, Variants } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@/components/language-provider';
 import { useTheme } from '@/components/theme-provider';
+
+interface MuseumPrefaceLanguageContent {
+  title: string;
+  subtitle: string;
+  prefaceLabel: string;
+  paragraphs: string[];
+  bestiesMessage: string;
+  welcome: string;
+  siteName: string;
+  siteDesc: string;
+  curatorTitle: string;
+  curatorSignature: string;
+  date: string;
+}
+
+type MuseumPrefaceContentMap = Record<'en' | 'zh' | 'th', MuseumPrefaceLanguageContent>;
 
 export function MuseumPreface() {
   const ref = useRef(null);
@@ -35,7 +51,7 @@ export function MuseumPreface() {
   };
 
   // Content based on language
-  const content = {
+  const fallbackContent: MuseumPrefaceContentMap = {
     en: {
       title: 'LMSY.SPACE: The First Orbit',
       subtitle: '首个轨道',
@@ -97,6 +113,34 @@ export function MuseumPreface() {
       date: '2025.12.31',
     },
   };
+
+  const [content, setContent] = useState<MuseumPrefaceContentMap>(fallbackContent);
+
+  useEffect(() => {
+    async function fetchContentBlock() {
+      try {
+        const response = await fetch('/api/site-content?key=homepage_preface', {
+          cache: 'no-store',
+        });
+
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        if (!payload.success || !payload.block?.content_i18n) return;
+
+        const remote = payload.block.content_i18n as Partial<MuseumPrefaceContentMap>;
+        setContent({
+          en: { ...fallbackContent.en, ...(remote.en || {}) },
+          zh: { ...fallbackContent.zh, ...(remote.zh || {}) },
+          th: { ...fallbackContent.th, ...(remote.th || {}) },
+        });
+      } catch (error) {
+        console.error('[SITE_CONTENT] Failed to fetch homepage_preface:', error);
+      }
+    }
+
+    fetchContentBlock();
+  }, []);
 
   const currentContent = content[language as keyof typeof content] || content.en;
 

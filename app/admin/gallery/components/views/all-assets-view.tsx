@@ -7,13 +7,15 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Check, Calendar, Link2 } from 'lucide-react';
+import { Edit2, Trash2, Check, Link2, X, Save, Loader2, Languages } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getCdnUrl } from '../../utils';
 import type { GalleryItem } from '@/lib/supabase';
 import type { Project } from '@/lib/supabase';
+import { getLocalizedText, normalizeLocalizedText } from '@/lib/localized-content';
+import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
 
 interface AllAssetsViewProps {
   data: {
@@ -40,6 +42,20 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
   const [selectedProject, setSelectedProject] = useState('');
   const [projectsList, setProjectsList] = useState<Project[]>([]);
   const [transferring, setTransferring] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<GalleryItem | null>(null);
+  const [savingAsset, setSavingAsset] = useState(false);
+  const [translatingAssetLang, setTranslatingAssetLang] = useState<AdminTranslateTarget | null>(null);
+  const [assetForm, setAssetForm] = useState({
+    title_en: '',
+    title_zh: '',
+    title_th: '',
+    caption_en: '',
+    caption_zh: '',
+    caption_th: '',
+    excerpt_en: '',
+    excerpt_zh: '',
+    excerpt_th: '',
+  });
 
   // Fetch projects for transfer modal
   useEffect(() => {
@@ -180,6 +196,127 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
     }
   };
 
+  const getAuthHeaders = async (includeJson = false) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (includeJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    return headers;
+  };
+
+  const handleOpenEdit = (asset: GalleryItem) => {
+    const titleI18n = normalizeLocalizedText(asset.title_i18n, asset.title || '');
+    const captionI18n = normalizeLocalizedText(asset.caption_i18n, asset.caption || '');
+    const excerptI18n = normalizeLocalizedText(asset.excerpt_i18n, asset.excerpt || '');
+
+    setEditingAsset(asset);
+    setAssetForm({
+      title_en: titleI18n.en || '',
+      title_zh: titleI18n.zh || '',
+      title_th: titleI18n.th || '',
+      caption_en: captionI18n.en || '',
+      caption_zh: captionI18n.zh || '',
+      caption_th: captionI18n.th || '',
+      excerpt_en: excerptI18n.en || '',
+      excerpt_zh: excerptI18n.zh || '',
+      excerpt_th: excerptI18n.th || '',
+    });
+  };
+
+  const handleSaveAsset = async () => {
+    if (!editingAsset) return;
+
+    setSavingAsset(true);
+    try {
+      const headers = await getAuthHeaders(true);
+      const response = await fetch('/api/admin/gallery', {
+        method: 'PATCH',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          id: editingAsset.id,
+          title: assetForm.title_en,
+          title_i18n: {
+            en: assetForm.title_en,
+            zh: assetForm.title_zh,
+            th: assetForm.title_th,
+          },
+          caption: assetForm.caption_en,
+          caption_i18n: {
+            en: assetForm.caption_en,
+            zh: assetForm.caption_zh,
+            th: assetForm.caption_th,
+          },
+          excerpt: assetForm.excerpt_en,
+          excerpt_i18n: {
+            en: assetForm.excerpt_en,
+            zh: assetForm.excerpt_zh,
+            th: assetForm.excerpt_th,
+          },
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update asset');
+      }
+
+      window.location.reload();
+    } catch (err) {
+      console.error('[ASSET_EDIT] Error:', err);
+      alert('Failed to save asset translations');
+    } finally {
+      setSavingAsset(false);
+    }
+  };
+
+  const handleTranslateAsset = async (targetLang: AdminTranslateTarget) => {
+    if (!assetForm.title_en.trim() && !assetForm.caption_en.trim() && !assetForm.excerpt_en.trim()) {
+      alert('Please enter English content first.');
+      return;
+    }
+
+    setTranslatingAssetLang(targetLang);
+    try {
+      const translated = await translateFieldMap(
+        {
+          title: assetForm.title_en,
+          caption: assetForm.caption_en,
+          excerpt: assetForm.excerpt_en,
+        },
+        targetLang,
+        {
+          title: 'title',
+          caption: 'description',
+          excerpt: 'description',
+        }
+      );
+
+      setAssetForm(prev => ({
+        ...prev,
+        ...(targetLang === 'zh'
+          ? {
+              title_zh: translated.title,
+              caption_zh: translated.caption,
+              excerpt_zh: translated.excerpt,
+            }
+          : {
+              title_th: translated.title,
+              caption_th: translated.caption,
+              excerpt_th: translated.excerpt,
+            }),
+      }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Translation failed');
+    } finally {
+      setTranslatingAssetLang(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -270,7 +407,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                     <div className="relative w-full">
                       <Image
                         src={imageUrl}
-                        alt={item.caption || item.tag || 'Gallery image'}
+                        alt={getLocalizedText(item.caption_i18n, 'en', item.caption) || item.tag || 'Gallery image'}
                         width={0}
                         height={0}
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -303,15 +440,15 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                     )}
 
                     <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                      {item.caption && (
+                      {getLocalizedText(item.caption_i18n, 'en', item.caption) && (
                         <p className="text-white/90 text-xs font-light line-clamp-2 leading-relaxed">
-                          {item.caption}
+                          {getLocalizedText(item.caption_i18n, 'en', item.caption)}
                         </p>
                       )}
 
                       <div className="flex gap-2">
                         <button
-                          onClick={() => {/* TODO */}}
+                          onClick={() => handleOpenEdit(item)}
                           className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-white/60 text-[10px] font-mono hover:bg-white/15 hover:text-white/80 transition-all"
                         >
                           <Edit2 className="h-3 w-3" strokeWidth={2} />
@@ -442,6 +579,139 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                   >
                     {transferring ? 'LINKING...' : 'LINK_ITEMS'}
                   </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingAsset && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
+              onClick={() => setEditingAsset(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.97 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
+                <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+                  <div>
+                    <h2 className="text-lg font-serif text-white/90">Edit Asset Copy</h2>
+                    <p className="text-[10px] font-mono tracking-wider text-white/35">
+                      TITLE / CAPTION / EXCERPT · EN / ZH / TH
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setEditingAsset(null)}
+                    className="rounded-full border border-white/10 p-2 text-white/45 transition hover:border-white/20 hover:text-white/70"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="grid max-h-[calc(88vh-74px)] grid-cols-1 overflow-y-auto lg:grid-cols-[320px_1fr]">
+                  <div className="border-b border-white/10 bg-white/[0.02] p-6 lg:border-b-0 lg:border-r">
+                    <div className="space-y-4">
+                      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        <Image
+                          src={getCdnUrl(editingAsset.image_url)}
+                          alt={getLocalizedText(editingAsset.caption_i18n, 'en', editingAsset.caption) || 'Asset'}
+                          width={640}
+                          height={860}
+                          className="h-auto w-full"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="space-y-2 text-[11px] font-mono tracking-wider text-white/35">
+                        <div>CATALOG {editingAsset.catalog_id || 'UNSET'}</div>
+                        <div>TAG {editingAsset.tag || 'UNSET'}</div>
+                        <div>PROJECT {editingAsset.project_id || 'UNLINKED'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 p-6">
+                    <div className="flex gap-2">
+                      {(['zh', 'th'] as const).map((lang) => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => handleTranslateAsset(lang)}
+                          disabled={translatingAssetLang !== null}
+                          className="inline-flex items-center gap-2 rounded border border-lmsy-blue/30 bg-lmsy-blue/10 px-3 py-1.5 text-[10px] font-mono tracking-wider text-lmsy-blue transition-all hover:bg-lmsy-blue/20 disabled:opacity-50"
+                        >
+                          {translatingAssetLang === lang ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Languages className="h-3.5 w-3.5" />
+                          )}
+                          AUTO_{lang.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(['title', 'caption', 'excerpt'] as const).map((field) => (
+                      <div key={field} className="space-y-3">
+                        <div className="text-xs font-mono uppercase tracking-[0.24em] text-white/30">
+                          {field}
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-3">
+                          {(['en', 'zh', 'th'] as const).map((lang) => {
+                            const key = `${field}_${lang}` as keyof typeof assetForm;
+                            return (
+                              <div key={key} className="space-y-2">
+                                <label className="text-[10px] font-mono uppercase tracking-[0.24em] text-white/25">
+                                  {lang}
+                                </label>
+                                {field === 'excerpt' ? (
+                                  <textarea
+                                    value={assetForm[key]}
+                                    onChange={(e) => setAssetForm(prev => ({ ...prev, [key]: e.target.value }))}
+                                    rows={4}
+                                    className="custom-scrollbar min-h-[104px] w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-white/88 outline-none transition focus:border-lmsy-yellow/35"
+                                  />
+                                ) : (
+                                  <input
+                                    type="text"
+                                    value={assetForm[key]}
+                                    onChange={(e) => setAssetForm(prev => ({ ...prev, [key]: e.target.value }))}
+                                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-white/88 outline-none transition focus:border-lmsy-yellow/35"
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex justify-end gap-3 border-t border-white/10 pt-4">
+                      <button
+                        onClick={() => setEditingAsset(null)}
+                        disabled={savingAsset}
+                        className="rounded-xl border border-white/10 px-4 py-2 text-xs font-mono tracking-wider text-white/55 transition hover:border-white/20 hover:text-white/75"
+                      >
+                        CANCEL
+                      </button>
+                      <button
+                        onClick={handleSaveAsset}
+                        disabled={savingAsset}
+                        className="inline-flex items-center gap-2 rounded-xl border border-lmsy-yellow/30 bg-lmsy-yellow/12 px-4 py-2 text-xs font-mono tracking-wider text-lmsy-yellow/85 transition hover:bg-lmsy-yellow/18 disabled:opacity-60"
+                      >
+                        {savingAsset ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        SAVE_ASSET_COPY
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

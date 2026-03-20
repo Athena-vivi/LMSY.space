@@ -11,6 +11,7 @@ import Lightbox from './lightbox';
 import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
 import { getImageUrl } from '@/lib/image-url';
+import { getLocalizedText } from '@/lib/localized-content';
 
 const gradients = [
   'from-lmsy-yellow/20 to-lmsy-yellow/5',
@@ -34,7 +35,8 @@ export default function GalleryPage() {
 
       try {
         const { data, error } = await supabase
-          .from('gallery')
+          .schema('lmsy_archive')
+          .from('gallery_assets')
           .select('*')
           .order('created_at', { ascending: false });
 
@@ -175,7 +177,7 @@ export default function GalleryPage() {
                         return imageUrl ? (
                           <Image
                             src={imageUrl}
-                            alt={item.caption || item.tag || 'Gallery image'}
+                            alt={getLocalizedText(item.caption_i18n, language, item.caption) || item.tag || 'Gallery image'}
                             width={0}
                             height={0}
                             sizes="100vw"
@@ -217,10 +219,10 @@ export default function GalleryPage() {
                       </div>
 
                       {/* 📝 Caption - Bottom */}
-                      {item.caption && (
+                      {getLocalizedText(item.caption_i18n, language, item.caption) && (
                         <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                           <p className="text-white font-serif text-sm line-clamp-2 drop-shadow-lg">
-                            {item.caption}
+                            {getLocalizedText(item.caption_i18n, language, item.caption)}
                           </p>
                         </div>
                       )}

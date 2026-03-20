@@ -7,7 +7,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Edit2, Trash2, Play, RotateCcw, ImagePlus, Star } from 'lucide-react';
+import { Check, Edit2, Trash2, Play, RotateCcw, ImagePlus, Star, Link2 } from 'lucide-react';
 import Image from 'next/image';
 import { platformIcons, platformColors, statusBadges, stageBadges } from '../constants';
 import { formatRelativeTime, getDisplayTitle } from '../utils';
@@ -36,6 +36,7 @@ interface DraftCardProps {
   onPublish: (id: string) => void;
   onUnpublish: (id: string) => void;
   onCreateProject: (id: string) => void;
+  onLinkExistingProject: (id: string) => void;
   onAddToAssets: (id: string) => void;
   onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
@@ -52,6 +53,7 @@ export function DraftCard({
   onPublish,
   onUnpublish,
   onCreateProject,
+  onLinkExistingProject,
   onAddToAssets,
   onSetMilestone,
   onEdit,
@@ -240,6 +242,13 @@ export function DraftCard({
             >
               <Check className="h-3 w-3" strokeWidth={2} />
               <span>{hasProject ? 'PROJECT_LINKED' : 'NEW_PROJECT'}</span>
+            </button>
+            <button
+              onClick={() => onLinkExistingProject(draft.id)}
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-white/75 text-[10px] font-mono hover:bg-white/15 transition-all"
+            >
+              <Link2 className="h-3 w-3" strokeWidth={2} />
+              <span>{hasProject ? 'RELINK_EXISTING' : 'LINK_EXISTING'}</span>
             </button>
             <button
               onClick={() => onAddToAssets(draft.id)}

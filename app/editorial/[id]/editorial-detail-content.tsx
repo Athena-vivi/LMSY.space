@@ -6,14 +6,18 @@ import { BackButton } from '@/components/back-button';
 import { GalleryImageWithLightbox } from './gallery-image';
 import { getImageUrl } from '@/lib/image-url';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
+import { useLanguage } from '@/components/language-provider';
+import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 
 interface Magazine {
   id: string;
   title: string;
+  title_i18n?: LocalizedText | null;
   category: string;
   cover_url: string | null;
   release_date: string | null;
   description: string | null;
+  description_i18n?: LocalizedText | null;
   catalog_id: string | null;
   blur_data: string | null;
 }
@@ -37,6 +41,14 @@ export function EditorialDetailContent({
   galleryImages,
   selfHealed,
 }: EditorialDetailContentProps) {
+  const { language } = useLanguage();
+  const localizedTitle = getLocalizedText(magazine.title_i18n, language, magazine.title);
+  const localizedDescription = getLocalizedText(
+    magazine.description_i18n,
+    language,
+    magazine.description
+  );
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'TBD';
     const date = new Date(dateString);
@@ -78,7 +90,7 @@ export function EditorialDetailContent({
             className="text-right"
           >
             <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-white/90">
-              {magazine.title}
+              {localizedTitle}
             </h1>
             <p className="font-mono text-xs text-white/40 tracking-[0.3em]">
               {magazine.catalog_id || 'LMSY-ED'}
@@ -126,7 +138,7 @@ export function EditorialDetailContent({
           </motion.div>
 
           {/* Curator's Note */}
-          {magazine.description && (
+          {localizedDescription && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -137,7 +149,7 @@ export function EditorialDetailContent({
                 Curator's Note
               </p>
               <p className="font-serif text-lg md:text-xl text-white/70 leading-relaxed">
-                {magazine.description}
+                {localizedDescription}
               </p>
             </motion.div>
           )}
@@ -146,7 +158,7 @@ export function EditorialDetailContent({
           {magazine.cover_url && (() => {
             const coverUrl = getImageUrl(magazine.cover_url);
             console.log('[PATH_SYNC] Detail Cover:', {
-              title: magazine.title,
+              title: localizedTitle,
               finalSrc: coverUrl,
               inputUrl: magazine.cover_url,
             });
@@ -161,7 +173,7 @@ export function EditorialDetailContent({
                 <div className="w-full max-w-5xl mx-auto">
                   <Image
                     src={coverUrl || ''}
-                    alt={magazine.title}
+                    alt={localizedTitle}
                     width={1200}
                     height={1600}
                     className="w-full h-auto rounded-xl"

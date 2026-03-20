@@ -229,7 +229,7 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
 
           {/* Content */}
           <div className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto p-6">
+            <div className="custom-scrollbar h-full overflow-y-auto p-6">
               {/* Unified Grid Layout */}
               <div className="grid grid-cols-12 gap-6">
                 {/* Left Column: Upload Zone + Editorial + Gallery */}
