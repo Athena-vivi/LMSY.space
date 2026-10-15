@@ -53,13 +53,17 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     async function fetchProjects() {
+      // Only the fields this list renders. `select('*')` also pulled
+      // theme_statement, homepage_excerpt, cover_url and i18n blobs that the
+      // timeline never uses.
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
-        .order('release_date', { ascending: false });
+        .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url')
+        .order('release_date', { ascending: false })
+        .order('id', { ascending: false });
 
       if (!error && data) {
-        setProjects(data);
+        setProjects(data as unknown as Project[]);
       }
       setLoading(false);
     }
@@ -114,7 +118,7 @@ export default function ProjectsPage() {
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-100px' }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  transition={{ duration: 0.6, delay: Math.min(index, 6) * 0.05 }}
                 >
                   <Card className="group overflow-hidden border-0 magazine-shadow hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-0">

@@ -9,8 +9,9 @@ import { getImageUrl } from '@/lib/image-url';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 
-// 🚫 NO CACHE: Force dynamic rendering
-export const dynamic = 'force-dynamic';
+// This is a client-rendered shell; the list is fetched client-side, so the
+// HTML itself is static and safe to cache (the global no-store header and
+// force-dynamic were preventing that).
 
 // API Response Types
 interface Magazine {

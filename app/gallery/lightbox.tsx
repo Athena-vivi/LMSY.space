@@ -8,6 +8,7 @@ import { type GalleryItem } from '@/lib/supabase';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText } from '@/lib/localized-content';
+import { getImageUrl } from '@/lib/image-url';
 
 interface LightboxProps {
   image: GalleryItem;
@@ -87,7 +88,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                 <div className="relative w-full">
                   {currentImage.image_url ? (
                     <Image
-                      src={currentImage.image_url}
+                      src={getImageUrl(currentImage.image_url) || ''}
                       alt={localizedCaption || 'Curatorial feature'}
                       width={800}
                       height={1000}
@@ -226,7 +227,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
             <div className="relative w-full h-full max-h-[80vh]">
               {currentImage.image_url ? (
                 <Image
-                  src={currentImage.image_url}
+                  src={getImageUrl(currentImage.image_url) || ''}
                   alt={localizedCaption || currentImage.tag || 'Gallery image'}
                   fill
                   className="object-contain"

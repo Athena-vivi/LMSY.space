@@ -40,6 +40,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Never intercept API traffic. API responses are user-specific or
+  // auth-bearing (/api/auth/session, /api/admin/*), so caching them in Cache
+  // Storage could leak one visitor's data to another on a shared device.
+  let pathname = '';
+  try {
+    pathname = new URL(event.request.url).pathname;
+  } catch (e) {
+    pathname = '';
+  }
+  if (pathname.startsWith('/api/') || pathname.startsWith('/admin/')) {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {

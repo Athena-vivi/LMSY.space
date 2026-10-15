@@ -24,6 +24,16 @@ interface ProjectGalleryImage {
   sequence?: number | null;
 }
 
+// The page renders a shell plus the project's own images. Cache it at the edge
+// and refresh every 5 minutes, so publishing in the admin panel shows up
+// shortly without re-querying the database on every single page view.
+export const revalidate = 300;
+
+// Only the columns the detail view renders (the previous select('*') pulled
+// excerpt/credits/i18n blobs the gallery grid never shows).
+const PROJECT_GALLERY_COLUMNS =
+  'id, image_url, caption, caption_i18n, catalog_id, category_tag, curator_note, is_featured, event_date, created_at, is_cover, rotation, sequence';
+
 // Tab categories configuration
 export const CATEGORIES = [
   { value: 'all', label: 'ALL' },
@@ -102,7 +112,7 @@ export default async function ProjectPage({ params }: PageProps) {
   const { data: galleryImages } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('gallery_assets')
-    .select('*')
+    .select(PROJECT_GALLERY_COLUMNS)
     .eq('project_id', id)
     .order('created_at', { ascending: true });
 

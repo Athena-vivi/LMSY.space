@@ -10,7 +10,7 @@ import { LoadingWrapper } from '@/components/loading/loading-wrapper';
 
 export default function HomePage() {
   return (
-    <LoadingWrapper minDuration={2500}>
+    <LoadingWrapper>
       <div className="relative">
         {/* Home Navigation - Only on Homepage */}
         <HomeHeader />

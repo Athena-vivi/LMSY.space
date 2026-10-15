@@ -11,7 +11,10 @@
     "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "backup:db": "node scripts/backup-supabase-data.mjs",
     "backup:r2": "node scripts/backup-r2-objects.mjs",
+    "backup:r2:offsite": "node scripts/backup-r2-offsite.mjs",
     "restore:drill": "node --experimental-sqlite scripts/restore-drill.mjs",
+    "images:dims": "node scripts/extract-image-dimensions.mjs",
+    "audit:r2": "node scripts/audit-r2-references.mjs",
     "backfill:magazine": "node --experimental-strip-types scripts/backfill-magazine-pages.ts"
   },
   "dependencies": {

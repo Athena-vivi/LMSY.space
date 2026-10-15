@@ -11,6 +11,7 @@ import Lightbox from './lightbox';
 import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
 import { getImageUrl } from '@/lib/image-url';
+import { getImageDimensions, FALLBACK_ASPECT_RATIO } from '@/lib/image-dimensions';
 import { getLocalizedText } from '@/lib/localized-content';
 
 const gradients = [
@@ -21,41 +22,76 @@ const gradients = [
   'from-amber-500/20 to-amber-500/5',
 ];
 
+// Only the columns this page renders (list + lightbox). The previous
+// `select('*')` also pulled every long text column (excerpt, title, credits,
+// i18n blobs) for all 330 rows.
+const GALLERY_COLUMNS =
+  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, is_cover, is_editorial, curator_note, rotation, sequence';
+const PAGE_SIZE = 60;
+
+const GRID_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
+
+async function fetchGalleryPage(from: number, tag: string) {
+  let query = supabase
+    .schema('lmsy_archive')
+    .from('gallery_assets')
+    .select(GALLERY_COLUMNS);
+
+  if (tag !== 'All') {
+    query = query.eq('tag', tag);
+  }
+
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false }) // stable tiebreaker so paging never repeats/skips
+    .range(from, from + PAGE_SIZE - 1);
+
+  if (error) return { rows: [] as GalleryItem[], failed: true };
+  return { rows: (data || []) as unknown as GalleryItem[], failed: false };
+}
+
 export default function GalleryPage() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [lightboxImage, setLightboxImage] = useState<GalleryItem | null>(null);
   const { language } = useLanguage();
 
-  // Fetch images from Supabase
+  // Reload from the first page whenever the filter changes (filtering happens
+  // in the database, not on a fully-loaded client array).
   useEffect(() => {
-    async function fetchImages() {
-      setLoading(true);
-
+    let active = true;
+    setLoading(true);
+    (async () => {
       try {
-        const { data, error } = await supabase
-          .schema('lmsy_archive')
-          .from('gallery_assets')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          // Silently handle error - likely not configured yet
-          setImages([]);
-        } else {
-          setImages(data || []);
-        }
-      } catch (err) {
-        // Catch any network or initialization errors
-        setImages([]);
+        const { rows, failed } = await fetchGalleryPage(0, selectedTag);
+        if (!active) return;
+        setImages(rows);
+        setHasMore(!failed && rows.length === PAGE_SIZE);
+      } catch {
+        if (active) setImages([]);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
-    }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [selectedTag]);
 
-    fetchImages();
-  }, []);
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const { rows, failed } = await fetchGalleryPage(images.length, selectedTag);
+      setImages((prev) => [...prev, ...rows]);
+      setHasMore(!failed && rows.length === PAGE_SIZE);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, images.length, selectedTag]);
 
   const tags = [
     { key: 'gallery.tagAll', value: 'All' },
@@ -65,9 +101,7 @@ export default function GalleryPage() {
     { key: 'gallery.tagMagazine', value: 'Magazine' },
   ];
 
-  const filteredImages = selectedTag === 'All'
-    ? images
-    : images.filter(item => item.tag === selectedTag);
+  const filteredImages = images;
 
   const openLightbox = useCallback((image: GalleryItem) => {
     setLightboxImage(image);
@@ -152,88 +186,116 @@ export default function GalleryPage() {
               className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6"
             >
               <AnimatePresence>
-                {filteredImages.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="break-inside-avoid"
-                  >
-                    <div
-                      className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] cursor-pointer magazine-shadow"
-                      onClick={() => openLightbox(item)}
+                {filteredImages.map((item, index) => {
+                  const imageUrl = getImageUrl(item.image_url);
+                  // The gallery does not apply a CSS rotation, so use the stored
+                  // orientation as-is (no w/h swap).
+                  const dimensions = getImageDimensions(item.image_url);
+                  // Cap the stagger: with the full set this expression used to
+                  // grow to ~16s (index * 0.05 for 330 items).
+                  const revealDelay = Math.min(index, 12) * 0.03;
+
+                  return (
+                    <motion.div
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.3, delay: revealDelay }}
+                      className="break-inside-avoid"
                     >
-                      {/* 🎨 Image with NATURAL aspect ratio - Gallery Grade Masonry */}
-                      {(() => {
-                        const imageUrl = getImageUrl(item.image_url);
-                        console.log('[PATH_SYNC] Gallery Item:', {
-                          id: item.id,
-                          finalSrc: imageUrl,
-                          inputUrl: item.image_url,
-                        });
-                        return imageUrl ? (
-                          <Image
-                            src={imageUrl}
-                            alt={getLocalizedText(item.caption_i18n, language, item.caption) || item.tag || 'Gallery image'}
-                            width={0}
-                            height={0}
-                            sizes="100vw"
-                            className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
-                            placeholder="empty"
-                            unoptimized
-                          />
+                      <div
+                        className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] cursor-pointer magazine-shadow"
+                        onClick={() => openLightbox(item)}
+                      >
+                        {/* 🎨 Natural aspect ratio, with reserved space to avoid layout shift */}
+                        {imageUrl ? (
+                          <div
+                            className="relative w-full"
+                            style={{ aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : `${FALLBACK_ASPECT_RATIO}` }}
+                          >
+                            <Image
+                              src={imageUrl}
+                              alt={getLocalizedText(item.caption_i18n, language, item.caption) || item.tag || 'Gallery image'}
+                              fill
+                              sizes={GRID_SIZES}
+                              className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              loading={index < 3 ? 'eager' : 'lazy'}
+                            />
+                          </div>
                         ) : (
                           <div className={`w-full min-h-[200px] aspect-[3/4] bg-gradient-to-br ${gradients[index % gradients.length]}`} />
-                        );
-                      })()}
+                        )}
 
-                      {/* 🌌 Nebula Hover Glow */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        {/* 🌌 Nebula Hover Glow */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                      {/* 📖 Catalog Number - Always visible */}
-                      <div className="absolute bottom-2 right-2 opacity-60 hover:opacity-100 transition-opacity">
-                        <CompactCatalogNumber
-                          id={item.id}
-                          createdAt={item.created_at}
-                          index={index}
-                        />
+                        {/* 📖 Catalog Number - Always visible */}
+                        <div className="absolute bottom-2 right-2 opacity-60 hover:opacity-100 transition-opacity">
+                          <CompactCatalogNumber
+                            id={item.id}
+                            createdAt={item.created_at}
+                            index={index}
+                          />
+                        </div>
+
+                        {/* 🏷️ Tag Badge - Top Left */}
+                        {item.tag && (
+                          <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <span className="px-3 py-1 text-xs font-medium bg-black/50 backdrop-blur-sm rounded-full text-white/90 border border-white/10">
+                              #{item.tag}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* 🔍 Zoom Icon - Top Right */}
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/10">
+                            <ZoomIn className="h-4 w-4 text-white" />
+                          </div>
+                        </div>
+
+                        {/* 📝 Caption - Bottom */}
+                        {getLocalizedText(item.caption_i18n, language, item.caption) && (
+                          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <p className="text-white font-serif text-sm line-clamp-2 drop-shadow-lg">
+                              {getLocalizedText(item.caption_i18n, language, item.caption)}
+                            </p>
+                          </div>
+                        )}
                       </div>
-
-                      {/* 🏷️ Tag Badge - Top Left */}
-                      {item.tag && (
-                        <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <span className="px-3 py-1 text-xs font-medium bg-black/50 backdrop-blur-sm rounded-full text-white/90 border border-white/10">
-                            #{item.tag}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* 🔍 Zoom Icon - Top Right */}
-                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/10">
-                          <ZoomIn className="h-4 w-4 text-white" />
-                        </div>
-                      </div>
-
-                      {/* 📝 Caption - Bottom */}
-                      {getLocalizedText(item.caption_i18n, language, item.caption) && (
-                        <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                          <p className="text-white font-serif text-sm line-clamp-2 drop-shadow-lg">
-                            {getLocalizedText(item.caption_i18n, language, item.caption)}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </motion.div>
 
+            {/* Load more — real pagination, the full table is never fetched at once */}
+            {hasMore && (
+              <div className="flex justify-center mt-12">
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="px-8 py-3 rounded-full text-sm font-medium border border-border bg-muted text-muted-foreground hover:border-lmsy-blue hover:text-lmsy-blue transition-colors disabled:opacity-60"
+                >
+                  {loadingMore
+                    ? language === 'zh'
+                      ? '加载中…'
+                      : language === 'th'
+                        ? 'กำลังโหลด…'
+                        : 'Loading…'
+                    : language === 'zh'
+                      ? '加载更多'
+                      : language === 'th'
+                        ? 'โหลดเพิ่มเติม'
+                        : 'Load more'}
+                </button>
+              </div>
+            )}
+
             {/* Empty State / Under Construction */}
-            {!loading && filteredImages.length === 0 && (
+            {filteredImages.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

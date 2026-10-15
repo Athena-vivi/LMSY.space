@@ -54,18 +54,6 @@ export function ServiceWorkerProvider() {
         .catch((error) => {
           console.error('[SW] Registration failed:', error);
         });
-
-      // Listen for controller change - new SW took control
-      const handleControllerChange = () => {
-        console.log('[SW] Controller changed, reloading page');
-        window.location.reload();
-      };
-
-      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-
-      return () => {
-        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-      };
     }
   }, []);
 

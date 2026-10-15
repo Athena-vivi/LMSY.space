@@ -7,6 +7,9 @@ export const metadata = {
   description: 'A chronological journey through Lookmhee & Sonya\'s milestones, photoshoots, projects, and special moments.',
 };
 
+// Server-rendered from the archive; cache and refresh every 5 minutes.
+export const revalidate = 300;
+
 export default async function ChroniclePage() {
   const events = await getAllTimelineEvents();
   const eventCount = events.length;

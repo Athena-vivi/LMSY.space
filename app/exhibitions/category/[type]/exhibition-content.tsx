@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { NebulaBackground } from '@/components/nebula-background';
 import { getImageUrl } from '@/lib/image-url';
+import { getImageDimensions } from '@/lib/image-dimensions';
 import { ProjectWithImage, GalleryImage } from './page';
 import { GalleryCanvas } from '@/components/gallery-canvas';
 import { SpaceHubReturn } from '@/components/space-hub-return';
@@ -140,16 +141,17 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
                       {/* 🔥 INTRINSIC ASPECT RATIO: width=0 height=0 forces natural dimensions */}
                       {(() => {
                         const imageUrl = project.displayImage ? getImageUrl(project.displayImage) : null;
+                        const dimensions = getImageDimensions(project.displayImage);
                         if (imageUrl) {
                           return (
                             <Image
                               src={imageUrl}
                               alt={project.title}
-                              width={0}
-                              height={0}
-                              sizes="100vw"
+                              width={dimensions?.width ?? 1200}
+                              height={dimensions?.height ?? 1500}
+                              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                               className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
-                              unoptimized
+                              loading="lazy"
                             />
                           );
                         }

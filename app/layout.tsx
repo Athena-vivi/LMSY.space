@@ -29,7 +29,7 @@ const mono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://lookmheesonya-forever.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://lmsy.space'),
   title: {
     default: "LMSY | Lookmhee & Sonya Official Fan Site",
     template: "%s | LMSY Official Fan Site"
@@ -39,18 +39,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Astra", url: "https://lmsy.space" }],
   creator: "Astra",
   publisher: "lmsy.space",
-  alternates: {
-    canonical: '/',
-    languages: {
-      'en': '/en',
-      'zh': '/zh',
-      'th': '/th',
-    },
-  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://lookmheesonya-forever.com',
+    url: '/',
     title: 'LMSY | Lookmhee & Sonya Official Fan Site',
     description: 'Official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series',
     siteName: 'LMSY Fan Site',
@@ -81,9 +73,6 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -98,8 +87,12 @@ export const metadata: Metadata = {
   category: 'entertainment',
 };
 
-// Force dynamic rendering to prevent caching on custom domains
-export const dynamic = 'force-dynamic';
+/**
+ * Runs before paint to align <html lang> with the visitor's stored language,
+ * so non-English visitors do not get an English-configured document (a11y,
+ * hyphenation, screen readers) nor a flash of the wrong language.
+ */
+const LANGUAGE_INIT_SCRIPT = `try{var l=localStorage.getItem('lmsy-language');if(l==='zh'||l==='th'||l==='en'){document.documentElement.lang=l;}}catch(e){}`;
 
 export default function RootLayout({
   children,
@@ -112,6 +105,7 @@ export default function RootLayout({
         className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}
         style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
+        <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INIT_SCRIPT }} />
         <NebulaBackground />
         <ScrollProgress />
         <ServiceWorkerProvider />

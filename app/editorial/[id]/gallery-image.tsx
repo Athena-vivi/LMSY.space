@@ -5,6 +5,9 @@ import Image from 'next/image';
 import EditorialLightbox from '@/components/lightbox/editorial-lightbox';
 import { useState } from 'react';
 import { getImageUrl } from '@/lib/image-url';
+import { getImageDimensions } from '@/lib/image-dimensions';
+
+const EDITORIAL_IMAGE_SIZES = '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
 interface GalleryImage {
   id: string;
@@ -31,12 +34,7 @@ export function GalleryImageWithLightbox({
 
   // 🔒 CRITICAL: Use getImageUrl for full compatibility
   const imageUrl = getImageUrl(image.image_url);
-
-  console.log('[PATH_SYNC] Gallery Image:', {
-    catalogId: image.catalog_id,
-    finalSrc: imageUrl,
-    inputUrl: image.image_url,
-  });
+  const dimensions = getImageDimensions(image.image_url);
 
   return (
     <>
@@ -52,13 +50,12 @@ export function GalleryImageWithLightbox({
           <Image
             src={imageUrl || ''}
             alt={image.caption || `Page ${index + 1}`}
-            width={0}
-            height={0}
-            sizes="100vw"
+            width={dimensions?.width ?? 1200}
+            height={dimensions?.height ?? 1800}
+            sizes={EDITORIAL_IMAGE_SIZES}
             className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
             placeholder="empty"
             priority={index < 3}
-            unoptimized
           />
 
           {/* 🌌 Nebula Hover Glow */}

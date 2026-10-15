@@ -43,15 +43,5 @@ export function getImageUrl(imageUrl: string | null | undefined): string | null 
   // 🔒 ENSURE SINGLE SLASH: cdnBaseUrl never ends with /, cleanPath never starts with /
   const finalUrl = `${cdnBaseUrl}/${cleanPath}`;
 
-  // 📊 PATH_SYNC DEBUG: Log every URL transformation for馆长's inspection
-  console.log('[PATH_SYNC]', {
-    input: imageUrl,
-    cleanPath,
-    cdnBaseUrl,
-    finalUrl,
-    hasLeadingSlash: imageUrl.startsWith('/'),
-    protocol: imageUrl.startsWith('http') ? 'absolute' : 'relative',
-  });
-
   return finalUrl;
 }

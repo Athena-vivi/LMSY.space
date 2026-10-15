@@ -7,6 +7,7 @@ import { X, ZoomIn, Calendar } from 'lucide-react';
 import type { TimelineEvent } from '@/lib/timeline';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText } from '@/lib/localized-content';
+import { getImageDimensions } from '@/lib/image-dimensions';
 
 interface ChronicleTimelineProps {
   events: TimelineEvent[];
@@ -212,6 +213,7 @@ interface TimelineItemProps {
 function TimelineItem({ event, language, position, isHovered, onHover, onHoverEnd, onClick }: TimelineItemProps) {
   const displayTitle = getLocalizedText(event.titleI18n, language, event.title);
   const displayDescription = getLocalizedText(event.descriptionI18n, language, event.description);
+  const dimensions = getImageDimensions(event.imageUrl);
 
   return (
     <motion.div
@@ -252,11 +254,11 @@ function TimelineItem({ event, language, position, isHovered, onHover, onHoverEn
               <Image
                 src={event.imageUrl}
                 alt={displayTitle}
-                width={0}
-                height={0}
-                sizes="100vw"
+                width={dimensions?.width ?? 1200}
+                height={dimensions?.height ?? 800}
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                unoptimized
+                loading="lazy"
               />
             )}
 

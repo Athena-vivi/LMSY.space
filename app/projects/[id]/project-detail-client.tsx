@@ -5,12 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ExternalLink, Play } from 'lucide-react';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
+import { getImageDimensions } from '@/lib/image-dimensions';
 import { NebulaBackground } from '@/components/nebula-background';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
 import { SpaceHubReturn } from '@/components/space-hub-return';
 import { CATEGORIES, CategoryType } from './page';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
+
+// Masonry is 1/2/3 columns; tell the image optimizer the real render width.
+const DETAIL_IMAGE_SIZES = '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
 interface GalleryImage {
   id: string;
@@ -392,27 +396,30 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                     {chapter.images.map((image, index) => {
                       const isCoverImage = image.catalog_id?.endsWith('-000');
                       const imageUrl = getImageUrl(image.image_url);
+                      const dimensions = getImageDimensions(image.image_url, image.rotation ?? 0);
 
                       return (
                         <motion.div
                           key={image.id}
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5, delay: index * 0.05 }}
+                          transition={{ duration: 0.5, delay: Math.min(index, 12) * 0.03 }}
                           className={`mb-4 md:mb-6 break-inside-avoid ${isCoverImage ? 'md:col-span-2 lg:col-span-1' : ''}`}
                         >
                           <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                            {/* 🎨 Image with NATURAL aspect ratio */}
+                            {/* 🎨 Natural aspect ratio; explicit width/height reserve
+                                space before load (no layout shift) and let Next
+                                optimize the served size. */}
                             {imageUrl ? (
                               <Image
                                 src={imageUrl}
                                 alt={image.caption || image.catalog_id || ''}
-                                width={0}
-                                height={0}
-                                sizes="100vw"
+                                width={dimensions?.width ?? 1200}
+                                height={dimensions?.height ?? 1800}
+                                sizes={DETAIL_IMAGE_SIZES}
                                 className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
                                 style={{ transform: `rotate(${image.rotation ?? 0}deg)` }}
-                                unoptimized
+                                loading={index < 2 ? 'eager' : 'lazy'}
                               />
                             ) : null}
 
