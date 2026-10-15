@@ -3,7 +3,7 @@
 **报告日期：** 2026-10-15
 **执行范围：** 工作包 A（第一阶段生产收尾）+ 工作包 B（第二阶段性能优化）
 **代码基线：** `main @ f9b0627`
-**本次提交：** 见 E 节（提交后回填）
+**本次提交：** `b2813ee`（详见 E 节）
 **涉及仓库：** `Athena-vivi/LMSY.space`（分支 `main`）
 **全程遵守的约束：** 未重构架构；未更换技术栈；未重新设计数据模型；未大规模移动或重命名历史图片；未删除任何 R2 对象；未重复执行杂志内页回填；未改变 draft 审核发布流程；未提前构建批量采集工作台；未为性能指标牺牲图片质量或页面正确性；未在报告中输出任何密钥值。
 
@@ -387,10 +387,10 @@ last page (300-359) HTTP 206 rows=30 (expected 30 for 330 total)
 
 - **分支：** `main`
 - **基线：** `f9b0627`（第一阶段最后提交）
-- **本次提交：** 待回填（提交后本条由后续小提交更新）
-- **推送：** 待回填
-- **Vercel 部署：** 待回填（本机无法访问 `*.vercel.app`；将通过 GitHub commit status / deployments API 核验，该 API 可达）
-- **生产验证结果：** 受网络限制无法在本机执行，见 F 节。
+- **本次提交：** `b2813ee` —— `Add phase 2 performance work: cache policy, images, pagination, SEO`（34 个文件，+1321 / −296）
+- **推送：** **成功** —— `f9b0627..b2813ee  main -> main`（HTTPS，未强推、未重置、未丢弃任何他人提交）
+- **Vercel 部署：** **成功** —— GitHub deployments API 显示 Production 环境、`sha = b2813ee…`、创建于 `2026-10-15T14:38:06Z`；commit status 为 `state: success`、`"Deployment has completed"`。（Vercel 控制台页面本身在本机不可达，但这两个 GitHub API 可达，故用它核验。Vercel 的构建不受本机代理问题影响，`next/font` 拉取 Google 字体在 Vercel 侧正常。）
+- **生产验证结果：** 受网络限制**无法在本机执行**（`lmsy.space` 返回 `000`），见 F.4。需在能访问 `https://lmsy.space` 的环境补做 `security-smoke-test --base https://lmsy.space` 与页面回归。
 
 ---
 
