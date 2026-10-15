@@ -24,7 +24,9 @@
 2. **需生产验证**：部署后需在线上重跑安全冒烟与回归。
 3. **需业主决策**：`cover_url` 双格式统一、20 张待定图片归属、R2 异地备份。
 
-在环境变量与迁移应用之前，**管理后台与 Telegram 采集在生产上会 fail-closed（拒绝而非放行）**——这是刻意的安全默认，不是故障。
+在环境变量与迁移应用之前，**管理后台与 Telegram 采集在生产上会 fail-closed（拒绝而非放行）**——这是刻意的安全默认，不是故障。其中管理后台在 `NEXT_PUBLIC_ADMIN_EMAIL` 已配置的情况下会经回退继续可用；Telegram 采集在 `TELEGRAM_WEBHOOK_SECRET` 就绪并重设 webhook 前**会中断**（见 G.2/G.3）。
+
+代码已推送并**在生产部署成功**（Vercel `success`，见 F/G 节）。
 
 ---
 
@@ -161,13 +163,20 @@
 
 ## G. 生产环境变更记录
 
-**G.1 代码 → 部署**
+**G.1 代码 → 部署（已核验）**
 
-- 推送 `main` 到 GitHub 后，若 Vercel 已接 GitHub 自动部署，将自动构建上线；**若无法核验，以 Vercel 控制台部署记录为准**（本报告不臆断部署状态）。
+- 推送 `main` 到 GitHub 触发 Vercel 生产自动部署。**已核验：本次推送的部署状态为 `success`（"Deployment has completed"）**（Vercel 项目 `lmsy-space`，2026-10-15）。
+- 说明：本报告为纯文档提交，其后再次推送会触发一次不改变应用代码的重新部署（无害）。
+
+**G.1b 部署后仍需人工完成的事项**（应用已上线，但因缺少环境变量/迁移，相关功能 fail-closed）：
+
+- 见 G.2–G.4；在完成前，管理后台与 Telegram 采集在生产上会被拒绝。
 
 **G.2 环境变量（Vercel，需人工添加）**
 
-- 新增：`ADMIN_EMAIL`、`TELEGRAM_WEBHOOK_SECRET`、`CRON_SECRET`（三者在应用前，管理后台与 Telegram 采集将 fail-closed）。
+- 新增：`ADMIN_EMAIL`、`TELEGRAM_WEBHOOK_SECRET`、`CRON_SECRET`。
+- **重要（管理后台）：** `getAdminEmail()` 在 `ADMIN_EMAIL` 缺失时会回退到 `NEXT_PUBLIC_ADMIN_EMAIL`。**若 Vercel 已配置 `NEXT_PUBLIC_ADMIN_EMAIL`，管理后台可继续登录**；否则在补上 `ADMIN_EMAIL` 前，所有 admin 接口返回 503（fail-closed）。请在 Vercel 确认其一存在。
+- **重要（采集）：** 未设置 `TELEGRAM_WEBHOOK_SECRET` 前，Telegram webhook 一律拒绝（fail-closed），采集会中断。
 - 确认：`INGEST_API_KEY`。
 - 过渡期保留：`NEXT_PUBLIC_ADMIN_EMAIL`（待 `ADMIN_EMAIL` 全环境就绪后移除）。
 - 完整清单与来源见 `PRODUCTION_CONFIG_CHANGES.md` 第 1 节。**不含任何值。**
