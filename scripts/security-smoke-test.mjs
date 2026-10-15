@@ -49,7 +49,13 @@ async function call(method, path, { headers = {}, body, expect = 'unauthorized' 
 
   let pass;
   if (expect === 'unauthorized') pass = status === 401 || status === 403 || status === 503;
-  else if (expect === 'public') pass = status >= 200 && status < 400;
+  // A 404 is acceptable for endpoints that switch themselves off when
+  // NODE_ENV=production (they never reach the auth check at all, which is
+  // strictly safer than rejecting it). 401/403 remain the expected outcome
+  // wherever the endpoint is live.
+  else if (expect === 'unauthorized-or-disabled') {
+    pass = status === 401 || status === 403 || status === 503 || status === 404;
+  } else if (expect === 'public') pass = status >= 200 && status < 400;
   else if (expect === 'not-unauthorized') pass = status !== 401 && status !== 403;
   else if (typeof expect === 'number') pass = status === expect;
   else pass = false;
@@ -80,7 +86,6 @@ async function main() {
     ['DELETE', '/api/admin/drafts'],
     ['GET', '/api/admin/drafts/00000000-0000-0000-0000-000000000000'],
     ['PATCH', '/api/admin/drafts/00000000-0000-0000-0000-000000000000'],
-    ['POST', '/api/admin/drafts/seed'],
     ['POST', '/api/admin/drafts/batch-publish'],
     ['POST', '/api/admin/drafts/00000000-0000-0000-0000-000000000000/publish'],
     ['POST', '/api/admin/drafts/00000000-0000-0000-0000-000000000000/to-gallery'],
@@ -106,6 +111,11 @@ async function main() {
   for (const [method, path] of adminRoutes) {
     await call(method, path, { expect: 'unauthorized' });
   }
+  // app/api/admin/drafts/seed/route.ts returns 404 on purpose when
+  // NODE_ENV=production - it is a temporary dev-only seeding endpoint that
+  // disables itself before the auth check. 404 is therefore the correct
+  // production answer, not a missing route.
+  await call('POST', '/api/admin/drafts/seed', { expect: 'unauthorized-or-disabled' });
 
   console.log('');
   console.log('[2] removed debug endpoints are gone');

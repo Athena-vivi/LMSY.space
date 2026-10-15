@@ -28,6 +28,7 @@ npm run backup:db            # logical export of every table in lmsy_archive
 npm run backup:r2            # mirror every R2 object to local disk
 npm run backup:r2:offsite    # copy every object to the second R2 bucket (server-side)
 npm run restore:drill        # re-load the newest snapshots into an isolated DB + verify
+npm run backup:db:offsite    # upload the newest DB snapshot to the second R2 bucket
 node scripts/audit-r2-references.mjs   # read-only R2 <-> database reconciliation
 ```
 
@@ -43,6 +44,9 @@ row counts, byte sizes and sha256 hashes.
   mismatches). The objects themselves live in the second bucket, not on disk.
 - Drill: `backups/restore-drill/<timestamp>/` — `restore.db`,
   `restore-report.json`.
+- DB offsite: `backups/db-offsite/offsite-report.json` — per-file size and
+  sha256, read-back verification, retention candidates. The snapshot itself
+  lives in `lmsy-archive-backup/db-logical/<timestamp>/`.
 
 Every script exits non-zero and prints the failing items when something goes
 wrong. A backup that fails part-way is reported as failed, never as successful.
@@ -83,6 +87,23 @@ botched bulk operation, or a bug in the app's own delete path — but it does
 compromise, provider incident). A true third copy on a different provider (or
 on storage outside Cloudflare) is still the owner's call. The local mirror
 (`npm run backup:r2`) on a separate machine remains a useful complement.
+
+## The off-site database copy
+
+`npm run backup:db:offsite` uploads the newest logical snapshot to
+`lmsy-archive-backup/db-logical/<timestamp>/`. It refuses to run if the newest
+snapshot's own manifest says `ok=false`, uploads every file, then **re-downloads
+each one and compares SHA-256** (a size check alone cannot prove the bytes
+survived). Old snapshots are listed as retention candidates but are never
+deleted automatically.
+
+Verified run (2026-10-16): snapshot `2026-10-15T22-37-05-656`, 11 files,
+518.3KB, `failures: []`, `hashMismatch: []`, `ok: true`.
+
+**Privacy:** the snapshot contains every business row, including unpublished
+drafts. Both buckets reject anonymous access (verified: an unauthenticated
+bucket listing returns HTTP 400 `Authorization`), so it is readable only with
+the R2 credentials — keep them out of git.
 
 ## Recovery playbooks
 
@@ -144,10 +165,15 @@ These cannot be done from the repository and must be completed by the owner:
    job), and keep at least one copy off this laptop. Suggested cadence:
    database daily, R2 weekly (or after any bulk import), offsite R2 copy after
    any bulk import.
-4. **Off-site copy.** Done in phase 2 for R2 (second bucket
-   `lmsy-archive-backup`, see above) — but it shares the Cloudflare account with
-   the source. Getting the *database* snapshot off this laptop, and ideally a
-   third R2 copy on a different provider, is still the owner's work.
+4. **Off-site copy of the database snapshot.** Done on 2026-10-16: the newest
+   logical backup is uploaded to the second R2 bucket under
+   `lmsy-archive-backup/db-logical/<timestamp>/` by `npm run backup:db:offsite`
+   (11 files, ~0.5MB, every file re-downloaded and SHA-256 compared). The
+   bucket rejects anonymous access, so it is readable only with the R2
+   credentials. Retention candidates are listed by the script but are **never
+   pruned automatically**.
+   Still open: a third copy of R2 on a different provider or account, since
+   both current buckets share one Cloudflare account.
 
 ## Notes for future cleanup work
 
