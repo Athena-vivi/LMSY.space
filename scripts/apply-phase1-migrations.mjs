@@ -415,7 +415,12 @@ try {
   console.log(`  source_platform CHECK: ${v.platformCheck[0]?.pg_get_constraintdef ?? '(missing)'}`);
   console.log('  policies:');
   for (const r of v.policies) {
-    console.log(`    ${r.tablename} | ${r.policyname} | ${r.cmd} | ${(r.roles || []).join(',')}`);
+    // pg_policies.roles is a Postgres array literal like "{anon,authenticated}",
+    // not a JS array.
+    const roles = Array.isArray(r.roles)
+      ? r.roles.join(',')
+      : String(r.roles ?? '').replace(/^\{|\}$/g, '');
+    console.log(`    ${r.tablename} | ${r.policyname} | ${r.cmd} | ${roles}`);
   }
 
   // -------------------------------------------------------------------------

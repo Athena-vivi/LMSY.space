@@ -74,6 +74,23 @@ describe('rls hardening: the leak is actually closed', () => {
     assert.match(HARDENING, /REVOKE SELECT ON lmsy_archive\.%I FROM anon, authenticated/);
   });
 
+  test('read policies on deny-listed tables are dropped too', () => {
+    // Production evidence (2026-10-16): RLS was already enabled on every table
+    // and anon held SELECT through PUBLIC, so REVOKE alone was a no-op. The
+    // leak was carried by a permissive SELECT policy
+    // ("Public can view published draft_items"). A policy has to be dropped,
+    // not just a grant revoked.
+    assert.match(HARDENING, /tablename = ANY \(deny_read\)/);
+    assert.match(HARDENING, /cmd IN \('SELECT', 'ALL'\)/);
+    assert.match(HARDENING, /roles::text ILIKE '%anon%' OR roles::text ILIKE '%authenticated%'/);
+  });
+
+  test('the service_role policy survives the read-policy cleanup', () => {
+    // draft_items carries "Service role full access on draft_items" (cmd ALL).
+    // Dropping it would break the admin UI, ingest, webhook and cron job.
+    assert.match(HARDENING, /roles::text NOT ILIKE '%service_role%'/);
+  });
+
   test('write privileges are revoked from anon and authenticated', () => {
     assert.match(
       HARDENING,

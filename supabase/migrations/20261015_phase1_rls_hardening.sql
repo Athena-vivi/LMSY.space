@@ -10,6 +10,20 @@
 --   create accounts when sign-ups are open) could INSERT/UPDATE/DELETE rows in
 --   every business table.
 --
+--   Re-checked against production on 2026-10-16, which changed the shape of the
+--   fix. The live state was NOT what the file above assumed:
+--     * RLS was ALREADY enabled on all 9 tables (pg_class.relrowsecurity = true).
+--     * anon already had no INSERT anywhere (has_table_privilege -> false);
+--       its SELECT comes via PUBLIC, which `REVOKE ... FROM anon` does not
+--       remove.
+--     * the draft leak was therefore NOT missing RLS and NOT a grant: it was a
+--       PERMISSIVE SELECT policy
+--           "Public can view published draft_items"
+--           ON draft_items TO anon, authenticated USING (status = 'published')
+--       A permissive policy admits rows under RLS even when the grant is
+--       inherited, so revoking alone would have left the leak wide open.
+--   The migration therefore drops read policies on the deny list explicitly.
+--
 -- DESIGN
 --   The application never writes with the anon/authenticated role:
 --   every mutation goes through a Next.js API route that uses the service_role
@@ -98,6 +112,25 @@ BEGIN
   LOOP
     EXECUTE format('DROP POLICY %I ON lmsy_archive.%I', t.policyname, t.tablename);
     RAISE NOTICE 'dropped legacy write policy % on %', t.policyname, t.tablename;
+  END LOOP;
+
+  -- 2b. Drop READ policies that expose the deny-listed tables. This is the part
+  --     that actually closes the draft leak: under RLS a permissive SELECT
+  --     policy admits rows even when the grant is inherited from PUBLIC, so
+  --     REVOKE (step 1) on its own is not sufficient.
+  --     service_role policies are deliberately preserved so the admin UI, the
+  --     ingest route, the Telegram webhook and the cron job keep working.
+  FOR t IN
+    SELECT tablename, policyname
+    FROM pg_policies
+    WHERE schemaname = 'lmsy_archive'
+      AND tablename = ANY (deny_read)
+      AND cmd IN ('SELECT', 'ALL')
+      AND (roles::text ILIKE '%anon%' OR roles::text ILIKE '%authenticated%')
+      AND roles::text NOT ILIKE '%service_role%'
+  LOOP
+    EXECUTE format('DROP POLICY %I ON lmsy_archive.%I', t.policyname, t.tablename);
+    RAISE NOTICE 'dropped public read policy % on %', t.policyname, t.tablename;
   END LOOP;
 END $$;
 

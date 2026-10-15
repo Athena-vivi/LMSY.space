@@ -40,8 +40,44 @@ PostgREST 对无权限目标的响应），即 anon **没有任何写权限**。
 
 ### A.2 迁移执行结果
 
-**状态：未执行 —— 被凭据阻塞。** 详见 B 节。执行通道已完全就绪，支持三种方式
-（数据库密码 / 管理 API Token / 手工粘贴 SQL），一旦拿到任意一种即可完成。
+**状态：已于 2026-10-16 07:45 GMT+8 执行完成并验证通过。** 三个迁移全部应用；
+`draft_items` / `admin_users` 对 anon 的读取已关闭（**HTTP 401**），公开表读取未受
+任何影响，行数全部未变。
+
+执行通道为 Supabase Management API。第一个令牌虽能连通控制面、并在**另一个**项目上
+成功执行 SQL（HTTP 201），但对本项目返回 **403 "Your account does not have the
+necessary privileges to access this endpoint"**，即该令牌所属账号**不含本项目**
+（`GET /v1/projects` 只列出 `ubbmlgvkqqzzsnrdzdnc`）。换用第二个令牌后
+`GET /v1/projects/obylptsyyqydbbawkvxd` 返回 200，通道打通。
+
+#### 执行前发现的缺陷：原样执行修不掉这个漏洞
+
+拿到凭据后我没有直接执行，而是先把生产实际状态与迁移内容逐条对齐——结果发现
+**RLS 加固迁移按原样执行很可能修不掉泄露**：
+
+| 生产实测（2026-10-16） | 迁移原假设 | 后果 |
+|---|---|---|
+| RLS **已在全部 9 张表启用**（`pg_class.relrowsecurity = true`） | 需要先开启 RLS | `ENABLE ROW LEVEL SECURITY` 是空操作 |
+| 泄露由 **PERMISSIVE SELECT 策略**承载：`"Public can view published draft_items"`，roles `{anon,authenticated}`，`USING (status = 'published')` | 未考虑 | **该策略不会被删除** |
+| `information_schema.role_table_grants` 对 anon/authenticated 返回空，但 `has_table_privilege('anon',…,'SELECT')` 为 `true` | 假设 `REVOKE` 能收权 | 权限来源不明确，`REVOKE` 是否生效无法预判 |
+
+第三条需要说明：`information_schema` 的权限视图只显示**当前用户有权查看**的授权项，
+Management API 的执行角色看不到 anon 的授权，所以「空结果」**不能证明**权限来自
+PUBLIC 继承。结论是**不确定**，因此不能把宝押在 `REVOKE` 上。
+
+第二行是决定性的：迁移第 2 步清理策略的过滤条件是
+`cmd IN ('INSERT','UPDATE','DELETE','ALL') AND roles ILIKE '%authenticated%'`，
+而这条泄露策略的 `cmd` 是 **SELECT**，**不匹配、不会被删除**。
+
+**修正：** 在 `20261015_phase1_rls_hardening.sql` 新增第 2b 步，显式删除 deny 表上
+roles 含 `anon` / `authenticated` 的 `SELECT` / `ALL` 策略；同时用
+`roles::text NOT ILIKE '%service_role%'` 保护 `draft_items` 上的
+`"Service role full access"` 策略，保证后台、采集、Webhook、cron 不受影响。
+新增 2 条测试断言固化该行为（测试 46 → 48）。
+
+结果证明 `REVOKE SELECT` 确实生效（返回 **401**，而非「200 空数组」，后者只是
+「RLS 开启但无匹配策略」，不如显式收权强）。但**若未删除策略，仅靠 REVOKE 并不可
+靠**——两者都做才是对的。
 
 #### 为什么项目 API Key 不够 —— 三类凭据的区别
 
@@ -79,29 +115,59 @@ HTTP 401），`POST /v1/projects/{ref}/database/query` 通路已接通并用无�
 脚本现在自动选择：有 `SUPABASE_ACCESS_TOKEN` 就走 API，有 `DATABASE_URL` /
 `SUPABASE_DB_PASSWORD` 就走直连，也可用 `--via=api` / `--via=pg` 强制。
 
-### A.3 修复后的验证
+### A.3 修复后的验证（已执行，全部为生产实测）
 
-尚未执行。已编写并在本地逐级验证过验证逻辑，凭据到位后将自动运行：
+同一把**公开 anon key**，与浏览器匿名访问完全相同的身份，迁移后重测：
 
-1. 库内验证：anon/authenticated 的写权限授权数、RLS 未启用表数、策略清单、
-   两个唯一索引、`source_platform` CHECK 定义。
-2. 行数前后比对（迁移不含 DELETE/UPDATE/TRUNCATE，任何变化即中止）。
-3. **库外验证**：用同一把公开 anon key 重新请求 `draft_items` / `admin_users`，
-   必须不再是「200 且有行」；同时确认 `gallery_assets` / `projects` /
-   `site_content_blocks` 公开读取仍正常。若仍泄露，脚本以非零码退出并打印
-   「MIGRATIONS APPLIED BUT THE LEAK IS STILL PRESENT」。
+| 表 | 迁移前 | 迁移后 | 判定 |
+|---|---|---|---|
+| `draft_items` | **200**（3 行，含私有来源链接） | **401 / 42501** | ✅ **泄露已关闭** |
+| `admin_users` | 200（0 行） | **401 / 42501** | ✅ 已收紧 |
+| `gallery_assets` | 200 | 200 | ✅ 公开读取正常 |
+| `projects` | 200 | 200 | ✅ 公开读取正常 |
+| `site_content_blocks` | 200 | 200 | ✅ 公开读取正常 |
+| `gallery` | 200 | 200 | ✅ 无回退 |
+| `chronicle_events` | 200 | 200 | ✅ 无回退 |
+| `profiles` | 200 | 200 | ✅ 无回退 |
+| `publications` | 200 | 200 | ✅ 无回退 |
+
+**匿名 INSERT 仍被拒绝**（4 张表全部 HTTP 401 / code 42501）：
+`gallery_assets`、`gallery`、`projects`、`draft_items`。
+
+库内核验（`information_schema` + `pg_policies`，迁移后）：
+
+- `has_table_privilege('anon', …)`：`draft_items` / `admin_users` = **false**；
+  其余 7 张公开表 = true。
+- `has_table_privilege('authenticated', …, 'INSERT')`：全部 9 张表 = **false**。
+- anon/authenticated 的写权限授权数：**0**。
+- RLS 未启用的表：**0**。
+- deny 表上 roles 含 anon/authenticated 的剩余策略：**0**。
+- `draft_items` 仅保留 `Service role full access on draft_items`（roles `{service_role}`）。
 
 ### A.4 普通用户与管理员
 
-- **普通 authenticated 身份：** 迁移对 `anon, authenticated` **同时**收权，
-  普通登录用户同样被排除。已由 `tests/migrations.test.ts` 断言保护。
-- **管理员：** 迁移不触碰 `service_role`，后台照常绕过 RLS 工作；审核与发布流程
-  未做任何改动。已添加断言：`REVOKE` 语句中不得出现 `service_role`。
+- **普通 authenticated 身份：** 迁移对 `anon, authenticated` **同时**收权。
+  库内实测 `has_table_privilege('authenticated','lmsy_archive.draft_items','SELECT')`
+  = **false**，`admin_users` 同样 false；`INSERT` 在全部 9 张表均为 false。
+  （本环境无 Supabase Auth 测试账号，故以库内权限函数实测替代真实登录实测；
+  这一点如实标注，不冒充端到端登录验证。）
+- **管理员：** `service_role` 未被收权。实测 service_role 读取 `draft_items` 仍为
+  **HTTP 200**，且编年史页依赖的查询
+  （`status='published' AND chronicle_visible=true`）返回 **6 行**——
+  即后台审核/发布与公开编年史的数据通路均未受影响。
+  已添加断言：`REVOKE` 语句中不得出现 `service_role`。
 
 ### A.5 公开页面回归结果
 
-**阻塞。** 站点不可达，无法做线上页面回归。库层面已确认三张公开表 anon 读取正常
-（见 A.1 表），迁移后由 A.3 第 3 步复测。
+**库层面：已验证无回退** —— 见 A.3 表，7 张公开内容表 anon 读取全部保持 200。
+
+**页面层面：仍被网络阻塞。** `lmsy.space` 在本机 TCP 443 超时（DNS 可解析），
+无法做线上页面回归。已确认的数据通路：所有读取 `draft_items` 的代码路径
+（`app/api/admin/**`、`app/api/ingest`、`app/api/webhooks/telegram`、
+`app/api/cron/fetch-updates`、`lib/timeline.ts`）**均使用 `service_role`**
+（`getSupabaseAdmin()`），因此收紧 anon 不会影响任何页面或后台功能。
+唯一使用 anon 客户端读取的是 `app/admin/upload/_hooks/use-upload-state.ts`
+（读 `profiles` / `projects` / `gallery`，三张表均保持公开可读）。
 
 ---
 
@@ -157,20 +223,39 @@ PostgREST 暴露的 RPC 仅 `get_translation` / `set_translation` / `normalize_u
 
 ### B.3 逐项执行状态
 
-| 迁移 | 状态 | 结构核验 | 行数对比 |
-|---|---|---|---|
-| `20261015_phase1_rls_hardening.sql` | **未执行（阻塞）** | 待执行后核验 | 执行后自动比对 |
-| `20261015_phase1_baseline_gallery_assets.sql` | **未执行（阻塞）** | 生产已是 30 列，迁移为 `IF NOT EXISTS`，不会重建或覆盖 | 执行后自动比对 |
-| `20261015_phase1_data_integrity.sql` | **未执行（阻塞）** | 前置条件已核验（见 B.1） | 执行后自动比对 |
+三个迁移均于 **2026-10-16 07:45 GMT+8** 通过 Management API 应用成功（每个迁移在
+独立事务中执行，退出码 0）。执行时刻取自 `reports/migration-apply.json`：
 
-### B.4 迁移前保护（已落实）
+| 迁移 | 执行时间 (UTC) | 状态 | 结构核验结果 | 行数对比 |
+|---|---|---|---|---|
+| `20261015_phase1_rls_hardening.sql` | 2026-10-15T23:45:19Z | ✅ 已应用 | anon/authenticated 写授权 **0**；RLS 未启用表 **0**；deny 表剩余 anon/auth 策略 **0**；`draft_items` 仅剩 service_role 策略 | 330/25/71/0/0/0/4 全部一致 |
+| `20261015_phase1_baseline_gallery_assets.sql` | 2026-10-15T23:45:20Z | ✅ 已应用 | 全为 `CREATE TABLE/INDEX IF NOT EXISTS`，生产已是 30 列 → **空操作，未重建表** | 一致 |
+| `20261015_phase1_data_integrity.sql` | 2026-10-15T23:45:22Z | ✅ 已应用 | 新建 `uq_gallery_assets_catalog_id`、`uq_draft_items_file_hash` 两个部分唯一索引（原为 0，现为 2）；`source_platform` CHECK 重建为含 `telegram` 的超集 | 一致 |
 
-- **最新逻辑备份：** `backups/db/2026-10-15T22-37-05-656`，9 表 / 432 行 /
-  0.41MB，`manifest.ok = true`，逐表行数与期望值一致。执行脚本会检查该清单，
+`source_platform` CHECK 迁移后实际定义（库内读取）：
+
+```
+CHECK (((source_platform IS NULL) OR (source_platform = ANY (ARRAY[
+  'twitter','instagram','weibo','xiaohongshu','youtube','tiktok','telegram','manual'
+]))))
+```
+
+未删除、未重排、未清理任何历史数据 —— 迁移全部为 `IF NOT EXISTS` / 幂等语句，
+且执行前后逐表行数零漂移。
+
+### B.4 迁移前后保护（已落实）
+
+- **最新逻辑备份：** `backups/db/2026-10-15T23-36-19-598`（迁移前 9 分钟重新生成），
+  9 表 / 432 行 / 0.41MB，`manifest.ok = true`。执行脚本强制检查该清单，
   `ok=false` 或超过 24 小时即拒绝运行。
-- **内容复核：** 三个文件全部重读，并新增 15 条断言测试（见 D 节）。
+- **内容复核：** 三个文件全部重读，据此修正了 A.2 中记录的实际缺陷，并新增断言
+  （测试 46 → 48，见 D 节）。
 - **兼容性：** 对不存在的 `schedule` / `members` 表，迁移按设计跳过而不报错。
 - **异常恢复：** 每个迁移在独立事务中执行，失败即 `ROLLBACK`；行数漂移即中止。
+  本次执行无回滚、无漂移。
+- **先 dry-run 后执行：** `--dry-run` 先行，过程中发现并修复了一处脚本自身的缺陷
+  （`pg_policies.roles` 返回 Postgres 数组字面量 `{anon,authenticated}` 而非 JS
+  数组，导致打印时崩溃）。若不先跑 dry-run，真实执行会在验证阶段中断。
 
 ---
 
@@ -237,11 +322,14 @@ Webhook secret 校验、登录限流（第 11 次 → 429）、公开 API 正常
 
 ### D.3 单元测试
 
-`npm test` → **46/46 通过**（原 31 项 + 新增 15 项）。
+`npm test` → **48/48 通过**（原 31 项 + 迁移 17 项）。
 
 新增 `tests/migrations.test.ts`，覆盖指令中「不要只检查 RLS 是否启用」的要求：
 
 - `draft_items` / `admin_users` 确实在 deny 列表，且 `REVOKE SELECT` 存在；
+- deny 表上 roles 含 anon/authenticated 的 **SELECT/ALL 策略会被删除**（A.2 中
+  记录的修正，2 条断言）；
+- `draft_items` 的 **service_role 策略在清理中保留**（1 条断言）；
 - 写权限（INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER）确实被撤销；
 - 每张表都 `ENABLE ROW LEVEL SECURITY`；
 - `gallery_assets` / `projects` / `site_content_blocks` 保留公开只读；
@@ -366,56 +454,49 @@ PITR、每日备份、保留期与最近恢复测试。文档 `docs/BACKUP_AND_R
 
 ## H. 未完成事项
 
-### 已完成并验证
+### 已完成并验证（生产实测）
 
-1. 生产草稿泄露**复测确认仍然存在**（有完整请求与状态码证据）。
-2. 三个迁移的**前置条件全部核验通过**（表结构、行数、约束、重复值、RPC 清单）。
-3. 迁移执行通道建成：脚本（含事务、NOTICE、行数保护、库外复测）+ SQL 包
-   （16.5KB，加固在最前，0 条破坏性语句）+ 15 条断言测试。
-4. 数据库异地副本建成并验证（11/11 SHA-256 回读通过）。
-5. 全部备份与恢复演练重跑通过（见 E.1）。
-6. `docs/BACKUP_AND_RESTORE.md` 已更新。
-7. 类型检查、测试、构建通过：
-   `npm run typecheck` → **0 错**；`npm test` → **46/46 通过**；
-   `npm run build` → **✓ Compiled successfully，exit 0**（`/gallery` 等为静态路由）。
+1. ✅ **P0 生产草稿泄露已修复。** anon 读取 `draft_items` / `admin_users` 由
+   HTTP 200 → **401 / 42501**；7 张公开表读取不变；service_role 后台通路不变；
+   行数零漂移。证据见 A.3 / A.4。
+2. ✅ **三个迁移全部应用并核验**（执行时间、结构核验、行数对比见 B.3）。
+3. ✅ **执行前发现并修正了迁移本身的缺陷** —— 原样执行修不掉泄露，原因与修正见 A.2。
+4. ✅ 迁移顺序「加固优先」已在真实库上执行成功（此前仅依赖分析 + 测试固化）。
+5. ✅ `migrate:phase1` 的**有凭据分支已真实验证**（Management API 路径），
+   dry-run 亦已验证。
+6. ✅ 数据库异地副本建成并验证（11/11 SHA-256 回读通过）。
+7. ✅ 全部备份与恢复演练重跑通过（见 E.1）。
+8. ✅ `docs/BACKUP_AND_RESTORE.md` 已更新。
+9. ✅ 类型检查、测试、构建通过：`npm run typecheck` → **0 错**；
+   `npm test` → **48/48 通过**；`npm run build` → **✓ Compiled successfully，exit 0**。
 
 ### 已执行但尚未验证
 
-1. 迁移顺序改为「加固优先」—— 依赖分析已完成并有测试固化，但尚未在真实库上跑过。
-2. `migrate:phase1` 的无凭据分支已验证（exit 2 + 明确指引），**有凭据分支未验证**。
+（无。此前唯一的两项已在本次完成验证。）
 
 ### 需要人工操作
 
-1. **给一条能执行 DDL 的凭据**（二选一，推荐第一个）→ 我立刻执行并复测：
-   - `SUPABASE_ACCESS_TOKEN=sbp_...`：在
-     https://supabase.com/dashboard/account/tokens 生成，**务必选作用域受限**：
-     仅本项目 + `database_write` + 短有效期，用完撤销。
-   - `SUPABASE_DB_PASSWORD=...` 或 `DATABASE_URL=postgres://...`：
-     Dashboard → Project Settings → Database。
-
-   命令：`SUPABASE_ACCESS_TOKEN=sbp_... npm run migrate:phase1`
-2. 或自行在 Supabase SQL Editor 粘贴 `backups/phase1-pending-migrations.sql`
-   （已生成，16.5KB，加固在最前，0 条破坏性语句），执行后告诉我，我立即用
-   anon key 做外部复测。
-2. Vercel Dashboard 核验 Production 环境变量（5 项），再执行
+1. Vercel Dashboard 核验 Production 环境变量（`ADMIN_EMAIL`、
+   `TELEGRAM_WEBHOOK_SECRET`、`CRON_SECRET`、`INGEST_API_KEY`、
+   `TELEGRAM_BOT_TOKEN`），确认后再执行
    `npx tsx scripts/setup-telegram-webhook.ts https://lmsy.space` **重新注册
-   Webhook**（顺序不可颠倒）。
-3. 在可达环境执行 `node scripts/security-smoke-test.mjs --base https://lmsy.space`。
-4. 真实管理员端到端登录/登出验证。
-5. Supabase Dashboard 核验 PITR / 每日备份 / 保留期，并填回文档。
-6. 第二阶段性能与 SEO 的线上复测。
-7. 关键业务回归（首页、图库、作品、档案、日程、编年史、灯箱、审核发布、上传）。
+   Webhook**（顺序不可颠倒，否则采集会中断）。
+2. 在可达环境执行 `node scripts/security-smoke-test.mjs --base https://lmsy.space`。
+3. 真实管理员端到端登录 / 会话 / 登出验证。
+4. Supabase Dashboard 核验 PITR / 每日备份 / 保留期，并填回文档。
+5. 第二阶段性能与 SEO 的线上复测。
+6. 关键业务回归（首页、图库、作品、档案、日程、编年史、灯箱、审核发布、上传）。
 
 ### 被权限、网络或平台条件阻塞
 
-1. **数据库迁移执行** —— 本机无 Postgres 密码、无 Supabase Management token；
-   PostgREST 无法执行 DDL（已确认无 `exec_sql` 类 RPC）。
-   注：Supabase 连接池 TCP 可达，`api.supabase.com` 亦可达，凭据是唯一缺口。
-2. **Vercel 环境变量核验** —— 无 Vercel 凭据。
-3. **Telegram Webhook** —— `api.telegram.org` 不可达。
-4. **全部线上 HTTP 验收** —— `lmsy.space` / `*.vercel.app` 不可达（DNS 可解析，
+1. **Vercel 环境变量核验** —— 无 Vercel 凭据（`~/.vercel/auth.json` 不存在）。
+2. **Telegram Webhook** —— `api.telegram.org` 不可达（TCP 443 超时）。
+3. **全部线上 HTTP 验收** —— `lmsy.space` / `*.vercel.app` 不可达（DNS 可解析，
    TCP 443 超时；代理通道同样超时）。
-5. **R2 版本控制状态** —— Cloudflare token 权限不足（仅能 token 自校验）。
+4. **R2 版本控制状态** —— Cloudflare token 权限不足（仅能 token 自校验）。
+5. **普通 authenticated 身份的端到端登录实测** —— 本环境无法创建 Supabase Auth
+   测试账号；已用库内 `has_table_privilege('authenticated', …)` 实测替代（见 A.4），
+   但这不等同于真实登录实测。
 
 ### 需要单独产品决策
 
