@@ -319,9 +319,9 @@ PITR、每日备份、保留期与最近恢复测试。文档 `docs/BACKUP_AND_R
 
 - **未提交任何密钥、备份或临时文件：** `backups/`、`temp/`、`reports/`、`.env*`
   均在 `.gitignore` 中，`git status` 确认仅上述源码文件入选。
-- **推送与部署：** 提交 `9e75a21`（8 文件，+1282/−6），已推送 `main`
-  （`0b742e9..9e75a21`）。Vercel Production 部署状态经 GitHub commit status API
-  核验：`state = success`，`description = "Deployment has completed"`，
+- **推送与部署：** 代码提交 `9e75a21`（8 文件，+1282/−6）+ 文档回填 `5b0e8a4`，
+  已推送 `main`（`0b742e9..9e75a21..5b0e8a4`）。Vercel Production 部署状态经 GitHub
+  commit status API 核验：`state = success`，`description = "Deployment has completed"`，
   **`sha = 9e75a21`**（即线上代码已包含本次改动）。工作区干净，无未提交的用户改动。
 - **注意：**「部署成功」只代表代码已上线，**不代表**生产数据库权限已修复或环境变量
   已配置——这两项仍需 H 节的人工操作。
