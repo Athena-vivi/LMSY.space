@@ -40,8 +40,44 @@ PostgREST 对无权限目标的响应），即 anon **没有任何写权限**。
 
 ### A.2 迁移执行结果
 
-**状态：未执行 —— 被权限阻塞。** 详见 B 节。执行通道已完全就绪（脚本 + SQL 包 +
-备份 + 验证），一旦获得数据库凭据即可在一条命令内完成。
+**状态：未执行 —— 被凭据阻塞。** 详见 B 节。执行通道已完全就绪，支持三种方式
+（数据库密码 / 管理 API Token / 手工粘贴 SQL），一旦拿到任意一种即可完成。
+
+#### 为什么项目 API Key 不够 —— 三类凭据的区别
+
+这一点值得单独说清楚，因为「给个 API 就行」在这里不成立，取决于是哪一类 API：
+
+| 凭据 | 作用面 | 能执行 DDL 吗 |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY` | **PostgREST**（项目数据面，`<ref>.supabase.co/rest/v1`） | **不能** |
+| `SUPABASE_ACCESS_TOKEN`（`sbp_…` 个人访问令牌） | **Management API**（控制面，`api.supabase.com`） | **能** |
+| `SUPABASE_DB_PASSWORD` / `DATABASE_URL` | **Postgres 直连**（连接池 5432/6543） | **能** |
+
+前两个容易被混为一谈，但它们是两套完全不同的服务。PostgREST 只把表、视图和存储函数
+映射成 HTTP 端点，能做的只有**增删改查行**和调用函数；`CREATE` / `ALTER` / `GRANT` /
+`CREATE POLICY` / `CREATE INDEX` 一律不支持——这是设计使然，把 DDL 暴露到 HTTP 上是
+灾难性的。我实测确认了生产只暴露三个 RPC（均非 SQL 执行器）：
+
+```
+/rpc/get_translation  /rpc/set_translation  /rpc/normalize_url
+```
+
+所以本报告的结论不变：**anon / service_role key 修复不了这个漏洞**。
+
+需要的是后两者之一。已实测 `api.supabase.com` 在本机**可达**（未带令牌时返回
+HTTP 401），`POST /v1/projects/{ref}/database/query` 通路已接通并用无效令牌验证过
+会明确报 `HTTP 401: JWT could not be decoded`（失败得很大声，不会假装成功）。
+
+**两条路线的取舍：**
+
+- **Token（推荐）**：不用交出数据库密码；可创建**作用域受限**的令牌（仅本项目、
+  仅 `database_write`、短有效期），用完在 Dashboard 撤销即可，爆炸半径可控。
+  代价是账号级凭据，且该端点官方标注为 **Beta**。
+- **数据库密码**：作用域仅限这一个数据库，语义更干净，且 `RAISE NOTICE` 能回传；
+  但属于长期凭据，轮换更麻烦。
+
+脚本现在自动选择：有 `SUPABASE_ACCESS_TOKEN` 就走 API，有 `DATABASE_URL` /
+`SUPABASE_DB_PASSWORD` 就走直连，也可用 `--via=api` / `--via=pg` 强制。
 
 ### A.3 修复后的验证
 
@@ -350,9 +386,17 @@ PITR、每日备份、保留期与最近恢复测试。文档 `docs/BACKUP_AND_R
 
 ### 需要人工操作
 
-1. **提供数据库密码或 `DATABASE_URL`** → 执行 `npm run migrate:phase1`。
-   或自行在 Supabase SQL Editor 粘贴 `backups/phase1-pending-migrations.sql`
-   （已生成），执行后由我复测。
+1. **给一条能执行 DDL 的凭据**（二选一，推荐第一个）→ 我立刻执行并复测：
+   - `SUPABASE_ACCESS_TOKEN=sbp_...`：在
+     https://supabase.com/dashboard/account/tokens 生成，**务必选作用域受限**：
+     仅本项目 + `database_write` + 短有效期，用完撤销。
+   - `SUPABASE_DB_PASSWORD=...` 或 `DATABASE_URL=postgres://...`：
+     Dashboard → Project Settings → Database。
+
+   命令：`SUPABASE_ACCESS_TOKEN=sbp_... npm run migrate:phase1`
+2. 或自行在 Supabase SQL Editor 粘贴 `backups/phase1-pending-migrations.sql`
+   （已生成，16.5KB，加固在最前，0 条破坏性语句），执行后告诉我，我立即用
+   anon key 做外部复测。
 2. Vercel Dashboard 核验 Production 环境变量（5 项），再执行
    `npx tsx scripts/setup-telegram-webhook.ts https://lmsy.space` **重新注册
    Webhook**（顺序不可颠倒）。
@@ -364,9 +408,9 @@ PITR、每日备份、保留期与最近恢复测试。文档 `docs/BACKUP_AND_R
 
 ### 被权限、网络或平台条件阻塞
 
-1. **数据库迁移执行** —— 本机无 Postgres 密码，PostgREST 无法执行 DDL
-   （已确认无 `exec_sql` 类 RPC），无 Supabase Management token。
-   注：Supabase 连接池端口 TCP 可达，凭据是唯一缺口。
+1. **数据库迁移执行** —— 本机无 Postgres 密码、无 Supabase Management token；
+   PostgREST 无法执行 DDL（已确认无 `exec_sql` 类 RPC）。
+   注：Supabase 连接池 TCP 可达，`api.supabase.com` 亦可达，凭据是唯一缺口。
 2. **Vercel 环境变量核验** —— 无 Vercel 凭据。
 3. **Telegram Webhook** —— `api.telegram.org` 不可达。
 4. **全部线上 HTTP 验收** —— `lmsy.space` / `*.vercel.app` 不可达（DNS 可解析，

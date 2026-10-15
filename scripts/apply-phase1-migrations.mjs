@@ -21,17 +21,31 @@
  *     contain no DELETE/UPDATE/TRUNCATE, so any difference aborts the run.
  *   - Never prints the password or the connection string.
  *
- * CREDENTIALS (never commit these)
+ * CREDENTIALS - supply ONE of these (never commit any of them)
+ *   SUPABASE_ACCESS_TOKEN  a `sbp_...` personal access token for the Supabase
+ *                          Management API. Create it at
+ *                          https://supabase.com/dashboard/account/tokens
+ *                          Prefer a SCOPED token: this project only,
+ *                          `database_write`, short expiry. Revoke it afterwards.
+ *                          This is usually the easiest option - it needs no
+ *                          database password and no extra dependency.
  *   SUPABASE_DB_PASSWORD   database password (Supabase Dashboard ->
- *                          Project Settings -> Database -> Database password)
- *   or DATABASE_URL        full postgres:// connection string
+ *                          Project Settings -> Database), or DATABASE_URL.
+ *                          Scoped to a single database, but longer-lived.
  * Optional:
  *   SUPABASE_DB_HOST / SUPABASE_DB_PORT / SUPABASE_DB_USER
+ *   --via=pg | --via=api   force one transport
+ *
+ * NOTE: the project API keys (NEXT_PUBLIC_SUPABASE_ANON_KEY /
+ * SUPABASE_SERVICE_ROLE_KEY) are NOT enough. They only reach PostgREST, which
+ * serves rows and stored functions over HTTP and cannot run DDL.
  *
  * USAGE
  *   npm run backup:db                 # required first
+ *   SUPABASE_ACCESS_TOKEN=sbp_... npm run migrate:phase1
  *   SUPABASE_DB_PASSWORD=... npm run migrate:phase1
- *   SUPABASE_DB_PASSWORD=... npm run migrate:phase1 -- --dry-run
+ *   npm run migrate:phase1 -- --dry-run
+ *   npm run migrate:phase1 -- --emit-sql backups/pending.sql   # no credential
  */
 
 import { readFileSync, readdirSync, statSync, existsSync, writeFileSync } from 'fs';
@@ -152,59 +166,135 @@ if (ageHours > MAX_BACKUP_AGE_HOURS) {
 // ---------------------------------------------------------------------------
 // 2. Credentials
 // ---------------------------------------------------------------------------
-let pg;
-try {
-  pg = await import('pg');
-} catch {
-  fail('the `pg` package is not installed. Run `npm install`.');
-}
-const { Client } = pg.default ?? pg;
-
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const ref = url.match(/https:\/\/([^.]+)\./)?.[1] ?? '';
 if (!ref) fail('could not derive the project ref from NEXT_PUBLIC_SUPABASE_URL.');
 
-let conn;
-if (process.env.DATABASE_URL) {
-  conn = { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } };
-} else {
-  if (!process.env.SUPABASE_DB_PASSWORD) {
-    console.error('');
-    console.error('FATAL: no database credentials available.');
-    console.error('  SUPABASE_DB_PASSWORD (or DATABASE_URL) is required to open a Postgres');
-    console.error('  session. PostgREST cannot execute DDL, so the migrations cannot be');
-    console.error('  applied with the anon or service_role key alone.');
-    console.error('  Get it from Supabase Dashboard -> Project Settings -> Database.');
+/**
+ * Two independent ways to get a real SQL session, because the project API keys
+ * cannot do this at all:
+ *
+ *   A. Direct Postgres (DATABASE_URL, or SUPABASE_DB_PASSWORD + pooler).
+ *      Real transaction semantics, and RAISE NOTICE comes back to us.
+ *
+ *   B. Supabase Management API (SUPABASE_ACCESS_TOKEN, a `sbp_...` personal
+ *      access token) -> POST /v1/projects/{ref}/database/query.
+ *      Same SQL, no extra dependency, no need to share the DB password.
+ *      Caveat: the endpoint is Beta, and it returns only the LAST statement's
+ *      result set, so RAISE NOTICE is not surfaced. That is fine here because
+ *      every "skipped" branch is also observable through the verification
+ *      queries below (does the index exist, what does the CHECK say).
+ */
+const TOKEN = process.env.SUPABASE_ACCESS_TOKEN || process.env.SUPABASE_PAT || '';
+const HAS_PG_CRED = Boolean(process.env.DATABASE_URL || process.env.SUPABASE_DB_PASSWORD);
+const forced = (process.argv.find((a) => a.startsWith('--via=')) || '').split('=')[1];
+
+let backend = null;
+let client = null;
+const notices = [];
+
+async function mgmtQuery(sql, readOnly) {
+  const res = await fetch(
+    `https://api.supabase.com/v1/projects/${ref}/database/query`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: sql, read_only: readOnly === true }),
+    }
+  );
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); } catch { json = null; }
+  if (!res.ok) {
+    const msg = json?.message || text.slice(0, 200);
+    const e = new Error(`HTTP ${res.status}: ${msg}`);
+    e.status = res.status;
+    throw e;
+  }
+  return Array.isArray(json) ? json : (json?.result ?? []);
+}
+
+if (forced === 'api' || (!HAS_PG_CRED && TOKEN)) {
+  if (!TOKEN) {
+    console.error('FATAL: --via=api needs SUPABASE_ACCESS_TOKEN.');
     process.exit(2);
   }
-  const host = process.env.SUPABASE_DB_HOST || `${ref}.pooler.supabase.com`;
-  conn = {
-    host,
-    port: Number(process.env.SUPABASE_DB_PORT || 6543),
-    user: process.env.SUPABASE_DB_USER || `postgres.${ref}`,
-    password: process.env.SUPABASE_DB_PASSWORD,
-    database: process.env.SUPABASE_DB_NAME || 'postgres',
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 15000,
+  backend = {
+    kind: 'api',
+    exec: (sql) => mgmtQuery(sql, false),
+    query: (sql) => mgmtQuery(sql, true),
+    close: async () => {},
   };
-}
-console.log(`\n=== connection ===\n  ${conn.host ?? '(from DATABASE_URL)'}:${conn.port ?? ''} user=${conn.user ?? '(from DATABASE_URL)'}`);
+  console.log(`\n=== connection ===\n  Supabase Management API -> project ${ref}`);
+} else if (HAS_PG_CRED || forced === 'pg') {
+  let pg;
+  try {
+    pg = await import('pg');
+  } catch {
+    fail('the `pg` package is not installed. Run `npm install`, or use a token instead.');
+  }
+  const { Client } = pg.default ?? pg;
 
-const client = new Client(conn);
-const notices = [];
-client.on('notice', (n) => notices.push(String(n.message)));
+  let conn;
+  if (process.env.DATABASE_URL) {
+    conn = { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } };
+  } else {
+    if (!process.env.SUPABASE_DB_PASSWORD) {
+      fail('SUPABASE_DB_PASSWORD is set as empty; unset it to fall back to a token.');
+    }
+    conn = {
+      host: process.env.SUPABASE_DB_HOST || `${ref}.pooler.supabase.com`,
+      port: Number(process.env.SUPABASE_DB_PORT || 6543),
+      user: process.env.SUPABASE_DB_USER || `postgres.${ref}`,
+      password: process.env.SUPABASE_DB_PASSWORD,
+      database: process.env.SUPABASE_DB_NAME || 'postgres',
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 15000,
+    };
+  }
+  console.log(`\n=== connection ===\n  ${conn.host ?? '(from DATABASE_URL)'}:${conn.port ?? ''} user=${conn.user ?? '(from DATABASE_URL)'}`);
 
-try {
-  await client.connect();
-} catch (e) {
+  client = new Client(conn);
+  client.on('notice', (n) => notices.push(String(n.message)));
+  try {
+    await client.connect();
+  } catch (e) {
+    console.error('');
+    console.error('FATAL: could not connect - ' + e.message);
+    console.error('  If the host is wrong, set SUPABASE_DB_HOST / SUPABASE_DB_PORT,');
+    console.error('  or supply DATABASE_URL. A Management API token also works:');
+    console.error('  SUPABASE_ACCESS_TOKEN=sbp_... npm run migrate:phase1');
+    process.exit(2);
+  }
+  backend = {
+    kind: 'pg',
+    exec: (sql) => client.query(sql),
+    query: async (sql) => (await client.query(sql)).rows,
+    close: async () => { await client.end().catch(() => {}); },
+  };
+} else {
   console.error('');
-  console.error('FATAL: could not connect - ' + e.message);
-  console.error('  If the host is wrong, set SUPABASE_DB_HOST / SUPABASE_DB_PORT,');
-  console.error('  or supply a full DATABASE_URL from the Supabase dashboard.');
+  console.error('FATAL: no credential that can execute DDL.');
+  console.error('  The project API keys (anon / service_role) only reach PostgREST,');
+  console.error('  which cannot run CREATE / ALTER / GRANT / CREATE POLICY. Supply ONE of:');
+  console.error('');
+  console.error('    SUPABASE_ACCESS_TOKEN=sbp_...   personal access token (Management API)');
+  console.error('      -> https://supabase.com/dashboard/account/tokens');
+  console.error('      -> give it database_write on this project only, short expiry');
+  console.error('');
+  console.error('    SUPABASE_DB_PASSWORD=...        or DATABASE_URL=postgres://...');
+  console.error('      -> Supabase Dashboard -> Project Settings -> Database');
+  console.error('');
+  console.error('  With no credential at all, run:');
+  console.error('    npm run migrate:phase1 -- --emit-sql backups/phase1-pending-migrations.sql');
+  console.error('  and paste the output into the Supabase SQL Editor.');
   process.exit(2);
 }
 
-const q = async (sql) => (await client.query(sql)).rows;
+const q = async (sql) => backend.query(sql);
 
 async function rowCounts() {
   const out = {};
@@ -212,8 +302,17 @@ async function rowCounts() {
     try {
       const r = await q(`SELECT count(*)::int AS n FROM lmsy_archive.${t}`);
       out[t] = r[0].n;
-    } catch {
-      out[t] = null; // table does not exist
+    } catch (e) {
+      // Only a missing relation is allowed to read as "absent". Anything else
+      // (auth failure, network error) must surface, otherwise a broken
+      // connection would look like an empty database and the row-count guard
+      // below would compare null against null and pass silently.
+      const msg = String(e?.message || e);
+      if (/does not exist|42P01|undefined_table/i.test(msg)) {
+        out[t] = null;
+      } else {
+        throw new Error(`row count for ${t} failed: ${msg}`);
+      }
     }
   }
   return out;
@@ -232,6 +331,7 @@ try {
   const report = {
     kind: 'phase1-migration-apply',
     dryRun: DRY_RUN,
+    transport: backend.kind,
     startedAt: new Date().toISOString(),
     backupSnapshot: snapshots[snapshots.length - 1],
     migrations: [],
@@ -259,18 +359,37 @@ try {
       const startedAt = new Date().toISOString();
       console.log(`\n=== applying ${file} ===`);
       try {
-        await client.query('BEGIN');
-        await client.query(sql);
-        await client.query('COMMIT');
+        if (backend.kind === 'api') {
+          // One request = one pooled connection; explicit BEGIN/COMMIT keeps the
+          // whole migration atomic even across the HTTP boundary.
+          await backend.exec(`BEGIN;\n${sql}\nCOMMIT;`);
+        } else {
+          await backend.exec('BEGIN');
+          await backend.exec(sql);
+          await backend.exec('COMMIT');
+        }
       } catch (e) {
-        await client.query('ROLLBACK').catch(() => {});
+        if (backend.kind === 'pg') await backend.exec('ROLLBACK').catch(() => {});
         console.error(`  FAILED: ${e.message}`);
-        console.error('  transaction rolled back; no partial migration was applied.');
+        if (backend.kind === 'api') {
+          // Postgres aborts the whole transaction on statement error, so the
+          // server side is already clean; nothing to compensate here.
+          console.error('  the failed transaction is aborted server-side (no partial apply).');
+        } else {
+          console.error('  transaction rolled back; no partial migration was applied.');
+        }
         report.migrations.push({ file, status: 'failed', error: e.message, startedAt });
         writeJson(_r(process.cwd(), 'reports', 'migration-apply.json'), report);
         process.exit(1);
       }
       for (const n of notices) console.log('  NOTICE: ' + n);
+      if (backend.kind === 'api') {
+        // RAISE NOTICE is not returned by the Management API. The verification
+        // queries below cover the same ground (does the index exist, what is
+        // the CHECK constraint), so a skipped block still shows up.
+        console.log('  (RAISE NOTICE is not surfaced over the Management API;');
+        console.log('   the verification step below proves the outcome instead)');
+      }
       console.log(`  applied at ${startedAt}`);
       report.migrations.push({ file, status: 'applied', startedAt, notices: [...notices] });
     }
@@ -323,8 +442,14 @@ try {
   ensureDir(_r(process.cwd(), 'reports'));
   writeJson(_r(process.cwd(), 'reports', 'migration-apply.json'), report);
   console.log('\nReport: reports/migration-apply.json');
+} catch (e) {
+  // Credential / connectivity problems land here before anything is applied.
+  console.error('');
+  console.error('FATAL: ' + e.message);
+  console.error('  Nothing was applied. Fix the credential or the connection and re-run.');
+  process.exit(1);
 } finally {
-  await client.end().catch(() => {});
+  await backend.close().catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
