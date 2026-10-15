@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { deleteFromR2 } from '@/lib/r2-client';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -19,6 +21,9 @@ export async function GET(
   request: NextRequest,
   { params }: RouteContext
 ) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 
@@ -29,10 +34,7 @@ export async function GET(
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id] GET', error);
     }
 
     if (!data) {
@@ -61,6 +63,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: RouteContext
 ) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -76,10 +81,7 @@ export async function PATCH(
 
     if (error) {
       console.error('[DRAFTS_API] Update error:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id] PATCH', error);
     }
 
     if (!data) {
@@ -111,6 +113,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: RouteContext
 ) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 
@@ -125,10 +130,7 @@ export async function DELETE(
 
     if (fetchError) {
       console.error('[DRAFTS_API] Fetch for delete error:', fetchError);
-      return NextResponse.json(
-        { success: false, error: fetchError.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id] DELETE', fetchError);
     }
 
     if (!item) {
@@ -151,10 +153,7 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('[DRAFTS_API] Database delete error:', deleteError);
-      return NextResponse.json(
-        { success: false, error: deleteError.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id] DELETE', deleteError);
     }
 
     console.log('[DRAFTS_API] Deleted successfully:', id);

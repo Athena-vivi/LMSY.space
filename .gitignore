@@ -48,3 +48,6 @@ backups/
 # Local analysis scripts and work notes
 temp/
 .workbuddy/
+
+# Generated audit / remediation reports (local artifacts)
+reports/

@@ -6,11 +6,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { deleteFromR2 } from '@/lib/r2-client';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 // =====================================================
 // GET - Fetch draft items with optional filtering
 // =====================================================
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -41,10 +46,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('[DRAFTS_API] Fetch error:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts GET', error);
     }
 
     console.log('[DRAFTS_API] Retrieved:', data?.length || 0, 'items');
@@ -69,6 +71,9 @@ export async function GET(request: NextRequest) {
 // DELETE - Batch delete draft items (with R2 cleanup)
 // =====================================================
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const { ids } = body as { ids: string[] };
@@ -90,10 +95,7 @@ export async function DELETE(request: NextRequest) {
 
     if (fetchError) {
       console.error('[DRAFTS_API] Fetch for delete error:', fetchError);
-      return NextResponse.json(
-        { success: false, error: fetchError.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts DELETE', fetchError);
     }
 
     if (!items || items.length === 0) {
@@ -119,10 +121,7 @@ export async function DELETE(request: NextRequest) {
 
     if (deleteError) {
       console.error('[DRAFTS_API] Database delete error:', deleteError);
-      return NextResponse.json(
-        { success: false, error: deleteError.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts DELETE', deleteError);
     }
 
     console.log('[DRAFTS_API] Deleted:', items.length, 'items');

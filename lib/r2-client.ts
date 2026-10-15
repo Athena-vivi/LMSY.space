@@ -90,7 +90,8 @@ export async function uploadToR2(
       url: `${BASE_CDN_URL}/${path}`,
     };
   } catch (error) {
-    console.error('R2 upload error:', error);
+    // Log the message only - never dump the raw SDK error object.
+    console.error('R2 upload error:', error instanceof Error ? error.message : 'Unknown error');
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -113,7 +114,8 @@ export async function deleteFromR2(path: string): Promise<boolean> {
     await getR2Client().send(command);
     return true;
   } catch (error) {
-    console.error('R2 delete error:', error);
+    // Log the message only - never dump the raw SDK error object.
+    console.error('R2 delete error:', error instanceof Error ? error.message : 'Unknown error');
     return false;
   }
 }
@@ -194,7 +196,8 @@ export async function listR2Objects(prefix?: string): Promise<{
       objects,
     };
   } catch (error) {
-    console.error('[R2_LIST] Error listing objects:', error);
+    // Log the message only - never dump the raw SDK error object.
+    console.error('[R2_LIST] Error listing objects:', error instanceof Error ? error.message : 'Unknown error');
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -233,7 +236,8 @@ export async function getR2ObjectMetadata(key: string): Promise<{
       },
     };
   } catch (error) {
-    console.error('[R2_METADATA] Error getting object metadata:', error);
+    // Log the message only - never dump the raw SDK error object.
+    console.error('[R2_METADATA] Error getting object metadata:', error instanceof Error ? error.message : 'Unknown error');
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -300,14 +304,14 @@ export async function testR2Connection(): Promise<{
     console.error('[R2_RAW_ERROR] Endpoint:', process.env.R2_ENDPOINT);
     console.error('[R2_RAW_ERROR] Bucket:', R2_BUCKET_NAME);
     console.error('[R2_RAW_ERROR] Region:', 'auto');
-    console.error('[R2_RAW_ERROR] Full Error Object:', JSON.stringify(error, null, 2));
+    // NOTE: do not dump the raw error object - it may embed request/response
+    // details. The structured fields above are enough to diagnose failures.
 
     console.error(`[R2_MEDIA] Connection failed:`, {
       bucket: R2_BUCKET_NAME,
       code: errorCode,
       message: errorMessage,
       httpStatusCode,
-      raw: error,
     });
 
     return {

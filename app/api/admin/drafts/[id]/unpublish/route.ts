@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -13,6 +15,9 @@ export async function POST(
   request: NextRequest,
   { params }: RouteContext
 ) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 
@@ -31,10 +36,7 @@ export async function POST(
 
     if (error) {
       console.error('[DRAFTS_API] Unpublish error:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id]/unpublish POST', error);
     }
 
     if (!data) {

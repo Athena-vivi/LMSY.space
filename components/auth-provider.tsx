@@ -3,7 +3,42 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { isAdmin } from '@/lib/admin';
+
+interface SessionInfo {
+  authenticated: boolean;
+  isAdmin: boolean;
+  user: { id: string; email: string | null } | null;
+}
+
+/**
+ * Ask the server whether the current session is authenticated and is the admin.
+ *
+ * The admin email is never shipped to the browser; the server compares it and
+ * only returns a boolean. Fails closed (isAdmin: false) on any error and never
+ * throws.
+ */
+async function fetchSessionInfo(): Promise<SessionInfo> {
+  try {
+    const response = await fetch('/api/auth/session', {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return { authenticated: false, isAdmin: false, user: null };
+    }
+
+    const data = await response.json();
+    return {
+      authenticated: Boolean(data?.authenticated),
+      isAdmin: Boolean(data?.isAdmin),
+      user: data?.user ?? null,
+    };
+  } catch (error) {
+    console.error('Session info fetch error:', error);
+    return { authenticated: false, isAdmin: false, user: null };
+  }
+}
 
 interface AuthContextType {
   user: User | null;
@@ -46,9 +81,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
-        // Check if user is admin
-        const adminCheck = isAdmin(currentUser?.email);
-        setIsAdminUser(adminCheck);
+        // Admin status is decided server-side so the email never reaches the bundle.
+        const sessionInfo = await fetchSessionInfo();
+        setIsAdminUser(sessionInfo.isAdmin);
       } catch (error) {
         console.error('Session check error:', error);
         setUser(null);
@@ -65,9 +100,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
-      // Check if user is admin
-      const adminCheck = isAdmin(currentUser?.email);
-      setIsAdminUser(adminCheck);
+      // Refresh the admin flag from the server endpoint. Avoid awaiting inside
+      // this callback (Supabase warns it can deadlock), so fire-and-forget.
+      void fetchSessionInfo().then((sessionInfo) => {
+        setIsAdminUser(sessionInfo.isAdmin);
+      });
 
       setLoading(false);
     });
@@ -109,9 +146,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         setUser(result.session.user);
 
-        // Check if user is admin
-        const adminCheck = isAdmin(result.session.user.email);
-        setIsAdminUser(adminCheck);
+        // Derive the admin flag from the server (never from a public env var).
+        const sessionInfo = await fetchSessionInfo();
+        setIsAdminUser(sessionInfo.isAdmin);
       } else {
         // Fallback: try to get session from cookies
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -121,14 +158,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (session?.user) {
           setUser(session.user);
 
-          // Check if user is admin
-          const adminCheck = isAdmin(session.user.email);
-          setIsAdminUser(adminCheck);
+          // Derive the admin flag from the server (never from a public env var).
+          const sessionInfo = await fetchSessionInfo();
+          setIsAdminUser(sessionInfo.isAdmin);
         } else {
           throw new Error('Session not found after login - neither from API response nor from cookies');
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       throw error;
     } finally {
       setLoading(false);
@@ -138,10 +175,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     setLoading(true);
     try {
+      // Clear the HttpOnly session cookies used by the server guards first.
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (error) {
+        console.error('Logout endpoint error:', error);
+      }
       await supabase.auth.signOut();
+    } finally {
       setUser(null);
       setIsAdminUser(false);
-    } finally {
       setLoading(false);
     }
   };

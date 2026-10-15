@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { translateText } from '@/lib/ai-translator';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 interface TranslateRequest {
   text?: string;
@@ -15,6 +17,9 @@ interface TranslateRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body: TranslateRequest = await request.json();
     const { text, title, description, contentType, targetLang } = body;
@@ -53,10 +58,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success || !result.translations) {
-      return NextResponse.json(
-        { success: false, error: result.error || 'Translation failed' },
-        { status: 500 }
-      );
+      return apiServerError('admin/translate POST', result.error);
     }
 
     // Return the translation

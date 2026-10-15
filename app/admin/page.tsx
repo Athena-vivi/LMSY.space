@@ -6,11 +6,6 @@ import { Upload, FileText, PenTool, ArrowRight, ShieldCheck, AlertCircle } from 
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-interface SystemStatus {
-  r2: 'checking' | 'connected' | 'error';
-  supabase: 'checking' | 'connected' | 'error';
-}
-
 interface CollectionStats {
   gallery: number;
   projects: number;
@@ -24,10 +19,6 @@ interface IntegrityStatus {
 }
 
 export default function AdminDashboard() {
-  const [systemStatus, setSystemStatus] = useState<SystemStatus>({
-    r2: 'checking',
-    supabase: 'checking',
-  });
   const [stats, setStats] = useState<CollectionStats>({
     gallery: 0,
     projects: 0,
@@ -37,7 +28,6 @@ export default function AdminDashboard() {
   const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
-    checkSystemStatus();
     fetchCollectionStats();
     fetchIntegrityStatus();
   }, []);
@@ -55,69 +45,6 @@ export default function AdminDashboard() {
     }
 
     return headers;
-  };
-
-  const checkSystemStatus = async () => {
-    // Check R2 configuration and connection (通过 API)
-    try {
-      const response = await fetch('/api/admin/diagnose/r2');
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[R2_MEDIA] HTTP error:', response.status, response.statusText, errorText);
-        setSystemStatus(prev => ({
-          ...prev,
-          r2: 'error',
-        }));
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSystemStatus(prev => ({
-          ...prev,
-          r2: 'connected',
-        }));
-      } else {
-        console.error('[R2_MEDIA] Connection test failed:', data.code, data.error);
-        setSystemStatus(prev => ({
-          ...prev,
-          r2: 'error',
-        }));
-      }
-    } catch (error: any) {
-      console.error('[R2_MEDIA] Test error:', error?.message || error);
-      setSystemStatus(prev => ({
-        ...prev,
-        r2: 'error',
-      }));
-    }
-
-    // Check Supabase connection via API (使用馆长客户端)
-    try {
-      const response = await fetch('/api/admin/diagnose/db');
-      const data = await response.json();
-      if (data.success) {
-        console.log('[DB_CORE] Connection successful via admin client');
-        setSystemStatus(prev => ({
-          ...prev,
-          supabase: 'connected',
-        }));
-      } else {
-        console.error('[DB_CORE] Connection failed via admin client:', data.error);
-        setSystemStatus(prev => ({
-          ...prev,
-          supabase: 'error',
-        }));
-      }
-    } catch (error: any) {
-      console.error('[DB_CORE] Unexpected error:', error?.message || error);
-      setSystemStatus(prev => ({
-        ...prev,
-        supabase: 'error',
-      }));
-    }
   };
 
   const fetchCollectionStats = async () => {
@@ -253,78 +180,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Status Indicators */}
-          <div className="flex items-center gap-6">
-            {/* R2 Status */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5">
-                <div
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    systemStatus.r2 === 'connected'
-                      ? 'bg-green-500 animate-pulse'
-                      : systemStatus.r2 === 'error'
-                      ? 'bg-red-500'
-                      : 'bg-yellow-500 animate-pulse'
-                  }`}
-                  style={{
-                    boxShadow:
-                      systemStatus.r2 === 'connected'
-                        ? '0 0 8px rgba(34, 197, 94, 0.6)'
-                        : 'none',
-                  }}
-                />
-                <span className="text-[10px] font-mono text-white/30 tracking-wider">
-                  R2_MEDIA
-                </span>
-              </div>
-              <span
-                className={`text-[10px] font-mono tracking-wider ${
-                  systemStatus.r2 === 'connected'
-                    ? 'text-green-500/80'
-                    : systemStatus.r2 === 'error'
-                    ? 'text-red-500/80'
-                    : 'text-yellow-500/80'
-                }`}
-              >
-                {systemStatus.r2 === 'connected' ? 'ONLINE' : systemStatus.r2 === 'error' ? 'OFFLINE' : 'CHECKING'}
-              </span>
-            </div>
-
-            {/* Supabase Status */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5">
-                <div
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    systemStatus.supabase === 'connected'
-                      ? 'bg-green-500 animate-pulse'
-                      : systemStatus.supabase === 'error'
-                      ? 'bg-red-500'
-                      : 'bg-yellow-500 animate-pulse'
-                  }`}
-                  style={{
-                    boxShadow:
-                      systemStatus.supabase === 'connected'
-                        ? '0 0 8px rgba(34, 197, 94, 0.6)'
-                        : 'none',
-                  }}
-                />
-                <span className="text-[10px] font-mono text-white/30 tracking-wider">
-                  DB_CORE
-                </span>
-              </div>
-              <span
-                className={`text-[10px] font-mono tracking-wider ${
-                  systemStatus.supabase === 'connected'
-                    ? 'text-green-500/80'
-                    : systemStatus.supabase === 'error'
-                    ? 'text-red-500/80'
-                    : 'text-yellow-500/80'
-                }`}
-              >
-                {systemStatus.supabase === 'connected' ? 'CONNECTED' : systemStatus.supabase === 'error' ? 'FAILED' : 'CHECKING'}
-              </span>
-            </div>
-          </div>
+          {/* Diagnostics panel (R2_MEDIA / DB_CORE) removed in phase 1 hardening. */}
         </motion.div>
 
         {/* Museum Stats */}

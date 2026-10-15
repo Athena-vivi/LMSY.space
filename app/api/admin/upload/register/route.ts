@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getAdminEmail } from '@/lib/security/api-auth';
+import { validateObjectKey } from '@/lib/security/upload-guard';
+import { apiServerError } from '@/lib/security/http';
+
+// Object-key prefixes this route is allowed to register.
+const ALLOWED_R2_PREFIXES = ['draft/', 'magazines/', 'gallery/'];
 
 const r2Client = new S3Client({
   region: 'auto',
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmail = getAdminEmail();
   if (authResult.user.email !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
@@ -75,6 +81,26 @@ export async function POST(request: NextRequest) {
           required: ['catalogId', 'imageUrl', 'eventDate'],
         },
         { status: 400 }
+      );
+    }
+
+    // This route registers an already-uploaded object, so validate the
+    // client-supplied R2 key (derived from imageUrl) instead of a File.
+    let r2Key: string;
+    try {
+      r2Key = new URL(imageUrl).pathname.replace(/^\/+/, '');
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid image URL' },
+        { status: 400 }
+      );
+    }
+
+    const keyValidation = validateObjectKey(r2Key, ALLOWED_R2_PREFIXES);
+    if (!keyValidation.ok) {
+      return NextResponse.json(
+        { success: false, error: keyValidation.error },
+        { status: keyValidation.status }
       );
     }
 
@@ -107,7 +133,6 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
-    const r2Key = new URL(imageUrl).pathname.replace(/^\/+/, '');
 
     const { data, error } = await supabaseAdmin
       .from('draft_items')
@@ -163,13 +188,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      {
-        error: 'Upload registration failed',
-        details: error instanceof Error ? error.message : String(error),
-        _rolled_back: true,
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/upload/register', error);
   }
 }

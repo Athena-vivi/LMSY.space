@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireMachineKey } from '@/lib/security/machine-auth';
 
 // =====================================================
 // RSS SOURCES CONFIGURATION
@@ -345,16 +346,16 @@ function stripHTML(html: string): string {
 // =====================================================
 
 export async function GET(request: NextRequest) {
-  // Security: Verify cron secret
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = request.nextUrl.searchParams.get('secret');
-
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && cronSecret !== process.env.CRON_SECRET) {
-    return NextResponse.json(
-      { error: 'Unauthorized', message: 'Missing or invalid cron secret' },
-      { status: 401 }
-    );
-  }
+  // SECURITY: constant-time machine key check. The old comparison
+  // `Bearer ${process.env.CRON_SECRET}` accepted the literal "Bearer undefined"
+  // whenever CRON_SECRET was unset, and also trusted a ?secret= query value.
+  // requireMachineKey fails closed (503) when CRON_SECRET is missing.
+  const auth = requireMachineKey(request, {
+    envVars: ['CRON_SECRET'],
+    queryParam: 'secret',
+    label: 'cron fetch-updates',
+  });
+  if (!auth.ok) return auth.response;
 
   console.log('[CRON] ========== AUTOMATED RADAR STARTED ==========');
   console.log('[CRON] Time:', new Date().toISOString());
@@ -498,14 +499,13 @@ export async function GET(request: NextRequest) {
  * POST endpoint for manual triggering
  */
 export async function POST(request: NextRequest) {
-  // Verify authorization
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json(
-      { error: 'Unauthorized', message: 'Missing or invalid cron secret' },
-      { status: 401 }
-    );
-  }
+  // SECURITY: constant-time machine key check (see GET for rationale).
+  const auth = requireMachineKey(request, {
+    envVars: ['CRON_SECRET'],
+    queryParam: 'secret',
+    label: 'cron fetch-updates',
+  });
+  if (!auth.ok) return auth.response;
 
   // Call GET handler
   return GET(request);

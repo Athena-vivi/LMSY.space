@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -11,6 +13,9 @@ export async function POST(
   request: NextRequest,
   { params }: RouteContext
 ) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 
@@ -22,7 +27,7 @@ export async function POST(
 
     if (draftError || !draft) {
       return NextResponse.json(
-        { success: false, error: draftError?.message || 'Draft not found' },
+        { success: false, error: 'Draft not found' },
         { status: 404 }
       );
     }
@@ -43,10 +48,7 @@ export async function POST(
       .maybeSingle();
 
     if (projectError) {
-      return NextResponse.json(
-        { success: false, error: projectError.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id]/link-milestone-project POST', projectError);
     }
 
     if (!project) {
@@ -67,10 +69,7 @@ export async function POST(
         .single();
 
       if (createError || !createdProject) {
-        return NextResponse.json(
-          { success: false, error: createError?.message || 'Failed to create milestone project' },
-          { status: 500 }
-        );
+        return apiServerError('admin/drafts/[id]/link-milestone-project POST', createError);
       }
 
       project = createdProject;
@@ -82,10 +81,7 @@ export async function POST(
       .eq('id', id);
 
     if (updateError) {
-      return NextResponse.json(
-        { success: false, error: updateError.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id]/link-milestone-project POST', updateError);
     }
 
     return NextResponse.json({
@@ -94,12 +90,6 @@ export async function POST(
       data: project,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/drafts/[id]/link-milestone-project POST', error);
   }
 }

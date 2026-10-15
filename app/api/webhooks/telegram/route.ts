@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { downloadAndSaveToR2 } from '@/lib/media-downloader';
 import { translateDraftItem } from '@/lib/ai-translator';
+import { requireMachineKey } from '@/lib/security/machine-auth';
 
 // =====================================================
 // TYPES
@@ -112,7 +113,9 @@ async function getTelegramFileInfo(fileId: string): Promise<string | null> {
     console.error('[TELEGRAM_WEBHOOK] getFile failed:', data);
     return null;
   } catch (error) {
-    console.error('[TELEGRAM_WEBHOOK] Error calling getFile:', error);
+    // Do not dump the raw error: the failing call targets a URL that embeds
+    // the bot token, so log only the message.
+    console.error('[TELEGRAM_WEBHOOK] Error calling getFile:', error instanceof Error ? error.message : 'unknown error');
     return null;
   }
 }
@@ -181,12 +184,23 @@ async function checkDuplicateByFileHash(
  * Main webhook handler - receives updates from Telegram
  */
 export async function POST(request: NextRequest) {
+  // SECURITY: verify the Telegram webhook secret before anything else runs.
+  // requireMachineKey is synchronous; the X-Telegram-Bot-Api-Secret-Token
+  // header value is compared in constant time. Nothing else (R2 download,
+  // draft insert, AI translation) happens when this check fails.
+  const auth = requireMachineKey(request, {
+    envVars: ['TELEGRAM_WEBHOOK_SECRET'],
+    secretHeader: 'x-telegram-bot-api-secret-token',
+    label: 'telegram webhook',
+  });
+  if (!auth.ok) return auth.response;
+
   console.log('[TELEGRAM_WEBHOOK] Received update');
 
   if (!TELEGRAM_BOT_TOKEN) {
     return NextResponse.json(
       { error: 'Telegram bot not configured' },
-      { status: 500 }
+      { status: 503 }
     );
   }
 
@@ -258,8 +272,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Build direct download URL
+        // NOTE: mediaUrl embeds the bot token (.../bot<TOKEN>/...), so it must
+        // never be logged. Log only the file path returned by Telegram.
         const mediaUrl = buildTelegramFileUrl(filePath);
-        console.log('[TELEGRAM_WEBHOOK] Media URL:', mediaUrl);
+        console.log('[TELEGRAM_WEBHOOK] Media file path:', filePath);
 
         // Download media to R2
         console.log('[TELEGRAM_WEBHOOK] Downloading to R2...');
@@ -397,7 +413,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[TELEGRAM_WEBHOOK] Error:', error);
+    // Log only the message (never the raw error object, which could carry a
+    // token-bearing URL through its cause chain).
+    console.error('[TELEGRAM_WEBHOOK] Error:', error instanceof Error ? error.message : 'unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -409,7 +427,15 @@ export async function POST(request: NextRequest) {
  * GET /api/webhooks/telegram
  * Health check & webhook info
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // SECURITY: same webhook secret check as POST.
+  const auth = requireMachineKey(request, {
+    envVars: ['TELEGRAM_WEBHOOK_SECRET'],
+    secretHeader: 'x-telegram-bot-api-secret-token',
+    label: 'telegram webhook',
+  });
+  if (!auth.ok) return auth.response;
+
   return NextResponse.json({
     status: 'ok',
     service: 'LMSY Telegram Webhook',

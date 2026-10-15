@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
-import { uploadToR2 } from '@/lib/r2-client';
+import { uploadToR2, deleteFromR2 } from '@/lib/r2-client';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
-import { getR2PathForCatalogId } from '@/lib/catalog-id';
+import { getR2PathForCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS } from '@/lib/catalog-id';
+import { getAdminEmail } from '@/lib/security/api-auth';
+import { validateUploadFile } from '@/lib/security/upload-guard';
+import { apiServerError } from '@/lib/security/http';
 
 export async function POST(request: NextRequest) {
   // Authentication
@@ -16,7 +19,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmail = getAdminEmail();
   if (authResult.user.email !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
@@ -40,8 +43,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
 
-  if (!file.type.startsWith('image/')) {
-    return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
+  // Server-side validation: size limit, declared MIME allowlist (SVG excluded),
+  // and magic-byte sniffing. This is the authoritative check.
+  const validation = await validateUploadFile(file);
+  if (!validation.ok) {
+    return NextResponse.json(
+      { success: false, error: validation.error },
+      { status: validation.status }
+    );
   }
 
   // Determine catalog ID and category based on project
@@ -110,11 +119,13 @@ export async function POST(request: NextRequest) {
     // Generate catalog ID with dynamic category prefix
     const compactDate = uploadDate.replace(/-/g, '');
 
-    // Query for highest sequence for this category and date
+    // Query for highest sequence for this category and date.
+    // NOTE: gallery_assets, not the legacy `gallery` table (see the comment on
+    // the R2 upload section below).
     const prefix = `LMSY-${categoryPrefix}-${compactDate}`;
     const { data: lastItem } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('catalog_id')
       .like('catalog_id', `${prefix}-%`)
       .order('catalog_id', { ascending: false })
@@ -139,47 +150,69 @@ export async function POST(request: NextRequest) {
   try {
     webpResult = await convertToWebP(file, 95, isEditorial);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'WebP conversion failed',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/upload', error);
   }
 
   // Blur data generation
   let blurData;
   try {
     blurData = await generateBlurData(file);
-  } catch (error) {
+  } catch {
     blurData = null;
   }
 
-  // R2 upload
-  const r2Path = getR2PathForCatalogId(catalogId);
-  let uploadResult;
-  try {
-    uploadResult = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
+  // R2 upload + database insert.
+  //
+  // PHASE 1 FIXES APPLIED HERE:
+  // 1. Target table: this route used to allocate catalog ids from, and insert
+  //    into, the legacy `gallery` table. That table holds 0 rows and the public
+  //    site reads `gallery_assets`, so uploads made through this endpoint never
+  //    appeared on the site. Both the sequence query and the insert now use
+  //    `gallery_assets` (all inserted columns exist there).
+  // 2. Concurrency: the catalog id is picked with read-max-then-add-one, so two
+  //    uploads of the same category/date can choose the same sequence. The
+  //    unique index on gallery_assets.catalog_id now rejects the second write;
+  //    we detect that conflict, remove the object we just uploaded (so no orphan
+  //    is left behind) and retry with a freshly allocated id.
+  let r2Path = '';
+  let uploadResult: Awaited<ReturnType<typeof uploadToR2>> | null = null;
+  let insertedItem: any = null;
 
-    if (!uploadResult.success) {
-      throw new Error(`R2 upload failed: ${uploadResult.error}`);
+  const allocateNextCatalogId = async (): Promise<string> => {
+    const compact = uploadDate.replace(/-/g, '');
+    const nextPrefix = `LMSY-${categoryPrefix}-${compact}`;
+    const { data: lastItem } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('catalog_id')
+      .like('catalog_id', `${nextPrefix}-%`)
+      .order('catalog_id', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let nextSequence = 1;
+    const sequenceMatch = lastItem?.catalog_id?.match(/-(\d{3})$/);
+    if (sequenceMatch) {
+      nextSequence = parseInt(sequenceMatch[1], 10) + 1;
     }
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Failed to upload to R2',
-        details: error instanceof Error ? error.message : String(error),
-        r2Path,
-      },
-      { status: 500 }
-    );
-  }
+    return `LMSY-${categoryPrefix}-${compact}-${String(nextSequence).padStart(3, '0')}`;
+  };
 
-  // Database insert - STRICT FIELD MAPPING
-  let insertedItem;
-  try {
-    // Validate insert data before database call
+  const canRetryWithNewId = !(manualCatalogId && manualCatalogId.trim());
+
+  for (let attempt = 1; attempt <= CATALOG_ID_MAX_ATTEMPTS; attempt++) {
+    r2Path = getR2PathForCatalogId(catalogId);
+
+    try {
+      uploadResult = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
+      if (!uploadResult.success) {
+        throw new Error(`R2 upload failed: ${uploadResult.error}`);
+      }
+    } catch (error) {
+      console.error('[UPLOAD] R2 upload failed at', r2Path);
+      return apiServerError('admin/upload', error);
+    }
+
     const insertData: Record<string, any> = {
       image_url: uploadResult.url,
       caption: caption || null,
@@ -192,72 +225,50 @@ export async function POST(request: NextRequest) {
       event_date: uploadDate,
     };
 
-    // 🔒 CRITICAL: Add project_id if provided
     if (projectId) {
       insertData.project_id = projectId;
-      console.log('[UPLOAD] Adding project_id to insert:', projectId);
     }
 
-    console.log('[UPLOAD] Insert data validation:', {
-      fields: Object.keys(insertData),
-      types: Object.fromEntries(
-        Object.entries(insertData).map(([k, v]) => [k, typeof v])
-      ),
-    });
-
-    const insertResult = await supabaseAdmin
+    const { data, error: insertError } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .insert(insertData)
       .select()
       .single();
 
-    const { data, error: insertError } = insertResult;
+    if (!insertError && data) {
+      insertedItem = data;
+      console.log(`[SYNC] Artifact ${catalogId} uploaded successfully`);
+      console.log(`[ARCHIVE_SUCCESS] Physical: ${r2Path} | Logical: ${catalogId}`);
+      break;
+    }
+
+    // Catalog id collision: clean up the object we just wrote and retry.
+    if (insertError && isCatalogIdConflict(insertError) && canRetryWithNewId && attempt < CATALOG_ID_MAX_ATTEMPTS) {
+      console.warn(`[UPLOAD] catalog_id ${catalogId} already taken, retrying with the next sequence (attempt ${attempt})`);
+      await deleteFromR2(r2Path).catch(() => undefined);
+      catalogId = await allocateNextCatalogId();
+      continue;
+    }
 
     if (insertError) {
-      // Parse Supabase error to identify specific field
-      const errorDetails = {
-        message: insertError.message,
-        code: insertError.code,
-        hint: insertError.hint,
-        details: insertError.details,
-      };
-
-      // Identify field from error message or details
+      // Identify the failing field for the server log only.
       let failingField = 'unknown';
       if (insertError.details) {
         const fieldMatch = insertError.details.match(/Key \((\w+)\)/);
         if (fieldMatch) failingField = fieldMatch[1];
       }
-      if (insertError.message.includes('column')) {
-        const colMatch = insertError.message.match(/column "(\w+)"/);
-        if (colMatch) failingField = colMatch[1];
-      }
-
-      console.error('[UPLOAD] ❌ Database insert failed - Field:', failingField, errorDetails);
-
-      throw new Error(`Field '${failingField}': ${insertError.message} (Code: ${insertError.code})`);
+      const columnMatch = insertError.message.match(/column "(\w+)"/);
+      if (columnMatch) failingField = columnMatch[1];
+      console.error(`[UPLOAD] database insert failed (field: ${failingField}, code: ${insertError.code})`);
+      return apiServerError('admin/upload', new Error(insertError.message));
     }
 
-    if (!data) {
-      throw new Error('Database insert returned no data');
-    }
+    return apiServerError('admin/upload', new Error('Database insert returned no data'));
+  }
 
-    insertedItem = data;
-    console.log(`[SYNC] Artifact ${catalogId} Uploaded Successfully`);
-
-    // 🔒 ARCHIVE_SUCCESS LOG: 零误差上传确认
-    console.log(`[ARCHIVE_SUCCESS] Physical: ${r2Path} | Logical: ${catalogId}`);
-  } catch (error) {
-    console.error('[UPLOAD] Database insert failed:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to insert into database',
-        details: error instanceof Error ? error.message : String(error),
-        uploadedFileUrl: uploadResult.url,
-      },
-      { status: 500 }
-    );
+  if (!insertedItem || !uploadResult) {
+    return apiServerError('admin/upload', new Error('Could not allocate a unique catalog id after retries'));
   }
 
   // Success response
@@ -298,7 +309,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const adminEmail = getAdminEmail();
     if (authResult.user?.email !== adminEmail) {
       return NextResponse.json(
         { error: 'Forbidden' },
@@ -311,7 +322,7 @@ export async function GET(request: NextRequest) {
 
     const { data: lastItem } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('catalog_id')
       .like('catalog_id', `LMSY-G-${today.replace(/-/g, '')}-%`)
       .order('catalog_id', { ascending: false })
@@ -328,7 +339,7 @@ export async function GET(request: NextRequest) {
 
     const { count } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('*', { count: 'exact', head: true });
 
     return NextResponse.json({
@@ -337,12 +348,6 @@ export async function GET(request: NextRequest) {
       today: today,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Failed to retrieve statistics',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/upload', error);
   }
 }

@@ -8,6 +8,7 @@ import {
   generateMagazinePageCatalogId,
   getR2PathForCatalogId,
 } from '@/lib/catalog-id';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
  * Magazine Upload API - Astra 馆长档案标准
@@ -59,8 +60,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Double-check admin email
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
+    const adminEmail = getAdminEmail();
+    if (user.email?.toLowerCase() !== adminEmail) {
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }
@@ -301,8 +302,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
+    const adminEmail = getAdminEmail();
+    if (user.email?.toLowerCase() !== adminEmail) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }

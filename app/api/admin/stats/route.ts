@@ -1,7 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -18,9 +23,6 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error('Stats fetch error:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Failed to fetch stats' },
-      { status: 500 }
-    );
+    return apiServerError('admin/stats GET', error);
   }
 }

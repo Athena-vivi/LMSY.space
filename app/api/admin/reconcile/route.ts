@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { listR2Objects, BASE_CDN_URL } from '@/lib/r2-client';
 import { generateBlurData } from '@/lib/image-processing';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
  * Manual Reconciliation API
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (authResult.user.email !== adminEmail) {
+    const adminEmail = getAdminEmail();
+    if (authResult.user.email?.toLowerCase() !== adminEmail) {
       console.error('[RECONCILE] ❌ Authorization failed: Non-admin user');
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
@@ -216,8 +217,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (authResult.user?.email !== adminEmail) {
+    const adminEmail = getAdminEmail();
+    if (authResult.user?.email?.toLowerCase() !== adminEmail) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }

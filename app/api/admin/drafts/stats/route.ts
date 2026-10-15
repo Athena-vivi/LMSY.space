@@ -6,8 +6,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     // Count all drafts
     const { count, error } = await supabaseAdmin
@@ -16,10 +21,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('[DRAFTS_STATS] Error:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/stats GET', error);
     }
 
     return NextResponse.json({

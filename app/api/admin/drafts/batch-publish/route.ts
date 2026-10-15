@@ -4,8 +4,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const { ids } = body as { ids: string[] };
@@ -31,10 +36,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[DRAFTS_API] Batch publish error:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/batch-publish POST', error);
     }
 
     const published = data?.length || 0;

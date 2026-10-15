@@ -19,6 +19,14 @@
 
 export type CatalogCategory = 'MAG' | 'G' | 'P'; // Magazine, Gallery, Project
 
+/**
+ * Minimal structural type for the Supabase client used by these helpers.
+ * Kept intentionally loose (any table/select chain) so the existing call sites
+ * do not need to be re-typed, while still avoiding the bare `any` keyword.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CatalogIdClient = any;
+
 export interface CatalogIdOptions {
   category: CatalogCategory;
   eventDate: string; // YYYY-MM-DD format (local date)
@@ -119,7 +127,7 @@ export function generateCatalogId(options: CatalogIdOptions): string {
  * @returns Next sequence number (starts from 0 for cover, or increments from existing)
  */
 export async function getNextCatalogSequence(
-  supabase: any,
+  supabase: CatalogIdClient,
   category: CatalogCategory,
   eventDate: string,
   tableName: string = 'gallery'
@@ -158,7 +166,7 @@ export async function getNextCatalogSequence(
  * @returns New catalog ID for cover (sequence 000)
  */
 export async function generateMagazineCoverCatalogId(
-  supabase: any,
+  supabase: CatalogIdClient,
   eventDate: string
 ): Promise<string> {
   // Cover is always 000, no need to query
@@ -177,7 +185,7 @@ export async function generateMagazineCoverCatalogId(
  * @returns New catalog ID for page (sequence 001+)
  */
 export async function generateMagazinePageCatalogId(
-  supabase: any,
+  supabase: CatalogIdClient,
   eventDate: string,
   tableName: string = 'gallery'
 ): Promise<string> {
@@ -201,7 +209,7 @@ export async function generateMagazinePageCatalogId(
  * @returns New catalog ID
  */
 export async function generateNextGalleryCatalogId(
-  supabase: any,
+  supabase: CatalogIdClient,
   eventDate: string
 ): Promise<string> {
   const nextSequence = await getNextCatalogSequence(supabase, 'G', eventDate, 'gallery');
@@ -283,4 +291,37 @@ export function parseLegacyCatalogId(catalogId: string): LegacyParsedCatalogId |
  */
 export function isLegacyCatalogId(catalogId: string): boolean {
   return /^LMSY-[A-Z]+-\d{4}-\d{3}$/.test(catalogId);
+}
+
+// ============================================================================
+// Concurrent allocation support (phase 1 hardening)
+// ============================================================================
+// Catalog IDs are allocated with a read-max-then-add-one query, which is not
+// atomic: two uploads of the same category and date can pick the same sequence.
+// A partial unique index on catalog_id (see
+// supabase/migrations/20261015_phase1_data_integrity.sql) makes the database
+// the final authority; callers must treat the resulting conflict as retryable
+// instead of a hard failure.
+// ============================================================================
+
+/** How many times a caller should re-allocate an id before giving up. */
+export const CATALOG_ID_MAX_ATTEMPTS = 5;
+
+/**
+ * True when a Postgres/Supabase error is a unique-constraint violation,
+ * which for this codebase means "that catalog_id or file_hash is taken".
+ */
+export function isCatalogIdConflict(error: unknown): boolean {
+  if (!error) return false;
+  const code = (error as { code?: string }).code;
+  if (code === '23505') return true;
+  const message = (error as { message?: string }).message || '';
+  return /duplicate key value|unique constraint|already exists/i.test(message);
+}
+
+/** True when the error is the file_hash deduplication index complaining. */
+export function isDuplicateFileHash(error: unknown): boolean {
+  if (!isCatalogIdConflict(error)) return false;
+  const message = (error as { message?: string }).message || '';
+  return /file_hash/i.test(message);
 }

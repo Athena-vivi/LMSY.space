@@ -6,6 +6,14 @@
  * 2. Start ngrok/Cloudflare Tunnel (you need to run this separately)
  * 3. Register the webhook with Telegram
  *
+ * SECURITY: registration also requires TELEGRAM_WEBHOOK_SECRET. It is sent to
+ * Telegram as `secret_token`, and Telegram then signs every webhook request
+ * with the X-Telegram-Bot-Api-Secret-Token header, which the webhook route
+ * verifies. If the secret ever leaks, rotate it immediately: generate a new
+ * value (see the command below), update it in .env.local AND in the production
+ * environment variables, then re-run `register` so Telegram starts signing
+ * with the new secret.
+ *
  * Usage:
  * 1. Make sure your Next.js dev server is running: npm run dev
  * 2. Expose localhost:3000 using ngrok or Cloudflare Tunnel
@@ -47,7 +55,11 @@ function extractToken(env: Record<string, string>): string | null {
   return env.TELEGRAM_BOT_TOKEN || null;
 }
 
-async function registerWebhook(publicUrl: string, botToken: string): Promise<boolean> {
+function extractWebhookSecret(env: Record<string, string>): string | null {
+  return env.TELEGRAM_WEBHOOK_SECRET || null;
+}
+
+async function registerWebhook(publicUrl: string, botToken: string, webhookSecret: string): Promise<boolean> {
   const webhookUrl = `${publicUrl}/api/webhooks/telegram`;
 
   console.log('\n📡 Registering webhook with Telegram...');
@@ -61,6 +73,7 @@ async function registerWebhook(publicUrl: string, botToken: string): Promise<boo
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url: webhookUrl,
+          secret_token: webhookSecret,
         }),
       }
     );
@@ -70,6 +83,7 @@ async function registerWebhook(publicUrl: string, botToken: string): Promise<boo
     if (data.ok) {
       console.log('✅ Webhook registered successfully!');
       console.log(`   Webhook URL: ${webhookUrl}`);
+      console.log('   Secret token registered (value masked).');
       return true;
     } else {
       console.error('❌ Failed to register webhook:', data.description);
@@ -90,8 +104,10 @@ async function getWebhookInfo(botToken: string): Promise<void> {
     const data = await response.json();
 
     if (data.ok) {
+      const registeredUrl = data.result.url || '';
       console.log('\n📋 Current webhook info:');
-      console.log(`   URL: ${data.result.url || '(not set)'}`);
+      console.log(`   Registered: ${registeredUrl ? 'yes' : 'no'}`);
+      console.log(`   URL: ${registeredUrl || '(not set)'}`);
       console.log(`   Has custom certificate: ${data.result.has_custom_certificate}`);
       console.log(`   Pending updates: ${data.result.pending_update_count || 0}`);
 
@@ -134,6 +150,7 @@ async function main() {
   // Load environment
   const env = loadEnvFile();
   const botToken = extractToken(env);
+  const webhookSecret = extractWebhookSecret(env);
 
   if (!botToken) {
     console.error('❌ TELEGRAM_BOT_TOKEN not found in .env.local');
@@ -142,7 +159,20 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`✅ Bot token found: ${botToken.substring(0, 10)}...`);
+  if (!webhookSecret) {
+    console.error('❌ TELEGRAM_WEBHOOK_SECRET not found in .env.local');
+    console.log('\nThis secret is required: Telegram signs every webhook request with it,');
+    console.log('and the webhook route rejects any request that is not signed.');
+    console.log('\nGenerate a strong secret:');
+    console.log('   node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    console.log('\nThen add it to BOTH .env.local and the production environment variables:');
+    console.log('   TELEGRAM_WEBHOOK_SECRET=<the generated value>\n');
+    process.exit(1);
+  }
+
+  // Never print the token value (it grants full control of the bot).
+  console.log('✅ Bot token found (value masked).');
+  console.log('✅ Webhook secret found (value masked).');
 
   // Get command line arguments
   const args = process.argv.slice(2);
@@ -190,10 +220,14 @@ async function main() {
     // First, show current webhook info
     await getWebhookInfo(botToken);
 
-    // Register new webhook
-    const success = await registerWebhook(cleanUrl, botToken);
+    // Register new webhook (sends secret_token so Telegram signs requests)
+    const success = await registerWebhook(cleanUrl, botToken, webhookSecret);
 
     if (success) {
+      // Verify the registration by asking Telegram for the current webhook.
+      console.log('\n🔎 Verifying registration...');
+      await getWebhookInfo(botToken);
+
       console.log('\n🎉 Setup complete!');
       console.log('\nNow send a photo with caption to your bot on Telegram.');
       console.log('The webhook will receive it and process it through the pipeline.');

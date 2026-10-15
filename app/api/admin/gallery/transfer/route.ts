@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
  * POST /api/admin/gallery/transfer - Batch transfer gallery items to project
@@ -17,8 +18,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (authResult.user.email !== adminEmail) {
+  const adminEmail = getAdminEmail();
+  if (authResult.user.email?.toLowerCase() !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
       { status: 403 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { listR2Objects, getR2ObjectMetadata } from '@/lib/r2-client';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
  * Duplicate Detection API
@@ -20,8 +21,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (authResult.user.email !== adminEmail) {
+    const adminEmail = getAdminEmail();
+    if (authResult.user.email?.toLowerCase() !== adminEmail) {
       return NextResponse.json(
         { error: 'Forbidden: Admin access required' },
         { status: 403 }
@@ -108,8 +109,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    if (authResult.user?.email !== adminEmail) {
+    const adminEmail = getAdminEmail();
+    if (authResult.user?.email?.toLowerCase() !== adminEmail) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

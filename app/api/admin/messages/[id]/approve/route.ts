@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 // PATCH - 批准或拒绝留言
 // 使用馆长客户端进行管理操作
@@ -39,7 +40,7 @@ export async function PATCH(
     }
 
     // 检查是否为管理员（两种方式：admin_users 表或邮箱匹配）
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const adminEmail = getAdminEmail();
 
     // 方式1: 检查 admin_users 表
     const { data: adminCheck, error: adminError } = await supabaseAuth
@@ -51,7 +52,7 @@ export async function PATCH(
       .single();
 
     // 方式2: 邮箱匹配（作为后备方案）
-    const isEmailAdmin = adminEmail && user.email === adminEmail;
+    const isEmailAdmin = adminEmail && (user.email || '').toLowerCase() === adminEmail;
 
     if (adminError || !adminCheck) {
       // 如果 admin_users 检查失败，尝试邮箱匹配
@@ -141,7 +142,7 @@ export async function DELETE(
     }
 
     // 检查是否为管理员（两种方式：admin_users 表或邮箱匹配）
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const adminEmail = getAdminEmail();
 
     // 方式1: 检查 admin_users 表
     const { data: adminCheck, error: adminError } = await supabaseAuth
@@ -153,7 +154,7 @@ export async function DELETE(
       .single();
 
     // 方式2: 邮箱匹配（作为后备方案）
-    const isEmailAdmin = adminEmail && user.email === adminEmail;
+    const isEmailAdmin = adminEmail && (user.email || '').toLowerCase() === adminEmail;
 
     if (adminError || !adminCheck) {
       // 如果 admin_users 检查失败，尝试邮箱匹配

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
  * POST - Verify data integrity and clean up broken links
@@ -22,8 +23,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (authResult.user.email !== adminEmail) {
+  const adminEmail = getAdminEmail();
+  if (authResult.user.email?.toLowerCase() !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
       { status: 403 }
@@ -176,8 +177,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (authResult.user.email !== adminEmail) {
+  const adminEmail = getAdminEmail();
+  if (authResult.user.email?.toLowerCase() !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
       { status: 403 }

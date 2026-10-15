@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 const MILESTONE_PROJECT_TITLE = 'MILESTONES_ARCHIVE';
 
@@ -52,6 +54,9 @@ async function ensureMilestoneProject() {
  * 2. Setting the new image as milestone
  */
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const { imageId, year } = body;
@@ -95,10 +100,7 @@ export async function PATCH(request: NextRequest) {
         .eq('id', imageId);
 
       if (linkError) {
-        return NextResponse.json(
-          { error: 'Failed to link milestone project', details: linkError.message },
-          { status: 500 }
-        );
+        return apiServerError('admin/gallery/milestone PATCH', linkError);
       }
     }
 
@@ -111,11 +113,8 @@ export async function PATCH(request: NextRequest) {
         .eq('milestone_priority', newPriority);
 
       if (clearError) {
-        console.error('[MILESTONE_API] ❌ Failed to clear existing milestone:', clearError);
-        return NextResponse.json(
-          { error: 'Failed to clear existing milestone', details: clearError.message },
-          { status: 500 }
-        );
+        console.error('[MILESTONE_API] Failed to clear existing milestone:', clearError);
+        return apiServerError('admin/gallery/milestone PATCH', clearError);
       }
     }
 
@@ -129,14 +128,11 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('[MILESTONE_API] ❌ Failed to set milestone:', error);
-      return NextResponse.json(
-        { error: 'Failed to set milestone', details: error.message },
-        { status: 500 }
-      );
+      console.error('[MILESTONE_API] Failed to set milestone:', error);
+      return apiServerError('admin/gallery/milestone PATCH', error);
     }
 
-    console.log('[MILESTONE_API] ✅ Set milestone:', { imageId, year, priority: newPriority });
+    console.log('[MILESTONE_API] Set milestone:', { imageId, year, priority: newPriority });
 
     return NextResponse.json({
       success: true,
@@ -147,15 +143,9 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[MILESTONE_API] ❌ Error:', error);
+    console.error('[MILESTONE_API] Error:', error);
 
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/gallery/milestone', error);
   }
 }
 
@@ -163,6 +153,9 @@ export async function PATCH(request: NextRequest) {
  * GET - Get current milestone images for all years
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -174,11 +167,8 @@ export async function GET(request: NextRequest) {
       .order('milestone_priority', { ascending: true });
 
     if (error) {
-      console.error('[MILESTONE_API] ❌ Failed to fetch milestones:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch milestones', details: error.message },
-        { status: 500 }
-      );
+      console.error('[MILESTONE_API] Failed to fetch milestones:', error);
+      return apiServerError('admin/gallery/milestone GET', error);
     }
 
     // Map to year
@@ -203,14 +193,8 @@ export async function GET(request: NextRequest) {
       data: milestones,
     });
   } catch (error) {
-    console.error('[MILESTONE_API] ❌ Error:', error);
+    console.error('[MILESTONE_API] Error:', error);
 
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/gallery/milestone', error);
   }
 }

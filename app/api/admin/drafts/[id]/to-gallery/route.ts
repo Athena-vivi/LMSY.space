@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -20,6 +22,9 @@ export async function POST(
   request: NextRequest,
   { params }: RouteContext
 ) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 
@@ -31,7 +36,7 @@ export async function POST(
 
     if (draftError || !draft) {
       return NextResponse.json(
-        { success: false, error: draftError?.message || 'Draft not found' },
+        { success: false, error: 'Draft not found' },
         { status: 404 }
       );
     }
@@ -65,10 +70,7 @@ export async function POST(
       .maybeSingle();
 
     if (existingError) {
-      return NextResponse.json(
-        { success: false, error: existingError.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id]/to-gallery POST', existingError);
     }
 
     if (existingAsset) {
@@ -109,10 +111,7 @@ export async function POST(
       .single();
 
     if (insertError || !insertedAsset) {
-      return NextResponse.json(
-        { success: false, error: insertError?.message || 'Failed to create asset' },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/[id]/to-gallery POST', insertError);
     }
 
     return NextResponse.json({
@@ -121,12 +120,6 @@ export async function POST(
       data: insertedAsset,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/drafts/[id]/to-gallery POST', error);
   }
 }

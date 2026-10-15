@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
  * GET /api/admin/editorial - Fetch all editorial projects (Admin Only)
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (authResult.user.email !== adminEmail) {
+  const adminEmail = getAdminEmail();
+  if (authResult.user.email?.toLowerCase() !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
       { status: 403 }
@@ -108,8 +109,8 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (authResult.user.email !== adminEmail) {
+  const adminEmail = getAdminEmail();
+  if (authResult.user.email?.toLowerCase() !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
       { status: 403 }
@@ -229,8 +230,8 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (authResult.user.email !== adminEmail) {
+  const adminEmail = getAdminEmail();
+  if (authResult.user.email?.toLowerCase() !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
       { status: 403 }

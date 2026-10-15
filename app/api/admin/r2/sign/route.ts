@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getAdminEmail } from '@/lib/security/api-auth';
+import { validateObjectKey, isAllowedMimeType, UPLOAD_POLICY } from '@/lib/security/upload-guard';
+import { apiServerError } from '@/lib/security/http';
+
+// All presigned keys must live under the prefix this route writes to.
+const ALLOWED_R2_PREFIXES = ['magazines/'];
 
 /**
  * POST - Generate R2 Presigned URL for direct client-to-R2 upload
@@ -35,7 +41,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmail = getAdminEmail();
   if (authResult.user.email !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
@@ -61,6 +67,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Only allow image content types (SVG is deliberately excluded).
+    if (!isAllowedMimeType(contentType)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Unsupported content type. Allowed: ${UPLOAD_POLICY.allowedMimeTypes.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Get R2 configuration
     const endpoint = process.env.R2_ENDPOINT;
     const accessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -75,15 +92,8 @@ export async function POST(request: NextRequest) {
     if (!secretAccessKey) missingVars.push('R2_SECRET_ACCESS_KEY');
 
     if (missingVars.length > 0) {
-      console.error('[R2_SIGN] ❌ Missing environment variables:', missingVars);
-      return NextResponse.json(
-        {
-          error: 'R2 configuration incomplete',
-          missingVars,
-          bucket: bucketName,
-        },
-        { status: 500 }
-      );
+      console.error('[R2_SIGN] Missing environment variables:', missingVars.join(', '));
+      return apiServerError('admin/r2/sign');
     }
 
     // Initialize R2 S3 client with proper type assertions
@@ -109,6 +119,15 @@ export async function POST(request: NextRequest) {
     const year = catalogMatch[1];
     const r2Path = `magazines/${year}/${catalogId}.webp`;
 
+    // The key must stay inside the expected upload prefix.
+    const keyValidation = validateObjectKey(r2Path, ALLOWED_R2_PREFIXES);
+    if (!keyValidation.ok) {
+      return NextResponse.json(
+        { success: false, error: keyValidation.error },
+        { status: keyValidation.status }
+      );
+    }
+
     console.log('[R2_SIGN] 🔑 Generating presigned URL:', {
       catalogId,
       r2Path,
@@ -116,11 +135,13 @@ export async function POST(request: NextRequest) {
       bucket: bucketName,
     });
 
-    // Create PutObject command for presigned URL
+    // Create PutObject command for presigned URL.
+    // ContentLength pins the maximum accepted body so R2 rejects larger uploads.
     const command = new PutObjectCommand({
       Bucket: bucketName,
       Key: r2Path,
       ContentType: contentType,
+      ContentLength: UPLOAD_POLICY.maxFileSizeBytes,
       // Add metadata for debugging
       Metadata: {
         'catalog-id': catalogId,
@@ -142,10 +163,9 @@ export async function POST(request: NextRequest) {
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
 
-    console.log('[R2_SIGN] ✅ Presigned URL generated successfully:', {
+    console.log('[R2_SIGN] Presigned URL generated:', {
       catalogId,
       expiresIn: `${expiresIn}s`,
-      urlPreview: uploadUrl.substring(0, 100) + '...',
       urlHost: new URL(uploadUrl).hostname,
     });
 
@@ -159,15 +179,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[R2_SIGN] ❌ Error generating presigned URL:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Failed to generate presigned URL',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/r2/sign', error);
   }
 }
 
@@ -184,7 +196,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmail = getAdminEmail();
   if (authResult.user.email !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden' },

@@ -24,28 +24,12 @@ import {
   downloadAndSaveToR2,
   detectPlatformFromUrl,
   detectMediaTypeFromUrl,
+  maskUrlForLog,
 } from '@/lib/media-downloader';
 import { translateDraftItem } from '@/lib/ai-translator';
-
-/**
- * 验证 Bearer Token
- */
-function validateAuth(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false;
-  }
-
-  const token = authHeader.substring(7);
-
-  // 接受 service role key 或自定义 ingest key
-  const validTokens = [
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    process.env.INGEST_API_KEY,
-  ].filter(Boolean);
-
-  return validTokens.includes(token);
-}
+import { requireMachineKey } from '@/lib/security/machine-auth';
+import { describeError } from '@/lib/security/http';
+import { isDuplicateFileHash } from '@/lib/catalog-id';
 
 /**
  * URL 清洗函数 - 去除查询参数和片段
@@ -93,23 +77,19 @@ function buildMultilingualContent(
  * POST /api/ingest - 主入口
  */
 export async function POST(request: NextRequest) {
-  console.log('[INGEST_API] Received request');
+  // SECURITY: constant-time machine key check. Runs BEFORE parsing the body
+  // or touching Supabase/R2. Fails closed (503) when neither secret is set.
+  // The legacy "key" query parameter is still accepted (logged as deprecated),
+  // and SUPABASE_SERVICE_ROLE_KEY stays as a fallback for the existing cron caller.
+  const auth = requireMachineKey(request, {
+    envVars: ['INGEST_API_KEY', 'SUPABASE_SERVICE_ROLE_KEY'],
+    secretHeader: 'x-ingest-key',
+    queryParam: 'key',
+    label: 'ingest api',
+  });
+  if (!auth.ok) return auth.response;
 
-  // 1. 验证认证
-  if (!validateAuth(request)) {
-    console.warn('[INGEST_API] Unauthorized request');
-    return NextResponse.json<IngestApiResponse>(
-      {
-        success: false,
-        draft_item_id: null,
-        status: null,
-        ingestion_stage: null,
-        message: 'Unauthorized',
-        error: 'Invalid or missing authorization token',
-      },
-      { status: 401 }
-    );
-  }
+  console.log('[INGEST_API] Received request');
 
   // 2. 解析请求体
   let body: IngestApiRequest;
@@ -145,7 +125,7 @@ export async function POST(request: NextRequest) {
   }
 
   console.log('[INGEST_API] Processing:', {
-    source_url: body.source_url,
+    source_url: maskUrlForLog(body.source_url),
     source_platform: body.source_platform,
     has_media_url: !!body.media_url,
   });
@@ -160,7 +140,7 @@ export async function POST(request: NextRequest) {
     let detectedMediaType: 'image' | 'video' = body.media_type || 'image';
 
     if (body.media_url) {
-      console.log('[INGEST_API] Downloading media from:', body.media_url);
+      console.log('[INGEST_API] Downloading media from:', maskUrlForLog(body.media_url));
 
       const downloadResult = await downloadAndSaveToR2(
         body.media_url,
@@ -175,8 +155,8 @@ export async function POST(request: NextRequest) {
         mediaMetadata = downloadResult.metadata || null;
         detectedMediaType = downloadResult.mediaType || 'image';
 
+        // Log the object key only - never log full (possibly signed) media URLs.
         console.log('[INGEST_API] Media saved to R2:', {
-          r2Url,
           r2Key,
           fileHash: fileHash?.substring(0, 16) + '...', // 只打印前16个字符
         });
@@ -207,7 +187,21 @@ export async function POST(request: NextRequest) {
           }
         }
       } else {
-        console.warn('[INGEST_API] Media download failed:', downloadResult.error);
+        // PHASE 1 FIX (P1-5): a failed download must NOT be reported as a
+        // successful capture, and must not create a media-less draft. Return a
+        // retryable error and stop before touching the database.
+        console.warn('[INGEST_API] Media download failed (no draft created):', downloadResult.error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Media download failed',
+            detail: downloadResult.error || null,
+            ingestion_stage: 'download_failed',
+            retryable: true,
+            processed_count: 0,
+          },
+          { status: 502 }
+        );
       }
     }
 
@@ -244,8 +238,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     // 检查唯一约束冲突（file_hash 重复）
-    if (createError?.message?.includes('unique constraint') ||
-        createError?.message?.includes('idx_draft_items_file_hash_unique')) {
+    // Uses the shared helper so both the constraint name and the 23505 code
+    // created by the new partial unique index are recognised.
+    if (isDuplicateFileHash(createError)) {
       console.log('[INGEST_API] Unique constraint violation - file already exists');
 
       // 查找已存在的记录
@@ -274,7 +269,29 @@ export async function POST(request: NextRequest) {
     }
 
     if (createError || !newDraft) {
-      throw new Error(`Failed to create draft: ${createError?.message}`);
+      // PHASE 1 FIX: the upload/write pair is not atomic. If the object was
+      // written to R2 but the draft row could not be created, remove the object
+      // so the bucket does not accumulate orphans that no record points at.
+      // Only the object we just created is touched, never a pre-existing one.
+      if (r2Key) {
+        try {
+          const { deleteFromR2 } = await import('@/lib/r2-client');
+          const removed = await deleteFromR2(r2Key);
+          console.warn(`[INGEST_API] insert failed, compensating delete of ${r2Key}: ${removed ? 'removed' : 'not removed'}`);
+        } catch (cleanupError) {
+          console.error('[INGEST_API] compensating delete failed:', describeError(cleanupError));
+        }
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to create draft record',
+          ingestion_stage: 'db_write_failed',
+          retryable: true,
+          processed_count: 0,
+        },
+        { status: 500 }
+      );
     }
 
     const draftId = newDraft.id;
@@ -357,12 +374,10 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[INGEST_API] Error:', errorMessage);
+    console.error('[INGEST_API] Error:', describeError(error));
 
     // 检查是否是唯一约束冲突
-    if (errorMessage.includes('unique constraint') ||
-        errorMessage.includes('idx_draft_items_file_hash_unique')) {
+    if (isDuplicateFileHash(error)) {
       return NextResponse.json<IngestApiResponse>(
         {
           success: true,
@@ -371,7 +386,7 @@ export async function POST(request: NextRequest) {
           ingestion_stage: 'duplicate' as IngestionStage,
           message: '图片已存在于库中，跳过抓取',
           is_duplicate: true,
-          error: errorMessage,
+          error: describeError(error),
         },
         { status: 200 }
       );
@@ -384,7 +399,7 @@ export async function POST(request: NextRequest) {
         status: null,
         ingestion_stage: null,
         message: 'Internal server error',
-        error: errorMessage,
+        error: describeError(error),
       },
       { status: 500 }
     );
@@ -394,7 +409,16 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/ingest - 健康检查
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // SECURITY: machine key check (same options as POST).
+  const auth = requireMachineKey(request, {
+    envVars: ['INGEST_API_KEY', 'SUPABASE_SERVICE_ROLE_KEY'],
+    secretHeader: 'x-ingest-key',
+    queryParam: 'key',
+    label: 'ingest api',
+  });
+  if (!auth.ok) return auth.response;
+
   return NextResponse.json({
     status: 'ok',
     service: 'LMSY Ingest API',

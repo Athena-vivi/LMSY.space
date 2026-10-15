@@ -16,6 +16,23 @@ import sharp from 'sharp';
 import { createHash } from 'crypto';
 
 /**
+ * Mask a URL for logging.
+ * - Drops the query string/fragment (may hold signed parameters).
+ * - Hides Telegram bot tokens, whose media URLs look like
+ *   https://api.telegram.org/file/bot<TOKEN>/<file_path>.
+ * Never log raw media URLs: they can embed credentials or signatures.
+ */
+export function maskUrlForLog(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const maskedPath = parsed.pathname.replace(/\/bot[^/]+\//, '/bot***/');
+    return `${parsed.origin}${maskedPath}`;
+  } catch {
+    return '[invalid-url]';
+  }
+}
+
+/**
  * 媒体下载结果接口
  */
 export interface MediaDownloadResult {
@@ -138,7 +155,7 @@ export async function downloadMedia(
 ): Promise<MediaDownloadResult> {
   const { timeout = 30000, maxSize = 50 * 1024 * 1024 } = options;
 
-  console.log(`[DOWNLOADER] Starting download: ${url}`);
+  console.log(`[DOWNLOADER] Starting download: ${maskUrlForLog(url)}`);
 
   try {
     // 验证 URL
@@ -231,7 +248,7 @@ export async function downloadMedia(
     }
 
     console.log(`[DOWNLOADER] Download successful:`, {
-      url,
+      url: maskUrlForLog(url),
       contentType,
       size: buffer.length,
       extension,
@@ -253,7 +270,7 @@ export async function downloadMedia(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`[DOWNLOADER] Download failed: ${url}`, errorMessage);
+    console.error(`[DOWNLOADER] Download failed: ${maskUrlForLog(url)}`, errorMessage);
 
     return {
       success: false,
@@ -338,9 +355,9 @@ export async function downloadAndSaveToR2(
     };
   }
 
+  // Log the object key only (the CDN URL is fine to omit; never log signed URLs).
   console.log(`[DOWNLOADER] Successfully saved to R2:`, {
     r2Key,
-    r2Url: uploadResult.url,
     mediaType,
     fileHash: downloadResult.fileHash,
   });

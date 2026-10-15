@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 function ensureAdminEmail(email: string | undefined | null) {
-  return email && email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmail = getAdminEmail();
+  return typeof email === 'string' && email.toLowerCase() === adminEmail;
 }
 
 export async function GET(request: NextRequest) {

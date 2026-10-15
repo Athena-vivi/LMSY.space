@@ -3,6 +3,9 @@ import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { uploadToR2 } from '@/lib/r2-client';
 import { convertToWebP, type ProcessedImageResult } from '@/lib/image-processing';
+import { getAdminEmail } from '@/lib/security/api-auth';
+import { validateUploadFile } from '@/lib/security/upload-guard';
+import { apiServerError } from '@/lib/security/http';
 
 export async function POST(request: NextRequest) {
   const authResult = await getAuthenticatedUser(request);
@@ -14,7 +17,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmail = getAdminEmail();
   if (authResult.user.email !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
@@ -39,10 +42,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!file.type.startsWith('image/')) {
+    // Server-side validation: size limit, declared MIME allowlist (SVG excluded),
+    // and magic-byte sniffing. This is the authoritative check.
+    const validation = await validateUploadFile(file);
+    if (!validation.ok) {
       return NextResponse.json(
-        { error: 'File must be an image' },
-        { status: 400 }
+        { success: false, error: validation.error },
+        { status: validation.status }
       );
     }
 
@@ -118,12 +124,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Fallback upload failed',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/upload/fallback', error);
   }
 }

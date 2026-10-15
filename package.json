@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
+    "backup:db": "node scripts/backup-supabase-data.mjs",
+    "backup:r2": "node scripts/backup-r2-objects.mjs",
+    "restore:drill": "node --experimental-sqlite scripts/restore-drill.mjs",
+    "backfill:magazine": "node --experimental-strip-types scripts/backfill-magazine-pages.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.964.0",

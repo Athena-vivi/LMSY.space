@@ -7,8 +7,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 export async function POST(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { success: false, error: 'Not found' },
+      { status: 404 }
+    );
+  }
+
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const draftData = await request.json();
 
@@ -42,10 +54,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[DRAFTS_SEED] Error:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/drafts/seed POST', error);
     }
 
     console.log('[DRAFTS_SEED] Seeded successfully:', data.id);

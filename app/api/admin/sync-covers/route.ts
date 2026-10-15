@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
+import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
  * Database Alignment Patch - Auto-sync covers from gallery
@@ -24,8 +25,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  if (authResult.user.email !== adminEmail) {
+  const adminEmail = getAdminEmail();
+  if (authResult.user.email?.toLowerCase() !== adminEmail) {
     return NextResponse.json(
       { error: 'Forbidden: Admin access required' },
       { status: 403 }

@@ -1,16 +1,73 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
+import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
+import { apiServerError } from '@/lib/security/http';
 
-// POST - 用户登录
-// 使用公共客户端进行身份验证
+/**
+ * POST /api/auth/login
+ *
+ * Hardening applied in phase 1:
+ * - Per-IP and per-IP+email rate limiting with lockout (brute force protection).
+ * - Generic error responses: Supabase error names/messages/status are logged
+ *   server-side but never returned to the caller (they leaked provider details
+ *   and confirmed whether an email exists).
+ * - Cookies remain HttpOnly + Secure + SameSite=Lax.
+ */
+
+// 10 attempts per IP+email per 10 minutes, then a 15 minute lockout.
+const PER_IDENTITY = { limit: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 };
+// Coarse per-IP ceiling to stop spraying many accounts from one source.
+const PER_IP = { limit: 30, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 };
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const first = forwarded.split(',')[0]?.trim();
+    if (first) return first;
+  }
+  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    let body: { email?: unknown; password?: unknown };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
+    }
+
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { success: false, error: 'Email and password are required' },
         { status: 400 }
+      );
+    }
+
+    const ip = getClientIp(request);
+
+    // --- Rate limiting (checked before any credential work) ---
+    const identityKey = `login:${ip}:${email}`;
+    const ipKey = `login-ip:${ip}`;
+
+    const identityLimit = consumeRateLimit(identityKey, PER_IDENTITY);
+    if (!identityLimit.allowed) {
+      console.warn(`[LOGIN] rate limited (identity) ip=${ip}`);
+      return NextResponse.json(
+        { success: false, error: 'Too many login attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(identityLimit.retryAfterSeconds) } }
+      );
+    }
+
+    const ipLimit = consumeRateLimit(ipKey, PER_IP);
+    if (!ipLimit.allowed) {
+      console.warn(`[LOGIN] rate limited (ip) ip=${ip}`);
+      return NextResponse.json(
+        { success: false, error: 'Too many login attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSeconds) } }
       );
     }
 
@@ -19,104 +76,79 @@ export async function POST(request: NextRequest) {
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !anonKey) {
-      return NextResponse.json(
-        { error: 'Server configuration error: Missing Supabase credentials' },
-        { status: 500 }
-      );
+      return apiServerError('auth/login', 'Supabase credentials are not configured');
     }
 
     // Create response first (needed for cookie operations)
-    const response = NextResponse.json({
-      success: true,
-    });
+    const response = NextResponse.json({ success: true });
 
-    // 🔒 CRITICAL: Create Supabase client with proper cookie handling
-    const supabase = createServerClient(
-      supabaseUrl,
-      anonKey,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            // 🔒 CRITICAL: Ensure cookies have proper path and samesite attributes
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-              path: '/', // Ensure cookie is available site-wide
-              sameSite: 'lax', // Required for auth cookies
-              secure: process.env.NODE_ENV === 'production',
-              httpOnly: true,
-            });
-          },
-          remove(name: string, options: any) {
-            response.cookies.delete({
-              name,
-              ...options,
-              path: '/',
-            });
-          },
+    // Create Supabase client with cookie handling
+    const supabase = createServerClient(supabaseUrl, anonKey, {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
         },
-      }
-    );
-
-    console.log('[LOGIN] Attempting sign in for:', email);
-
-    // Attempt to sign in
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+        set(name: string, value: string, options: Record<string, unknown>) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+            path: '/', // Ensure cookie is available site-wide
+            sameSite: 'lax', // Required for auth cookies
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true,
+          });
+        },
+        remove(name: string, options: Record<string, unknown>) {
+          response.cookies.delete({
+            name,
+            ...options,
+            path: '/',
+          });
+        },
+      },
     });
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      console.error('[LOGIN] Sign in failed:', error.message);
+      // Full provider detail stays in the server log only.
+      console.warn(`[LOGIN] failed ip=${ip} status=${error.status ?? 'n/a'}: ${error.message}`);
       return NextResponse.json(
-        {
-          error: error.message,
-          name: error.name,
-          status: error.status,
-        },
+        { success: false, error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    console.log('[LOGIN] ✅ Sign in successful for:', email);
+    // Successful login clears the failure counters for this identity.
+    resetRateLimit(identityKey);
+    console.log('[LOGIN] success');
 
-    // 🔒 CRITICAL: Ensure cookies are set by accessing them
-    // The cookies are automatically set by Supabase when signInWithPassword succeeds
-    // We just need to ensure the response is returned properly
-
-    // 返回完整的 session 数据，供客户端手动设置
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-      },
-      session: data.session ? {
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        expires_at: data.session.expires_at,
-        user: data.session.user,
-      } : null,
-    }, {
-      // 🔒 CRITICAL: Ensure response headers are properly set
-      headers: {
-        // Ensure the response allows cookies to be set
-        'Set-Cookie': response.headers.get('Set-Cookie') || '',
-      },
-    });
-
-  } catch (error: any) {
-    console.error('[LOGIN] Unexpected error:', error);
     return NextResponse.json(
       {
-        error: error.message || 'Internal server error',
-        type: error.name,
+        success: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
+        // Kept for the existing admin UI, which sends the access token as a
+        // Bearer credential to admin APIs. Cookie auth works in parallel.
+        session: data.session
+          ? {
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+              expires_at: data.session.expires_at,
+              user: data.session.user,
+            }
+          : null,
       },
-      { status: 500 }
+      {
+        headers: {
+          'Set-Cookie': response.headers.get('Set-Cookie') || '',
+        },
+      }
     );
+  } catch (error) {
+    return apiServerError('auth/login', error);
   }
 }

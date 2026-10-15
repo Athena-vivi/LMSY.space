@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { convertToWebP } from '@/lib/image-processing';
 import { uploadToR2 } from '@/lib/r2-client';
 import { getR2PathForCatalogId } from '@/lib/catalog-id';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
 
 /**
  * POST /api/admin/reprocess
@@ -21,6 +23,9 @@ import { getR2PathForCatalogId } from '@/lib/catalog-id';
  * Example: /api/admin/reprocess?startDate=2025-01-10&endDate=2025-01-23&limit=10&dryRun=false
  */
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -45,10 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[REPROCESS] Database error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch images', details: error.message },
-        { status: 500 }
-      );
+      return apiServerError('admin/reprocess POST', error);
     }
 
     if (!images || images.length === 0) {
@@ -156,12 +158,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[REPROCESS] Critical error:', error);
-    return NextResponse.json(
-      {
-        error: 'Reprocessing failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return apiServerError('admin/reprocess POST', error);
   }
 }
