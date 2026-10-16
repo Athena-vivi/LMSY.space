@@ -12,7 +12,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { downloadAndSaveToR2 } from '@/lib/media-downloader';
+import { downloadMedia, saveDownloadToR2, isImageType } from '@/lib/media-downloader';
+import { deleteFromR2 } from '@/lib/r2-client';
 import { translateDraftItem } from '@/lib/ai-translator';
 import { requireMachineKey } from '@/lib/security/machine-auth';
 
@@ -277,35 +278,54 @@ export async function POST(request: NextRequest) {
         const mediaUrl = buildTelegramFileUrl(filePath);
         console.log('[TELEGRAM_WEBHOOK] Media file path:', filePath);
 
-        // Download media to R2
-        console.log('[TELEGRAM_WEBHOOK] Downloading to R2...');
-        const downloadResult = await downloadAndSaveToR2(
+        // Download media (B2-T4: download -> dedupe -> upload, in that order.
+        // The previous order uploaded first and deduped afterwards, so every
+        // duplicate photo left an unreferenced object in R2.)
+        console.log('[TELEGRAM_WEBHOOK] Downloading media...');
+        const download = await downloadMedia(
           mediaUrl,
-          'telegram',
           { timeout: 60000, maxSize: 50 * 1024 * 1024 }
         );
 
-        if (!downloadResult.success) {
-          console.error('[TELEGRAM_WEBHOOK] Download failed:', downloadResult.error);
-          results.errors.push({ update_id: update.update_id, error: downloadResult.error || 'Download failed' });
+        if (!download.success || !download.buffer) {
+          console.error('[TELEGRAM_WEBHOOK] Download failed:', download.error);
+          results.errors.push({ update_id: update.update_id, error: download.error || 'Download failed' });
           continue;
         }
 
-        const r2Url = downloadResult.r2Url || null;
-        const r2Key = downloadResult.r2Key || null;
-        const fileHash = downloadResult.fileHash || null;
+        const fileHash = download.fileHash || null;
 
-        console.log('[TELEGRAM_WEBHOOK] Downloaded to R2:', r2Key);
-
-        // Check for duplicates
+        // Check for duplicates BEFORE uploading anything to R2.
         if (fileHash) {
           const { isDuplicate, existingItem } = await checkDuplicateByFileHash(fileHash);
           if (isDuplicate) {
-            console.log('[TELEGRAM_WEBHOOK] File already exists, skipping');
+            console.log('[TELEGRAM_WEBHOOK] File already exists, skipping (nothing uploaded)', existingItem?.id);
             results.skipped++;
             continue;
           }
         }
+
+        // Upload to R2 only after the dedupe check passed.
+        const saved = await saveDownloadToR2(
+          {
+            buffer: download.buffer,
+            contentType: download.contentType,
+            fileName: download.fileName,
+            fileHash: download.fileHash,
+            metadata: download.metadata,
+          },
+          'telegram'
+        );
+        if (!saved.ok) {
+          console.error('[TELEGRAM_WEBHOOK] R2 upload failed:', saved.error);
+          results.errors.push({ update_id: update.update_id, error: saved.error });
+          continue;
+        }
+
+        const r2Url = saved.r2Url;
+        const r2Key = saved.r2Key;
+
+        console.log('[TELEGRAM_WEBHOOK] Downloaded to R2:', r2Key);
 
         // Create source URL (use telegram URL format for reference)
         // For channels: https://t.me/channel_username/msg_id
@@ -337,7 +357,7 @@ export async function POST(request: NextRequest) {
             r2_media_url: r2Url,
             r2_key: r2Key,
             file_hash: fileHash,
-            media_metadata: downloadResult.metadata || {
+            media_metadata: download.metadata || {
               width: largestPhoto.width,
               height: largestPhoto.height,
               duration: null,
@@ -350,6 +370,18 @@ export async function POST(request: NextRequest) {
 
         if (createError || !newDraft) {
           console.error('[TELEGRAM_WEBHOOK] Failed to create draft:', createError);
+          // B2-T4: the object was just uploaded; if the row could not be
+          // created, remove it so the bucket does not accumulate orphans
+          // (mirror of the ingest route's compensation). Only the object we
+          // just created is touched, never a pre-existing one.
+          if (r2Key) {
+            try {
+              const removed = await deleteFromR2(r2Key);
+              console.warn(`[TELEGRAM_WEBHOOK] insert failed, compensating delete of ${r2Key}: ${removed ? 'removed' : 'not removed'}`);
+            } catch (cleanupError) {
+              console.error('[TELEGRAM_WEBHOOK] compensating delete failed:', cleanupError);
+            }
+          }
           results.errors.push({ update_id: update.update_id, error: createError?.message || 'Failed to create draft' });
           continue;
         }

@@ -14,6 +14,10 @@ if (typeof window !== 'undefined') {
 
 import sharp from 'sharp';
 import { createHash } from 'crypto';
+import { isBlockedMediaUrl } from './security/url-guard.ts';
+
+/** Maximum redirects followed by downloadMedia (each hop is re-checked by the URL guard). */
+const MAX_REDIRECT_HOPS = 3;
 
 /**
  * Mask a URL for logging.
@@ -158,8 +162,13 @@ export async function downloadMedia(
   console.log(`[DOWNLOADER] Starting download: ${maskUrlForLog(url)}`);
 
   try {
-    // 验证 URL
-    new URL(url);
+    // Validate and guard the URL (B2-T5 / audit P2-3): loopback, private,
+    // link-local, carrier-NAT and cloud-metadata targets are refused before
+    // any connection is made.
+    const guard = isBlockedMediaUrl(url);
+    if (guard.blocked) {
+      throw new Error(`Blocked media host: ${guard.reason}`);
+    }
 
     // 构建请求头
     const headers: Record<string, string> = {
@@ -183,12 +192,34 @@ export async function downloadMedia(
       headers['Referer'] = 'https://weibo.com';
     }
 
-    // 发起下载请求
-    const response = await fetch(url, {
-      headers,
-      // @ts-ignore - Next.js fetch supports timeout
-      signal: AbortSignal.timeout(timeout),
-    });
+    // Follow redirects manually so every hop is re-checked by the URL guard;
+    // with redirect:'follow' a public URL could 302 into an internal address.
+    let currentUrl = url;
+    let response: Response | null = null;
+    for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
+      const hopGuard = isBlockedMediaUrl(currentUrl);
+      if (hopGuard.blocked) {
+        throw new Error(`Blocked media host on redirect hop ${hop}: ${hopGuard.reason}`);
+      }
+      response = await fetch(currentUrl, {
+        headers,
+        redirect: 'manual',
+        // @ts-ignore - Next.js fetch supports timeout
+        signal: AbortSignal.timeout(timeout),
+      });
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get('location');
+        if (!location) break;
+        currentUrl = new URL(location, currentUrl).toString();
+        response = null;
+        continue;
+      }
+      break;
+    }
+
+    if (!response) {
+      throw new Error(`Too many redirects (max ${MAX_REDIRECT_HOPS})`);
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -301,7 +332,47 @@ export function generateR2Path(
 }
 
 /**
+ * Upload an already-downloaded media buffer to R2 (remediation B2-T4).
+ *
+ * Deduplication must happen BETWEEN download and upload: the previous
+ * downloadAndSaveToR2 flow uploaded first and checked the hash afterwards, so
+ * every duplicate capture left an unreferenced object in the bucket. Callers
+ * now: downloadMedia() -> dedupe by fileHash -> saveDownloadToR2().
+ */
+export async function saveDownloadToR2(
+  download: Pick<MediaDownloadResult, 'contentType' | 'fileName' | 'fileHash' | 'metadata'> & { buffer: Buffer },
+  platform: string
+): Promise<{ ok: true; r2Url: string; r2Key: string; mediaType: 'image' | 'video' } | { ok: false; error: string }> {
+  const { uploadToR2 } = await import('./r2-client');
+
+  const mediaType: 'image' | 'video' = isImageType(download.contentType || '')
+    ? 'image'
+    : 'video';
+
+  const r2Key = generateR2Path(platform, mediaType, download.fileName || 'media.bin');
+
+  const uploadResult = await uploadToR2(download.buffer, r2Key, download.contentType);
+
+  if (!uploadResult.success) {
+    return { ok: false, error: uploadResult.error || 'R2 upload failed' };
+  }
+
+  // Log the object key only (never full signed URLs).
+  console.log(`[DOWNLOADER] Successfully saved to R2:`, {
+    r2Key,
+    mediaType,
+    fileHash: download.fileHash,
+  });
+
+  return { ok: true, r2Url: uploadResult.url!, r2Key, mediaType };
+}
+
+/**
  * 下载并保存到 R2（一站式操作）
+ *
+ * LEGACY convenience used by scripts (test-downloader). The API routes no
+ * longer use it: deduplication must run between download and upload so a
+ * duplicate capture never writes an R2 object (see saveDownloadToR2).
  *
  * @param url - 媒体 URL
  * @param platform - 来源平台

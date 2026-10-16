@@ -21,7 +21,9 @@ import type {
   IngestionStage,
 } from '@/lib/supabase/types';
 import {
-  downloadAndSaveToR2,
+  downloadMedia,
+  saveDownloadToR2,
+  isImageType,
   detectPlatformFromUrl,
   detectMediaTypeFromUrl,
   maskUrlForLog,
@@ -131,8 +133,9 @@ export async function POST(request: NextRequest) {
   });
 
   try {
-    // 4. 下载并保存媒体（如果提供了 media_url）
-    // 先下载以获取 file_hash 进行去重检查
+    // 4. Download media (B2-T4: download -> dedupe -> upload, in that order.
+    // The previous order uploaded first and deduped afterwards, so every
+    // duplicate capture left an unreferenced object in R2.)
     let r2Url: string | null = null;
     let r2Key: string | null = null;
     let fileHash: string | null = null;
@@ -142,60 +145,21 @@ export async function POST(request: NextRequest) {
     if (body.media_url) {
       console.log('[INGEST_API] Downloading media from:', maskUrlForLog(body.media_url));
 
-      const downloadResult = await downloadAndSaveToR2(
+      const download = await downloadMedia(
         body.media_url,
-        body.source_platform,
         { timeout: 60000, maxSize: 50 * 1024 * 1024 }
       );
 
-      if (downloadResult.success) {
-        r2Url = downloadResult.r2Url || null;
-        r2Key = downloadResult.r2Key || null;
-        fileHash = downloadResult.fileHash || null;
-        mediaMetadata = downloadResult.metadata || null;
-        detectedMediaType = downloadResult.mediaType || 'image';
-
-        // Log the object key only - never log full (possibly signed) media URLs.
-        console.log('[INGEST_API] Media saved to R2:', {
-          r2Key,
-          fileHash: fileHash?.substring(0, 16) + '...', // 只打印前16个字符
-        });
-
-        // 5. 终极去重检查 - 基于 file_hash
-        if (fileHash) {
-          const { isDuplicate, existingItem } = await checkDuplicateByFileHash(fileHash);
-
-          if (isDuplicate) {
-            // 文件已存在，优雅返回
-            console.log('[INGEST_API] File already exists, returning gracefully');
-            return NextResponse.json<IngestApiResponse>(
-              {
-                success: true,  // 注意：返回 true 而不是 false
-                draft_item_id: existingItem?.id || null,
-                status: existingItem?.status || 'draft',
-                ingestion_stage: 'duplicate' as IngestionStage,
-                message: '图片已存在于库中，跳过抓取',
-                is_duplicate: true,
-                existing_item: {
-                  id: existingItem?.id,
-                  title: existingItem?.title,
-                  source_url: existingItem?.source_url,
-                },
-              },
-              { status: 200 }  // 返回 200 而不是 409
-            );
-          }
-        }
-      } else {
+      if (!download.success || !download.buffer) {
         // PHASE 1 FIX (P1-5): a failed download must NOT be reported as a
         // successful capture, and must not create a media-less draft. Return a
         // retryable error and stop before touching the database.
-        console.warn('[INGEST_API] Media download failed (no draft created):', downloadResult.error);
+        console.warn('[INGEST_API] Media download failed (no draft created):', download.error);
         return NextResponse.json(
           {
             success: false,
             error: 'Media download failed',
-            detail: downloadResult.error || null,
+            detail: download.error || null,
             ingestion_stage: 'download_failed',
             retryable: true,
             processed_count: 0,
@@ -203,6 +167,70 @@ export async function POST(request: NextRequest) {
           { status: 502 }
         );
       }
+
+      fileHash = download.fileHash || null;
+      mediaMetadata = download.metadata || null;
+      detectedMediaType = isImageType(download.contentType || '') ? 'image' : 'video';
+
+      // Log the hash prefix only - never log full (possibly signed) media URLs.
+      console.log('[INGEST_API] Media downloaded:', {
+        size: download.size,
+        fileHash: fileHash?.substring(0, 16) + '...', // 只打印前16个字符
+      });
+
+      // 5. Dedupe by file hash BEFORE uploading anything to R2.
+      if (fileHash) {
+        const { isDuplicate, existingItem } = await checkDuplicateByFileHash(fileHash);
+
+        if (isDuplicate) {
+          // 文件已存在，优雅返回（nothing was uploaded - no orphan possible）
+          console.log('[INGEST_API] File already exists, returning gracefully (nothing uploaded)');
+          return NextResponse.json<IngestApiResponse>(
+            {
+              success: true,  // 注意：返回 true 而不是 false
+              draft_item_id: existingItem?.id || null,
+              status: existingItem?.status || 'draft',
+              ingestion_stage: 'duplicate' as IngestionStage,
+              message: '图片已存在于库中，跳过抓取',
+              is_duplicate: true,
+              existing_item: {
+                id: existingItem?.id,
+                title: existingItem?.title,
+                source_url: existingItem?.source_url,
+              },
+            },
+            { status: 200 }  // 返回 200 而不是 409
+          );
+        }
+      }
+
+      // 6. Upload to R2 only after the dedupe check passed.
+      const saved = await saveDownloadToR2(
+        {
+          buffer: download.buffer,
+          contentType: download.contentType,
+          fileName: download.fileName,
+          fileHash: download.fileHash,
+          metadata: download.metadata,
+        },
+        body.source_platform
+      );
+      if (!saved.ok) {
+        console.warn('[INGEST_API] R2 upload failed (no draft created):', saved.error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'R2 upload failed',
+            detail: saved.error,
+            ingestion_stage: 'failed',
+            retryable: true,
+            processed_count: 0,
+          },
+          { status: 502 }
+        );
+      }
+      r2Url = saved.r2Url;
+      r2Key = saved.r2Key;
     }
 
     // 6. 创建初始草稿记录
