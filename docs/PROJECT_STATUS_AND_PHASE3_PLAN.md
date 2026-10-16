@@ -439,3 +439,59 @@ WHERE d.r2_media_url = ga.image_url
 2. 提供一个 Vercel 令牌（scope: 本项目），我代为写入并触发重新部署。
 
 **修复后验证（我来做）：** 错误密钥探针 → 应返回 401（而非 503）；随后由站长向机器人真实发一张图，确认草稿生成且 `event_date` 为空、`raw_event_date` 为发送时间（§11.1 日期语义修复的端到端验证）。
+
+---
+
+## 12. 第一批生产收尾验收（2026-10-16 14:50）——已关闭
+
+本节为第一批（来源追溯 + 日期语义）的最终生产验收记录。全部核验基于生产环境实测，非本地结果。
+
+### 12.1 数据库迁移状态：✅ 已完成，未重复执行
+
+只读核验（探针 `temp/batch1-closure-verify.mjs`，未执行任何写操作）：
+
+| 核对项 | 实测 | 判定 |
+|---|---|---|
+| `gallery_assets` 三列（source_url / source_platform / source_account） | 全部存在且可查询（HTTP 200） | ✅ |
+| 总行数 | 330（与迁移前一致） | ✅ 无行数变化 |
+| 来源回填 | 18 条（weibo 14 / telegram 3 / twitter 1），`source_account` 按预期全空（草稿无此数据） | ✅ 与预期精确一致 |
+| 回填正确性 | 18/18 逐条与 `draft_items.r2_media_url` 关联草稿比对，`source_url` 与 `source_platform` 全部一致，错配 0 | ✅ |
+| 重复数据 | `image_url` 重复 0；重复回填 0 | ✅ |
+
+结论：迁移早已在生产生效，本轮**禁止重跑**的约束已遵守，未触碰任何生产数据。
+
+### 12.2 GitHub 与部署状态：✅
+
+- `0959a47`（批 1 代码）在 `origin/main`，`git rev-list origin/main..main --count` = 0（本地远端零偏差）。
+- Vercel 部署（GitHub commit status API 实测）：`0959a47` → Vercel:success（04:57）；`c2d477c`（会话续期 proxy）→ success（06:27）；`1cd3561`（本轮修复）→ success。
+
+### 12.3 线上功能验收
+
+| 项目 | 结果 | 证据 |
+|---|---|---|
+| 图库灯箱显示来源平台 + 可访问外链 | ✅ 通过 | 无头浏览器实测生产站：点开带来源图（#Untagged 第一张，weibo 回填图），overlay 渲染 "SOURCE · WEIBO" 锚点，href=`https://weibo.com/u/5578160487` 与库中 `source_url`/`source_platform` 完全一致（截图 `temp/lightbox-with-source.png`） |
+| 来源为空的历史图不显示空白占位 | ✅ 通过 | 实测 #All 下无来源历史图（magazines 路径），灯箱无 Source 行、无任何外链锚点（0 个） |
+| 新列可读、旧数据兼容 | ✅ 通过 | 浏览器内捕获匿名 REST 响应：60 行首页 + 15 行 Untagged 全部正常返回且携带新列字段；页面渲染无回归 |
+| 无日期图进入 Date Unknown 章节 | ⚪ 代码已上线，无触发数据 | 生产 `gallery_assets.event_date IS NULL` 为 0 条——当前没有任何无日期发布图，功能无实数据可触发；代码经单测与构建覆盖，待未来出现无日期图时自然生效 |
+| 公开页面 / 接口回归 | ✅ 通过 | `/`、`/gallery`、`/projects`、`/profiles`、`/chronicle`、`/editorial`、`/schedule`、`/api/search?q=radar` 全部 HTTP 200 |
+
+### 12.4 Telegram 日期语义：✅ 已有完整实证，直接引用
+
+2026-10-16 06:01 入库的两条真实 Telegram 草稿（站长当日真实发送触发，§11.10 修复后端到端消息）：
+
+- `event_date` = **null**（发送时间未冒充事件日期）✅
+- `raw_event_date` = `2026-10-16T05:48:16Z`（= 真实发送时间）✅
+- `curator_note` = "Source link is the Telegram message URL (message provenance), not necessarily the original content page" ✅
+- 草稿状态 `ready`，审核/转正流程不受影响 ✅；10-15 旧草稿保持旧语义原样未回改（符合"历史数据不编造"规则）✅
+
+### 12.5 本轮修复（验收中发现并修掉的一个真问题）
+
+**问题**：批 1 的来源行只加进了 `lightbox.tsx` 的 Editorial 分支，而图库瀑布流走的是普通 overlay 分支——生产上带来源的图不显示任何 Source 行。通过无头浏览器 DOM dump 定位（overlay 结构与新代码不符 → 读源码发现双分支）。
+
+**修复**：`app/gallery/lightbox.tsx` 普通 overlay 分支补上来源锚点（提交 `1cd3561`，+15/-1 行，仅此一个文件）。验证链：本地 headless 实测 overlay 含 weibo 锚点 → 推送 → Vercel:success → 生产复验通过（12.3 前两行）。门禁：typecheck 0、单测 89/89、构建 exit 0。
+
+### 12.6 结论：第一批关闭
+
+- 授权范围内全部项目通过或已有完整实证；无遗留阻塞项。
+- 唯一非满分项是 Date Unknown 章节"无实数据可触发"，属数据状态而非功能缺陷，不需要操作。
+- 后续（非本批范围，未动）：站长审核 2 条新 Telegram 草稿；batch_id 与批量入口待下一批授权。
