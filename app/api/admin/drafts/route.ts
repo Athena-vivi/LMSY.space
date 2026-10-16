@@ -8,6 +8,12 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { deleteFromR2 } from '@/lib/r2-client';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
+import {
+  loadReferenceIndex,
+  planDraftObjectDeletion,
+  collectR2Failures,
+  type ObjectPlan,
+} from '@/lib/draft-delete-guard';
 
 // =====================================================
 // GET - Fetch draft items with optional filtering
@@ -106,14 +112,46 @@ export async function DELETE(request: NextRequest) {
       });
     }
 
-    // Delete from R2 (parallel, ignore errors)
-    const r2DeletePromises = items
-      .filter(item => item.r2_key)
-      .map(item => deleteFromR2(item.r2_key!));
+    // Guard (B2-T1 / audit P1-4): never delete an R2 object that published
+    // content still references. Fail closed if references cannot be loaded.
+    let plans: ObjectPlan[];
+    try {
+      const { index, siteContentBlocks } = await loadReferenceIndex(supabaseAdmin, ids);
+      plans = planDraftObjectDeletion(
+        items.map((item) => ({ id: item.id, r2Key: item.r2_key })),
+        index,
+        siteContentBlocks
+      );
+    } catch (error) {
+      console.error('[DRAFTS_API] Reference load for delete failed:', error);
+      return apiServerError('admin/drafts DELETE reference check', error);
+    }
 
-    await Promise.allSettled(r2DeletePromises);
+    const deleteList = plans
+      .filter((plan) => plan.action === 'delete-object' && plan.r2Key)
+      .map((plan) => ({ id: plan.id, r2Key: plan.r2Key! }));
 
-    // Delete from database
+    // Delete from R2 (objects with no remaining references only).
+    // Failures are collected and reported, not swallowed.
+    const r2Results = await Promise.allSettled(
+      deleteList.map((entry) => deleteFromR2(entry.r2Key))
+    );
+    const r2DeleteFailures = collectR2Failures(deleteList, r2Results);
+
+    if (r2DeleteFailures.length > 0) {
+      console.error('[DRAFTS_API] R2 delete failures:', r2DeleteFailures);
+    }
+
+    const keptObjects = plans
+      .filter((plan) => plan.action === 'keep-object')
+      .map((plan) => ({ id: plan.id, r2_key: plan.r2Key, referenced_by: plan.referencedBy }));
+
+    if (keptObjects.length > 0) {
+      console.log('[DRAFTS_API] Objects kept (still referenced):', keptObjects.length);
+    }
+
+    // Delete from database. Rows are removed even when their object was kept:
+    // the draft no longer owns the object, published content does.
     const { error: deleteError } = await supabaseAdmin
       .from('draft_items')
       .delete()
@@ -129,6 +167,10 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       deleted: items.length,
+      objects_deleted: deleteList.length - r2DeleteFailures.length,
+      objects_kept: keptObjects.length,
+      kept_objects: keptObjects,
+      r2_delete_failures: r2DeleteFailures,
       message: `Successfully deleted ${items.length} items`,
     });
   } catch (error) {

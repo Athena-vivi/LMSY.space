@@ -273,11 +273,15 @@ export function useDraftActions({
     return { count: selectedIds.size };
   };
 
-  /**
-   * Execute batch delete
-   */
-  const executeBatchDelete = async () => {
-    const ids = Array.from(selectedIds);
+/**
+ * Execute batch delete
+ *
+ * Server-side protection (B2-T1): the API keeps R2 objects that published
+ * content still references and reports them in the response. The temporary
+ * front-end kill switch that guarded the pre-fix window has been removed.
+ */
+const executeBatchDelete = async () => {
+  const ids = Array.from(selectedIds);
 
     // Optimistic update
     ids.forEach(id => removeDraftOptimistically(id));

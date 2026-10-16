@@ -9,6 +9,12 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { deleteFromR2 } from '@/lib/r2-client';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
+import {
+  loadReferenceIndex,
+  planDraftObjectDeletion,
+  collectR2Failures,
+  type ObjectPlan,
+} from '@/lib/draft-delete-guard';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -140,12 +146,39 @@ export async function DELETE(
       );
     }
 
-    // Delete from R2 if key exists
-    if (item.r2_key) {
-      await deleteFromR2(item.r2_key);
+    // Guard (B2-T1 / audit P1-4): never delete an R2 object that published
+    // content still references. Fail closed if references cannot be loaded.
+    let plans: ObjectPlan[];
+    try {
+      const { index, siteContentBlocks } = await loadReferenceIndex(supabaseAdmin, [id]);
+      plans = planDraftObjectDeletion(
+        [{ id: item.id, r2Key: item.r2_key }],
+        index,
+        siteContentBlocks
+      );
+    } catch (error) {
+      console.error('[DRAFTS_API] Reference load for delete failed:', error);
+      return apiServerError('admin/drafts/[id] DELETE reference check', error);
     }
 
-    // Delete from database
+    const plan = plans[0];
+
+    // Delete from R2 only when no other row references the object.
+    // A failure is reported, not swallowed.
+    let r2Deleted = false;
+    const r2DeleteFailures: Array<{ id: string; r2Key: string }> = [];
+    if (plan.action === 'delete-object' && plan.r2Key) {
+      const [result] = await Promise.allSettled([deleteFromR2(plan.r2Key)]);
+      const failures = collectR2Failures([{ id: plan.id, r2Key: plan.r2Key }], [result]);
+      r2DeleteFailures.push(...failures);
+      r2Deleted = failures.length === 0;
+      if (failures.length > 0) {
+        console.error('[DRAFTS_API] R2 delete failure:', failures[0]);
+      }
+    }
+
+    // Delete from database. The row is removed even when the object was kept:
+    // the draft no longer owns the object, published content does.
     const { error: deleteError } = await supabaseAdmin
       .from('draft_items')
       .delete()
@@ -161,6 +194,12 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message: 'Draft item deleted successfully',
+      r2_deleted: r2Deleted,
+      object_kept: plan.action === 'keep-object',
+      kept_object: plan.action === 'keep-object'
+        ? { id: plan.id, r2_key: plan.r2Key, referenced_by: plan.referencedBy }
+        : undefined,
+      r2_delete_failures: r2DeleteFailures,
     });
   } catch (error) {
     console.error('[DRAFTS_API] Delete unexpected error:', error);
