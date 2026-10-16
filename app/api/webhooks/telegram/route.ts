@@ -15,6 +15,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { downloadMedia, saveDownloadToR2, isImageType } from '@/lib/media-downloader';
 import { deleteFromR2 } from '@/lib/r2-client';
 import { translateDraftItem } from '@/lib/ai-translator';
+import { deriveTelegramDraftDates } from '@/lib/provenance';
 import { requireMachineKey } from '@/lib/security/machine-auth';
 
 // =====================================================
@@ -339,6 +340,12 @@ export async function POST(request: NextRequest) {
           chatName
         ];
 
+        // Date semantics (phase 3 batch 1): message.date is the time the
+        // photo was SENT to telegram - collection evidence, not the date of
+        // the depicted event. It is stored only in raw_event_date; event_date
+        // stays NULL until a curator confirms the real date during review.
+        const draftDates = deriveTelegramDraftDates(new Date(message.date * 1000));
+
         // Create draft item
         const { data: newDraft, error: createError } = await supabaseAdmin
           .from('draft_items')
@@ -350,8 +357,10 @@ export async function POST(request: NextRequest) {
             ingestion_stage: 'translating',
             title: { en: text, zh: '', th: '' },
             description: { en: '', zh: '', th: '' },
-            event_date: new Date(message.date * 1000).toISOString().split('T')[0],
-            raw_event_date: new Date(message.date * 1000).toISOString(),
+            event_date: draftDates.event_date,
+            raw_event_date: draftDates.raw_event_date,
+            curator_note:
+              'Source link is the Telegram message URL (message provenance), not necessarily the original content page. raw_event_date = telegram send time; event_date pending curator confirmation.',
             tags,
             media_type: 'image',
             r2_media_url: r2Url,

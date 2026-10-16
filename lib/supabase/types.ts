@@ -76,6 +76,9 @@ export interface GalleryItem {
   integrity_status?: 'unchecked' | 'ok' | 'broken' | 'missing' | 'hidden' | null;
   is_cover?: boolean | null;
   is_portal_candidate?: boolean | null;
+  source_url?: string | null;
+  source_platform?: string | null;
+  source_account?: string | null;
   rotation?: 0 | 90 | 180 | 270 | null;
   created_at: string;
 }

@@ -26,7 +26,7 @@ const gradients = [
 // `select('*')` also pulled every long text column (excerpt, title, credits,
 // i18n blobs) for all 330 rows.
 const GALLERY_COLUMNS =
-  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, is_cover, is_editorial, curator_note, rotation, sequence';
+  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform';
 const PAGE_SIZE = 60;
 
 const GRID_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';

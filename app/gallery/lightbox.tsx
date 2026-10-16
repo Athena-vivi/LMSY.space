@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, BookOpen, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useCallback, useEffect } from 'react';
 import { type GalleryItem } from '@/lib/supabase';
@@ -104,7 +104,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
               </div>
 
               {/* Curator's Note - Right/Bottom */}
-              {(localizedCaption || currentImage.curator_note) && (
+              {(localizedCaption || currentImage.curator_note || currentImage.source_url) && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -116,6 +116,23 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                     <div className="font-mono text-xs text-muted-foreground/60 tracking-widest mb-6">
                       {currentImage.catalog_id}
                     </div>
+                  )}
+
+                  {/* Source link - only rendered when provenance exists; legacy
+                      images with unknown origin show nothing (no empty stub). */}
+                  {currentImage.source_url && (
+                    <a
+                      href={currentImage.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mb-6 text-xs uppercase tracking-widest text-muted-foreground/70 hover:text-lmsy-yellow transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span>
+                        Source
+                        {currentImage.source_platform ? ` · ${currentImage.source_platform}` : ''}
+                      </span>
+                    </a>
                   )}
 
                   {/* Curator Label */}

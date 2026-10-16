@@ -314,3 +314,79 @@ WHERE d.r2_media_url = ga.image_url
 - 未启动采集 ✅｜未批量上传 ✅｜未发布草稿 ✅｜未修改生产数据、未执行任何迁移 ✅｜未重复执行历史回填 ✅
 - 本轮变更：仅本文档（v1.0 → v1.1 修订）+ 只读探针脚本（`temp/`，不入库）
 - 待站长：§8 的 8 项批准/决策；§1.6 的用户侧核验（U1/U2/U4）
+
+---
+
+## 11. 实施记录：第三阶段第一批（来源追溯 + 日期语义）
+
+- **授权：** 站长 2026-10-16（仅授权本批，不授权采集/上传/发布）。**状态：代码与迁移文件完成、门禁全绿；生产迁移执行被凭据阻塞（见 §11.5）。**
+- **提交：** 见 git log（phase 3 batch 1）。
+
+### 11.1 代码变更清单
+
+| 文件 | 变更 | 对应授权项 |
+|---|---|---|
+| `supabase/migrations/20261016_add_source_provenance.sql` | 新增迁移：`gallery_assets` 加 `source_url`/`source_platform`/`source_account` 三可空列 + 幂等回填（严格 1:1 匹配 `r2_media_url == image_url`）+ 内置验证 SQL | 授权一.1/.2 |
+| `lib/provenance.ts` | 新增纯函数：`buildProvenanceFields`（来源字段归一化，空→NULL）、`deriveTelegramDraftDates`（发送时间只进 `raw_event_date`，`event_date` 恒 NULL）+ 语义注释（Telegram 消息链接 ≠ 原始内容出处） | 授权一.3/.4 |
+| `app/api/admin/drafts/[id]/to-gallery/route.ts` | select 增加 `source_url,source_platform`；insert 写入归一化后的来源字段（未知=NULL，不编造） | 授权一.3 |
+| `app/api/webhooks/telegram/route.ts` | `event_date` 不再写 `message.date`（改为 NULL），发送时间只存 `raw_event_date`；新增 `curator_note` 说明「来源链接是 Telegram 消息链接、发送时间非事件日期」 | 授权一.4、二.4 |
+| `app/gallery/lightbox.tsx` | 新增「Source · 平台」外链行（新标签页打开原文）；`source_url` 为空时整行不渲染，历史无来源图无占位 | 授权一.6 |
+| `app/gallery/page.tsx` | `GALLERY_COLUMNS` 增加 `source_url, source_platform`（数据随现有查询返回） | 授权一.6 |
+| `lib/supabase/types.ts` | `GalleryItem` 增加三个来源可选字段 | 类型支撑 |
+| `app/projects/[id]/project-detail-client.tsx` | 修复：项目内部分图无 `event_date` 时，无日期图此前会被分章逻辑**静默丢弃**；现归入尾部「Unsorted / Date Unknown」章，不显示编造日期、不报错 | 授权一.5 |
+| `tests/provenance.test.ts` | 新增 6 个单测：来源透传/trim/空值→NULL/null 容错/发送时间只作证据/ISO 精度 | 授权一.7 |
+| `backups/pending-source-provenance.sql` | 生成可粘贴 Supabase SQL Editor 的执行文件（含 4 项运行后核对语句） | 迁移执行材料 |
+
+### 11.2 实施前检查结果（授权二）
+
+1. Git：工作区干净，`main` 领先 origin/main 3 个纯文档提交——无被覆盖风险。
+2. 迁移 SQL 与表结构：基线列定义、RLS 策略、OpenAPI 列清单均已核对（v1.1 §2/§3）；新列随 `phase1_public_read` SELECT 策略自动生效。
+3. **回填匹配条件核实（只读探针实测）：** 严格 1:1——18 对匹配、18 个不同资产、18 个不同草稿、两侧重复键均为 0（weibo 14 / telegram 3 / twitter 1）。等值连接不可能错配不同图片；回填预期影响行数 = **18**。
+4. Telegram 转发的来源性质：webhook 的 `source_url` 是 **t.me 消息链接（消息来源）**，不是原始内容页。已用三处机制明确区分：迁移列注释、webhook 写入的 `curator_note`、`lib/provenance.ts` 语义文档；转发文案中的真实出处由人工审核提取，不自动提升。
+5. 杂志日期含义：本次回填**不触及** 312 张杂志页（它们无草稿、不匹配）；其 `event_date`（来自期号）保持原样，既不回改也不默认为拍摄日期（v1.1 §4.2 已定性）。
+6. 备份：迁移前置备份已执行——`backups/db/2026-10-16T04-48-49-534/`（9 表 432 行，manifest ok）。
+
+### 11.3 其他生成资产的路径核对（授权一.3 后半句）
+
+全库扫描 `gallery_assets` 的 INSERT 调用点，共 3 处：
+
+| 路径 | 性质 | 处理 |
+|---|---|---|
+| `to-gallery`（草稿转正） | 有草稿溯源可带 | **已修**：来源字段随转正写入 |
+| `app/api/admin/upload/route.ts`（后台上传） | 人工直传，无草稿、无原始出处可言 | 不改（来源列默认 NULL=未知，语义正确）；如需上传时填来源，列为后续可选项 |
+| `app/api/admin/gallery/route.ts`（后台手工建资产） | 同上 | 同上 |
+
+`milestone` 路由的 insert 目标是 `projects` 表，`vault`/`editorial` 路由无 insert——均不构成绕过。
+
+### 11.4 门禁与测试结果（本地证据，非生产验收）
+
+| 门禁 | 结果 |
+|---|---|
+| `npm run typecheck` | 0 错 |
+| `npm test` | **89/89**（原 83 + 新增 6） |
+| `npm run build`（生产构建） | exit 0（一次通过） |
+| 安全冒烟（本地 `next start` + `security-smoke-test.mjs`） | **51/51** |
+| 回归观察 | 公开读、草稿审核 API、R2 审计脚本行为未变（`audit:r2` 逻辑未触碰；冒烟含公开端点 200 断言） |
+
+### 11.5 生产迁移执行状态：被凭据阻塞（授权二.6）
+
+- 迁移脚本（`scripts/apply-phase1-migrations.mjs` 同款传输层）需要 `SUPABASE_ACCESS_TOKEN`（sbp_，Management API）或 `SUPABASE_DB_PASSWORD`/`DATABASE_URL`，**本机 `.env.local` 两者皆无**（键名清点确认）。PostgREST（现有 service key）无法执行 DDL。
+- **已按授权停止生产写操作。** 未执行迁移，未改任何生产数据。
+- **解除阻塞的两个途径（站长任选）：**
+  1. **Dashboard SQL Editor（推荐，零凭据交付）**：执行 `backups/pending-source-provenance.sql`（文件已生成，幂等，可重复运行；含运行后 4 项核对语句：列存在性、回填行数=18、总行数=330、零错配检查）。执行前备份已就绪（§11.2.6）。
+  2. 提供一个**限本项目的短期 `database_write` scope 的 sbp_ 令牌**，我跑迁移并回收验证证据（脚本会强制要求 24h 内备份——已满足）。
+- **回滚方法：** 迁移为纯增量，回滚 = `ALTER TABLE ... DROP COLUMN source_url, source_platform, source_account`（或直接 revert 到备份）；代码层单提交 revert。
+
+### 11.6 本批未做 / 待下一批（不做即维持现状）
+
+- 生产迁移执行（§11.5，等站长动作）。
+- `batch_id` 迁移与批量入口（原 §9.3 管道批，**本批未授权未实施**）。
+- 项目详情页/编辑部的来源展示（授权范围仅图库灯箱；数据列已就绪，加展示为小改动）。
+- 后台上传路由的「来源选填」输入框（可选，未实施）。
+- 线上验收（X2）：本机网络不可达 lmsy.space，部署后的线上复测仍排队。
+- 新草稿 `event_date=NULL` 的完整效果需真实 Telegram 消息验证（属线上端到端，待网络/部署后）。
+
+### 11.7 部署状态
+
+- 代码推送：见提交记录；推送若因 GitHub 443 不通失败则与积压文档提交一并补推（推送成功 = `git rev-list origin/main..main --count` → 0）。
+- Vercel：推送成功后自动部署；**线上行为验证（新列查询、灯箱来源行、webhook 新日期语义）未经生产验证**，在 X2 销项前不得表述为生产验收通过。

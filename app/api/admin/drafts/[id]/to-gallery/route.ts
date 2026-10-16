@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
+import { buildProvenanceFields } from '@/lib/provenance';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
 
@@ -30,7 +31,7 @@ export async function POST(
 
     const { data: draft, error: draftError } = await supabaseAdmin
       .from('draft_items')
-      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt,chronicle_excerpt_i18n')
+      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt,chronicle_excerpt_i18n,source_url,source_platform')
       .eq('id', id)
       .single();
 
@@ -88,6 +89,10 @@ export async function POST(
       draft.chronicle_excerpt || description || ''
     );
     const primaryTag = Array.isArray(draft.tags) && draft.tags.length > 0 ? draft.tags[0] : null;
+    // Phase 3 batch 1: carry the draft's provenance into the published asset
+    // so every gallery image remains traceable to its origin. Values are
+    // normalized (trimmed, empty -> null); unknown stays NULL, never faked.
+    const provenance = buildProvenanceFields(draft);
 
     const { data: insertedAsset, error: insertError } = await supabaseAdmin
       .schema('lmsy_archive')
@@ -104,6 +109,8 @@ export async function POST(
         is_featured: draft.is_featured ?? false,
         project_id: draft.project_id,
         event_date: draft.event_date,
+        source_url: provenance.source_url,
+        source_platform: provenance.source_platform,
         integrity_status: 'ok',
         display_role: 'regular',
       })

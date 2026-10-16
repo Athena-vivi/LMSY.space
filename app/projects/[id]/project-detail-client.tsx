@@ -150,6 +150,20 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
     });
   }
 
+  // Images whose event_date is unknown (NULL) must not silently disappear
+  // from the page: collect them into a trailing chapter. NULL means "date
+  // unknown", never a fabricated date.
+  const undatedImages = images.filter(img => !img.event_date);
+  if (undatedImages.length > 0) {
+    chapters.push({
+      id: 'undated',
+      title: 'Unsorted',
+      period: 'Date Unknown',
+      images: undatedImages,
+      startIndex: sorted.length,
+    });
+  }
+
   return chapters;
 }
 
