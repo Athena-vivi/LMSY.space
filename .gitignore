@@ -51,3 +51,4 @@ temp/
 
 # Generated audit / remediation reports (local artifacts)
 reports/
+.playwright-cli/
