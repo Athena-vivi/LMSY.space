@@ -31,13 +31,19 @@ const PAGE_SIZE = 60;
 
 const GRID_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
+// Sentinel for the untagged filter: rows whose tag column IS NULL cannot be
+// matched with .eq(), they need .is('tag', null).
+const UNTAGGED = '__untagged__';
+
 async function fetchGalleryPage(from: number, tag: string) {
   let query = supabase
     .schema('lmsy_archive')
     .from('gallery_assets')
     .select(GALLERY_COLUMNS);
 
-  if (tag !== 'All') {
+  if (tag === UNTAGGED) {
+    query = query.is('tag', null);
+  } else if (tag !== 'All') {
     query = query.eq('tag', tag);
   }
 
@@ -93,12 +99,18 @@ export default function GalleryPage() {
     }
   }, [loadingMore, hasMore, images.length, selectedTag]);
 
+  // Tag buttons must match tag values that actually exist in the database
+  // (audit P1-3). Verified distribution: Magazine 237, Advertising 54,
+  // STAGE 12, STILL 9, Telegram 3, untagged 15. "Telegram" is ingest-source
+  // metadata rather than a content category, so it is not offered as a
+  // user-facing filter (those rows remain visible under All).
   const tags = [
     { key: 'gallery.tagAll', value: 'All' },
-    { key: 'gallery.tagFashion', value: 'Fashion' },
-    { key: 'gallery.tagBehindTheScene', value: 'BehindTheScene' },
-    { key: 'gallery.tagAffair', value: 'Affair' },
     { key: 'gallery.tagMagazine', value: 'Magazine' },
+    { key: 'gallery.tagAdvertising', value: 'Advertising' },
+    { key: 'gallery.tagStage', value: 'STAGE' },
+    { key: 'gallery.tagStill', value: 'STILL' },
+    { key: 'gallery.tagUntagged', value: UNTAGGED },
   ];
 
   const filteredImages = images;

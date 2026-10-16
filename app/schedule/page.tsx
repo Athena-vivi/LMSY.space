@@ -9,62 +9,27 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { BackButton } from '@/components/back-button';
 
-// Sample schedule data - will be replaced with Supabase data
-const scheduleItems = [
-  {
-    id: '1',
-    title: 'Fan Meet Bangkok',
-    event_date: '2025-01-20T14:00:00',
-    location: 'Siam Paragon, Bangkok',
-    link: '#',
-  },
-  {
-    id: '2',
-    title: 'Affair Season 2 Premiere',
-    event_date: '2025-02-14T19:00:00',
-    location: 'SF World Cinema, Bangkok',
-    link: '#',
-  },
-  {
-    id: '3',
-    title: 'Magazine Signing Event',
-    event_date: '2025-03-01T13:00:00',
-    location: 'Central World, Bangkok',
-    link: '#',
-  },
-  {
-    id: '4',
-    title: 'TV Interview Special',
-    event_date: '2025-03-15T10:00:00',
-    location: 'Channel 3 Studio',
-    link: '#',
-  },
-  {
-    id: '5',
-    title: 'Fashion Week Appearance',
-    event_date: '2025-04-05T18:00:00',
-    location: 'Bangkok Fashion Week',
-    link: '#',
-  },
-];
+// The schedule module is pending a product decision (audit P1-2, decision D2).
+// The hard-coded 2024/2025 sample events that used to live here were removed
+// instead of being shown to visitors as if they were real. Once the module is
+// approved and built, populate these from the schedule table; until then the
+// page renders the existing translated empty state below.
+const scheduleItems: Array<{
+  id: string;
+  title: string;
+  event_date: string;
+  location: string;
+  link: string | null;
+}> = [];
 
 // Past events
-const pastEvents = [
-  {
-    id: '6',
-    title: 'Year End Concert',
-    event_date: '2024-12-31T20:00:00',
-    location: 'Impact Arena, Bangkok',
-    link: null,
-  },
-  {
-    id: '7',
-    title: 'Charity Event',
-    event_date: '2024-12-15T10:00:00',
-    location: 'Children\'s Hospital, Bangkok',
-    link: null,
-  },
-];
+const pastEvents: Array<{
+  id: string;
+  title: string;
+  event_date: string;
+  location: string;
+  link: string | null;
+}> = [];
 
 const now = new Date();
 

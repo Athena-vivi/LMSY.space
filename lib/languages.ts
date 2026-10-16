@@ -82,10 +82,11 @@ export const translations = {
     'gallery.description': 'A visual journey through moments captured in time.',
     'gallery.noImages': 'No images found for this tag.',
     'gallery.tagAll': 'All',
-    'gallery.tagFashion': 'Fashion',
-    'gallery.tagBehindTheScene': 'BehindTheScene',
-    'gallery.tagAffair': 'Affair',
     'gallery.tagMagazine': 'Magazine',
+    'gallery.tagAdvertising': 'Advertising',
+    'gallery.tagStage': 'Stage',
+    'gallery.tagStill': 'Still',
+    'gallery.tagUntagged': 'Untagged',
 
     // Projects
     'projects.title': 'Projects',
@@ -240,10 +241,11 @@ export const translations = {
     'gallery.description': '一场视觉之旅，记录那些被时光捕捉的瞬间。',
     'gallery.noImages': '此标签下暂无图片。',
     'gallery.tagAll': '全部',
-    'gallery.tagFashion': '时尚',
-    'gallery.tagBehindTheScene': '幕后花絮',
-    'gallery.tagAffair': 'Affair',
     'gallery.tagMagazine': '杂志',
+    'gallery.tagAdvertising': '广告',
+    'gallery.tagStage': '舞台',
+    'gallery.tagStill': '剧照',
+    'gallery.tagUntagged': '未分类',
 
     // Projects
     'projects.title': '作品',
@@ -398,10 +400,11 @@ export const translations = {
     'gallery.description': 'การเดินทางทางสายตาผ่านช่วงเวลาที่ถูกบันทึกไว้',
     'gallery.noImages': 'ไม่พบรูปภาพสำหรับแท็กนี้',
     'gallery.tagAll': 'ทั้งหมด',
-    'gallery.tagFashion': 'แฟชั่น',
-    'gallery.tagBehindTheScene': 'เบื้องกล้อง',
-    'gallery.tagAffair': 'Affair',
     'gallery.tagMagazine': 'นิตยสาร',
+    'gallery.tagAdvertising': 'โฆษณา',
+    'gallery.tagStage': 'เวที',
+    'gallery.tagStill': 'ภาพนิ่ง',
+    'gallery.tagUntagged': 'ไม่มีหมวดหมู่',
 
     // Projects
     'projects.title': 'ผลงาน',
