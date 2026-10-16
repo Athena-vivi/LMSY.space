@@ -1,184 +1,103 @@
-# LMSY (Lookmhee & Sonya) Official Fan Site
+# LMSY.space
 
-A visually stunning, digital magazine-style fan website for Thai GL duo LMSY (Lookmhee & Sonya), stars of the Affair series.
+LMSY（Lookmhee & Sonya，泰剧《Affair》主演）粉丝站。线上：https://lmsy.space ，部署于 Vercel，代码仓库 `Athena-vivi/LMSY.space`（公开）。
 
-## Tech Stack
+> **想了解网站现状、局限与下一步？** 读 [`docs/FULL_AUDIT_REPORT_2026-10-16.md`](docs/FULL_AUDIT_REPORT_2026-10-16.md) —— 这是仓库中唯一保留的全量审计文档（现状 / 功能审计表 / P0-P3 问题清单 / 架构评估 / 分批整改计划 / 批量采集准备度 / 验证结果 / 结论），2026-10-16 基于生产只读复测。此前的初版审计与各阶段实施过程文档已按「只留现状与参考」原则清理，细节可在 Git 历史按需查阅。
 
-- **Framework**: Next.js 14+ (App Router)
-- **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui
-- **Animations**: Framer Motion
-- **Database**: Supabase (PostgreSQL + Storage)
-- **Icons**: Lucide React
-- **Fonts**: Playfair Display (Serif) + Inter (Sans-serif)
+## 技术栈
 
-## Design Features
+- **框架**: Next.js 16（App Router）+ React 19 + Tailwind CSS v4 + Framer Motion
+- **数据库**: Supabase PostgreSQL（独立 schema `lmsy_archive`）+ Supabase Auth（管理员登录）
+- **图片存储**: Cloudflare R2（公开 CDN `https://cdn.lmsy.space`）
+- **内容**: MDX 专栏（`content/editorial/`）
+- **部署**: Vercel（main 分支推送自动部署）
+- **其他**: PWA、i18n（EN/ZH/TH）、暗色模式
 
-- **Asymmetric Magazine Layout**: Non-traditional, editorial-style design
-- **Dark Mode**: Full dark mode support with #0F0F0F background
-- **Page Transitions**: Smooth animations using Framer Motion
-- **Masonry Gallery**: Waterfall layout with lightbox functionality
-- **Responsive Design**: Mobile-first with Sheet navigation
-- **SEO Optimized**: Proper meta tags and semantic HTML
+## 系统架构与数据流
 
-## Color Palette
-
-| Color | Hex | Usage |
-|-------|-----|-------|
-| Burgundy (Primary) | #630d16 | Brand accent, Affair theme |
-| Champagne (Secondary) | #D4AF37 | Highlights, gold accents |
-| Cream (Background) | #FAF9F6 | Paper texture feel |
-| Charcoal (Foreground) | #1A1A1A | Text, soft black |
-| Dark Background | #0F0F0F | Dark mode background |
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- Supabase account (for database/storage)
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd lookmheesonya-forever.com
+```
+浏览器扩展 / Telegram 机器人 / 管理后台上传
+        │
+        ▼
+  /api/ingest ──► 下载图片 ──► SHA-256 查重 ──► 上传 R2 ──► 写入 draft_items（草稿）
+        │                                                      │
+        │                                                      ▼
+        │                                         管理后台人工审核（AI 翻译辅助）
+        │                                                      │
+        │                                                      ▼
+        └────────────────────────────────────────── 发布 ──► gallery_assets ──► 前台展示
 ```
 
-2. Install dependencies:
+- **发布态数据**住在 `gallery_assets`；**未发布内容**住在 `draft_items`。两个表都只允许 `service_role`（服务端）访问，anon/authenticated 角色对 `draft_items`、`admin_users` 的读取已于 2026-10-16 关闭（此前存在未发布草稿外泄，已修复并复验）。
+- 前台公开读取的 7 张表：`gallery_assets`、`projects`、`profiles`、`publications`、`chronicle_events`、`site_content_blocks`、`gallery`。
+- 数据库迁移按文件名时间戳顺序执行，记录在 `supabase/migrations/`。
+
+## 功能清单
+
+- **前台**： masonry 图库（标签筛选 + 灯箱）、人物档案、作品时间线、日程、编年史、MDX 专栏、搜索 API
+- **后台**（`/admin`）：登录/会话（限流 + HttpOnly Cookie）、草稿箱（含 Telegram 收件）、审核发布、图片上传（presigned 直传 R2 + 注册）、批量操作、人物/作品/日程/内容管理
+- **采集**：Telegram 机器人 webhook（secret 头校验）、`/api/ingest`（机器密钥）、定时 cron
+- **已知缺陷**（含严重度与修复计划）：见审计报告问题清单。最需要注意的三个「死功能」：`/profiles/[id]` 查不存在的表、`/schedule` 前台写死示例数据、`/gallery` 标签按钮与真实 tag 不匹配。
+
+## 本地开发
+
 ```bash
 npm install
+cp .env.example .env.local   # 按注释填值；.env.local 永不入库
+npm run dev                  # http://localhost:3000
 ```
 
-3. Set up environment variables:
+环境变量说明见 `.env.example`（每个变量的来源都写在注释里）。生产环境变量在 Vercel Dashboard 配置。
+
+### 质量门禁
+
 ```bash
-cp .env.local.example .env.local
+npm run typecheck   # tsc --noEmit
+npm test            # 48 个单测（node --test）
+npm run lint
+npm run build       # 生产构建
+node scripts/security-smoke-test.mjs --base http://localhost:3000   # 安全冒烟（51 项）
 ```
 
-Edit `.env.local` and add your Supabase credentials:
-```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+> 注意：本机若配了代理，`next build` 拉取 Google Fonts 会被阻断，需 `env -u http_proxy -u https_proxy ... npm run build`（本机网络问题，与代码无关）。
 
-### Supabase Setup
+## 常用脚本
 
-1. Create a new project in [Supabase](https://supabase.com)
+| 命令 | 用途 |
+|---|---|
+| `npm run backup:db` / `backup:db:offsite` | 数据库逻辑导出 / 导出并上传异地桶 |
+| `npm run backup:r2` / `backup:r2:offsite` | R2 全量镜像 / 异地第二副本 |
+| `npm run restore:drill` | 恢复演练 |
+| `npm run audit:r2` | R2 对象与数据库引用对账（只读） |
+| `npm run migrate:phase1` | 应用 phase1 迁移（默认 dry-run，需凭据） |
+| `npx tsx scripts/reset-admin-password.ts <email>` | 管理员密码重置（0600 文件交付） |
+| `npx tsx scripts/setup-telegram-webhook.ts https://lmsy.space` | 注册 Telegram webhook |
+| `npm run backfill:magazine` | 杂志孤儿图片回填（dry-run 先行，需人工确认） |
 
-2. Run the SQL schema from `supabase/schema.sql` in your Supabase SQL Editor:
-   - Creates tables: members, projects, gallery, schedule
-   - Sets up Row Level Security (RLS) policies
-   - Creates indexes for performance
+`scripts/` 里另有若干历史一次性脚本（`batch-feed-*`、`sync-r2-*`、`delete-fake-data` 等），**不要随手执行**，用前先读脚本头部注释。
 
-3. Create storage buckets in Supabase Storage:
-   - `avatars` (public) - Member profile photos
-   - `project-covers` (public) - Project cover images
-   - `gallery` (public) - Gallery photos
-   - `assets` (public) - General assets
+## 文档索引
 
-4. Update `.env.local` with your Supabase URL and anon key from project settings
+| 文档 | 内容 |
+|---|---|
+| `docs/FULL_AUDIT_REPORT_2026-10-16.md` | **全量审计报告（现状唯一入口，含遗留事项与待决策）** |
+| `docs/BACKUP_AND_RESTORE.md` | 备份/恢复体系与操作手册 |
+| `docs/R2_SETUP.md` | R2 桶与 CDN 配置 |
+| `docs/BATCH_UPLOAD_GUIDE.md` | 后台上传指南 |
+| `docs/I18N_CONTENT_ARCHITECTURE.md` | 三语内容架构 |
+| `MAGAZINE_WORKFLOW.md` | 杂志类内容工作流 |
+| `CATALOG_ID_STANDARD.md` / `CATALOG_ID_OVERRIDE.md` | catalog_id 编号体系与例外 |
+| `SUPABASE_SETUP.md` | Supabase 项目设置 |
+| `supabase/setup.md` | 数据库 schema 与迁移说明 |
 
-### Running the App
+## 部署
 
-Development mode:
-```bash
-npm run dev
-```
+推送 `main` → Vercel 自动构建部署。回滚 = Vercel Dashboard 选择上一个 Deployment Promote。数据库变更必须走 `supabase/migrations/` 新文件，不在 Dashboard 手改结构。
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## 备份
 
-Production build:
-```bash
-npm run build
-npm start
-```
-
-## Project Structure
-
-```
-lookmheesonya-forever.com/
-├── app/
-│   ├── page.tsx              # Homepage with Hero section
-│   ├── layout.tsx            # Root layout with fonts
-│   ├── template.tsx          # Page transitions
-│   ├── globals.css           # Tailwind + custom styles
-│   ├── profiles/
-│   │   ├── page.tsx          # Profiles listing
-│   │   └── [id]/page.tsx     # Individual profile (dynamic)
-│   ├── gallery/page.tsx      # Masonry gallery
-│   ├── projects/page.tsx     # Projects timeline
-│   └── schedule/page.tsx     # Events calendar
-├── components/
-│   ├── ui/                   # shadcn/ui components
-│   ├── theme-provider.tsx    # Dark mode context
-│   ├── site-header.tsx       # Navigation
-│   ├── site-footer.tsx       # Footer
-│   └── page-transition.tsx   # Transition wrapper
-├── lib/
-│   ├── utils.ts              # Utility functions (cn)
-│   └── supabase.ts           # Supabase client + types
-└── supabase/
-    └── schema.sql            # Database schema
-```
-
-## Pages
-
-- **/** - Hero section with asymmetric image layout, quote section, latest updates
-- **/profiles** - Member profiles listing
-- **/profiles/[id]** - Individual profile with fixed image + scrollable content
-- **/gallery** - Masonry gallery with tag filtering and lightbox
-- **/projects** - Timeline-style project showcase
-- **/schedule** - Events calendar with past/upcoming events
-
-## Customization
-
-### Adding Real Images
-
-Replace the placeholder gradient divs with actual images using Next.js Image:
-
-```tsx
-import Image from 'next/image';
-
-<Image
-  src={member.avatar_url || '/placeholder.jpg'}
-  alt={member.name}
-  width={400}
-  height={500}
-  className="object-cover"
-/>
-```
-
-### Connecting to Supabase
-
-Update the data fetching in pages to use Supabase:
-
-```tsx
-import { supabase } from '@/lib/supabase';
-
-const { data: members } = await supabase
-  .from('members')
-  .select('*');
-```
-
-### Modifying Colors
-
-Edit `app/globals.css` to customize the theme:
-
-```css
-:root {
-  --primary: #630d16;  /* Change burgundy */
-  --secondary: #D4AF37; /* Change champagne gold */
-}
-```
+代码（GitHub）/ 数据库（逻辑导出 + R2 异地副本）/ 图片（R2 全量镜像 + 第二桶）三层相互独立，操作与演练记录见 `docs/BACKUP_AND_RESTORE.md`。本地 `backups/` 目录（gitignored）存放数据快照与决策依据（如杂志孤儿图片映射表），不要提交。
 
 ## License
 
-This is a fan-made project. All rights to LMSY (Lookmhee & Sonya) and the Affair series belong to their respective owners.
-
-## Credits
-
-- Designed with inspiration from digital magazine aesthetics
-- Built with [Next.js](https://nextjs.org)
-- UI components from [shadcn/ui](https://ui.shadcn.com)
+粉丝作品，非官方。LMSY 及《Affair》相关权利归各自所有者。
