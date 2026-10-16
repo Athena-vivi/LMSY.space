@@ -66,3 +66,19 @@ Scope: phase-1 audit for the project-centric admin refactor. Verified against re
 - No new project/gallery/batch tables, no new state fields.
 - No second upload pipeline: new-project-with-drop composes the existing upload page pieces (phase 2 batches, not batch 1).
 - Magazine special handling stays inside vault editorial tab; generic curation covers all categories through the same projects table.
+
+---
+
+## 6. Batch 1 implementation record (2026-10-16, deployed)
+
+Commit: "Project workbench: project-first dashboard, batch records view, project workspace with pending drafts, batch-link API, transfer table fix"
+
+1. `/admin` rewritten as **Project Workbench**: project-first card grid (cover, title, category, date, published count, pending count, status badge), search + status filter, entry tiles for ungrouped pending images (`/admin/drafts`), ingest batches (`/admin/batches`), asset vault; legacy links (chronicle/editorial/milestones) kept in footer; EditProjectModal reused inline.
+2. New `/admin/batches`: draft_items aggregated by batch_id (window, total, fail count, assigned/ungrouped, source account) with REVIEW deep link to `/admin/drafts?batch_id=...`. Draft inbox now reads `?batch_id=` / `?project_id=` from URL.
+3. `/admin/projects/[id]/curate` upgraded to full workspace: pending-drafts section (status-separated from published assets), click-to-select + select-all, batch PROMOTE (loops existing per-item to-gallery, duplicates auto-skipped), batch UNLINK, batch DELETE (existing drafts DELETE with R2 cleanup), per-card source platform/account/link, published assets keep drag-reorder + cover + rotate + delete, source icon added; PROJECT_INFO edit via reused EditProjectModal.
+4. New `POST /api/admin/drafts/batch-link`: `{ids, projectId}` assign or `{ids, unlink:true}` remove; verifies project exists, reports moved count.
+5. **Bug fix**: `POST /api/admin/gallery/transfer` now writes `gallery_assets` (was writing the dead `gallery` table -> batch transfer silently did nothing). Cover auto-set now also honors `is_cover`.
+6. Sidebar: Batches nav item added under CONTENT FLOW.
+7. Gates: tsc 0 errors, 90/90 unit tests, next build pass. Deployed; live probes: batch-link 401 unauthenticated (route+auth live), /admin/batches 200, public /projects 200 (public side untouched).
+
+Not done in batch 1 (per directive, later batches): local drag-in "new project + import" wizard (upload page already covers multi-file + metadata + monitor; wizard composes it), magazine/experience unification pass.
