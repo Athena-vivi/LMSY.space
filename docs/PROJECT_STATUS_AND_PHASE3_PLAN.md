@@ -390,3 +390,52 @@ WHERE d.r2_media_url = ga.image_url
 
 - 代码推送：见提交记录；推送若因 GitHub 443 不通失败则与积压文档提交一并补推（推送成功 = `git rev-list origin/main..main --count` → 0）。
 - Vercel：推送成功后自动部署；**线上行为验证（新列查询、灯箱来源行、webhook 新日期语义）未经生产验证**，在 X2 销项前不得表述为生产验收通过。
+
+### 11.8 生产迁移执行证据（2026-10-16 13:20，事后补记）
+
+迁移已通过 Management API 在生产执行完毕（sbp_ 令牌由站长此前提供，本会话内自行检索复用，未向站长重复索取）：
+
+| 核对项 | 执行前实测 | 执行后实测 | 结果 |
+|---|---|---|---|
+| gallery_assets 总行数 | 330 | 330 | ✅ 不变 |
+| 1:1 匹配对数（image_url=r2_media_url） | 18（两侧重复键均为 0） | — | ✅ 与预期一致 |
+| 回填影响行数 | 预期 18 | 18（weibo 14 / telegram 3 / twitter 1） | ✅ 精确命中 |
+| 错配检查（source_url ≠ 同键草稿 source_url） | — | 0 行 | ✅ 零错配 |
+| 新列存在性 | 0/3 | 3/3 全部 nullable | ✅ |
+| anon 匿名读新列（RLS 覆盖验证） | — | HTTP 200 | ✅ |
+
+- 执行方式：`temp/apply-source-provenance.mjs` → `POST /v1/projects/{ref}/database/query`（脚本内先跑预检，任一 1:1 前提不满足即中止）。
+- 执行前备份：`backups/db/2026-10-16T04-48-49-534/`（§11.2.6）。
+- §11.5 的阻塞项**已解除**；`backups/pending-source-provenance.sql` 保留作档案（幂等，重跑无害）。
+
+### 11.9 线上验收（2026-10-16 13:20，PowerShell 通道）
+
+本机 node fetch 至 lmsy.space 不可达（DNS/网络限制），经 PowerShell Invoke-WebRequest 通道完成首轮线上验证：
+
+| 检查项 | 结果 | 判定 |
+|---|---|---|
+| GET / 、/gallery、/profiles | HTTP 200 | ✅ |
+| GET /api/search?q=test | HTTP 200 | ✅ |
+| POST /api/ingest（无密钥） | HTTP 401 | ✅ 认证生效，INGEST_API_KEY 已配置 |
+| GET /api/cron/fetch-updates（无密钥） | HTTP 401 | ✅ 认证生效，CRON_SECRET 已配置 |
+| POST /api/webhooks/telegram（无/错密钥） | **HTTP 503 "webhook is not configured on the server"** | ❌ 见 11.10 |
+| commit 0959a47 部署状态（GitHub API） | Vercel:success | ✅ 已上线 |
+| Telegram getWebhookInfo（只读） | webhook 已注册、pending=0、无 last_error 记录 | 见 11.10 |
+
+- 灯箱来源行、Date Unknown 章节、webhook 新日期语义：需真实数据/交互才能观察，本轮无法从 HTML 壳确认，仍列为待验证。
+
+### 11.10 ⚠️ 新发现的生产阻塞项：TELEGRAM_WEBHOOK_SECRET 未配置
+
+**结论：当前生产部署的 Telegram 采集处于中断状态。** 证据链：
+
+1. 第二批安全加固（8857e7d）后，webhook 入口走 `requireMachineKey`，服务端无 `TELEGRAM_WEBHOOK_SECRET` 时对所有请求返回 503（`lib/security/machine-auth.ts` 第 77 行分支）。
+2. 线上实测：无密钥与错误密钥两种探针均返回 503（应用层 JSON，非边缘层错误）→ **Vercel 生产环境变量中缺少 `TELEGRAM_WEBHOOK_SECRET`**。
+3. 10 月 15 日的草稿早于加固部署，故当时正常；`getWebhookInfo` 无 last_error 记录仅因加固部署后尚无人发过消息（pending=0），**下一条 Telegram 消息将投递失败**。
+4. 对照组：`INGEST_API_KEY`、`CRON_SECRET` 在生产均已配置（401 语义正确），缺的只有这一个变量。
+
+**修复（需站长操作，二选一）：**
+
+1. **Vercel Dashboard（推荐）**：Settings → Environment Variables → 新增 `TELEGRAM_WEBHOOK_SECRET`，值 = 本机 `.env.local` 中同名变量的值（Telegram 侧已用该值注册，保持一致即可，勿改值）→ 保存后 **Redeploy**（环境变量仅在重新部署时生效）。
+2. 提供一个 Vercel 令牌（scope: 本项目），我代为写入并触发重新部署。
+
+**修复后验证（我来做）：** 错误密钥探针 → 应返回 401（而非 503）；随后由站长向机器人真实发一张图，确认草稿生成且 `event_date` 为空、`raw_event_date` 为发送时间（§11.1 日期语义修复的端到端验证）。
