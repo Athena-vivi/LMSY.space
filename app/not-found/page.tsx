@@ -32,7 +32,7 @@ export default function NotFound() {
             <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 tracking-tight">
               This part of the universe is still expanding...
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-ink-2 max-w-2xl mx-auto leading-relaxed">
               The stars you're looking for seem to have drifted into another galaxy.
               Let us guide you back to familiar territory.
             </p>

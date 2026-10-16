@@ -144,7 +144,7 @@ export function LongformSection() {
                 ease: 'easeInOut',
               }}
             >
-              <Quote className="w-10 h-10 text-white" />
+              <Quote className="w-10 h-10 text-ink" />
             </motion.div>
           </motion.div>
 
@@ -173,7 +173,7 @@ export function LongformSection() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
               >
-                <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
+                <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-ink mb-2">
                   <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
                     {featuredTitle}
                   </span>
@@ -199,7 +199,7 @@ export function LongformSection() {
               </div>
 
               <blockquote className="relative z-10">
-                <p className="font-serif text-lg md:text-xl lg:text-2xl leading-relaxed text-foreground/90 pl-6">
+                <p className="font-serif text-lg md:text-xl lg:text-2xl leading-relaxed text-ink pl-6">
                   {featuredExcerpt}
                 </p>
               </blockquote>
@@ -212,7 +212,7 @@ export function LongformSection() {
 
             {/* Source */}
             <motion.p
-              className="text-sm md:text-base text-muted-foreground italic pl-6 border-l-2 border-lmsy-blue/30"
+              className="text-sm md:text-base text-ink-2 italic pl-6 border-l-2 border-lmsy-blue/30"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -232,7 +232,7 @@ export function LongformSection() {
                 href={featuredHref}
                 className="inline-flex items-center gap-3 group"
               >
-                <span className="text-sm font-medium tracking-wider text-foreground/80 group-hover:text-foreground transition-colors">
+                <span className="text-sm font-medium tracking-wider text-ink group-hover:text-ink transition-colors">
                   {currentLongformContent.readMoreLabel}
                 </span>
                 <motion.div

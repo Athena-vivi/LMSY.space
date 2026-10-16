@@ -161,10 +161,10 @@ export function MuseumPreface() {
         >
           {/* Title */}
           <motion.div variants={itemVariants} className="text-center mb-16">
-            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-3">
+            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-ink mb-3">
               {currentContent.title}
             </h2>
-            <p className="text-sm md:text-base text-muted-foreground/80 tracking-[0.3em] uppercase font-light">
+            <p className="text-sm md:text-base text-ink-2 tracking-[0.3em] uppercase font-light">
               {currentContent.subtitle}
             </p>
           </motion.div>
@@ -177,7 +177,7 @@ export function MuseumPreface() {
 
           {/* Preface Content */}
           <motion.div variants={itemVariants} className="text-center mb-8">
-            <p className="font-serif text-lg md:text-xl text-muted-foreground/70 tracking-wider leading-relaxed mb-2">
+            <p className="font-serif text-lg md:text-xl text-ink-2 tracking-wider leading-relaxed mb-2">
               {currentContent.prefaceLabel}
             </p>
           </motion.div>
@@ -187,7 +187,7 @@ export function MuseumPreface() {
             {currentContent.paragraphs.map((paragraph, index) => (
               <p
                 key={index}
-                className="font-serif text-lg md:text-xl text-foreground/90 leading-relaxed tracking-wide text-justify"
+                className="font-serif text-lg md:text-xl text-ink leading-relaxed tracking-wide text-justify"
                 dangerouslySetInnerHTML={{ __html: paragraph }}
               />
             ))}
@@ -205,16 +205,16 @@ export function MuseumPreface() {
               {currentContent.bestiesMessage}
             </p>
 
-            <p className="font-serif text-lg md:text-xl text-foreground/90 leading-relaxed tracking-wide text-justify">
+            <p className="font-serif text-lg md:text-xl text-ink leading-relaxed tracking-wide text-justify">
               {currentContent.welcome}
             </p>
 
-            <p className="font-serif text-2xl md:text-3xl text-foreground leading-relaxed tracking-wide text-center font-semibold">
+            <p className="font-serif text-2xl md:text-3xl text-ink leading-relaxed tracking-wide text-center font-semibold">
               {currentContent.siteName}
             </p>
 
             {currentContent.siteDesc && (
-              <p className="font-serif text-lg md:text-xl text-foreground/80 leading-relaxed tracking-wide text-center italic">
+              <p className="font-serif text-lg md:text-xl text-ink leading-relaxed tracking-wide text-center italic">
                 {currentContent.siteDesc}
               </p>
             )}
@@ -225,13 +225,13 @@ export function MuseumPreface() {
             variants={itemVariants}
             className="text-center pt-8 border-t border-foreground/20"
           >
-            <p className="font-mono text-xs md:text-sm text-muted-foreground/60 tracking-widest mb-4">
+            <p className="font-mono text-xs md:text-sm text-ink-2 tracking-widest mb-4">
               {currentContent.curatorTitle}
             </p>
-            <p className="font-light text-base md:text-lg text-foreground/70 italic tracking-wide mb-4">
+            <p className="font-light text-base md:text-lg text-ink-2 italic tracking-wide mb-4">
               {currentContent.curatorSignature}
             </p>
-            <p className="font-mono text-xs text-muted-foreground/80 tracking-wider">
+            <p className="font-mono text-xs text-ink-2 tracking-wider">
               {currentContent.date}
             </p>
           </motion.div>

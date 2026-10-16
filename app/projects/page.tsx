@@ -109,7 +109,7 @@ export default function ProjectsPage() {
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6">
               {t(language, 'projects.title')}
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
+            <p className="text-lg text-ink-2 max-w-2xl">
               {t(language, 'projects.description')}
             </p>
           </motion.div>
@@ -160,7 +160,7 @@ export default function ProjectsPage() {
                         {/* Content */}
                         <div className={`p-6 md:p-10 flex flex-col justify-center ${isEven ? 'md:order-2' : 'md:order-1'}`}>
                           {project.release_date && (
-                            <time className="text-sm text-muted-foreground mb-2">
+                            <time className="text-sm text-ink-2 mb-2">
                               {new Date(project.release_date).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
                                 year: 'numeric',
                                 month: 'long',
@@ -174,7 +174,7 @@ export default function ProjectsPage() {
                           </h3>
 
                           {getLocalizedText(project.description_i18n, language, project.description) && (
-                            <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-6">
+                            <p className="text-ink-2 text-base md:text-lg leading-relaxed mb-6">
                               {getLocalizedText(project.description_i18n, language, project.description)}
                             </p>
                           )}
@@ -219,7 +219,7 @@ export default function ProjectsPage() {
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <p className="text-muted-foreground text-lg">No projects found</p>
+              <p className="text-ink-2 text-lg">No projects found</p>
             </motion.div>
           )}
         </div>

@@ -36,7 +36,7 @@ export function CatalogNumber({
       className={`
         flex items-center gap-2 text-[10px] md:text-[11px]
         font-mono tracking-wider
-        text-muted-foreground/60
+        text-ink-2
         select-none
         ${className}
       `}
@@ -74,8 +74,8 @@ export function CompactCatalogNumber({
   return (
     <div
       className={`
-        text-[9px] font-mono tracking-wide
-        text-foreground/80
+        text-[10px] font-mono tracking-wide
+        text-ink-2
         ${className}
       `}
       style={{

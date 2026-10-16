@@ -57,7 +57,7 @@ export function CreditBadge({ credits, variant = 'detailed', showIcon = true }: 
               })}
             </div>
           )}
-          <span className="text-xs text-white/70">
+          <span className="text-xs text-ink-2">
             {primaryKey && t(language, `editorial.${primaryKey}` as any) || primaryKey}:
           </span>
           <span className="text-xs text-white font-medium">{primaryCredit}</span>
@@ -86,7 +86,7 @@ export function CreditBadge({ credits, variant = 'detailed', showIcon = true }: 
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs text-ink-2 uppercase tracking-wider">
                 {t(language, `editorial.${key}` as any) || key}
               </p>
               <p className="text-sm font-medium text-foreground truncate">{value}</p>
@@ -127,7 +127,7 @@ export function CreditsList({ credits }: CreditsListProps) {
               <Icon className="w-5 h-5 text-lmsy-yellow" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs text-ink-2 uppercase tracking-wider">
                 {t(language, `editorial.${key}` as any) || key}
               </p>
               <p className="font-medium text-foreground truncate">{value}</p>

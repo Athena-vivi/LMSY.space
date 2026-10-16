@@ -85,7 +85,7 @@ export default function AssetVaultPage() {
 
       {debug && (
         <div className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3">
-          <p className="text-[10px] font-mono text-white/70">
+          <p className="text-[10px] font-mono text-ink-2">
             GALLERY {debug.gallery_count} · PROJECTS {debug.projects_count} · CHRONICLE {debug.chronicle_count} · MILESTONES {debug.milestone_count}
           </p>
         </div>

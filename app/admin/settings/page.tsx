@@ -319,7 +319,7 @@ export default function AdminSettingsPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="mb-8">
         <h1 className="mb-2 font-serif text-4xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">
+        <p className="text-ink-2">
           Edit homepage-level content blocks. Use tabs to switch between Hero, Preface, Longform, and Milestones.
         </p>
       </div>
@@ -370,10 +370,10 @@ export default function AdminSettingsPage() {
               <div className="rounded-xl border border-white/10 bg-black/30 p-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="block text-xs font-mono uppercase tracking-wider text-white/70">
+                    <span className="block text-xs font-mono uppercase tracking-wider text-ink-2">
                       Selected Loading Splash
                     </span>
-                    <p className="mt-2 text-xs text-white/70">
+                    <p className="mt-2 text-xs text-ink-2">
                       Click an image below to use it for the fullscreen LMSY opening animation.
                     </p>
                   </div>
@@ -381,7 +381,7 @@ export default function AdminSettingsPage() {
                   <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <div className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-4">
                       <div>
-                        <span className="block text-xs font-mono uppercase tracking-wider text-white/70">
+                        <span className="block text-xs font-mono uppercase tracking-wider text-ink-2">
                           Loading Splash
                         </span>
                       </div>
@@ -394,7 +394,7 @@ export default function AdminSettingsPage() {
                           unoptimized
                         />
                       </div>
-                      <p className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-white/75">
+                      <p className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-ink-2">
                         {heroSplashImageUrl}
                       </p>
                       <button
@@ -411,7 +411,7 @@ export default function AdminSettingsPage() {
 
                     <div className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-4">
                       <div>
-                        <span className="block text-xs font-mono uppercase tracking-wider text-white/70">
+                        <span className="block text-xs font-mono uppercase tracking-wider text-ink-2">
                           Hero Section Image
                         </span>
                       </div>
@@ -424,7 +424,7 @@ export default function AdminSettingsPage() {
                           unoptimized
                         />
                       </div>
-                      <p className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-white/75">
+                      <p className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-ink-2">
                         {heroSectionImageUrl}
                       </p>
                       <button
@@ -580,10 +580,10 @@ export default function AdminSettingsPage() {
           <div className="max-h-[85vh] w-full max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
-                <h2 className="font-serif text-2xl text-white/90">
+                <h2 className="font-serif text-2xl text-ink">
                   {heroPickerTarget === 'splash' ? 'Choose Splash Image' : 'Choose Hero Image'}
                 </h2>
-                <p className="mt-1 text-xs font-mono uppercase tracking-[0.18em] text-white/70">
+                <p className="mt-1 text-xs font-mono uppercase tracking-[0.18em] text-ink-2">
                   {heroPickerTarget === 'splash'
                     ? 'Select one image for the homepage opening animation'
                     : 'Select one image for the homepage hero section'}
@@ -594,14 +594,14 @@ export default function AdminSettingsPage() {
                 onClick={() => {
                   setIsHeroPickerOpen(false);
                 }}
-                className="rounded-lg border border-white/10 px-3 py-2 text-xs font-mono uppercase tracking-[0.16em] text-white/60 transition-colors hover:border-white/20 hover:text-white"
+                className="rounded-lg border border-white/10 px-3 py-2 text-xs font-mono uppercase tracking-[0.16em] text-ink-2 transition-colors hover:border-white/20 hover:text-white"
               >
                 Close
               </button>
             </div>
 
             <div className="max-h-[calc(85vh-81px)] overflow-y-auto p-6">
-              <div className="mb-4 text-xs font-mono uppercase tracking-[0.16em] text-white/70">
+              <div className="mb-4 text-xs font-mono uppercase tracking-[0.16em] text-ink-2">
                 Draft Inbox · {heroSplashOptions.length} image{heroSplashOptions.length === 1 ? '' : 's'}
               </div>
 
@@ -644,7 +644,7 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent p-2">
-                      <p className="truncate text-[10px] font-mono uppercase tracking-[0.16em] text-white/80">
+                      <p className="truncate text-[10px] font-mono uppercase tracking-[0.16em] text-ink-2">
                         {displayTitle || asset.catalog_id || 'ASSET'}
                       </p>
                     </div>

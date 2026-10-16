@@ -15,7 +15,7 @@ export const MDXComponents = {
     <h4 className={`font-serif text-xl md:text-2xl font-semibold tracking-tight text-foreground mb-3 mt-6 ${className || ''}`} {...props} />
   ),
   p: ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p className={`font-sans text-lg md:text-xl text-foreground/90 leading-relaxed tracking-wide mb-6 ${className || ''}`} {...props} />
+    <p className={`font-sans text-lg md:text-xl text-ink leading-relaxed tracking-wide mb-6 ${className || ''}`} {...props} />
   ),
   a: ({ className, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a className={`text-lmsy-blue hover:text-lmsy-yellow underline decoration-2 underline-offset-4 transition-colors duration-300 ${className || ''}`} {...props} />
@@ -27,7 +27,7 @@ export const MDXComponents = {
     <ol className={`list-decimal list-inside space-y-3 mb-6 marker:text-lmsy-blue ${className || ''}`} {...props} />
   ),
   li: ({ className, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
-    <li className={`text-lg md:text-xl text-foreground/90 leading-relaxed ${className || ''}`} {...props} />
+    <li className={`text-lg md:text-xl text-ink leading-relaxed ${className || ''}`} {...props} />
   ),
   blockquote: ({ className, ...props }: React.HTMLAttributes<HTMLQuoteElement>) => (
     <blockquote className={`border-l-4 border-lmsy-yellow pl-6 py-2 my-6 bg-muted/30 italic ${className || ''}`} {...props} />
@@ -77,7 +77,7 @@ export const MDXComponents = {
     <tr className={`${className || ''}`} {...props} />
   ),
   th: ({ className, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
-    <th className={`px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider ${className || ''}`} {...props} />
+    <th className={`px-6 py-3 text-left text-xs font-medium text-ink-2 uppercase tracking-wider ${className || ''}`} {...props} />
   ),
   td: ({ className, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
     <td className={`px-6 py-4 whitespace-nowrap text-sm text-foreground ${className || ''}`} {...props} />

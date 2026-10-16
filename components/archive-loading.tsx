@@ -189,7 +189,7 @@ export function ArchiveLoading() {
 
           {/* Atmospheric Text */}
           <motion.h1
-            className="font-serif text-white/90 text-lg tracking-widest uppercase"
+            className="font-serif text-ink text-lg tracking-widest uppercase"
             style={{
               letterSpacing: `${textSpacing}em`,
             }}

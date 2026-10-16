@@ -103,7 +103,7 @@ ${hashtags}
             {twitterText}
           </div>
           <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-ink-2">
               <span>Character count:</span>
               <span className={twitterText.length > 280 ? 'text-red-500' : 'text-green-500'}>
                 {twitterText.length} / 280
@@ -144,7 +144,7 @@ ${hashtags}
             {weiboText}
           </div>
           <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-ink-2">
               <span>字数:</span>
               <span>{weiboText.length}</span>
             </div>
@@ -165,7 +165,7 @@ ${hashtags}
               // 可以在这里保存自定义文案到 state
             }}
           />
-          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="mt-2 flex items-center justify-between text-xs text-ink-2">
             <span>Add your personal touch</span>
             <span>{0} / 500</span>
           </div>

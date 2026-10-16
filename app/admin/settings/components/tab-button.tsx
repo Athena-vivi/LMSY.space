@@ -23,7 +23,7 @@ export function TabButton({
       className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
         active
           ? activeClasses
-          : 'border-white/10 bg-black/20 text-white/80 hover:border-white/20 hover:text-white/80'
+          : 'border-white/10 bg-black/20 text-ink-2 hover:border-white/20 hover:text-ink-2'
       }`}
     >
       {children}

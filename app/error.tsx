@@ -30,7 +30,7 @@ export default function Error({
         <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
           Something went wrong
         </h1>
-        <p className="text-muted-foreground mb-8">
+        <p className="text-ink-2 mb-8">
           This part of the archive could not be loaded. Please try again.
         </p>
         <button

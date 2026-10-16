@@ -42,13 +42,13 @@ export function DeleteConfirmModal({ deleteConfirm, onExecute, onClose }: Delete
               <div className="p-2 bg-red-500/20 rounded-full">
                 <Trash2 className="h-5 w-5 text-red-400" strokeWidth={1.5} />
               </div>
-              <h2 className="text-lg font-serif text-white/90">
+              <h2 className="text-lg font-serif text-ink">
                 {deleteConfirm.type === 'batch' ? t('d.deleteMany') : t('d.deleteOne')}
               </h2>
             </div>
 
             {/* Message */}
-            <p className="text-white/60 text-sm mb-6">
+            <p className="text-ink-2 text-sm mb-6">
               {deleteConfirm.type === 'batch'
                 ? `${t('d.deleteConfirmMany')} ${deleteConfirm.count} ${t('common.images')}。`
                 : t('d.deleteConfirmOne')}
@@ -66,7 +66,7 @@ export function DeleteConfirmModal({ deleteConfirm, onExecute, onClose }: Delete
               </motion.button>
               <motion.button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 bg-white/10 border border-white/20 text-white/60 text-sm font-mono hover:bg-white/15 hover:text-white/80 transition-all rounded"
+                className="flex-1 px-4 py-2 bg-white/10 border border-white/20 text-ink-2 text-sm font-mono hover:bg-white/15 hover:text-ink-2 transition-all rounded"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

@@ -68,13 +68,13 @@ export function DraftsFilterBar({
     >
       {/* Search */}
       <div className="flex-1 min-w-[200px] relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/55" strokeWidth={1.5} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-2" strokeWidth={1.5} />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={t('d.searchPlaceholder')}
-          className="w-full pl-9 pr-4 py-1.5 bg-transparent text-white/60 text-sm font-mono focus:outline-none placeholder:text-white/55 tracking-wide"
+          className="w-full pl-9 pr-4 py-1.5 bg-transparent text-ink-2 text-sm font-mono focus:outline-none placeholder:text-ink-2 tracking-wide"
         />
       </div>
 
@@ -82,7 +82,7 @@ export function DraftsFilterBar({
       <select
         value={filterStatus}
         onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
-        className="px-3 py-1.5 bg-transparent text-white/75 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
+        className="px-3 py-1.5 bg-transparent text-ink-2 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
       >
         <option value="all">{t('d.status.all')}</option>
         <option value="draft">{t('d.status.draft')}</option>
@@ -94,7 +94,7 @@ export function DraftsFilterBar({
       <select
         value={filterMediaType}
         onChange={(e) => setFilterMediaType(e.target.value as MediaType)}
-        className="px-3 py-1.5 bg-transparent text-white/75 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
+        className="px-3 py-1.5 bg-transparent text-ink-2 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
       >
         <option value="all">{t('d.type.all')}</option>
         <option value="image">{t('d.type.image')}</option>
@@ -108,7 +108,7 @@ export function DraftsFilterBar({
         onChange={(e) => setFilterBatchId?.(e.target.value)}
         placeholder={t('d.batchId')}
         title={t('d.batchIdHint')}
-        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/55 tracking-wider"
+        className="w-36 px-3 py-1.5 bg-transparent text-ink-2 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-ink-2 tracking-wider"
       />
 
       {/* Project filter (batch 2): paste a project id to review one project */}
@@ -118,14 +118,14 @@ export function DraftsFilterBar({
         onChange={(e) => setFilterProjectId?.(e.target.value)}
         placeholder={t('d.projectId')}
         title={t('d.projectIdHint')}
-        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/55 tracking-wider"
+        className="w-36 px-3 py-1.5 bg-transparent text-ink-2 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-ink-2 tracking-wider"
       />
 
       {/* Select All */}
       {filteredDrafts.length > 0 && (
         <motion.button
           onClick={toggleSelectAll}
-          className="flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/65 text-xs font-mono hover:text-white/60 hover:border-white/20 transition-all"
+          className="flex items-center gap-2 px-3 py-1.5 border border-white/10 text-ink-2 text-xs font-mono hover:text-ink-2 hover:border-white/20 transition-all"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -147,7 +147,7 @@ export function DraftsFilterBar({
       <motion.button
         onClick={fetchDrafts}
         disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-white/75 text-xs font-mono hover:text-lmsy-yellow hover:border-lmsy-yellow/40 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-ink-2 text-xs font-mono hover:text-lmsy-yellow hover:border-lmsy-yellow/40 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         whileHover={{ scale: loading ? 1 : 1.02 }}
         whileTap={{ scale: loading ? 1 : 0.98 }}
         title={t('d.refreshHint')}

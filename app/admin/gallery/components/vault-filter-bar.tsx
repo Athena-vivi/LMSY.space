@@ -46,18 +46,18 @@ export function VaultFilterBar({
     >
       {/* Search */}
       <div className="flex-1 min-w-[200px] relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/55" strokeWidth={1.5} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-2" strokeWidth={1.5} />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="SEARCH_VAULT..."
-          className="w-full pl-9 pr-8 py-1.5 bg-transparent text-white/60 text-sm font-mono focus:outline-none placeholder:text-white/55 tracking-wide"
+          className="w-full pl-9 pr-8 py-1.5 bg-transparent text-ink-2 text-sm font-mono focus:outline-none placeholder:text-ink-2 tracking-wide"
         />
         {searchQuery && (
           <button
             onClick={handleClearSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/65 hover:text-white/60 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-2 hover:text-ink-2 transition-colors"
           >
             <X className="h-3.5 w-3.5" strokeWidth={1.5} />
           </button>
@@ -69,7 +69,7 @@ export function VaultFilterBar({
         <select
           value={filterTag}
           onChange={(e) => setFilterTag(e.target.value)}
-          className="px-3 py-1.5 bg-transparent text-white/75 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
+          className="px-3 py-1.5 bg-transparent text-ink-2 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
         >
           <option value="">ALL_TAGS</option>
           {uniqueTags.map(tag => (
@@ -80,7 +80,7 @@ export function VaultFilterBar({
 
       {/* Status indicator */}
       <div className="flex items-center gap-3 text-xs font-mono tracking-wider">
-        <span className="text-white/55">
+        <span className="text-ink-2">
           {projectId ? `${activeTab.toUpperCase()} · PROJECT_FILTERED` : activeTab.toUpperCase()}
         </span>
         {projectId && (

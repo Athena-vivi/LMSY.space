@@ -162,13 +162,13 @@ export function ServiceWorkerProvider() {
 
                       {/* Text */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm md:text-base text-foreground/90 leading-relaxed font-serif">
+                        <p className="text-sm md:text-base text-ink leading-relaxed font-serif">
                           {isUpdating
                             ? '发现新藏品，正在刷新空间...'
                             : '发现新藏品，点击按钮立即更新'}
                         </p>
                         {!isUpdating && (
-                          <p className="text-xs text-muted-foreground/60 mt-2 font-mono tracking-wider">
+                          <p className="text-xs text-ink-2 mt-2 font-mono tracking-wider">
                             NEW VERSION AVAILABLE
                           </p>
                         )}
@@ -180,7 +180,7 @@ export function ServiceWorkerProvider() {
                         disabled={isUpdating}
                         className={`flex-shrink-0 px-4 py-2 rounded-md font-medium transition-all ${
                           isUpdating
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                            ? 'bg-muted text-ink-2 cursor-not-allowed'
                             : 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-white hover:shadow-lg hover:shadow-lmsy-yellow/20'
                         }`}
                         whileHover={!isUpdating ? { scale: 1.05 } : {}}

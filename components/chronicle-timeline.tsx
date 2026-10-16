@@ -139,7 +139,7 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
                 {/* Close Button */}
                 <button
                   onClick={closeLightbox}
-                  className="absolute -top-12 right-0 p-2 text-white/60 hover:text-white transition-colors"
+                  className="absolute -top-12 right-0 p-2 text-ink-2 hover:text-white transition-colors"
                 >
                   <X className="h-6 w-6" strokeWidth={1.5} />
                 </button>
@@ -167,11 +167,11 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
 
                 {/* Info */}
                 <div className="mt-4 text-center">
-                  <h3 className="font-serif text-xl text-white/90 mb-2">
+                  <h3 className="font-serif text-xl text-ink mb-2">
                     {lightboxImage.title}
                   </h3>
                   {lightboxImage.description && (
-                    <p className="text-sm text-white/60">
+                    <p className="text-sm text-ink-2">
                       {lightboxImage.description}
                     </p>
                   )}
@@ -186,11 +186,11 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
       {events.length === 0 && (
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
-            <Calendar className="h-12 w-12 text-white/70 mx-auto mb-4" strokeWidth={1} />
-            <p className="text-white/80 text-sm font-mono">
+            <Calendar className="h-12 w-12 text-ink-2 mx-auto mb-4" strokeWidth={1} />
+            <p className="text-ink-2 text-sm font-mono">
               NO_EVENTS_RECORDED
             </p>
-            <p className="text-white/70 text-xs font-mono mt-2">
+            <p className="text-ink-2 text-xs font-mono mt-2">
               Published items will appear here
             </p>
           </div>
@@ -278,7 +278,7 @@ function TimelineItem({ event, language, position, isHovered, onHover, onHoverEn
 
             {/* Date Badge */}
             <div className="absolute top-3 left-3 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-sm">
-              <span className="text-xs font-mono text-white/90">
+              <span className="text-xs font-mono text-ink">
                 {event.eventDate}
               </span>
             </div>
@@ -297,7 +297,7 @@ function TimelineItem({ event, language, position, isHovered, onHover, onHoverEn
               </h3>
 
               {displayDescription && (
-                <p className="line-clamp-2 text-xs text-white/75">
+                <p className="line-clamp-2 text-xs text-ink-2">
                   {displayDescription}
                 </p>
               )}

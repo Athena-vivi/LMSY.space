@@ -11,14 +11,14 @@ export function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-mono uppercase tracking-wider text-white/70">
+      <label className="block text-xs font-mono uppercase tracking-wider text-ink-2">
         {label}
       </label>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-white/10 bg-black/20 px-4 py-2 text-white/90 focus:border-lmsy-yellow/40 focus:outline-none"
+        className="w-full rounded-lg border border-white/10 bg-black/20 px-4 py-2 text-ink focus:border-lmsy-yellow/40 focus:outline-none"
       />
     </div>
   );
@@ -35,14 +35,14 @@ export function TextArea({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-mono uppercase tracking-wider text-white/70">
+      <label className="block text-xs font-mono uppercase tracking-wider text-ink-2">
         {label}
       </label>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={4}
-        className="custom-scrollbar w-full rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-white/90 focus:border-lmsy-yellow/40 focus:outline-none"
+        className="custom-scrollbar w-full rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-ink focus:border-lmsy-yellow/40 focus:outline-none"
       />
     </div>
   );

@@ -86,7 +86,7 @@ export function GalleryImageWithLightbox({
               initial={{ y: 10 }}
               whileHover={{ y: 0 }}
             >
-              <p className="font-serif text-sm text-white/90 line-clamp-2">
+              <p className="font-serif text-sm text-ink line-clamp-2">
                 {image.caption}
               </p>
             </motion.div>

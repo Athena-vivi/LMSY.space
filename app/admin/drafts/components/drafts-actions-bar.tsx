@@ -44,7 +44,7 @@ export function DraftsActionsBar({
               boxShadow: '0 0 40px rgba(251, 191, 36, 0.2), inset 0 0 20px rgba(251, 191, 36, 0.05)',
             }}
           >
-            <span className="text-white/60 text-sm font-mono">
+            <span className="text-ink-2 text-sm font-mono">
               {t('common.selected')} {selectedIds.size}
             </span>
             <div className="w-px h-4 bg-white/10" />
@@ -87,7 +87,7 @@ export function DraftsActionsBar({
             </motion.button>
             <motion.button
               onClick={onClearSelection}
-              className="p-2 text-white/65 hover:text-white/60 transition-colors"
+              className="p-2 text-ink-2 hover:text-ink-2 transition-colors"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >

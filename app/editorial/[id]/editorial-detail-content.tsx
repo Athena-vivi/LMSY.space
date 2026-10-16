@@ -89,10 +89,10 @@ export function EditorialDetailContent({
             transition={{ duration: 0.6 }}
             className="text-right"
           >
-            <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-white/90">
+            <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-ink">
               {localizedTitle}
             </h1>
-            <p className="font-mono text-xs text-white/80 tracking-[0.3em]">
+            <p className="font-mono text-xs text-ink-2 tracking-[0.3em]">
               {magazine.catalog_id || 'LMSY-ED'}
             </p>
           </motion.div>
@@ -110,10 +110,10 @@ export function EditorialDetailContent({
             className="flex items-center justify-between mb-8"
           >
             <div>
-              <p className="font-mono text-4xl md:text-6xl font-bold text-white/90 mb-2">
+              <p className="font-mono text-4xl md:text-6xl font-bold text-ink mb-2">
                 {formatDate(magazine.release_date)}
               </p>
-              <p className="font-mono text-xs text-white/80 tracking-[0.2em] uppercase">
+              <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
                 Release Date
               </p>
             </div>
@@ -121,7 +121,7 @@ export function EditorialDetailContent({
               <p className="font-mono text-3xl md:text-5xl font-bold text-lmsy-yellow/80">
                 {totalArtifacts}
               </p>
-              <p className="font-mono text-xs text-white/80 tracking-[0.2em] uppercase">
+              <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
                 Artifacts Preserved
               </p>
             </div>
@@ -148,7 +148,7 @@ export function EditorialDetailContent({
               <p className="font-mono text-[10px] text-lmsy-yellow/60 tracking-[0.2em] uppercase mb-3">
                 Curator's Note
               </p>
-              <p className="font-serif text-lg md:text-xl text-white/70 leading-relaxed">
+              <p className="font-serif text-lg md:text-xl text-ink-2 leading-relaxed">
                 {localizedDescription}
               </p>
             </motion.div>
@@ -201,7 +201,7 @@ export function EditorialDetailContent({
               <p className="font-mono text-lg text-lmsy-yellow/60 tracking-[0.2em] mb-4">
                 [ ARCHIVE_EMPTY: WAITING_FOR_CURATION ]
               </p>
-              <p className="font-serif text-white/80">
+              <p className="font-serif text-ink-2">
                 This magazine&lsquo;s pages have not yet been digitized.<br />
                 Check back soon for updates.
               </p>
@@ -220,10 +220,10 @@ export function EditorialDetailContent({
               transition={{ duration: 0.6, delay: 0.8 }}
               className="mb-8"
             >
-              <h2 className="font-serif text-2xl md:text-3xl text-white/80 mb-2">
+              <h2 className="font-serif text-2xl md:text-3xl text-ink-2 mb-2">
                 Inside This Issue
               </h2>
-              <p className="font-mono text-xs text-white/80 tracking-[0.2em] uppercase">
+              <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
                 {galleryImages.length} Pages Preserved
               </p>
             </motion.div>
@@ -245,7 +245,7 @@ export function EditorialDetailContent({
       {/* Footer */}
       <footer className="relative border-t border-white/5 py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="font-mono text-[10px] text-white/70 tracking-[0.3em] uppercase">
+          <p className="font-mono text-[10px] text-ink-2 tracking-[0.3em] uppercase">
             LMSY.SPACE · MAGAZINE_ARCHIVE · {magazine.catalog_id || 'LMSY-ED'} · {totalArtifacts} ARTIFACTS
           </p>
         </div>

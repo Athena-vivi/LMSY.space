@@ -299,7 +299,7 @@ export default function AdminProjectsPage() {
     },
     journal: {
       label: 'cat.JOURNAL',
-      className: 'text-white/75 border-white/10 bg-transparent backdrop-blur-sm',
+      className: 'text-ink-2 border-white/10 bg-transparent backdrop-blur-sm',
     },
     commercial: {
       label: 'cat.COMMERCIAL',
@@ -353,17 +353,17 @@ export default function AdminProjectsPage() {
         className="flex items-center justify-between"
       >
         <div className="space-y-1">
-          <h1 className="font-serif text-3xl font-light text-white/90 tracking-tight">
+          <h1 className="font-serif text-3xl font-light text-ink tracking-tight">
             PROJECTS_ARCHIVE
           </h1>
-          <p className="text-xs font-mono text-white/65 tracking-wider">
+          <p className="text-xs font-mono text-ink-2 tracking-wider">
             CAREER_HISTORY_MANAGEMENT_SYSTEM
           </p>
         </div>
 
         {/* Add Project Button - Outline Style */}
         <motion.button
-          className="flex items-center gap-3 px-4 py-2 border border-white/10 text-white/75 text-xs font-mono hover:text-white/60 hover:border-white/20 transition-all"
+          className="flex items-center gap-3 px-4 py-2 border border-white/10 text-ink-2 text-xs font-mono hover:text-ink-2 hover:border-white/20 transition-all"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -389,7 +389,7 @@ export default function AdminProjectsPage() {
             exit={{ opacity: 0 }}
             className="flex items-center justify-center py-32"
           >
-            <div className="text-xs font-mono text-white/55 tracking-wider">
+            <div className="text-xs font-mono text-ink-2 tracking-wider">
               <span className="animate-pulse">{t('common.loading')}</span>
             </div>
           </motion.div>
@@ -425,14 +425,14 @@ export default function AdminProjectsPage() {
             {/* Empty State Message */}
             <div className="pl-20">
               <div className="space-y-2">
-                <p className="text-xs font-mono text-white/55 tracking-widest">
+                <p className="text-xs font-mono text-ink-2 tracking-widest">
                   HISTORY_RECORD_START
                 </p>
-                <p className="text-[10px] font-mono text-white/50 tracking-wider">
+                <p className="text-[10px] font-mono text-ink-2 tracking-wider">
                   NO_PROJECT_ENTRIES_FOUND
                 </p>
                 <motion.button
-                  className="mt-4 flex items-center gap-2 px-4 py-2 border border-white/10 text-white/65 text-xs font-mono hover:text-white/80 hover:border-white/20 transition-all"
+                  className="mt-4 flex items-center gap-2 px-4 py-2 border border-white/10 text-ink-2 text-xs font-mono hover:text-ink-2 hover:border-white/20 transition-all"
                   whileHover={{ x: 4 }}
                 >
                   <Plus className="h-3 w-3" strokeWidth={2} />
@@ -457,13 +457,13 @@ export default function AdminProjectsPage() {
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder={t('wb.searchPlaceholder')}
-                  className="w-full border bg-transparent px-3 py-2 font-mono text-xs tracking-wider text-white/80 outline-none transition-colors placeholder:text-white/55 md:max-w-sm"
+                  className="w-full border bg-transparent px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors placeholder:text-ink-2 md:max-w-sm"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                 />
                 <select
                   value={categoryFilter}
                   onChange={(event) => setCategoryFilter(event.target.value as 'all' | Project['category'])}
-                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-white/70 outline-none transition-colors"
+                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                 >
                   {categoryOptions.map((option) => (
@@ -475,7 +475,7 @@ export default function AdminProjectsPage() {
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value as 'all' | 'published' | 'draft' | 'archived' | 'available')}
-                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-white/70 outline-none transition-colors"
+                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                 >
                   <option value="all">{t('wb.filterAll')}</option>
@@ -485,7 +485,7 @@ export default function AdminProjectsPage() {
                   <option value="available">{t('status.available')}</option>
                 </select>
               </div>
-              <div className="text-xs font-mono tracking-wider text-white/65">
+              <div className="text-xs font-mono tracking-wider text-ink-2">
                 {filteredProjects.length} / {projects.length}
               </div>
             </div>
@@ -494,11 +494,11 @@ export default function AdminProjectsPage() {
             <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b text-xs font-mono font-medium tracking-wider"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
             >
-              <div className="col-span-4 text-white/75">{t('p.projectTitle')}</div>
-              <div className="col-span-2 text-white/75">{t('common.category')}</div>
-              <div className="col-span-2 text-white/75">{t('common.date')}</div>
-              <div className="col-span-3 text-white/75">{t('common.status')}</div>
-              <div className="col-span-1 text-white/75 text-right">{t('common.actions')}</div>
+              <div className="col-span-4 text-ink-2">{t('p.projectTitle')}</div>
+              <div className="col-span-2 text-ink-2">{t('common.category')}</div>
+              <div className="col-span-2 text-ink-2">{t('common.date')}</div>
+              <div className="col-span-3 text-ink-2">{t('common.status')}</div>
+              <div className="col-span-1 text-ink-2 text-right">{t('common.actions')}</div>
             </div>
 
             {/* Table Rows */}
@@ -535,17 +535,17 @@ export default function AdminProjectsPage() {
                               />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-4 w-4 text-white/50" strokeWidth={1.5} />
+                              <Play className="h-4 w-4 text-ink-2" strokeWidth={1.5} />
                             </div>
                           );
                         })()}
                       </Link>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm text-white/80 font-serif truncate">
+                        <h3 className="text-sm text-ink-2 font-serif truncate">
                           {project.title}
                         </h3>
                         {project.description && (
-                          <p className="text-[10px] text-white/65 font-mono truncate mt-0.5">
+                          <p className="text-[10px] text-ink-2 font-mono truncate mt-0.5">
                             {project.description}
                           </p>
                         )}
@@ -572,14 +572,14 @@ export default function AdminProjectsPage() {
                                   <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/70 px-1 py-1">
                                     <button
                                       onClick={() => handleRotateAsset(asset, 'left')}
-                                      className="text-white/60 transition-colors hover:text-white"
+                                      className="text-ink-2 transition-colors hover:text-white"
                                       title={t('c.rotateLeft')}
                                     >
                                       <RotateCcw className="h-3 w-3" strokeWidth={1.8} />
                                     </button>
                                     <button
                                       onClick={() => handleRotateAsset(asset, 'right')}
-                                      className="text-white/60 transition-colors hover:text-white"
+                                      className="text-ink-2 transition-colors hover:text-white"
                                       title={t('c.rotateRight')}
                                     >
                                       <RotateCw className="h-3 w-3" strokeWidth={1.8} />
@@ -610,7 +610,7 @@ export default function AdminProjectsPage() {
                   {/* Release Date */}
                   <div className="col-span-2">
                     {project.release_date ? (
-                      <div className="flex items-center gap-2 text-xs text-white/75">
+                      <div className="flex items-center gap-2 text-xs text-ink-2">
                         <Calendar className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
                         <span className="font-mono tracking-wide">
                           {new Date(project.release_date).toLocaleDateString('en-US', {
@@ -621,7 +621,7 @@ export default function AdminProjectsPage() {
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs text-white/55 font-mono">—</span>
+                      <span className="text-xs text-ink-2 font-mono">—</span>
                     )}
                   </div>
 
@@ -638,7 +638,7 @@ export default function AdminProjectsPage() {
                         <ChevronRight className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" strokeWidth={2} />
                       </a>
                     ) : (
-                      <span className="text-xs text-white/55 font-mono">{t('status.archived')}</span>
+                      <span className="text-xs text-ink-2 font-mono">{t('status.archived')}</span>
                     )}
                   </div>
 
@@ -648,42 +648,42 @@ export default function AdminProjectsPage() {
                       href={`/projects/${project.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-white/55 hover:text-lmsy-blue/80 hover:bg-lmsy-blue/5 transition-all"
+                      className="p-1.5 text-ink-2 hover:text-lmsy-blue/80 hover:bg-lmsy-blue/5 transition-all"
                       title={t('p.viewLive')}
                     >
                       <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </Link>
                     <Link
                       href={`/admin/gallery?tab=all&projectId=${project.id}`}
-                      className="p-1.5 text-white/55 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all"
+                      className="p-1.5 text-ink-2 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all"
                       title={t('p.viewAssets')}
                     >
                       <Images className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </Link>
                     <button
                       onClick={() => handleMerge(project)}
-                      className="p-1.5 text-white/55 hover:text-white/70 hover:bg-white/5 transition-all"
+                      className="p-1.5 text-ink-2 hover:text-ink-2 hover:bg-white/5 transition-all"
                       title={t('p.merge')}
                     >
                       <ArrowRightLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
                       onClick={() => handleSplit(project)}
-                      className="p-1.5 text-white/55 hover:text-white/70 hover:bg-white/5 transition-all"
+                      className="p-1.5 text-ink-2 hover:text-ink-2 hover:bg-white/5 transition-all"
                       title={t('p.split')}
                     >
                       <SplitSquareVertical className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
                       onClick={() => handleEdit(project)}
-                      className="p-1.5 text-white/55 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
+                      className="p-1.5 text-ink-2 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
                     >
                       <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
                       onClick={() => handleDeleteClick(project)}
                       disabled={deletingProjectId === project.id}
-                      className="p-1.5 text-white/55 hover:text-red-400/80 hover:bg-red-500/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-1.5 text-ink-2 hover:text-red-400/80 hover:bg-red-500/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       {deletingProjectId === project.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
@@ -698,7 +698,7 @@ export default function AdminProjectsPage() {
 
             {filteredProjects.length === 0 && (
               <div
-                className="border px-4 py-10 text-center text-xs font-mono tracking-wider text-white/60"
+                className="border px-4 py-10 text-center text-xs font-mono tracking-wider text-ink-2"
                 style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
               >
                 NO_MATCHING_PROJECTS
@@ -747,14 +747,14 @@ export default function AdminProjectsPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                   <div>
-                    <h2 className="text-lg font-serif text-white/90">确认销毁档案</h2>
+                    <h2 className="text-lg font-serif text-ink">确认销毁档案</h2>
                     <p className="text-[10px] font-mono text-red-400/60 tracking-wider uppercase mt-0.5">
                       ARCHIVE_DESTRUCTION_PROTOCOL
                     </p>
                   </div>
                   <motion.button
                     onClick={cancelDelete}
-                    className="text-white/65 hover:text-white/60 transition-colors"
+                    className="text-ink-2 hover:text-ink-2 transition-colors"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -764,15 +764,15 @@ export default function AdminProjectsPage() {
 
                 {/* Content */}
                 <div className="p-6 space-y-4">
-                  <p className="text-sm text-white/60 leading-relaxed">
+                  <p className="text-sm text-ink-2 leading-relaxed">
                     即将永久删除以下项目档案：
                   </p>
 
                   <div className="px-4 py-3 bg-red-500/5 border border-red-500/20 rounded">
-                    <p className="text-sm text-white/90 font-serif truncate">
+                    <p className="text-sm text-ink font-serif truncate">
                       {deleteConfirm.projectTitle}
                     </p>
-                    <p className="text-[10px] font-mono text-white/65 mt-1">
+                    <p className="text-[10px] font-mono text-ink-2 mt-1">
                       ID: {deleteConfirm.projectId}
                     </p>
                   </div>

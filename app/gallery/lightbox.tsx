@@ -76,7 +76,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
             {/* Minimal close button - top right */}
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 z-10 text-foreground/70 hover:text-foreground transition-colors"
+              className="absolute top-6 right-6 z-10 text-ink-2 hover:text-ink transition-colors"
               aria-label="Close"
             >
               <X className="h-8 w-8" />
@@ -97,7 +97,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                     />
                   ) : (
                     <div className="w-full h-96 bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20 rounded-lg flex items-center justify-center">
-                      <p className="text-foreground/70 text-lg">Image not available</p>
+                      <p className="text-ink-2 text-lg">Image not available</p>
                     </div>
                   )}
                 </div>
@@ -113,7 +113,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                 >
                   {/* Catalog ID */}
                   {currentImage.catalog_id && (
-                    <div className="font-mono text-xs text-muted-foreground/60 tracking-widest mb-6">
+                    <div className="font-mono text-xs text-ink-2 tracking-widest mb-6">
                       {currentImage.catalog_id}
                     </div>
                   )}
@@ -125,7 +125,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                       href={currentImage.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mb-6 text-xs uppercase tracking-widest text-muted-foreground/70 hover:text-lmsy-yellow transition-colors"
+                      className="inline-flex items-center gap-2 mb-6 text-xs uppercase tracking-widest text-ink-2 hover:text-lmsy-yellow transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
                       <span>
@@ -138,14 +138,14 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                   {/* Curator Label */}
                   <div className="flex items-center gap-2 mb-4">
                     <BookOpen className="h-4 w-4 text-lmsy-yellow" />
-                    <span className="text-xs uppercase tracking-widest text-muted-foreground/60">
+                    <span className="text-xs uppercase tracking-widest text-ink-2">
                       Curator's Note
                     </span>
                   </div>
 
                   {/* Caption */}
                   {localizedCaption && (
-                    <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-6 leading-relaxed">
+                    <h2 className="font-serif text-2xl md:text-3xl text-ink mb-6 leading-relaxed">
                       {localizedCaption}
                     </h2>
                   )}
@@ -156,7 +156,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                       <ReactMarkdown
                         components={{
                           p: ({ node, ...props }: any) => (
-                            <p className="text-muted-foreground/80 leading-relaxed mb-4" {...props} />
+                            <p className="text-ink-2 leading-relaxed mb-4" {...props} />
                           ),
                           em: ({ node, ...props }: any) => (
                             <em className="text-lmsy-yellow not-italic" {...props} />
@@ -165,7 +165,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                             <strong className="text-lmsy-blue font-semibold" {...props} />
                           ),
                           blockquote: ({ node, ...props }: any) => (
-                            <blockquote className="border-l-2 border-lmsy-yellow pl-4 italic text-foreground/60 my-4" {...props} />
+                            <blockquote className="border-l-2 border-lmsy-yellow pl-4 italic text-ink-2 my-4" {...props} />
                           ),
                         }}
                       >
@@ -225,7 +225,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
             className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full p-2 transition-colors"
             aria-label="Close lightbox"
           >
-            <X className="h-6 w-6 text-white" />
+            <X className="h-6 w-6 text-ink" />
           </button>
 
           {/* Navigation - Previous */}
@@ -235,7 +235,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
               className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full p-3 transition-colors"
               aria-label="Previous image"
             >
-              <ChevronLeft className="h-6 w-6 text-white" />
+              <ChevronLeft className="h-6 w-6 text-ink" />
             </button>
           )}
 
@@ -253,7 +253,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20 rounded-lg flex items-center justify-center">
-                  <p className="text-white/80 text-lg">Image not available</p>
+                  <p className="text-ink text-lg">Image not available</p>
                 </div>
               )}
 
@@ -266,7 +266,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                   className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
                 >
                   {currentImage.catalog_id && !isEditorial && (
-                    <div className="font-mono text-[10px] text-white/80 mb-2">
+                    <div className="font-mono text-[10px] text-ink mb-2">
                       {currentImage.catalog_id}
                     </div>
                   )}
@@ -275,7 +275,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                       href={currentImage.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-white/60 hover:text-lmsy-yellow transition-colors"
+                      className="inline-flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-ink-2 hover:text-lmsy-yellow transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
                       <span>
@@ -290,7 +290,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                     </span>
                   )}
                   {localizedCaption && (
-                    <p className="text-white font-serif text-xl md:text-2xl">
+                    <p className="text-ink font-serif text-xl md:text-2xl">
                       {localizedCaption}
                     </p>
                   )}
@@ -306,14 +306,14 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
               className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full p-3 transition-colors"
               aria-label="Next image"
             >
-              <ChevronRight className="h-6 w-6 text-white" />
+              <ChevronRight className="h-6 w-6 text-ink" />
             </button>
           )}
 
           {/* Counter */}
           {images.length > 1 && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur px-4 py-2 rounded-full">
-              <span className="text-white text-sm font-medium">
+              <span className="text-ink text-sm font-medium">
                 {currentIndex + 1} / {images.length}
               </span>
             </div>

@@ -76,8 +76,8 @@ export default function StorageWidget({ className = '' }: StorageWidgetProps) {
     return (
       <div className={`p-3 border rounded bg-black/40 ${className}`} style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
         <div className="flex items-center gap-2">
-          <RefreshCw className="w-3 h-3 text-white/55 animate-spin" />
-          <span className="text-[8px] font-mono text-white/65">LOADING_STORAGE_METRICS...</span>
+          <RefreshCw className="w-3 h-3 text-ink-2 animate-spin" />
+          <span className="text-[10px] font-mono text-ink-2">LOADING_STORAGE_METRICS...</span>
         </div>
       </div>
     );
@@ -88,7 +88,7 @@ export default function StorageWidget({ className = '' }: StorageWidgetProps) {
       <div className={`p-3 border rounded bg-black/40 ${className}`} style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}>
         <div className="flex items-center gap-2">
           <HardDrive className="w-3 h-3 text-red-400/50" />
-          <span className="text-[8px] font-mono text-red-400/50">STORAGE_UNAVAILABLE</span>
+          <span className="text-[10px] font-mono text-red-400/50">STORAGE_UNAVAILABLE</span>
         </div>
       </div>
     );
@@ -116,7 +116,7 @@ export default function StorageWidget({ className = '' }: StorageWidgetProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <HardDrive className="w-3 h-3" style={{ color: barColor }} />
-          <span className="text-[9px] font-mono text-white/75 tracking-wider uppercase">
+          <span className="text-[10px] font-mono text-ink-2 tracking-wider uppercase">
             R2_STORAGE
           </span>
         </div>
@@ -125,15 +125,15 @@ export default function StorageWidget({ className = '' }: StorageWidgetProps) {
           className="p-0.5 hover:bg-white/5 rounded transition-colors"
           title="Refresh storage info"
         >
-          <RefreshCw className="w-2.5 h-2.5 text-white/55 hover:text-white/75 transition-colors" />
+          <RefreshCw className="w-2.5 h-2.5 text-ink-2 hover:text-ink-2 transition-colors" />
         </button>
       </div>
 
       {/* Usage Bar */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-[8px] font-mono">
+        <div className="flex items-center justify-between text-[10px] font-mono">
           <span className={textColor}>{storage.usedPercent}%</span>
-          <span className="text-white/65">{storage.totalFormatted} / {storage.limitGB} GB</span>
+          <span className="text-ink-2">{storage.totalFormatted} / {storage.limitGB} GB</span>
         </div>
         <div className="h-1 bg-white/5 rounded-full overflow-hidden">
           <motion.div
@@ -144,24 +144,24 @@ export default function StorageWidget({ className = '' }: StorageWidgetProps) {
             style={{ backgroundColor: barColor }}
           />
         </div>
-        <div className="text-[7px] font-mono text-white/55 text-center">
+        <div className="text-[10px] font-mono text-ink-2 text-center">
           {storage.remainingFormatted} REMAINING
         </div>
       </div>
 
       {/* Object Count */}
       <div className="pt-1 border-t border-white/5 flex items-center justify-between">
-        <span className="text-[7px] font-mono text-white/55 uppercase">Total Artifacts</span>
-        <span className="text-[8px] font-mono text-white/75">{storage.objectCount} FILES</span>
+        <span className="text-[10px] font-mono text-ink-2 uppercase">Total Artifacts</span>
+        <span className="text-[10px] font-mono text-ink-2">{storage.objectCount} FILES</span>
       </div>
 
       {/* Breakdown (hover to show) */}
       {storage.breakdown.length > 0 && (
         <div className="pt-1 space-y-0.5">
           {storage.breakdown.slice(0, 3).map((item) => (
-            <div key={item.prefix} className="flex items-center justify-between text-[7px] font-mono">
-              <span className="text-white/50">{item.prefix}</span>
-              <span className="text-white/60">{item.count} · {item.size}</span>
+            <div key={item.prefix} className="flex items-center justify-between text-[10px] font-mono">
+              <span className="text-ink-2">{item.prefix}</span>
+              <span className="text-ink-2">{item.count} · {item.size}</span>
             </div>
           ))}
         </div>

@@ -97,12 +97,12 @@ export function DraftCard({
       {/* Status Badges */}
       <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
         {statusBadges[draft.status] && (
-          <span className={`px-2 py-0.5 border text-[9px] font-mono tracking-wider ${statusBadges[draft.status].className}`}>
+          <span className={`px-2 py-0.5 border text-[10px] font-mono tracking-wider ${statusBadges[draft.status].className}`}>
             {t('db.'+draft.status)}
           </span>
         )}
         {stageBadges[draft.ingestion_stage] && draft.ingestion_stage !== 'ready' && (
-          <span className={`px-2 py-0.5 border text-[9px] font-mono tracking-wider ${stageBadges[draft.ingestion_stage].className}`}>
+          <span className={`px-2 py-0.5 border text-[10px] font-mono tracking-wider ${stageBadges[draft.ingestion_stage].className}`}>
             {t('db.'+draft.ingestion_stage)}
           </span>
         )}
@@ -137,7 +137,7 @@ export function DraftCard({
               {/* Play Icon Overlay */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/0 transition-colors">
                 <div className="p-3 rounded-full bg-black/60 backdrop-blur-sm border border-white/20">
-                  <Play className="h-4 w-4 text-white/90" fill="currentColor" strokeWidth={1} />
+                  <Play className="h-4 w-4 text-ink" fill="currentColor" strokeWidth={1} />
                 </div>
               </div>
             </div>
@@ -155,7 +155,7 @@ export function DraftCard({
           )
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-white/5">
-            <span className="text-white/55 text-xs">{t('d.noMedia')}</span>
+            <span className="text-ink-2 text-xs">{t('d.noMedia')}</span>
           </div>
         )}
       </div>
@@ -164,7 +164,7 @@ export function DraftCard({
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
         {/* Source Platform */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2">
-          <span className={`px-2 py-0.5 bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] ${platformColors[draft.source_platform || ''] || 'text-white/60'}`}>
+          <span className={`px-2 py-0.5 bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] ${platformColors[draft.source_platform || ''] || 'text-ink-2'}`}>
             {platformIcons[draft.source_platform || ''] || '📌'} {(draft.source_platform || '').toUpperCase()}
           </span>
         </div>
@@ -173,18 +173,18 @@ export function DraftCard({
         <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
           {/* Title (Multilingual, collapsible) */}
           <div className="space-y-1">
-            <p className="text-white/90 text-xs font-medium line-clamp-2 leading-relaxed">
+            <p className="text-ink text-xs font-medium line-clamp-2 leading-relaxed">
               {getDisplayTitle(draft)}
             </p>
             {/* Show translations on hover */}
             <div className="space-y-0.5">
               {draft.title.zh && (
-                <p className="text-white/80 text-[10px] line-clamp-1">
+                <p className="text-ink text-[10px] line-clamp-1">
                   {draft.title.zh}
                 </p>
               )}
               {draft.title.th && (
-                <p className="text-white/75 text-[10px] line-clamp-1">
+                <p className="text-ink-2 text-[10px] line-clamp-1">
                   {draft.title.th}
                 </p>
               )}
@@ -192,7 +192,7 @@ export function DraftCard({
           </div>
 
           {/* Meta info */}
-          <div className="flex items-center gap-2 text-[9px] font-mono text-white/65">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-ink-2">
             <span>{formatRelativeTime(draft.created_at)}</span>
             {draft.is_featured && (
               <span className="text-lmsy-yellow/60">⭐ {t('d.featured')}</span>
@@ -222,7 +222,7 @@ export function DraftCard({
             )}
             <button
               onClick={() => onEdit(draft)}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-white/60 text-[10px] font-mono hover:bg-white/15 hover:text-white/80 transition-all"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-ink-2 text-[10px] font-mono hover:bg-white/15 hover:text-ink transition-all"
             >
               <Edit2 className="h-3 w-3" strokeWidth={2} />
               <span>{t('common.edit')}</span>
@@ -247,7 +247,7 @@ export function DraftCard({
             </button>
             <button
               onClick={() => onLinkExistingProject(draft.id)}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-white/75 text-[10px] font-mono hover:bg-white/15 transition-all"
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-ink-2 text-[10px] font-mono hover:bg-white/15 transition-all"
             >
               <Link2 className="h-3 w-3" strokeWidth={2} />
               <span>{hasProject ? t('d.relink') : t('d.linkProject')}</span>
@@ -272,7 +272,7 @@ export function DraftCard({
                   key={year}
                   onClick={() => onSetMilestone(draft.id, year as '2022' | '2023' | '2024' | '2025' | 'infinity')}
                   disabled={!canCreateAsset}
-                  className="flex items-center justify-center gap-1 px-1 py-1 bg-white/8 border border-white/15 text-white/70 text-[9px] font-mono hover:bg-white/12 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-1 px-1 py-1 bg-white/8 border border-white/15 text-ink-2 text-[10px] font-mono hover:bg-white/12 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Star className="h-2.5 w-2.5" strokeWidth={2} />
                   <span>{label}</span>

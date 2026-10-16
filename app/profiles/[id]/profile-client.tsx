@@ -74,7 +74,7 @@ export default function ProfileClient({ member }: ProfileClientProps) {
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="font-serif text-9xl text-muted-foreground/70">
+                    <div className="font-serif text-9xl text-ink-2">
                       {member.name[0]}
                     </div>
                   </div>
@@ -127,17 +127,17 @@ export default function ProfileClient({ member }: ProfileClientProps) {
             {/* Bio */}
             {member.bio && (
               <motion.div variants={item}>
-                <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-3">
+                <h3 className="text-sm font-medium tracking-widest text-ink-2 mb-3">
                   {t(language, 'profile.biography')}
                 </h3>
-                <p className="text-lg leading-relaxed text-muted-foreground">{member.bio}</p>
+                <p className="text-lg leading-relaxed text-ink-2">{member.bio}</p>
               </motion.div>
             )}
 
             {/* Birthday */}
             {member.birthday && (
               <motion.div variants={item}>
-                <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-3">
+                <h3 className="text-sm font-medium tracking-widest text-ink-2 mb-3">
                   {t(language, 'profile.born')}
                 </h3>
                 <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ export default function ProfileClient({ member }: ProfileClientProps) {
                     )}
                   </span>
                   {age && (
-                    <span className="text-muted-foreground">
+                    <span className="text-ink-2">
                       ({t(language, 'profile.yearsOld', { age })})
                     </span>
                   )}
@@ -160,7 +160,7 @@ export default function ProfileClient({ member }: ProfileClientProps) {
             {/* Height */}
             {member.height && (
               <motion.div variants={item}>
-                <h3 className="text-sm font-medium tracking-widest text-muted-foreground mb-3">
+                <h3 className="text-sm font-medium tracking-widest text-ink-2 mb-3">
                   {t(language, 'profile.height')}
                 </h3>
                 <div className="flex items-center gap-2">
@@ -175,10 +175,10 @@ export default function ProfileClient({ member }: ProfileClientProps) {
               variants={item}
               className="pt-8 border-t border-border"
             >
-              <blockquote className="font-serif text-2xl md:text-3xl leading-relaxed text-foreground/80">
+              <blockquote className="font-serif text-2xl md:text-3xl leading-relaxed text-ink-2">
                 {t(language, 'profile.quote')}
               </blockquote>
-              <cite className="mt-4 block text-sm text-muted-foreground not-italic">
+              <cite className="mt-4 block text-sm text-ink-2 not-italic">
                 — {member.nickname}
               </cite>
             </motion.div>

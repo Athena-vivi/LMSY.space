@@ -18,7 +18,7 @@ export function EditorialArticle({ article }: EditorialArticleProps) {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <Link
           href="/editorial"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-2 text-ink-2 hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">Back to Editorial</span>
@@ -60,7 +60,7 @@ export function EditorialArticle({ article }: EditorialArticleProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-xl md:text-2xl text-muted-foreground leading-relaxed mb-8"
+              className="text-xl md:text-2xl text-ink-2 leading-relaxed mb-8"
             >
               {article.excerpt}
             </motion.p>
@@ -70,7 +70,7 @@ export function EditorialArticle({ article }: EditorialArticleProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground"
+              className="flex flex-wrap items-center gap-6 text-sm text-ink-2"
             >
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
@@ -127,7 +127,7 @@ export function EditorialArticle({ article }: EditorialArticleProps) {
       <footer className="border-t border-border">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="font-mono text-xs text-muted-foreground/60 tracking-widest mb-4">
+            <p className="font-mono text-xs text-ink-2 tracking-widest mb-4">
               CURATED WITH LOVE BY <span className="text-lmsy-yellow">ASTRA</span>
             </p>
             <Link

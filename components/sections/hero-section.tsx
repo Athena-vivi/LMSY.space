@@ -62,7 +62,7 @@ export function HeroSection() {
           >
             {/* Preface */}
             <motion.p
-              className="text-sm md:text-base text-muted-foreground/80 italic font-serif"
+              className="text-sm md:text-base text-ink-2 italic font-serif"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
@@ -78,7 +78,7 @@ export function HeroSection() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base md:text-lg text-muted-foreground tracking-[0.2em] uppercase">
+            <p className="text-base md:text-lg text-ink-2 tracking-[0.2em] uppercase">
               {t(language, 'hero.subtitle')}
             </p>
 
@@ -96,10 +96,10 @@ export function HeroSection() {
                 delay: 1.5,
               }}
             >
-              <h3 className="font-serif font-light text-2xl md:text-3xl text-foreground/80 tracking-wide">
+              <h3 className="font-serif font-light text-2xl md:text-3xl text-ink tracking-wide">
                 {currentHeroContent.universeTitle}
               </h3>
-              <p className="font-serif text-sm md:text-base text-foreground/70 leading-relaxed max-w-md mx-auto lg:mx-0 italic">
+              <p className="font-serif text-sm md:text-base text-ink-2 leading-relaxed max-w-md mx-auto lg:mx-0 italic">
                 {currentHeroContent.universeSubtitle}
               </p>
             </motion.div>
@@ -161,7 +161,7 @@ export function HeroSection() {
                   transition={{ duration: 0.3 }}
                 >
                   <ExternalLink className="w-4 h-4 text-lmsy-yellow" />
-                  <span className="text-xs font-medium text-white">
+                  <span className="text-xs font-medium text-ink">
                     {t(language, 'editorial.title')}
                   </span>
                 </motion.div>
@@ -199,7 +199,7 @@ export function HeroSection() {
         transition={{ duration: 1, delay: 1.5 }}
       >
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs text-muted-foreground tracking-widest">{t(language, 'hero.scroll')}</span>
+          <span className="text-xs text-ink-2 tracking-widest">{t(language, 'hero.scroll')}</span>
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}

@@ -220,11 +220,11 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
     },
     appearance: {
       label: 'Appearance',
-      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
+      className: 'text-ink border-white/20 bg-white/5 backdrop-blur-sm',
     },
     journal: {
       label: 'Journal',
-      className: 'text-white/80 border-white/10 bg-transparent backdrop-blur-sm',
+      className: 'text-ink border-white/10 bg-transparent backdrop-blur-sm',
     },
     commercial: {
       label: 'Commercial',
@@ -257,7 +257,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                 {categoryConfig[project.category]?.label || 'Uncategorized'}
               </span>
               {project.release_date && (
-                <div className="flex items-center gap-2 text-white/60">
+                <div className="flex items-center gap-2 text-ink-2">
                   <Calendar className="h-4 w-4" />
                   <span className="text-sm">
                     {new Date(project.release_date).toLocaleDateString('en-US', {
@@ -270,7 +270,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               )}
             </div>
 
-            <h1 className="mb-4 font-serif text-2xl font-bold tracking-tight text-white md:text-3xl xl:text-[2rem]">
+            <h1 className="mb-4 font-serif text-2xl font-bold tracking-tight text-ink md:text-3xl xl:text-[2rem]">
               {localizedTitle}
             </h1>
 
@@ -290,7 +290,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mb-6 max-w-[220px]"
             >
-              <p className="text-sm leading-7 text-white/60 whitespace-pre-line">
+              <p className="text-sm leading-7 text-ink-2 whitespace-pre-line">
                 {localizedDescription}
               </p>
             </motion.div>
@@ -303,7 +303,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               transition={{ duration: 0.6, delay: 0.22 }}
               className="mb-6 max-w-[220px]"
             >
-              <p className="border-l border-lmsy-yellow/30 pl-4 text-sm leading-relaxed text-white/80 whitespace-pre-line">
+              <p className="border-l border-lmsy-yellow/30 pl-4 text-sm leading-relaxed text-ink whitespace-pre-line">
                 {localizedThemeStatement}
               </p>
             </motion.div>
@@ -346,12 +346,12 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                     onClick={() => setActiveTab(cat.value as CategoryType)}
                     className={`relative px-4 py-2 text-xs font-mono tracking-wider uppercase transition-all duration-300 ${
                       activeTab === cat.value
-                        ? 'text-white'
-                        : 'text-white/80 hover:text-white/60'
+                        ? 'text-ink'
+                        : 'text-ink hover:text-ink-2'
                     }`}
                   >
                     {cat.label}
-                    <span className="ml-2 text-white/70">({count})</span>
+                    <span className="ml-2 text-ink-2">({count})</span>
                     {activeTab === cat.value && (
                       <motion.div
                         layoutId="activeTab"
@@ -382,7 +382,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                     <h4 className="text-xs font-mono text-lmsy-yellow/60 tracking-wider uppercase mb-2">
                       {curatorNote.title}
                     </h4>
-                    <p className="text-white/60 text-sm leading-relaxed italic">
+                    <p className="text-ink-2 text-sm leading-relaxed italic">
                       {curatorNote.note}
                     </p>
                   </div>
@@ -466,7 +466,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                                 </p>
                               )}
                               {image.caption && (
-                                <p className="text-sm text-white/80 line-clamp-2">
+                                <p className="text-sm text-ink line-clamp-2">
                                   {image.caption}
                                 </p>
                               )}
@@ -498,8 +498,8 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               animate={{ opacity: 1 }}
               className="text-center py-24"
             >
-              <p className="text-white/80 text-lg">No images in this category yet.</p>
-              <p className="text-white/70 text-sm mt-2">More content will be added soon.</p>
+              <p className="text-ink text-lg">No images in this category yet.</p>
+              <p className="text-ink-2 text-sm mt-2">More content will be added soon.</p>
             </motion.div>
           )}
         </div>

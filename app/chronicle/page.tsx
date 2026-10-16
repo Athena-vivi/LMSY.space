@@ -38,29 +38,29 @@ export default async function ChroniclePage() {
             <div className="mb-6 h-0.5 w-24 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
 
             <div className="mb-6 max-w-[220px]">
-              <p className="text-sm leading-7 text-muted-foreground">
+              <p className="text-sm leading-7 text-ink-2">
                 A visual journey through time, gathering milestones, shoots, and quiet archive moments into one continuous record.
               </p>
             </div>
 
             <div className="mb-6 max-w-[220px] border-l border-lmsy-blue/25 pl-4">
-              <p className="text-sm leading-relaxed text-white/80">
+              <p className="text-sm leading-relaxed text-ink-2">
                 The right column holds the image-led sequence. Each entry can be opened for a closer look.
               </p>
             </div>
 
             <div className="max-w-[220px] space-y-3 border-t border-white/10 pt-5">
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/70">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-ink-2">
                 <span>Entries</span>
-                <span className="text-white/65">{eventCount}</span>
+                <span className="text-ink-2">{eventCount}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/70">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-ink-2">
                 <span>Type</span>
-                <span className="text-white/65">Published</span>
+                <span className="text-ink-2">Published</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/70">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-ink-2">
                 <span>View</span>
-                <span className="text-white/65">Image First</span>
+                <span className="text-ink-2">Image First</span>
               </div>
             </div>
           </aside>

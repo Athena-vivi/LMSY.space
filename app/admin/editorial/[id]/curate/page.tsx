@@ -66,7 +66,7 @@ function SortableImage({ image, index }: { image: MagazineImage; index: number }
         {...listeners}
         className="absolute left-2 top-2 z-10 p-2 rounded-lg bg-black/80 backdrop-blur-sm border border-white/10 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
       >
-        <GripVertical className="h-4 w-4 text-white/60" strokeWidth={1.5} />
+        <GripVertical className="h-4 w-4 text-ink-2" strokeWidth={1.5} />
       </div>
 
       {/* Image Container - Smaller Scale */}
@@ -93,7 +93,7 @@ function SortableImage({ image, index }: { image: MagazineImage; index: number }
 
         {/* Catalog ID */}
         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
-          <p className="text-[10px] font-mono text-white/60 tracking-wider">
+          <p className="text-[10px] font-mono text-ink-2 tracking-wider">
             {image.catalog_id || `MAG_${String(index + 1).padStart(3, '0')}`}
           </p>
         </div>
@@ -211,17 +211,17 @@ export default function CurateEditorialPage({ params }: { params: { id: string }
             {/* Back Button */}
             <Link
               href="/admin/editorial"
-              className="p-2 rounded-lg hover:bg-white/5 text-white/75 hover:text-white transition-colors"
+              className="p-2 rounded-lg hover:bg-white/5 text-ink-2 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
             </Link>
 
             {/* Project Info */}
             <div>
-              <h1 className="font-serif text-2xl text-white/90 tracking-tight">
+              <h1 className="font-serif text-2xl text-ink tracking-tight">
                 {project?.title || 'Untitled Magazine'}
               </h1>
-              <p className="text-xs font-mono text-white/65 tracking-wider uppercase mt-1">
+              <p className="text-xs font-mono text-ink-2 tracking-wider uppercase mt-1">
                 {project?.catalog_id} · {images.length} ARTIFACTS
               </p>
             </div>
@@ -270,10 +270,10 @@ export default function CurateEditorialPage({ params }: { params: { id: string }
       {/* Instructions Footer */}
       <footer className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/5 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          <p className="text-xs font-mono text-white/65">
+          <p className="text-xs font-mono text-ink-2">
             <span className="text-lmsy-yellow/60">DRAG</span> to reorder · Auto-saves on drop
           </p>
-          <p className="text-xs font-mono text-white/55">
+          <p className="text-xs font-mono text-ink-2">
             MIRrored Curation v1.0 · MAGAZINE_ARCHIVE
           </p>
         </div>

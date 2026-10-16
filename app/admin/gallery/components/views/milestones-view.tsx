@@ -131,7 +131,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
           <h3 className="text-sm font-mono text-lmsy-yellow/90 tracking-wider">
             HOMEPAGE_MILESTONES
           </h3>
-          <span className="text-xs font-mono text-white/65 ml-auto">
+          <span className="text-xs font-mono text-ink-2 ml-auto">
             SELECT_IMAGES_FOR_EACH_YEAR
           </span>
         </div>
@@ -160,14 +160,14 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center space-y-2">
-                      <Star className="h-6 w-6 text-white/50 mx-auto" strokeWidth={1.5} />
-                      <span className="text-xs font-mono text-white/55">{year}</span>
+                      <Star className="h-6 w-6 text-ink-2 mx-auto" strokeWidth={1.5} />
+                      <span className="text-xs font-mono text-ink-2">{year}</span>
                     </div>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-2 left-2 right-2 text-center">
-                    <span className="text-xs font-mono text-white/80 tracking-wider">
+                    <span className="text-xs font-mono text-ink-2 tracking-wider">
                       {imageUrl ? 'CHANGE_IMAGE' : 'SET_IMAGE'}
                     </span>
                   </div>
@@ -221,7 +221,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                     <h2 className="font-serif text-xl text-lmsy-yellow/90 mb-1">
                       SET_MILESTONE_FOR_{selectedYear}
                     </h2>
-                    <p className="text-xs font-mono text-white/75">
+                    <p className="text-xs font-mono text-ink-2">
                       SELECT_AN_IMAGE_FROM_THE_VAULT_BELOW
                     </p>
                   </div>

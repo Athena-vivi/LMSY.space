@@ -115,7 +115,7 @@ export default function EditorialHeader({
             </div>
           </div>
         </div>
-        <div className="text-[9px] font-mono text-white/50 tracking-[0.3em] uppercase">
+        <div className="text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase">
           Orbit Title
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function EditorialHeader({
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Write the narrative for this orbit..."
           rows={3}
-          className="w-full bg-transparent text-sm text-white/70 placeholder-blue-200/20 focus:outline-none resize-none leading-relaxed transition-all duration-300 border-b"
+          className="w-full bg-transparent text-sm text-ink-2 placeholder-blue-200/20 focus:outline-none resize-none leading-relaxed transition-all duration-300 border-b"
           style={{
             lineHeight: '1.8',
             borderColor: 'rgba(255, 255, 255, 0.15)',
@@ -149,7 +149,7 @@ export default function EditorialHeader({
             e.target.style.textShadow = 'none';
           }}
         />
-        <div className="text-[9px] font-mono text-white/50 tracking-[0.3em] uppercase">
+        <div className="text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase">
           Curator's Statement
         </div>
       </div>

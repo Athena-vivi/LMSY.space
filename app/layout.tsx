@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Geist_Mono, Playfair_Display } from "next/font/google";
+// Fonts are bundled locally (npm packages) instead of next/font/google:
+// build-time Google Fonts fetch is unreachable from this network (P8 root cause).
+// CSS variable names stay identical, so globals.css and components are untouched.
+import { GeistMono } from "geist/font/mono";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/playfair-display";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
@@ -11,22 +16,7 @@ import { WhisperFloatingButton } from "@/components/whisper-floating-button";
 import { ScrollProgress } from "@/components/scroll-progress";
 import { NebulaBackground } from "@/components/nebula-background";
 
-const sans = Inter({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const serif = Playfair_Display({
-  variable: "--font-playfair-display",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const mono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const mono = GeistMono;
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://lmsy.space'),
@@ -102,7 +92,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${sans.variable} ${serif.variable} ${mono.variable} antialiased`}
+        className={`${mono.variable} antialiased`}
         style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
         <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INIT_SCRIPT }} />

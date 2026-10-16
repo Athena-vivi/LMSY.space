@@ -64,8 +64,8 @@ function MasonryImage({ src, index }: { src: string; index: number }) {
       {!src && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center p-4">
-            <Camera className="w-8 h-8 mx-auto text-foreground/70 mb-2" />
-            <p className="text-xs text-foreground/80">Image from Gallery</p>
+            <Camera className="w-8 h-8 mx-auto text-ink-2 mb-2" />
+            <p className="text-xs text-ink-2">Image from Gallery</p>
           </div>
         </div>
       )}
@@ -98,7 +98,7 @@ export default function ExhibitionDetailPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">Exhibition not found</p>
+          <p className="text-ink-2">Exhibition not found</p>
           <Link href="/exhibitions" className="text-lmsy-yellow hover:underline">
             ← Back to Exhibitions
           </Link>
@@ -141,7 +141,7 @@ export default function ExhibitionDetailPage() {
             >
               <Link
                 href="/exhibitions"
-                className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-2 text-ink-2 hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span className="text-sm tracking-wider">BACK TO EXHIBITIONS</span>
@@ -173,7 +173,7 @@ export default function ExhibitionDetailPage() {
 
             {/* Curator Note - Fade In */}
             <motion.blockquote
-              className="text-lg md:text-xl lg:text-2xl text-foreground/70 leading-relaxed font-light italic max-w-2xl mx-auto"
+              className="text-lg md:text-xl lg:text-2xl text-ink-2 leading-relaxed font-light italic max-w-2xl mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8, duration: 1.2 }}
@@ -212,7 +212,7 @@ export default function ExhibitionDetailPage() {
               <div className="bg-gradient-to-r from-lmsy-yellow/10 to-lmsy-blue/10 px-8 py-6 border-b border-border/50">
                 <div className="flex items-center gap-3">
                   <div className="h-px w-12 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
-                  <span className="text-xs tracking-widest text-muted-foreground uppercase">
+                  <span className="text-xs tracking-widest text-ink-2 uppercase">
                     Curator's Essay
                   </span>
                   <div className="h-px flex-1 bg-gradient-to-r from-lmsy-blue to-transparent" />
@@ -221,7 +221,7 @@ export default function ExhibitionDetailPage() {
 
               {/* Markdown Content */}
               <div className="px-8 md:px-12 py-8 md:py-12 prose prose-lg max-w-none">
-                <div className="font-serif text-foreground/90 leading-loose">
+                <div className="font-serif text-ink leading-loose">
                   {/* Render markdown content - for now showing as plain text */}
                   <div className="whitespace-pre-wrap">{exhibition.markdownContent}</div>
                 </div>
@@ -229,7 +229,7 @@ export default function ExhibitionDetailPage() {
 
               {/* Decorative Footer */}
               <div className="px-8 py-4 bg-muted/30 border-t border-border/50">
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 text-xs text-ink-2">
                   <div className="w-2 h-2 rounded-full bg-lmsy-yellow" />
                   <span>Exhibition Archive</span>
                   <div className="w-2 h-2 rounded-full bg-lmsy-blue" />
@@ -254,7 +254,7 @@ export default function ExhibitionDetailPage() {
                 The Collection
               </span>
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-ink-2">
               A dynamic collage of moments from {exhibition.range}
             </p>
           </motion.div>
@@ -274,7 +274,7 @@ export default function ExhibitionDetailPage() {
             viewport={{ once: true }}
             className="mt-12 text-center"
           >
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-sm text-ink-2 italic">
               Full collection available in Gallery with tag "{exhibition.slug}"
             </p>
           </motion.div>
@@ -291,7 +291,7 @@ export default function ExhibitionDetailPage() {
             className="text-center mb-12"
           >
             <h2 className="font-serif text-2xl md:text-3xl font-bold mb-4">Explore More</h2>
-            <p className="text-muted-foreground">Discover other curated exhibitions</p>
+            <p className="text-ink-2">Discover other curated exhibitions</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
@@ -307,8 +307,8 @@ export default function ExhibitionDetailPage() {
                     <h3 className="font-serif text-xl font-bold mb-2 group-hover:text-lmsy-yellow transition-colors">
                       {language === 'zh' ? data.titleZh : data.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">{data.range}</p>
-                    <div className="flex items-center gap-2 text-sm text-foreground/70 group-hover:text-foreground transition-colors">
+                    <p className="text-sm text-ink-2 mb-4">{data.range}</p>
+                    <div className="flex items-center gap-2 text-sm text-ink-2 group-hover:text-foreground transition-colors">
                       <span>Explore</span>
                       <span className="group-hover:translate-x-1 transition-transform">→</span>
                     </div>

@@ -214,14 +214,14 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
                 <UploadIcon className="h-5 w-5 text-lmsy-yellow/80" strokeWidth={1.5} />
               </div>
               <div>
-                <h2 className="font-serif text-xl text-white/90">Bulk Upload</h2>
-                <p className="text-xs text-white/80 font-mono">Import images to draft inbox</p>
+                <h2 className="font-serif text-xl text-ink">Bulk Upload</h2>
+                <p className="text-xs text-ink-2 font-mono">Import images to draft inbox</p>
               </div>
             </div>
             <button
               onClick={() => !isUploading && !ingestionMonitor.visible && onClose()}
               disabled={isUploading || ingestionMonitor.visible}
-              className="p-2 rounded-lg text-white/70 hover:text-white/60 hover:bg-white/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 rounded-lg text-ink-2 hover:text-ink-2 hover:bg-white/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <X className="h-5 w-5" strokeWidth={1.5} />
             </button>
@@ -296,10 +296,10 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
           <div className="px-6 py-3 border-t flex items-center justify-between text-xs font-mono flex-shrink-0"
             style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
           >
-            <span className="text-white/70">
+            <span className="text-ink-2">
               {uploadState.uploadItems.length} files selected
             </span>
-            <span className="text-white/70">
+            <span className="text-ink-2">
               Press ESC to close
             </span>
           </div>
@@ -349,7 +349,7 @@ export function BulkUploadButton({ onClick, count }: { onClick: () => void; coun
       whileTap={{ scale: 0.98 }}
     >
       <UploadIcon className="h-4 w-4 text-lmsy-yellow/80" strokeWidth={1.5} />
-      <span className="text-white/70">Bulk Upload</span>
+      <span className="text-ink-2">Bulk Upload</span>
       {count !== undefined && count > 0 && (
         <span className="px-1.5 py-0.5 bg-lmsy-blue/20 border border-lmsy-blue/30 rounded text-xs text-lmsy-blue">
           {count}

@@ -93,7 +93,7 @@ function Milestone({ year, title, index, onHover }: MilestoneProps) {
             />
             <motion.div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <div className="absolute bottom-4 left-4 right-4 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <span className={`font-mono text-xs tracking-widest uppercase ${isInfinity ? 'text-lmsy-yellow/90' : 'text-white/80'}`}>
+              <span className={`font-mono text-xs tracking-widest uppercase ${isInfinity ? 'text-lmsy-yellow/90' : 'text-ink'}`}>
                 {isInfinity ? 'Story Continues →' : 'Enter Archive →'}
               </span>
             </div>
@@ -143,7 +143,7 @@ function Milestone({ year, title, index, onHover }: MilestoneProps) {
         )}
       </motion.div>
 
-      <p className="max-w-[200px] text-center font-serif text-lg text-white/70 transition-colors group-hover:text-white/90 md:text-xl">
+      <p className="max-w-[200px] text-center font-serif text-lg text-ink-2 transition-colors group-hover:text-ink md:text-xl">
         {title}
       </p>
     </motion.div>
@@ -273,7 +273,7 @@ export function ChronicleSection() {
         </div>
 
         <motion.p
-          className="mt-16 text-center font-serif text-sm italic text-white/80 md:text-base"
+          className="mt-16 text-center font-serif text-sm italic text-ink md:text-base"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}

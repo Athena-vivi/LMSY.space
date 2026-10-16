@@ -91,7 +91,7 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
           <div className="absolute inset-0 flex flex-col justify-end p-8">
             {/* Title with Duo Color Gradient */}
             <motion.h3
-              className="font-serif text-3xl md:text-4xl font-bold text-white mb-3"
+              className="font-serif text-3xl md:text-4xl font-bold text-ink mb-3"
               style={{
                 background: titleGradient,
                 WebkitBackgroundClip: 'text',
@@ -103,13 +103,13 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
             </motion.h3>
 
             {/* Description */}
-            <p className="text-white/90 text-base md:text-lg font-light leading-relaxed mb-4">
+            <p className="text-ink text-base md:text-lg font-light leading-relaxed mb-4">
               {t(language, descKey as any)}
             </p>
 
             {/* Arrow Indicator */}
             <motion.div
-              className="flex items-center gap-2 text-white/80 group-hover:text-white transition-colors"
+              className="flex items-center gap-2 text-ink group-hover:text-ink transition-colors"
               initial={{ x: 0 }}
               whileHover={{ x: 5 }}
             >
@@ -210,7 +210,7 @@ export function PortalsSection() {
               {t(language, 'hero.portalsTitle')}
             </span>
           </h2>
-          <p className="text-muted-foreground text-lg md:text-xl font-light">
+          <p className="text-ink-2 text-lg md:text-xl font-light">
             {t(language, 'hero.portalsSubtitle')}
           </p>
         </motion.div>

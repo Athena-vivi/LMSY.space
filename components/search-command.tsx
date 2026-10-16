@@ -134,7 +134,7 @@ export function SearchCommand() {
       case 'schedule':
         return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
       default:
-        return 'text-muted-foreground bg-muted';
+        return 'text-ink-2 bg-muted';
     }
   };
 
@@ -163,7 +163,7 @@ export function SearchCommand() {
         className="p-2 hover:bg-muted rounded-full transition-colors group"
         aria-label="Search"
       >
-        <Search className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+        <Search className="h-5 w-5 text-ink-2 group-hover:text-foreground transition-colors" />
       </button>
 
       {/* Spotlight-style Modal */}
@@ -192,14 +192,14 @@ export function SearchCommand() {
               >
                 {/* Search Input */}
                 <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-                  <Search className="h-5 w-5 text-muted-foreground" />
+                  <Search className="h-5 w-5 text-ink-2" />
                   <input
                     ref={inputRef}
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search photos, projects, events..."
-                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-lg"
+                    className="flex-1 bg-transparent text-foreground placeholder:text-ink-2 focus:outline-none text-lg"
                   />
                   {query && (
                     <button
@@ -209,10 +209,10 @@ export function SearchCommand() {
                       }}
                       className="p-1 hover:bg-muted rounded-full transition-colors"
                     >
-                      <X className="h-5 w-5 text-muted-foreground" />
+                      <X className="h-5 w-5 text-ink-2" />
                     </button>
                   )}
-                  <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground bg-muted rounded">
+                  <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-ink-2 bg-muted rounded">
                     ESC
                   </kbd>
                 </div>
@@ -255,12 +255,12 @@ export function SearchCommand() {
                                 {highlightMatch(result.title, query)}
                               </div>
                               {result.description && (
-                                <div className="text-sm text-muted-foreground line-clamp-1">
+                                <div className="text-sm text-ink-2 line-clamp-1">
                                   {highlightMatch(result.description, query)}
                                 </div>
                               )}
                               {result.subtitle && (
-                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <div className="text-xs text-ink-2 mt-1 flex items-center gap-1">
                                       <Hash className="h-3 w-3" />
                                       {result.subtitle}
                                 </div>
@@ -272,15 +272,15 @@ export function SearchCommand() {
                     </div>
                   ) : query ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <Search className="h-12 w-12 text-muted-foreground/70 mb-3" />
-                      <p className="text-muted-foreground">No results found for "{query}"</p>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <Search className="h-12 w-12 text-ink-2 mb-3" />
+                      <p className="text-ink-2">No results found for "{query}"</p>
+                      <p className="text-sm text-ink-2 mt-1">
                         Try different keywords or browse the gallery
                       </p>
                     </div>
                   ) : (
                     <div className="p-4">
-                      <p className="text-sm text-muted-foreground mb-4">Quick Access</p>
+                      <p className="text-sm text-ink-2 mb-4">Quick Access</p>
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           { label: 'Gallery', url: '/gallery', icon: FileImage, color: 'text-lmsy-yellow' },
@@ -310,7 +310,7 @@ export function SearchCommand() {
 
                 {/* Footer */}
                 <div className="px-4 py-2 border-t border-border bg-muted/30">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-ink-2">
                     <div className="flex items-center gap-3">
                       <span className="hidden sm:inline">Use arrows to navigate</span>
                       <span>Enter to select</span>

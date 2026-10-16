@@ -122,10 +122,10 @@ export function LinkProjectModal({
         className="max-w-3xl border-white/10 bg-black p-0 text-white shadow-2xl"
       >
         <DialogHeader className="border-b border-white/10 px-6 py-5 text-left">
-          <DialogTitle className="font-serif text-xl font-light tracking-wide text-white/90">
+          <DialogTitle className="font-serif text-xl font-light tracking-wide text-ink">
             Link Existing Project
           </DialogTitle>
-          <DialogDescription className="font-mono text-[11px] tracking-wider text-white/70">
+          <DialogDescription className="font-mono text-[11px] tracking-wider text-ink-2">
             {t('p.linkHint')}
           </DialogDescription>
         </DialogHeader>
@@ -136,12 +136,12 @@ export function LinkProjectModal({
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={t('p.searchLink')}
-            className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-white/85 outline-none transition-colors placeholder:text-white/60 focus:border-lmsy-yellow/40"
+            className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none transition-colors placeholder:text-ink-2 focus:border-lmsy-yellow/40"
           />
 
           {loading ? (
             <div className="flex h-64 items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-white/75" />
+              <Loader2 className="h-5 w-5 animate-spin text-ink-2" />
             </div>
           ) : error ? (
             <div className="rounded border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200/80">
@@ -171,20 +171,20 @@ export function LinkProjectModal({
                           unoptimized
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-white/55">
+                        <div className="flex h-full w-full items-center justify-center text-ink-2">
                           <Link2 className="h-4 w-4" />
                         </div>
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1 space-y-1">
-                      <div className="truncate font-serif text-sm text-white/90">
+                      <div className="truncate font-serif text-sm text-ink">
                         {project.title}
                       </div>
-                      <div className="font-mono text-[10px] tracking-wider text-white/70">
+                      <div className="font-mono text-[10px] tracking-wider text-ink-2">
                         {project.category.toUpperCase()} {project.release_date ? `· ${project.release_date}` : '· NO_DATE'}
                       </div>
-                      <div className="truncate font-mono text-[10px] text-white/60">
+                      <div className="truncate font-mono text-[10px] text-ink-2">
                         {project.id}
                       </div>
                     </div>
@@ -197,7 +197,7 @@ export function LinkProjectModal({
               })}
 
               {filteredProjects.length === 0 && (
-                <div className="rounded border border-white/10 bg-white/[0.02] px-4 py-8 text-center font-mono text-xs tracking-wider text-white/65">
+                <div className="rounded border border-white/10 bg-white/[0.02] px-4 py-8 text-center font-mono text-xs tracking-wider text-ink-2">
                   NO_MATCHING_PROJECTS
                 </div>
               )}

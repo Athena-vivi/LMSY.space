@@ -48,10 +48,10 @@ export function EmptyState({ hasDrafts }: EmptyStateProps) {
       exit={{ opacity: 0, scale: 0.95 }}
       className="relative py-32 text-center"
     >
-      <p className="text-xs font-mono text-white/55 tracking-widest">
+      <p className="text-xs font-mono text-ink-2 tracking-widest">
         {t('d.title')}
       </p>
-      <p className="text-[10px] font-mono text-white/50 tracking-wider mt-2">
+      <p className="text-[10px] font-mono text-ink-2 tracking-wider mt-2">
         {t(hasDrafts ? 'common.noResults' : 'd.waitingIngestion')}
       </p>
     </motion.div>

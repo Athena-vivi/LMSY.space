@@ -149,7 +149,7 @@ export default function AdminMessagesPage() {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-serif text-3xl text-white/90 mb-2"
+            className="font-serif text-3xl text-ink mb-2"
           >
             Whispers Management
           </motion.h1>
@@ -157,7 +157,7 @@ export default function AdminMessagesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-sm text-white/75 font-light"
+            className="text-sm text-ink-2 font-light"
           >
             Review and approve visitor messages
           </motion.p>
@@ -176,7 +176,7 @@ export default function AdminMessagesPage() {
             }}
           >
             <Sparkles className="w-4 h-4 text-lmsy-yellow" />
-            <span className="text-white/70">
+            <span className="text-ink-2">
               Approve All ({pendingCount})
             </span>
           </motion.button>
@@ -193,7 +193,7 @@ export default function AdminMessagesPage() {
             'relative px-4 py-3 text-sm font-mono transition-colors',
             filter === 'pending'
               ? 'text-lmsy-yellow'
-              : 'text-white/65 hover:text-white/80'
+              : 'text-ink-2 hover:text-ink-2'
           )}
         >
           Pending
@@ -211,7 +211,7 @@ export default function AdminMessagesPage() {
             'px-4 py-3 text-sm font-mono transition-colors',
             filter === 'approved'
               ? 'text-lmsy-blue'
-              : 'text-white/65 hover:text-white/80'
+              : 'text-ink-2 hover:text-ink-2'
           )}
         >
           Approved
@@ -221,8 +221,8 @@ export default function AdminMessagesPage() {
           className={cn(
             'px-4 py-3 text-sm font-mono transition-colors',
             filter === 'all'
-              ? 'text-white/70'
-              : 'text-white/65 hover:text-white/80'
+              ? 'text-ink-2'
+              : 'text-ink-2 hover:text-ink-2'
           )}
         >
           All
@@ -234,12 +234,12 @@ export default function AdminMessagesPage() {
         {loading ? (
           <div className="text-center py-20">
             <div className="inline-block w-8 h-8 border-2 border-lmsy-yellow/30 border-t-lmsy-yellow rounded-full animate-spin" />
-            <p className="mt-4 text-sm text-white/65 font-mono">Loading messages...</p>
+            <p className="mt-4 text-sm text-ink-2 font-mono">Loading messages...</p>
           </div>
         ) : filteredMessages.length === 0 ? (
           <div className="text-center py-20">
-            <MessageSquare className="w-16 h-16 text-white/50 mx-auto mb-4" />
-            <p className="text-white/65 font-light italic">
+            <MessageSquare className="w-16 h-16 text-ink-2 mx-auto mb-4" />
+            <p className="text-ink-2 font-light italic">
               {filter === 'pending' ? 'No pending messages' : 'No messages yet'}
             </p>
           </div>
@@ -289,28 +289,28 @@ export default function AdminMessagesPage() {
 
               {/* Message Content */}
               <div className="pr-24">
-                <p className="font-serif text-lg text-white/80 leading-relaxed mb-4">
+                <p className="font-serif text-lg text-ink-2 leading-relaxed mb-4">
                   "{message.content}"
                 </p>
 
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-white/65">—</span>
-                    <span className="text-white/60">{message.author}</span>
+                    <span className="text-ink-2">—</span>
+                    <span className="text-ink-2">{message.author}</span>
                   </div>
                   {message.location && (
                     <>
-                      <span className="text-white/55">·</span>
-                      <span className="text-white/75 font-mono text-xs">
+                      <span className="text-ink-2">·</span>
+                      <span className="text-ink-2 font-mono text-xs">
                         {message.location}
                       </span>
                     </>
                   )}
-                  <span className="text-white/55">·</span>
-                  <span className="text-white/65 font-mono text-xs">
+                  <span className="text-ink-2">·</span>
+                  <span className="text-ink-2 font-mono text-xs">
                     {formatDate(message.created_at)}
                   </span>
-                  <span className="text-white/55">·</span>
+                  <span className="text-ink-2">·</span>
                   <span className={`text-xs font-mono ${
                     message.color_pref === 'yellow' ? 'text-lmsy-yellow/60' : 'text-lmsy-blue/60'
                   }`}>

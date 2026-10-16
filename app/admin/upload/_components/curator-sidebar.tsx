@@ -158,12 +158,12 @@ export default function CuratorSidebar({
     <div className="col-span-12 xl:col-span-2 space-y-4">
       {/* Group A: BASE_META */}
       <div className="space-y-3 pb-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-        <div className="text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+        <div className="text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
           Base Meta
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+          <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
             Event Date
           </label>
           <motion.div
@@ -187,8 +187,8 @@ export default function CuratorSidebar({
               onChange={(e) => onEventDateChange(e.target.value)}
               className={`w-full px-0 py-1.5 bg-transparent font-mono text-xs focus:outline-none border-b transition-colors [color-scheme:dark] ${
                 !eventDate
-                  ? 'text-white/65 placeholder:text-white/55'
-                  : 'text-white/70'
+                  ? 'text-ink-2 placeholder:text-ink-2'
+                  : 'text-ink-2'
               }`}
               style={{
                 borderColor: dateMismatchWarning
@@ -199,7 +199,7 @@ export default function CuratorSidebar({
             />
             {!eventDate && (
               <motion.div
-                className="absolute right-0 top-1/2 -translate-y-1/2 text-[8px] font-mono text-white/55 pointer-events-none"
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] font-mono text-ink-2 pointer-events-none"
                 animate={{
                   opacity: [0.3, 0.6, 0.3],
                 }}
@@ -217,7 +217,7 @@ export default function CuratorSidebar({
             <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-[8px] font-mono text-red-400/80 mt-1"
+              className="text-[10px] font-mono text-red-400/80 mt-1"
             >
               ⚠️ {dateMismatchWarning}
             </motion.div>
@@ -226,7 +226,7 @@ export default function CuratorSidebar({
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+            <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
               Project
             </label>
             <motion.button
@@ -241,7 +241,7 @@ export default function CuratorSidebar({
           <motion.select
             value={selectedProject || ''}
             onChange={(e) => onProjectChange(e.target.value || null)}
-            className="w-full px-0 py-1.5 bg-transparent text-white/70 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer"
+            className="w-full px-0 py-1.5 bg-transparent text-ink-2 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer"
             style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
             whileFocus={{ boxShadow: '0 0 10px rgba(56, 189, 248, 0.1)' }}
           >
@@ -255,13 +255,13 @@ export default function CuratorSidebar({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+          <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
             Member
           </label>
           <motion.select
             value={selectedMember || ''}
             onChange={(e) => onMemberChange(e.target.value || null)}
-            className="w-full px-0 py-1.5 bg-transparent text-white/70 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer"
+            className="w-full px-0 py-1.5 bg-transparent text-ink-2 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer"
             style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
             whileFocus={{ boxShadow: '0 0 10px rgba(56, 189, 248, 0.1)' }}
           >
@@ -284,14 +284,14 @@ export default function CuratorSidebar({
           onClick={onToggleBatchEditor}
           className="w-full flex items-center justify-between text-left"
         >
-          <div className="text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+          <div className="text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
             Archive Data
           </div>
           <motion.div
             animate={{ rotate: showBatchEditor ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
-            <svg className="w-3 h-3 text-white/55" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3 h-3 text-ink-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </motion.div>
@@ -306,7 +306,7 @@ export default function CuratorSidebar({
               className="space-y-3 pt-2"
             >
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-mono text-white/55 tracking-[0.2em] uppercase">
+                <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
                   Credits
                 </label>
                 <input
@@ -314,13 +314,13 @@ export default function CuratorSidebar({
                   value={batchCredits}
                   onChange={(e) => onBatchCreditsChange(e.target.value)}
                   placeholder="Source: X / Weibo / Official"
-                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/50"
+                  className="w-full px-0 py-1.5 bg-transparent text-ink-2 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.03)' }}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-mono text-white/55 tracking-[0.2em] uppercase">
+                <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
                   Catalog ID Override
                 </label>
                 <input
@@ -328,13 +328,13 @@ export default function CuratorSidebar({
                   value={batchCatalogId}
                   onChange={(e) => onBatchCatalogIdChange(e.target.value)}
                   placeholder="LMSY-G-20250109-001"
-                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/50"
+                  className="w-full px-0 py-1.5 bg-transparent text-ink-2 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.03)' }}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-mono text-white/55 tracking-[0.2em] uppercase">
+                <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
                   Magazine Issue
                 </label>
                 <input
@@ -342,7 +342,7 @@ export default function CuratorSidebar({
                   value={batchMagazineIssue}
                   onChange={(e) => onBatchMagazineIssueChange(e.target.value)}
                   placeholder="Publication name and issue number"
-                  className="w-full px-0 py-1.5 bg-transparent text-white/60 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-white/50"
+                  className="w-full px-0 py-1.5 bg-transparent text-ink-2 font-mono text-xs focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-ink-2"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.03)' }}
                 />
               </div>
@@ -354,10 +354,10 @@ export default function CuratorSidebar({
       {/* Group C: ARCHIVE_SPEC - Tags */}
       <div className="space-y-3 pb-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
         <div className="flex items-center justify-between">
-          <label className="text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+          <label className="text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
             Archive Spec
           </label>
-          <span className="text-[8px] font-mono" style={{ color: selectedTags.length >= MAX_TAGS ? 'rgba(239, 68, 68, 0.7)' : 'rgba(255, 255, 255, 0.2)' }}>
+          <span className="text-[10px] font-mono" style={{ color: selectedTags.length >= MAX_TAGS ? 'rgba(239, 68, 68, 0.7)' : 'rgba(255, 255, 255, 0.2)' }}>
             {selectedTags.length} / {MAX_TAGS}
           </span>
         </div>
@@ -381,7 +381,7 @@ export default function CuratorSidebar({
               {tag}
               <button
                 onClick={() => onRemoveTag(tag)}
-                className="hover:text-white/60 ml-0.5"
+                className="hover:text-ink-2 ml-0.5"
               >
                 <X className="h-2.5 w-2.5" strokeWidth={2} />
               </button>
@@ -396,13 +396,13 @@ export default function CuratorSidebar({
           onKeyDown={onTagInputKeyDown}
           placeholder={selectedTags.length >= MAX_TAGS ? "Maximum tags reached" : "+ Add tag"}
           disabled={selectedTags.length >= MAX_TAGS}
-          className="w-full px-0 py-1.5 bg-transparent text-white/75 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-full px-0 py-1.5 bg-transparent text-ink-2 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2 disabled:opacity-30 disabled:cursor-not-allowed"
           style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
         />
 
         {/* Curator's Favorite Tags */}
         <div className="pt-2">
-          <div className="text-[8px] font-mono text-white/50 tracking-wider uppercase mb-2">
+          <div className="text-[10px] font-mono text-ink-2 tracking-wider uppercase mb-2">
             Quick Add
           </div>
           <div className="flex flex-wrap gap-1">
@@ -414,7 +414,7 @@ export default function CuratorSidebar({
                   key={tag}
                   onClick={() => !isDisabled && onAddTag(tag)}
                   disabled={isDisabled}
-                  className={`px-2 py-0.5 rounded text-[8px] font-mono border transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all ${
                     isSelected
                       ? 'bg-white/10 cursor-default'
                       : isDisabled

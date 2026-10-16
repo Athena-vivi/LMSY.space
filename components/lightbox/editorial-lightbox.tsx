@@ -176,7 +176,7 @@ export default function EditorialLightbox({
                 transition={{ delay: 0.2 }}
                 className="absolute top-6 left-6 z-10"
               >
-                <span className="font-mono text-[10px] text-white/80 tracking-[0.2em] uppercase">
+                <span className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
                   {currentImage.catalog_id}
                 </span>
               </motion.div>
@@ -197,7 +197,7 @@ export default function EditorialLightbox({
               <svg className="w-3.5 h-3.5 text-lmsy-yellow/60 group-hover/btn:text-lmsy-yellow transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v4.5m0-4.5L15 15" />
               </svg>
-              <span className="font-mono text-[9px] text-lmsy-yellow/80 group-hover/btn:text-lmsy-yellow transition-colors tracking-[0.15em] uppercase">
+              <span className="font-mono text-[11px] text-lmsy-yellow/80 group-hover/btn:text-lmsy-yellow transition-colors tracking-[0.15em] uppercase">
                 VIEW_ORIGINAL_4K
               </span>
             </motion.a>
@@ -209,7 +209,7 @@ export default function EditorialLightbox({
               transition={{ delay: 0.2 }}
               className="absolute top-6 right-6 z-10"
             >
-              <span className="font-mono text-[10px] text-white/80 tracking-[0.2em]">
+              <span className="font-mono text-[10px] text-ink-2 tracking-[0.2em]">
                 {currentIndex + 1} / {images.length}
               </span>
             </motion.div>
@@ -220,7 +220,7 @@ export default function EditorialLightbox({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
               onClick={onClose}
-              className="absolute top-6 right-6 z-20 p-2 text-white/60 hover:text-white transition-colors"
+              className="absolute top-6 right-6 z-20 p-2 text-ink-2 hover:text-white transition-colors"
               style={{ marginTop: '24px' }}
             >
               <X className="w-6 h-6" />
@@ -235,7 +235,7 @@ export default function EditorialLightbox({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
                   onClick={handlePrevious}
-                  className="absolute left-4 md:left-8 z-10 p-3 text-white/80 hover:text-white transition-colors"
+                  className="absolute left-4 md:left-8 z-10 p-3 text-ink-2 hover:text-white transition-colors"
                 >
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -248,7 +248,7 @@ export default function EditorialLightbox({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
                   onClick={handleNext}
-                  className="absolute right-4 md:right-8 z-10 p-3 text-white/80 hover:text-white transition-colors"
+                  className="absolute right-4 md:right-8 z-10 p-3 text-ink-2 hover:text-white transition-colors"
                 >
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -265,7 +265,7 @@ export default function EditorialLightbox({
                 transition={{ delay: 0.3 }}
                 className="absolute bottom-8 left-0 right-0 z-10 text-center px-8"
               >
-                <p className="font-serif text-lg text-white/80 drop-shadow-lg">
+                <p className="font-serif text-lg text-ink-2 drop-shadow-lg">
                   {currentImage.caption}
                 </p>
               </motion.div>
@@ -281,19 +281,19 @@ export default function EditorialLightbox({
               <button
                 onClick={handleZoomOut}
                 disabled={zoom <= 1}
-                className="p-2 text-white/80 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                className="p-2 text-ink-2 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 12h-15" />
                 </svg>
               </button>
-              <span className="p-2 text-white/80 font-mono text-xs">
+              <span className="p-2 text-ink-2 font-mono text-xs">
                 {Math.round(zoom * 100)}%
               </span>
               <button
                 onClick={handleZoomIn}
                 disabled={zoom >= 5}
-                className="p-2 text-white/80 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                className="p-2 text-ink-2 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.5v15m7.5-7.5h-15" />
@@ -302,7 +302,7 @@ export default function EditorialLightbox({
               {zoom > 1 && (
                 <button
                   onClick={handleResetZoom}
-                  className="p-2 text-white/80 hover:text-white transition-colors"
+                  className="p-2 text-ink-2 hover:text-white transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -317,9 +317,9 @@ export default function EditorialLightbox({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1, duration: 0.5 }}
-                className="absolute bottom-8 left-8 z-10 text-white/70"
+                className="absolute bottom-8 left-8 z-10 text-ink-2"
               >
-                <p className="font-mono text-[9px] tracking-wider">
+                <p className="font-mono text-[10px] tracking-wider">
                   Scroll to zoom · Drag to pan · Arrows to navigate
                 </p>
               </motion.div>

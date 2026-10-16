@@ -138,10 +138,10 @@ export default function GalleryPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6 font-bold text-foreground tracking-tight">
+            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6 font-bold text-ink tracking-tight">
               {t(language, 'gallery.title')}
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
+            <p className="text-lg text-ink-2 max-w-2xl">
               {t(language, 'gallery.description')}
             </p>
           </motion.div>
@@ -163,8 +163,8 @@ export default function GalleryPage() {
                 onClick={() => setSelectedTag(tag.value)}
                 className={`px-6 py-2.5 text-sm font-medium transition-all duration-300 rounded-full border ${
                   selectedTag === tag.value
-                    ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-foreground border-transparent shadow-lg shadow-lmsy-yellow/20'
-                    : 'bg-muted text-muted-foreground border-border hover:border-lmsy-blue hover:text-lmsy-blue'
+                    ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-ink border-transparent shadow-lg shadow-lmsy-yellow/20'
+                    : 'bg-muted text-ink-2 border-border hover:border-lmsy-blue hover:text-lmsy-blue'
                 }`}
               >
                 #{t(language, tag.key as any)}
@@ -255,7 +255,7 @@ export default function GalleryPage() {
                         {/* 🏷️ Tag Badge - Top Left */}
                         {item.tag && (
                           <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <span className="px-3 py-1 text-xs font-medium bg-black/50 backdrop-blur-sm rounded-full text-white/90 border border-white/10">
+                            <span className="px-3 py-1 text-xs font-medium bg-black/50 backdrop-blur-sm rounded-full text-ink border border-white/10">
                               #{item.tag}
                             </span>
                           </div>
@@ -264,14 +264,14 @@ export default function GalleryPage() {
                         {/* 🔍 Zoom Icon - Top Right */}
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="bg-black/50 backdrop-blur-sm rounded-full p-2 border border-white/10">
-                            <ZoomIn className="h-4 w-4 text-white" />
+                            <ZoomIn className="h-4 w-4 text-ink" />
                           </div>
                         </div>
 
                         {/* 📝 Caption - Bottom */}
                         {getLocalizedText(item.caption_i18n, language, item.caption) && (
                           <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <p className="text-white font-serif text-sm line-clamp-2 drop-shadow-lg">
+                            <p className="text-ink font-serif text-sm line-clamp-2 drop-shadow-lg">
                               {getLocalizedText(item.caption_i18n, language, item.caption)}
                             </p>
                           </div>
@@ -289,7 +289,7 @@ export default function GalleryPage() {
                 <button
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="px-8 py-3 rounded-full text-sm font-medium border border-border bg-muted text-muted-foreground hover:border-lmsy-blue hover:text-lmsy-blue transition-colors disabled:opacity-60"
+                  className="px-8 py-3 rounded-full text-sm font-medium border border-border bg-muted text-ink-2 hover:border-lmsy-blue hover:text-lmsy-blue transition-colors disabled:opacity-60"
                 >
                   {loadingMore
                     ? language === 'zh'
@@ -336,10 +336,10 @@ export default function GalleryPage() {
                   </motion.div>
 
                   {/* Message */}
-                  <h3 className="font-serif text-2xl font-bold text-foreground mb-4">
+                  <h3 className="font-serif text-2xl font-bold text-ink mb-4">
                     {language === 'zh' ? '画廊建设中' : language === 'th' ? 'หอศิลป์กำลังสร้าง' : 'Gallery Under Construction'}
                   </h3>
-                  <p className="text-muted-foreground text-lg mb-6">
+                  <p className="text-ink-2 text-lg mb-6">
                     {language === 'zh'
                       ? '我们正在精心策划每一张照片，敬请期待...'
                       : language === 'th'

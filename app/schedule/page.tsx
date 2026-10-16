@@ -85,7 +85,7 @@ export default function SchedulePage() {
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6">
               {t(language, 'schedule.title')}
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
+            <p className="text-lg text-ink-2 max-w-2xl">
               {t(language, 'schedule.description')}
             </p>
           </motion.div>
@@ -110,7 +110,7 @@ export default function SchedulePage() {
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <p className="text-muted-foreground">{t(language, 'schedule.noEvents')}</p>
+              <p className="text-ink-2">{t(language, 'schedule.noEvents')}</p>
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
@@ -143,7 +143,7 @@ export default function SchedulePage() {
                             {event.title}
                           </h3>
 
-                          <div className="flex flex-wrap gap-x-6 gap-y-2 text-muted-foreground">
+                          <div className="flex flex-wrap gap-x-6 gap-y-2 text-ink-2">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4" />
                               <span className="text-sm">{formatDate(event.event_date, language)}</span>
@@ -203,7 +203,7 @@ export default function SchedulePage() {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-6 p-6 md:p-8">
                         {/* Date Badge */}
                         <div className="flex sm:flex-col items-center gap-4 sm:gap-1 min-w-[100px]">
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-sm bg-muted flex flex-col items-center justify-center text-muted-foreground">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-sm bg-muted flex flex-col items-center justify-center text-ink-2">
                             <span className="text-xl sm:text-2xl font-bold">
                               {new Date(event.event_date).getDate()}
                             </span>
@@ -219,7 +219,7 @@ export default function SchedulePage() {
                             {event.title}
                           </h3>
 
-                          <div className="flex flex-wrap gap-x-6 gap-y-2 text-muted-foreground">
+                          <div className="flex flex-wrap gap-x-6 gap-y-2 text-ink-2">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4" />
                               <span className="text-sm">{formatDate(event.event_date, language)}</span>

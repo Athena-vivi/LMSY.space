@@ -111,7 +111,7 @@ export const WhisperPortal = () => {
             whileHover={{ letterSpacing: '0.15em' }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
           >
-            <span className={`text-[10px] ${isDark ? 'text-white/70' : 'text-black/60'}`} style={{ fontFamily: 'var(--font-serif)' }}>
+            <span className={`text-[10px] ${isDark ? 'text-ink-2' : 'text-black/60'}`} style={{ fontFamily: 'var(--font-serif)' }}>
               The Whispering Gates
             </span>
           </motion.div>

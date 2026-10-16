@@ -41,7 +41,7 @@ export function AdminMobileNav() {
                 'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors',
                 isActive
                   ? 'text-lmsy-yellow'
-                  : 'text-white/75 hover:text-foreground'
+                  : 'text-ink-2 hover:text-foreground'
               )}
             >
               <Icon className="h-5 w-5" />

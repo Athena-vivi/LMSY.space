@@ -256,9 +256,9 @@ export function ChronicleView({ data, loading }: ChronicleViewProps) {
   if (data.events.length === 0) {
     return (
       <div className="rounded-lg border border-white/10 py-20 text-center">
-        <Calendar className="mx-auto mb-4 h-12 w-12 text-white/50" strokeWidth={1.5} />
-        <p className="text-sm text-white/75">No published Chronicle items yet.</p>
-        <p className="mt-2 text-xs font-mono text-white/55">Publish items from Draft Inbox first.</p>
+        <Calendar className="mx-auto mb-4 h-12 w-12 text-ink-2" strokeWidth={1.5} />
+        <p className="text-sm text-ink-2">No published Chronicle items yet.</p>
+        <p className="mt-2 text-xs font-mono text-ink-2">Publish items from Draft Inbox first.</p>
       </div>
     );
   }
@@ -270,7 +270,7 @@ export function ChronicleView({ data, loading }: ChronicleViewProps) {
         .map(([year, events]) => (
           <div key={year} className="space-y-4">
             <div className="flex items-center gap-4">
-              <h2 className="font-serif text-5xl font-light text-white/55">{year}</h2>
+              <h2 className="font-serif text-5xl font-light text-ink-2">{year}</h2>
               <div className="h-px flex-1 bg-gradient-to-r from-lmsy-yellow/30 to-transparent" />
             </div>
 
@@ -296,7 +296,7 @@ export function ChronicleView({ data, loading }: ChronicleViewProps) {
                             unoptimized
                           />
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-white/55">
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-ink-2">
                             NO_IMAGE
                           </div>
                         )}
@@ -306,23 +306,23 @@ export function ChronicleView({ data, loading }: ChronicleViewProps) {
                     <div className="min-w-0">
                       <div>
                         <div className="mb-2 flex items-center gap-3">
-                          <span className="text-[10px] font-mono text-white/65">
+                          <span className="text-[10px] font-mono text-ink-2">
                             {formatShortDate(event.event_date)}
                           </span>
                           <span className={`rounded border px-2 py-1 text-[10px] font-mono ${
                             event.chronicle_visible
                               ? 'border-lmsy-yellow/30 text-lmsy-yellow/80'
-                              : 'border-white/10 text-white/70'
+                              : 'border-white/10 text-ink-2'
                           }`}>
                             {event.chronicle_visible ? 'VISIBLE' : 'HIDDEN'}
                           </span>
                         </div>
-                        <h3 className="font-serif text-xl text-white/85">{event.title}</h3>
+                        <h3 className="font-serif text-xl text-ink">{event.title}</h3>
                         <div className="mt-4 flex flex-wrap gap-2">
                           <button
                             onClick={() => openEditModal(event)}
                             disabled={editingId === event.id}
-                            className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono text-white/80 transition-colors hover:border-lmsy-blue/30 hover:text-lmsy-blue/80 disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono text-ink-2 transition-colors hover:border-lmsy-blue/30 hover:text-lmsy-blue/80 disabled:opacity-50"
                           >
                             {editingId === event.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
@@ -334,7 +334,7 @@ export function ChronicleView({ data, loading }: ChronicleViewProps) {
                           <button
                             onClick={() => toggleVisibility(event)}
                             disabled={visibilityUpdatingId === event.id}
-                            className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono text-white/80 transition-colors hover:border-lmsy-yellow/30 hover:text-lmsy-yellow/80 disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono text-ink-2 transition-colors hover:border-lmsy-yellow/30 hover:text-lmsy-yellow/80 disabled:opacity-50"
                           >
                             {visibilityUpdatingId === event.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
@@ -348,14 +348,14 @@ export function ChronicleView({ data, loading }: ChronicleViewProps) {
 
                           <Link
                             href="/admin/drafts"
-                            className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono text-white/80 transition-colors hover:border-lmsy-blue/30 hover:text-lmsy-blue/80"
+                            className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono text-ink-2 transition-colors hover:border-lmsy-blue/30 hover:text-lmsy-blue/80"
                           >
                             <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
                             OPEN_DRAFTS
                           </Link>
                         </div>
                         {event.description && (
-                          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-white/75">
+                          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-2">
                             {event.description}
                           </p>
                         )}

@@ -17,18 +17,18 @@ export const platformIcons: Record<string, string> = {
 
 // Platform colors
 export const platformColors: Record<string, string> = {
-  twitter: 'text-white/60',
+  twitter: 'text-ink-2',
   instagram: 'text-pink-400/80',
   weibo: 'text-red-400/80',
   xiaohongshu: 'text-red-500/80',
   youtube: 'text-red-500/80',
-  tiktok: 'text-white/80',
-  manual: 'text-white/75',
+  tiktok: 'text-ink-2',
+  manual: 'text-ink-2',
 };
 
 // Status badges
 export const statusBadges: Record<string, { label: string; className: string }> = {
-  draft: { label: 'DRAFT', className: 'bg-white/10 border-white/20 text-white/60' },
+  draft: { label: 'DRAFT', className: 'bg-white/10 border-white/20 text-ink-2' },
   pending_review: { label: 'REVIEW', className: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400/90' },
   ready: { label: 'READY', className: 'bg-green-500/20 border-green-500/30 text-green-400/90' },
   published: { label: 'PUBLISHED', className: 'bg-blue-500/20 border-blue-500/30 text-blue-400/90' },
@@ -37,7 +37,7 @@ export const statusBadges: Record<string, { label: string; className: string }> 
 
 // Ingestion stage badges
 export const stageBadges: Record<string, { label: string; className: string }> = {
-  pending: { label: 'PENDING', className: 'bg-white/5 border-white/10 text-white/65' },
+  pending: { label: 'PENDING', className: 'bg-white/5 border-white/10 text-ink-2' },
   downloading: { label: 'DOWNLOADING', className: 'bg-blue-500/10 border-blue-500/20 text-blue-400/70' },
   uploading: { label: 'UPLOADING', className: 'bg-blue-500/10 border-blue-500/20 text-blue-400/70' },
   translating: { label: 'TRANSLATING', className: 'bg-purple-500/10 border-purple-500/20 text-purple-400/70' },

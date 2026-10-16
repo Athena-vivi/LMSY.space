@@ -95,7 +95,7 @@ export default function ImageLightbox({
               onClick={onClose}
               className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
             >
-              <X className="h-6 w-6 text-white/60" strokeWidth={1.5} />
+              <X className="h-6 w-6 text-ink-2" strokeWidth={1.5} />
             </button>
 
             {/* Navigation arrows */}
@@ -107,7 +107,7 @@ export default function ImageLightbox({
                 }}
                 className="absolute left-4 z-50 p-3 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
               >
-                <svg className="h-6 w-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-6 w-6 text-ink-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
@@ -121,7 +121,7 @@ export default function ImageLightbox({
                 }}
                 className="absolute right-4 z-50 p-3 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
               >
-                <svg className="h-6 w-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-6 w-6 text-ink-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -141,13 +141,13 @@ export default function ImageLightbox({
 
               {/* Image info overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent rounded-b-lg">
-                <div className="text-white/90 text-sm font-mono mb-1">
+                <div className="text-ink text-sm font-mono mb-1">
                   {String(lightboxIndex + 1).padStart(3, '0')} / {String(uploadItems.length).padStart(3, '0')}
                 </div>
                 <div className="text-lmsy-yellow/80 text-xs font-mono">
                   {getPreviewCatalogId(lightboxIndex)}
                 </div>
-                <div className="text-white/60 text-xs mt-1 truncate">
+                <div className="text-ink-2 text-xs mt-1 truncate">
                   {uploadItems[lightboxIndex].displayName}
                 </div>
               </div>

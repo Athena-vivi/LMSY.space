@@ -103,7 +103,7 @@ function ExhibitionCard({ exhibition, index }: { exhibition: Exhibition; index: 
               className="flex items-center gap-2"
             >
               <div className="h-px w-8 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue" />
-              <span className="text-xs md:text-sm font-mono text-foreground/70 tracking-wider">
+              <span className="text-xs md:text-sm font-mono text-ink-2 tracking-wider">
                 {exhibition.range}
               </span>
             </motion.div>
@@ -131,7 +131,7 @@ function ExhibitionCard({ exhibition, index }: { exhibition: Exhibition; index: 
                 className="overflow-hidden"
               >
                 <div className="backdrop-blur-sm bg-black/40 rounded-lg p-3 md:p-4 border border-lmsy-yellow/20">
-                  <p className="text-xs md:text-sm text-white/90 leading-relaxed font-light italic">
+                  <p className="text-xs md:text-sm text-ink leading-relaxed font-light italic">
                     {exhibition.curatorNote}
                   </p>
                 </div>
@@ -205,7 +205,7 @@ export default function ExhibitionsPage() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg md:text-xl text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-ink-2 font-light leading-relaxed max-w-2xl mx-auto">
               {t(language, 'exhibitions.subtitle')}
             </p>
 
@@ -243,7 +243,7 @@ export default function ExhibitionsPage() {
           >
             <div className="relative">
               <div className="absolute -top-4 -left-4 text-6xl text-lmsy-yellow/20 font-serif">"</div>
-              <blockquote className="text-lg md:text-xl text-foreground/80 leading-relaxed font-light italic">
+              <blockquote className="text-lg md:text-xl text-ink-2 leading-relaxed font-light italic">
                 Each exhibition is a constellation of moments, carefully curated to reveal the hidden narratives
                 within every frame. Here, we don't just display photographs—we orchestrate visual symphonies.
               </blockquote>
@@ -257,7 +257,7 @@ export default function ExhibitionsPage() {
               transition={{ delay: 0.3 }}
             >
               <div className="h-px w-12 bg-gradient-to-r from-transparent to-lmsy-yellow" />
-              <span className="text-sm text-muted-foreground tracking-widest">CURATOR</span>
+              <span className="text-sm text-ink-2 tracking-widest">CURATOR</span>
               <div className="h-px w-12 bg-gradient-to-l from-transparent to-lmsy-blue" />
             </motion.div>
           </motion.div>

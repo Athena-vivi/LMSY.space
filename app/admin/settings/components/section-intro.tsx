@@ -22,11 +22,11 @@ export function SectionIntro({
     >
       <div className="mb-4 flex items-center gap-3">
         <FileText className={`h-5 w-5 ${iconColor}`} />
-        <h2 className="font-serif text-2xl text-white/90">{title}</h2>
+        <h2 className="font-serif text-2xl text-ink">{title}</h2>
       </div>
-      <p className="text-sm text-white/75">
+      <p className="text-sm text-ink-2">
         {description}
-        <span className="mx-1 font-mono text-white/60">{blockKey}</span>.
+        <span className="mx-1 font-mono text-ink-2">{blockKey}</span>.
       </p>
     </motion.div>
   );

@@ -156,14 +156,14 @@ export default function QuickProjectModal({
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <div>
-                  <h2 className="text-lg font-serif text-white/90">New Orbit Project</h2>
-                  <p className="text-[10px] font-mono text-white/65 tracking-wider uppercase mt-0.5">
+                  <h2 className="text-lg font-serif text-ink">New Orbit Project</h2>
+                  <p className="text-[10px] font-mono text-ink-2 tracking-wider uppercase mt-0.5">
                     Quick Establishment
                   </p>
                 </div>
                 <motion.button
                   onClick={onClose}
-                  className="text-white/65 hover:text-white/60 transition-colors"
+                  className="text-ink-2 hover:text-ink-2 transition-colors"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -175,7 +175,7 @@ export default function QuickProjectModal({
               <form onSubmit={handleSubmit} className="p-6 space-y-5">
                 {/* Title */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
                     Title *
                   </label>
                   <input
@@ -183,7 +183,7 @@ export default function QuickProjectModal({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter project title..."
-                    className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55"
+                    className="w-full px-0 py-2 bg-transparent text-ink focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2"
                     style={{
                       borderColor: 'rgba(255, 255, 255, 0.1)',
                       fontFamily: 'var(--font-playfair), Georgia, serif',
@@ -195,7 +195,7 @@ export default function QuickProjectModal({
 
                 {/* Category */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
                     Category
                   </label>
                   <CategoryDropdown
@@ -207,7 +207,7 @@ export default function QuickProjectModal({
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-[8px] font-mono text-lmsy-yellow/60 tracking-wider"
+                    className="text-[10px] font-mono text-lmsy-yellow/60 tracking-wider"
                   >
                     Catalog Prefix: {CATEGORY_OPTIONS.find(opt => opt.value === category)?.prefix}
                   </motion.div>
@@ -215,14 +215,14 @@ export default function QuickProjectModal({
 
                 {/* Release Date */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
                     Release Date
                   </label>
                   <input
                     type="date"
                     value={releaseDate}
                     onChange={(e) => setReleaseDate(e.target.value)}
-                    className="w-full px-0 py-2 bg-transparent text-white/70 font-mono text-sm focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors [color-scheme:dark]"
+                    className="w-full px-0 py-2 bg-transparent text-ink-2 font-mono text-sm focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors [color-scheme:dark]"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   />
                 </div>

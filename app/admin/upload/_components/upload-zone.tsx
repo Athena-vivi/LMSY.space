@@ -33,12 +33,12 @@ export default function UploadZone({ onDrop, onFileInput }: UploadZoneProps) {
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
       />
       <div className="flex flex-col items-center justify-center gap-4 h-full">
-        <Upload className="h-8 w-8 text-white/55 group-hover:text-lmsy-yellow/60 transition-colors" strokeWidth={1.5} />
+        <Upload className="h-8 w-8 text-ink-2 group-hover:text-lmsy-yellow/60 transition-colors" strokeWidth={1.5} />
         <div className="text-center space-y-1">
-          <p className="text-sm font-light text-white/75">
+          <p className="text-sm font-light text-ink-2">
             {t('u.dropTitle')}
           </p>
-          <p className="text-xs text-white/65">
+          <p className="text-xs text-ink-2">
             {t('u.dropSub')}
           </p>
         </div>

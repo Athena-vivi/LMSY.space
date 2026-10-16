@@ -18,8 +18,8 @@ export function ThemeSwitcher() {
     return (
       <div className="flex items-center gap-3">
         <span className="text-xs font-sans tracking-wider text-lmsy-yellow font-bold">DAY</span>
-        <span className="text-muted-foreground/80 text-xs">/</span>
-        <span className="text-xs font-sans tracking-wider text-muted-foreground/60">SPACE</span>
+        <span className="text-ink-2 text-xs">/</span>
+        <span className="text-xs font-sans tracking-wider text-ink-2">SPACE</span>
       </div>
     );
   }
@@ -32,7 +32,7 @@ export function ThemeSwitcher() {
           relative text-xs font-sans tracking-wider transition-all duration-300
           ${theme === 'light'
             ? 'text-lmsy-yellow font-bold'
-            : 'text-muted-foreground/60 hover:text-foreground'
+            : 'text-ink-2 hover:text-foreground'
           }
         `}
         whileHover={{ y: -1 }}
@@ -48,14 +48,14 @@ export function ThemeSwitcher() {
           />
         )}
       </motion.button>
-      <span className="text-muted-foreground/80 text-xs">/</span>
+      <span className="text-ink-2 text-xs">/</span>
       <motion.button
         onClick={() => setTheme('dark')}
         className={`
           relative text-xs font-sans tracking-wider transition-all duration-300
           ${theme === 'dark'
             ? 'text-lmsy-blue font-bold'
-            : 'text-muted-foreground/60 hover:text-foreground'
+            : 'text-ink-2 hover:text-foreground'
           }
         `}
         whileHover={{ y: -1 }}

@@ -188,7 +188,7 @@ export default function EditorialPage() {
                 The Editorials
               </span>
             </h1>
-            <p className="font-mono text-xs text-white/80 tracking-[0.3em]">
+            <p className="font-mono text-xs text-ink-2 tracking-[0.3em]">
               MAGAZINE ARCHIVE COLLECTION
             </p>
           </motion.div>
@@ -276,7 +276,7 @@ export default function EditorialPage() {
       {/* Footer - Archive Metadata */}
       <footer className="relative z-10 border-t border-white/5 py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="font-mono text-[10px] text-white/70 tracking-[0.3em] uppercase">
+          <p className="font-mono text-[10px] text-ink-2 tracking-[0.3em] uppercase">
             LMSY.SPACE · EDITORIAL_ARCHIVE_VOL_001 · {`${magazines.length}`} ISSUES CURATED
           </p>
         </div>
@@ -329,7 +329,7 @@ function SkeletonSlot({ index }: { index: number }) {
                 ease: 'easeInOut',
               }}
             />
-            <p className="font-mono text-[8px] text-lmsy-yellow/30 tracking-[0.2em] uppercase">
+            <p className="font-mono text-[10px] text-lmsy-yellow/70 tracking-[0.2em] uppercase">
               Loading...
             </p>
           </div>
@@ -454,7 +454,7 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
                 <div className="w-6 h-6 rotate-45 border border-white/20" />
                 <div className="absolute inset-0 w-6 h-6 border border-white/10 rotate-45 scale-75" />
               </div>
-              <p className="font-mono text-[8px] text-white/70 tracking-[0.2em] uppercase text-center leading-relaxed">
+              <p className="font-mono text-[11px] text-ink-2 tracking-[0.2em] uppercase text-center leading-relaxed">
                 NO_COVER
               </p>
             </div>
@@ -467,7 +467,7 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
 
           {/* Artifact Count */}
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 rounded px-2 py-1">
-            <span className="font-mono text-[8px] text-white/70 tracking-[0.15em] uppercase">
+            <span className="font-mono text-[11px] text-ink-2 tracking-[0.15em] uppercase">
               {magazine.artifact_count} ARTIFACT{magazine.artifact_count !== 1 ? 'S' : ''}
             </span>
           </div>
@@ -478,7 +478,7 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
             initial={{ y: 10 }}
             whileHover={{ y: 0 }}
           >
-            <span className="font-mono text-[10px] text-white/80 tracking-[0.2em] uppercase">
+            <span className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
               View Issue →
             </span>
           </motion.div>
@@ -492,13 +492,13 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
           viewport={{ once: true }}
           transition={{ delay: index * 0.08 + 0.3 }}
         >
-          <span className="font-mono text-[9px] text-lmsy-yellow/80 tracking-wider">
+          <span className="font-mono text-[11px] text-lmsy-yellow/80 tracking-wider">
             #{catalogId}
           </span>
         </motion.div>
 
         <div className="absolute -bottom-3 -right-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-3 py-1.5">
-          <span className="font-mono text-[10px] text-white/70 tracking-wide uppercase">
+          <span className="font-mono text-[10px] text-ink-2 tracking-wide uppercase">
             {localizedTitle.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}
           </span>
         </div>

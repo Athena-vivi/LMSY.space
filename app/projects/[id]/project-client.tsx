@@ -51,7 +51,7 @@ export default function ProjectClient({ project }: ProjectClientProps) {
     },
     journal: {
       label: 'Journal',
-      className: 'text-white/80 border-white/10 bg-transparent backdrop-blur-sm',
+      className: 'text-ink-2 border-white/10 bg-transparent backdrop-blur-sm',
     },
     commercial: {
       label: 'Commercial',
@@ -116,7 +116,7 @@ export default function ProjectClient({ project }: ProjectClientProps) {
                 {categoryConfig[project.category]?.label || 'Uncategorized'}
               </motion.span>
               {project.release_date && (
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2 text-ink-2">
                   <Calendar className="w-4 h-4" />
                   <span className="text-sm">
                     {new Date(project.release_date).toLocaleDateString(
@@ -139,7 +139,7 @@ export default function ProjectClient({ project }: ProjectClientProps) {
           {project.description && (
             <motion.div variants={item} className="mb-12">
               <div className="prose prose-lg max-w-none">
-                <p className="text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
+                <p className="text-lg leading-relaxed text-ink-2 whitespace-pre-line">
                   {project.description}
                 </p>
               </div>
@@ -172,12 +172,12 @@ export default function ProjectClient({ project }: ProjectClientProps) {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
               <div>
-                <span className="text-muted-foreground">Category</span>
+                <span className="text-ink-2">Category</span>
                 <p className="font-medium mt-1">{categoryConfig[project.category]?.label || 'Uncategorized'}</p>
               </div>
               {project.release_date && (
                 <div>
-                  <span className="text-muted-foreground">Release Date</span>
+                  <span className="text-ink-2">Release Date</span>
                   <p className="font-medium mt-1">
                     {new Date(project.release_date).toLocaleDateString(
                       language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US',

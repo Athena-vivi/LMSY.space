@@ -76,7 +76,7 @@ export default function IngestionMonitor({
           animate={{ y: 0, opacity: 1 }}
           className="text-center mb-12"
         >
-          <h1 className="font-serif text-4xl md:text-6xl font-bold text-white/90 mb-4">
+          <h1 className="font-serif text-4xl md:text-6xl font-bold text-ink mb-4">
             {allComplete ? (
               <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
                 ARCHIVE_SYNC_SUCCESSFUL
@@ -84,13 +84,13 @@ export default function IngestionMonitor({
             ) : (
               <>
                 <span className="text-lmsy-yellow/80">SYNCHRONIZING</span>
-                <span className="text-white/80">_</span>
+                <span className="text-ink-2">_</span>
                 <span className="text-lmsy-blue/80">ORBIT</span>
                 <span className="animate-pulse">...</span>
               </>
             )}
           </h1>
-          <p className="font-mono text-xs text-white/65 tracking-[0.3em]">
+          <p className="font-mono text-xs text-ink-2 tracking-[0.3em]">
             INGESTION_MONITOR_v1.0 :: ABSOLUTE_TRANSPARENCY
           </p>
         </motion.div>
@@ -140,10 +140,10 @@ export default function IngestionMonitor({
                 animate={{ opacity: 1 }}
                 className="mt-4 text-center"
               >
-                <p className="font-mono text-sm text-white/60 break-all">
+                <p className="font-mono text-sm text-ink-2 break-all">
                   {currentItem.fileName}
                 </p>
-                <p className="font-mono text-xs text-white/65 mt-1">
+                <p className="font-mono text-xs text-ink-2 mt-1">
                   [{state.currentIndex + 1} / {state.total}]
                 </p>
               </motion.div>
@@ -157,7 +157,7 @@ export default function IngestionMonitor({
             transition={{ delay: 0.3 }}
             className="space-y-4"
           >
-            <h3 className="font-mono text-xs text-white/75 tracking-[0.2em] uppercase mb-6">
+            <h3 className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase mb-6">
               Lifecycle_Checklist
             </h3>
 
@@ -201,12 +201,12 @@ export default function IngestionMonitor({
                     {/* Label */}
                     <div className="flex-1">
                       <p className={`font-mono text-sm ${
-                        isActive ? 'text-lmsy-yellow/80' : isComplete || (currentItem?.status === 'db_register' && step.key !== 'db_register') ? 'text-lmsy-blue/60' : 'text-white/75'
+                        isActive ? 'text-lmsy-yellow/80' : isComplete || (currentItem?.status === 'db_register' && step.key !== 'db_register') ? 'text-lmsy-blue/60' : 'text-ink-2'
                       }`}>
                         {step.label}
                       </p>
                       {isActive && currentItem?.currentStep && (
-                        <p className="font-mono text-xs text-white/65 mt-1">
+                        <p className="font-mono text-xs text-ink-2 mt-1">
                           {currentItem.currentStep}
                         </p>
                       )}
@@ -278,7 +278,7 @@ export default function IngestionMonitor({
 
           {/* Progress Text */}
           <div className="text-center mt-4">
-            <p className="font-mono text-xs text-white/75">
+            <p className="font-mono text-xs text-ink-2">
               {state.completed} / {state.total} ARTIFACTS{' '}
               <span className="text-lmsy-yellow/60">
                 {progress.toFixed(0)}%
@@ -300,7 +300,7 @@ export default function IngestionMonitor({
               onClick={onClose}
               className="px-8 py-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
             >
-              <span className="font-mono text-sm text-white/60">
+              <span className="font-mono text-sm text-ink-2">
                 [ CLOSE ]
               </span>
             </button>

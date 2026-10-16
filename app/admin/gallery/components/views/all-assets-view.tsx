@@ -342,10 +342,10 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center space-y-2">
-                <p className="text-xs font-mono text-white/55 tracking-widest">
+                <p className="text-xs font-mono text-ink-2 tracking-widest">
                   {projectFiltered ? 'NO_ASSETS_FOR_THIS_PROJECT' : 'VAULT_EMPTY'}
                 </p>
-                <p className="text-[10px] font-mono text-white/50 tracking-wider">
+                <p className="text-[10px] font-mono text-ink-2 tracking-wider">
                   {projectFiltered ? 'CLEAR_FILTER_TO_VIEW_ALL_ASSETS' : 'WAITING_FOR_SYNC'}
                 </p>
               </div>
@@ -404,7 +404,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                     </div>
                   ) : (
                     <div className="w-full h-48 flex items-center justify-center bg-white/5">
-                      <span className="text-white/55 text-xs">No URL</span>
+                      <span className="text-ink-2 text-xs">No URL</span>
                     </div>
                   )}
 
@@ -428,7 +428,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
 
                     <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
                       {getLocalizedText(item.caption_i18n, 'en', item.caption) && (
-                        <p className="text-white/90 text-xs font-light line-clamp-2 leading-relaxed">
+                        <p className="text-ink text-xs font-light line-clamp-2 leading-relaxed">
                           {getLocalizedText(item.caption_i18n, 'en', item.caption)}
                         </p>
                       )}
@@ -436,7 +436,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleOpenEdit(item)}
-                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-white/60 text-[10px] font-mono hover:bg-white/15 hover:text-white/80 transition-all"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-ink-2 text-[10px] font-mono hover:bg-white/15 hover:text-ink-2 transition-all"
                         >
                           <Edit2 className="h-3 w-3" strokeWidth={2} />
                           <span>EDIT</span>
@@ -454,7 +454,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
 
                   {item.catalog_id && (
                     <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[9px] font-mono text-white/65 tracking-wider">
+                      <span className="text-[10px] font-mono text-ink-2 tracking-wider">
                         {item.catalog_id}
                       </span>
                     </div>
@@ -505,7 +505,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
             onClick={() => {
               setSelectedIds(new Set());
             }}
-            className="p-1.5 text-white/75 hover:text-white/60 transition-all"
+            className="p-1.5 text-ink-2 hover:text-ink-2 transition-all"
           >
             ✕
           </button>
@@ -530,17 +530,17 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
               <div className="bg-black border border-white/20 rounded-lg p-6 max-w-md w-full">
-                <h2 className="font-serif text-xl text-white/90 mb-2">
+                <h2 className="font-serif text-xl text-ink mb-2">
                   LINK_TO_PROJECT
                 </h2>
-                <p className="text-xs font-mono text-white/75 mb-4">
+                <p className="text-xs font-mono text-ink-2 mb-4">
                   SELECT_TARGET_PROJECT_FOR_{selectedIds.size}_ITEMS
                 </p>
 
                 <select
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full px-4 py-3 bg-black border border-white/20 text-white/80 text-sm font-mono focus:outline-none focus:border-lmsy-yellow/40 mb-4"
+                  className="w-full px-4 py-3 bg-black border border-white/20 text-ink-2 text-sm font-mono focus:outline-none focus:border-lmsy-yellow/40 mb-4"
                 >
                   <option value="">SELECT_PROJECT...</option>
                   {projectsList.map(project => (
@@ -554,7 +554,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                   <button
                     onClick={() => setShowTransferModal(false)}
                     disabled={transferring}
-                    className="flex-1 px-4 py-2 border border-white/20 text-white/60 text-xs font-mono hover:bg-white/5 transition-all disabled:opacity-50"
+                    className="flex-1 px-4 py-2 border border-white/20 text-ink-2 text-xs font-mono hover:bg-white/5 transition-all disabled:opacity-50"
                   >
                     CANCEL
                   </button>
@@ -591,14 +591,14 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
               <div className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
                 <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
                   <div>
-                    <h2 className="text-lg font-serif text-white/90">Edit Asset Copy</h2>
-                    <p className="text-[10px] font-mono tracking-wider text-white/70">
+                    <h2 className="text-lg font-serif text-ink">Edit Asset Copy</h2>
+                    <p className="text-[10px] font-mono tracking-wider text-ink-2">
                       TITLE / CAPTION / EXCERPT · EN / ZH / TH
                     </p>
                   </div>
                   <button
                     onClick={() => setEditingAsset(null)}
-                    className="rounded-full border border-white/10 p-2 text-white/75 transition hover:border-white/20 hover:text-white/70"
+                    className="rounded-full border border-white/10 p-2 text-ink-2 transition hover:border-white/20 hover:text-ink-2"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -618,12 +618,12 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                             unoptimized
                           />
                         ) : (
-                          <div className="flex min-h-[18rem] items-center justify-center text-xs font-mono tracking-wider text-white/60">
+                          <div className="flex min-h-[18rem] items-center justify-center text-xs font-mono tracking-wider text-ink-2">
                             NO_IMAGE_URL
                           </div>
                         )}
                       </div>
-                      <div className="space-y-2 text-[11px] font-mono tracking-wider text-white/70">
+                      <div className="space-y-2 text-[11px] font-mono tracking-wider text-ink-2">
                         <div>CATALOG {editingAsset.catalog_id || 'UNSET'}</div>
                         <div>TAG {editingAsset.tag || 'UNSET'}</div>
                         <div>PROJECT {editingAsset.project_id || 'UNLINKED'}</div>
@@ -653,7 +653,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
 
                     {(['title', 'caption', 'excerpt'] as const).map((field) => (
                       <div key={field} className="space-y-3">
-                        <div className="text-xs font-mono uppercase tracking-[0.24em] text-white/65">
+                        <div className="text-xs font-mono uppercase tracking-[0.24em] text-ink-2">
                           {field}
                         </div>
                         <div className="grid gap-3 md:grid-cols-3">
@@ -661,7 +661,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                             const key = `${field}_${lang}` as keyof typeof assetForm;
                             return (
                               <div key={key} className="space-y-2">
-                                <label className="text-[10px] font-mono uppercase tracking-[0.24em] text-white/60">
+                                <label className="text-[10px] font-mono uppercase tracking-[0.24em] text-ink-2">
                                   {lang}
                                 </label>
                                 {field === 'excerpt' ? (
@@ -669,14 +669,14 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                                     value={assetForm[key]}
                                     onChange={(e) => setAssetForm(prev => ({ ...prev, [key]: e.target.value }))}
                                     rows={4}
-                                    className="custom-scrollbar min-h-[104px] w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-white/88 outline-none transition focus:border-lmsy-yellow/35"
+                                    className="custom-scrollbar min-h-[104px] w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-ink outline-none transition focus:border-lmsy-yellow/35"
                                   />
                                 ) : (
                                   <input
                                     type="text"
                                     value={assetForm[key]}
                                     onChange={(e) => setAssetForm(prev => ({ ...prev, [key]: e.target.value }))}
-                                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-white/88 outline-none transition focus:border-lmsy-yellow/35"
+                                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm text-ink outline-none transition focus:border-lmsy-yellow/35"
                                   />
                                 )}
                               </div>
@@ -690,7 +690,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                       <button
                         onClick={() => setEditingAsset(null)}
                         disabled={savingAsset}
-                        className="rounded-xl border border-white/10 px-4 py-2 text-xs font-mono tracking-wider text-white/80 transition hover:border-white/20 hover:text-white/75"
+                        className="rounded-xl border border-white/10 px-4 py-2 text-xs font-mono tracking-wider text-ink-2 transition hover:border-white/20 hover:text-ink-2"
                       >
                         CANCEL
                       </button>

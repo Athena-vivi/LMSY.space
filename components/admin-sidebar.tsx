@@ -130,7 +130,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
           )}
           <button
             onClick={onToggle}
-            className="rounded-lg p-1.5 hover:bg-white/5 transition-colors flex-shrink-0 text-white/75 hover:text-white/60"
+            className="rounded-lg p-1.5 hover:bg-white/5 transition-colors flex-shrink-0 text-ink-2 hover:text-ink-2"
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
@@ -147,7 +147,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
           <div className={cn('flex', isCollapsed ? 'justify-center' : 'justify-start px-3')}>
             <button
               onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-              className="rounded-md border border-white/15 px-2.5 py-1 text-[12px] font-medium text-white/75 hover:text-white hover:border-white/30 transition-colors"
+              className="rounded-md border border-white/15 px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:text-white hover:border-white/30 transition-colors"
               title={lang === 'zh' ? 'Switch to English' : '切换到中文'}
             >
               {t('nav.langSwitch')}
@@ -161,7 +161,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                   animate={{ opacity: 1 }}
                   className="px-3 mb-2"
                 >
-                  <h3 className="text-[10px] font-medium text-white/65 uppercase tracking-widest">
+                  <h3 className="text-[10px] font-medium text-ink-2 uppercase tracking-widest">
                     {t(section.title)}
                   </h3>
                 </motion.div>
@@ -178,8 +178,8 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 relative overflow-hidden group',
                         isActive
-                          ? 'text-white/90 font-medium'
-                          : 'text-white/75 hover:text-white/70'
+                          ? 'text-ink font-medium'
+                          : 'text-ink-2 hover:text-ink-2'
                       )}
                     >
                       {/* Glow effect for active item */}
@@ -237,8 +237,8 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
             className={cn(
               'flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 relative overflow-hidden group',
               pathname?.startsWith('/admin/settings')
-                ? 'text-white/90 font-medium'
-                : 'text-white/75 hover:text-white/70'
+                ? 'text-ink font-medium'
+                : 'text-ink-2 hover:text-ink-2'
             )}
           >
             {pathname?.startsWith('/admin/settings') && (
@@ -275,7 +275,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
           <button
             onClick={signOut}
             className={cn(
-              'w-full flex items-center gap-3 rounded-lg px-3 py-2 text-white/65 hover:text-red-400/80 hover:bg-red-500/5 transition-all duration-200',
+              'w-full flex items-center gap-3 rounded-lg px-3 py-2 text-ink-2 hover:text-red-400/80 hover:bg-red-500/5 transition-all duration-200',
               isCollapsed && 'justify-center px-2'
             )}
             aria-label="Sign out"
@@ -314,7 +314,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
         </div>
         <Link
           href="/"
-          className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/75"
+          className="p-2 rounded-lg hover:bg-white/5 transition-colors text-ink-2"
           aria-label="Exit admin"
         >
           <X className="h-4 w-4" strokeWidth={1.5} />

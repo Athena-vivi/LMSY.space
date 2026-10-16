@@ -12,7 +12,7 @@ export default function Loading() {
           className="h-10 w-10 rounded-full border-2 border-white/15 border-t-lmsy-yellow animate-spin"
           aria-hidden="true"
         />
-        <p className="text-sm text-muted-foreground font-mono tracking-widest uppercase">
+        <p className="text-sm text-ink-2 font-mono tracking-widest uppercase">
           Loading archive
         </p>
       </div>

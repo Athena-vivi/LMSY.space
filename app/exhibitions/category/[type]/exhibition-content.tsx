@@ -99,10 +99,10 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
             >
               {mapping.title}
             </motion.h1>
-            <p className="text-lg md:text-xl text-white/60 max-w-2xl">
+            <p className="text-lg md:text-xl text-ink-2 max-w-2xl">
               {mapping.description}
             </p>
-            <div className="mt-8 flex items-center gap-4 text-sm text-white/80">
+            <div className="mt-8 flex items-center gap-4 text-sm text-ink-2">
               <span>{projects.length} Projects</span>
               <span>•</span>
               <span>{allImages.length} Images</span>
@@ -171,7 +171,7 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
                       <div className="absolute inset-0 p-6 flex flex-col justify-end">
                         {/* Category Badge */}
                         <div className="mb-3">
-                          <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-[10px] font-mono tracking-wider uppercase text-white/80 border border-white/20">
+                          <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-[10px] font-mono tracking-wider uppercase text-ink-2 border border-white/20">
                             {project.category}
                           </span>
                         </div>
@@ -183,7 +183,7 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
 
                         {/* 🕐 Time Period Display */}
                         {(project.start_date || project.release_date) && (
-                          <p className="text-white/70 text-xs md:text-sm">
+                          <p className="text-ink-2 text-xs md:text-sm">
                             {formatTimePeriod(project)}
                           </p>
                         )}
@@ -194,7 +194,7 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
                             {project.tags.slice(0, 3).map((tag: string) => (
                               <span
                                 key={tag}
-                                className="text-[10px] text-white/80 font-mono"
+                                className="text-[10px] text-ink-2 font-mono"
                               >
                                 #{tag}
                               </span>
@@ -229,7 +229,7 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
             </div>
           ) : (
             <div className="text-center py-24">
-              <p className="text-white/80 text-lg">No projects found in this category yet.</p>
+              <p className="text-ink-2 text-lg">No projects found in this category yet.</p>
               <Link
                 href="/"
                 className="inline-block mt-6 text-lmsy-yellow hover:text-lmsy-blue transition-colors"

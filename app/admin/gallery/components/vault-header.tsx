@@ -24,10 +24,10 @@ export function VaultHeader({ activeTab }: VaultHeaderProps) {
       transition={{ duration: 0.2 }}
       className="space-y-1"
     >
-      <h1 className="font-serif text-3xl md:text-4xl font-light text-white/90 tracking-tight">
+      <h1 className="font-serif text-3xl md:text-4xl font-light text-ink tracking-tight">
         {title}
       </h1>
-      <p className="text-xs font-mono text-white/65 tracking-wider">
+      <p className="text-xs font-mono text-ink-2 tracking-wider">
         {subtitle}
       </p>
     </motion.div>

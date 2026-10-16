@@ -63,7 +63,7 @@ export function BackButton() {
           transition={{ duration: 0.3, ease: 'easeOut' }}
         >
           <span
-            className="font-serif text-[9px] tracking-[0.35em] uppercase text-white/80"
+            className="font-serif text-[11px] tracking-[0.2em] uppercase text-ink-2"
             style={{
               fontFamily: 'Playfair Display, serif',
             }}

@@ -120,7 +120,7 @@ export default function ProfilesPage() {
               initial={{ opacity: 0, letterSpacing: '0.5em' }}
               animate={{ opacity: 1, letterSpacing: 'normal' }}
               transition={{ duration: 1.2, delay: 0.5 }}
-              className="text-xs md:text-sm font-mono text-white/80 tracking-[0.3em] uppercase mb-6"
+              className="text-xs md:text-sm font-mono text-ink-2 tracking-[0.3em] uppercase mb-6"
             >
               The Resonance
             </motion.p>
@@ -133,7 +133,7 @@ export default function ProfilesPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 0.8 }}
-              className="text-lg md:text-xl text-white/60 font-light leading-relaxed mb-12"
+              className="text-lg md:text-xl text-ink-2 font-light leading-relaxed mb-12"
             >
               {language === 'th'
                 ? 'สองลึกถึงเส้นที่เชื่อมโยงระหว่างสองหัวใจ'
@@ -147,7 +147,7 @@ export default function ProfilesPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 1.2 }}
-              className="flex items-center justify-center gap-2 text-white/80 text-xs font-mono tracking-wider"
+              className="flex items-center justify-center gap-2 text-ink-2 text-xs font-mono tracking-wider"
             >
               <span>SCROLL</span>
               <motion.div
@@ -181,7 +181,7 @@ export default function ProfilesPage() {
                 className="relative mb-8 pl-8"
               >
                 <Quote className="absolute left-0 top-0 h-8 w-8 text-lmsy-yellow/40" strokeWidth={1} />
-                <blockquote className="font-serif text-2xl md:text-3xl text-white/90 leading-relaxed italic pl-8">
+                <blockquote className="font-serif text-2xl md:text-3xl text-ink leading-relaxed italic pl-8">
                   "{quotes.lookmhee[0].text}"
                 </blockquote>
                 <p className="text-xs font-mono text-lmsy-yellow/60 tracking-wider uppercase mt-4 pl-8">
@@ -215,7 +215,7 @@ export default function ProfilesPage() {
                   </div>
 
                   <div className="mt-6 text-center">
-                    <h3 className="font-serif text-3xl md:text-4xl font-bold text-white/90 mb-2">
+                    <h3 className="font-serif text-3xl md:text-4xl font-bold text-ink mb-2">
                       LOOKMHEE
                     </h3>
                     <p className="text-sm text-lmsy-yellow/60 font-mono tracking-wider uppercase">
@@ -245,7 +245,7 @@ export default function ProfilesPage() {
                 className="relative mb-8 pr-8 text-right"
               >
                 <Quote className="absolute right-0 top-0 h-8 w-8 text-lmsy-blue/40" strokeWidth={1} />
-                <blockquote className="font-serif text-2xl md:text-3xl text-white/90 leading-relaxed italic pr-8">
+                <blockquote className="font-serif text-2xl md:text-3xl text-ink leading-relaxed italic pr-8">
                   "{quotes.sonya[0].text}"
                 </blockquote>
                 <p className="text-xs font-mono text-lmsy-blue/60 tracking-wider uppercase mt-4 pr-8">
@@ -279,7 +279,7 @@ export default function ProfilesPage() {
                   </div>
 
                   <div className="mt-6 text-center">
-                    <h3 className="font-serif text-3xl md:text-4xl font-bold text-white/90 mb-2">
+                    <h3 className="font-serif text-3xl md:text-4xl font-bold text-ink mb-2">
                       SONYA
                     </h3>
                     <p className="text-sm text-lmsy-blue/60 font-mono tracking-wider uppercase">
@@ -303,10 +303,10 @@ export default function ProfilesPage() {
             viewport={{ once: true }}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <h2 className="font-serif text-4xl md:text-5xl font-light text-white/90 mb-6">
+            <h2 className="font-serif text-4xl md:text-5xl font-light text-ink mb-6">
               The Unspoken Language
             </h2>
-            <p className="text-white/60 leading-relaxed">
+            <p className="text-ink-2 leading-relaxed">
               {language === 'th'
                 ? 'ภาษาที่ไม่ต้องพูด ก็เข้าใจกัน'
                 : language === 'zh'
@@ -331,10 +331,10 @@ export default function ProfilesPage() {
               >
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <p className="text-white/70 text-xs font-mono tracking-wider">
+                    <p className="text-ink-2 text-xs font-mono tracking-wider">
                       4K GIF PLACEHOLDER
                     </p>
-                    <p className="text-white/70 text-[10px] mt-2">
+                    <p className="text-ink-2 text-[10px] mt-2">
                       Moment #{item}
                     </p>
                   </div>

@@ -42,9 +42,9 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
   if (data.projects.length === 0) {
     return (
       <div className="rounded-lg border border-white/10 py-20 text-center">
-        <FileText className="mx-auto mb-4 h-12 w-12 text-white/50" strokeWidth={1.5} />
-        <p className="text-sm text-white/75">No editorial projects found.</p>
-        <p className="mt-2 text-xs font-mono text-white/55">
+        <FileText className="mx-auto mb-4 h-12 w-12 text-ink-2" strokeWidth={1.5} />
+        <p className="text-sm text-ink-2">No editorial projects found.</p>
+        <p className="mt-2 text-xs font-mono text-ink-2">
           Create or tag editorial projects to manage them here.
         </p>
       </div>
@@ -75,7 +75,7 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
                     unoptimized
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-white/55">
+                  <div className="flex h-full w-full items-center justify-center text-ink-2">
                     <FileText className="h-8 w-8" strokeWidth={1.5} />
                   </div>
                 )}
@@ -88,19 +88,19 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
                       <div className="mb-2 inline-flex rounded border border-lmsy-blue/30 bg-lmsy-blue/10 px-2 py-1 text-[10px] font-mono tracking-[0.16em] text-lmsy-blue/80">
                         {project.category.toUpperCase()}
                       </div>
-                      <h3 className="font-serif text-xl text-white/90">
+                      <h3 className="font-serif text-xl text-ink">
                         {project.title}
                       </h3>
                     </div>
                   </div>
 
                   {project.description && (
-                    <p className="line-clamp-3 text-sm leading-relaxed text-white/80">
+                    <p className="line-clamp-3 text-sm leading-relaxed text-ink-2">
                       {project.description}
                     </p>
                   )}
 
-                  <div className="space-y-2 text-[11px] font-mono tracking-wider text-white/70">
+                  <div className="space-y-2 text-[11px] font-mono tracking-wider text-ink-2">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />
                       <span>{formatReleaseDate(project.release_date)}</span>
@@ -112,7 +112,7 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
                 <div className="mt-5 flex flex-wrap gap-2">
                   <Link
                     href={`/admin/projects/${project.id}/curate`}
-                    className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono tracking-wider text-white/80 transition-colors hover:border-lmsy-yellow/30 hover:text-lmsy-yellow/80"
+                    className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono tracking-wider text-ink-2 transition-colors hover:border-lmsy-yellow/30 hover:text-lmsy-yellow/80"
                   >
                     <FolderOpen className="h-3.5 w-3.5" strokeWidth={1.5} />
                     CURATE
@@ -121,7 +121,7 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
                     href={`/projects/${project.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono tracking-wider text-white/80 transition-colors hover:border-lmsy-blue/30 hover:text-lmsy-blue/80"
+                    className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono tracking-wider text-ink-2 transition-colors hover:border-lmsy-blue/30 hover:text-lmsy-blue/80"
                   >
                     <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
                     OPEN_LIVE

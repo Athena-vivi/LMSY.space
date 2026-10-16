@@ -167,7 +167,7 @@ export default function ResonancePage() {
               initial={{ opacity: 0, letterSpacing: '0.5em' }}
               animate={{ opacity: 1, letterSpacing: 'normal' }}
               transition={{ duration: 1.2, delay: 0.3 }}
-              className="text-xs md:text-sm font-mono text-white/70 tracking-[0.3em] uppercase mb-6"
+              className="text-xs md:text-sm font-mono text-ink-2 tracking-[0.3em] uppercase mb-6"
             >
               The Soundscape Archive
             </motion.p>
@@ -181,11 +181,11 @@ export default function ResonancePage() {
                 transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: 'linear' }}
               />
               <h1 className="font-serif text-6xl md:text-8xl font-light mb-8 tracking-[0.2em]" style={{ letterSpacing: '0.15em' }}>
-                <span className="block text-white/90 relative z-10">RESONANCE</span>
+                <span className="block text-ink relative z-10">RESONANCE</span>
               </h1>
             </div>
 
-            <p className="text-lg md:text-xl text-white/70 font-light leading-relaxed max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-ink-2 font-light leading-relaxed max-w-2xl mx-auto">
               {language === 'th'
                 ? 'เพลงไม่ได้ถูกสร้างมาเพื่อฟัง แต่เพื่อสั่นไหวไปด้วยกัน'
                 : language === 'zh'
@@ -217,7 +217,7 @@ export default function ResonancePage() {
                     setSelectedTrack(null);
                     setWaveSpeed(1);
                   }}
-                  className="mb-8 inline-flex items-center gap-3 text-white/70 hover:text-white/80 text-sm font-mono tracking-wider transition-colors group"
+                  className="mb-8 inline-flex items-center gap-3 text-ink-2 hover:text-ink-2 text-sm font-mono tracking-wider transition-colors group"
                 >
                   <motion.span
                     animate={{ x: [0, -4, 0] }}
@@ -287,7 +287,7 @@ export default function ResonancePage() {
                               />
                             </motion.div>
                           </div>
-                          <p className="text-white/70 font-mono text-xs tracking-widest">
+                          <p className="text-ink-2 font-mono text-xs tracking-widest">
                             ALBUM_ART_PLACEHOLDER
                           </p>
                         </div>
@@ -304,15 +304,15 @@ export default function ResonancePage() {
                   >
                     {/* Title with metadata */}
                     <div>
-                      <h2 className="font-serif text-5xl md:text-6xl text-white/90 mb-4">
+                      <h2 className="font-serif text-5xl md:text-6xl text-ink mb-4">
                         {selectedTrack.title}
                       </h2>
-                      <p className="text-xl text-white/70 font-light mb-6">
+                      <p className="text-xl text-ink-2 font-light mb-6">
                         {selectedTrack.subtitle}
                       </p>
 
                       {/* Professional Archive Metadata */}
-                      <div className="flex items-center gap-6 text-xs font-mono text-white/70 tracking-wider">
+                      <div className="flex items-center gap-6 text-xs font-mono text-ink-2 tracking-wider">
                         <span>DURATION: {selectedTrack.duration}</span>
                         <span>•</span>
                         <span>BPM: {selectedTrack.bpm}</span>
@@ -352,12 +352,12 @@ export default function ResonancePage() {
                             />
                           </div>
                           <div>
-                            <p className="text-white/80 font-mono text-xs">NOW PLAYING</p>
-                            <p className="text-white/80 text-sm">{selectedTrack.title}</p>
+                            <p className="text-ink-2 font-mono text-xs">NOW PLAYING</p>
+                            <p className="text-ink-2 text-sm">{selectedTrack.title}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-white/70 font-mono text-xs">{selectedTrack.duration}</p>
+                          <p className="text-ink-2 font-mono text-xs">{selectedTrack.duration}</p>
                         </div>
                       </div>
                       {/* Progress Bar */}
@@ -449,7 +449,7 @@ export default function ResonancePage() {
                                 />
                               </motion.div>
                             </div>
-                            <p className="text-white/70 text-xs font-mono tracking-widest mb-2">
+                            <p className="text-ink-2 text-xs font-mono tracking-widest mb-2">
                               COVER_ART
                             </p>
                           </div>
@@ -458,27 +458,27 @@ export default function ResonancePage() {
                         {/* Track info overlay */}
                         <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
                           <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                            <h3 className="font-serif text-2xl text-white/90 mb-2 tracking-tight">
+                            <h3 className="font-serif text-2xl text-ink mb-2 tracking-tight">
                               {track.title}
                             </h3>
-                            <p className="text-sm text-white/70 mb-4">
+                            <p className="text-sm text-ink-2 mb-4">
                               {track.subtitle}
                             </p>
 
                             {/* Professional metadata */}
                             <div className="space-y-2">
-                              <div className="flex items-center justify-between text-xs font-mono text-white/70">
+                              <div className="flex items-center justify-between text-xs font-mono text-ink-2">
                                 <span>DURATION</span>
-                                <span className="text-white/80">{track.duration}</span>
+                                <span className="text-ink-2">{track.duration}</span>
                               </div>
-                              <div className="flex items-center justify-between text-xs font-mono text-white/70">
+                              <div className="flex items-center justify-between text-xs font-mono text-ink-2">
                                 <span>BPM</span>
-                                <span className="text-white/80">{track.bpm}</span>
+                                <span className="text-ink-2">{track.bpm}</span>
                               </div>
                               <div className="h-px bg-white/5" />
-                              <div className="flex items-center justify-between text-xs font-mono text-white/70">
+                              <div className="flex items-center justify-between text-xs font-mono text-ink-2">
                                 <span>VOCALS</span>
-                                <span className="text-white/80">{track.vocals.join(' + ')}</span>
+                                <span className="text-ink-2">{track.vocals.join(' + ')}</span>
                               </div>
                             </div>
                           </div>

@@ -83,7 +83,7 @@ export function HomeHeader() {
               >
                 <Link
                   href={item.href}
-                  className="group relative font-serif text-sm uppercase tracking-[0.15em] text-muted-foreground transition-colors duration-300 hover:text-foreground py-2 inline-block"
+                  className="group relative font-serif text-sm uppercase tracking-[0.15em] text-ink-2 transition-colors duration-300 hover:text-ink py-2 inline-block"
                 >
                   {t(language, item.key as any)}
 
@@ -124,7 +124,7 @@ export function HomeHeader() {
                                 <Link
                                   key={subItem.href}
                                   href={subItem.href}
-                                  className="group relative flex items-center gap-3 px-5 py-3 font-serif text-xs uppercase tracking-[0.2em] text-white/70 hover:text-white/90 transition-all duration-300"
+                                  className="group relative flex items-center gap-3 px-5 py-3 font-serif text-xs uppercase tracking-[0.2em] text-ink-2 hover:text-ink transition-all duration-300"
                                   style={{
                                     transitionDelay: `${index * 50}ms`,
                                   }}
@@ -235,7 +235,7 @@ export function HomeHeader() {
                         <Link
                           href={item.href}
                           onClick={() => setIsOpen(false)}
-                          className="block py-2 font-serif text-lg uppercase tracking-wider font-medium transition-colors hover:text-foreground text-muted-foreground"
+                          className="block py-2 font-serif text-lg uppercase tracking-wider font-medium transition-colors hover:text-ink text-ink-2"
                         >
                           {t(language, item.key as any)}
                         </Link>
@@ -248,7 +248,7 @@ export function HomeHeader() {
                                 key={subItem.href}
                                 href={subItem.href}
                                 onClick={() => setIsOpen(false)}
-                                className="block py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                className="block py-1 text-sm text-ink-2 hover:text-ink transition-colors"
                               >
                                 {t(language, subItem.key as any)}
                               </Link>
@@ -264,7 +264,7 @@ export function HomeHeader() {
                 <div className="mt-8 space-y-4">
                   <div className="flex items-center gap-2">
                     <LanguageSwitcher />
-                    <span className="text-sm text-muted-foreground">Language</span>
+                    <span className="text-sm text-ink-2">Language</span>
                   </div>
                 </div>
               </SheetContent>

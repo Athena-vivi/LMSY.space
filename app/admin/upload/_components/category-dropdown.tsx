@@ -45,7 +45,7 @@ export default function CategoryDropdown({ options, value, onChange }: CategoryD
       <motion.button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-0 py-2 bg-transparent text-left text-white/70 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer relative z-10 flex items-center justify-between"
+        className="w-full px-0 py-2 bg-transparent text-left text-ink-2 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors appearance-none cursor-pointer relative z-10 flex items-center justify-between"
         style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
         whileFocus={{
           boxShadow: '0 0 20px rgba(56, 189, 248, 0.15)',
@@ -56,7 +56,7 @@ export default function CategoryDropdown({ options, value, onChange }: CategoryD
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <ChevronDown className="w-4 h-4 text-white/65" />
+          <ChevronDown className="w-4 h-4 text-ink-2" />
         </motion.div>
       </motion.button>
 
@@ -117,7 +117,7 @@ export default function CategoryDropdown({ options, value, onChange }: CategoryD
                       <span className="flex-1">{option.label}</span>
                       {/* Prefix Badge */}
                       <span
-                        className="text-[9px] px-2 py-0.5 rounded border opacity-60 flex-shrink-0"
+                        className="text-[10px] px-2 py-0.5 rounded border opacity-60 flex-shrink-0"
                         style={{
                           borderColor: isSelected ? 'rgba(251, 191, 36, 0.3)' : 'rgba(255, 255, 255, 0.1)',
                           color: isSelected ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.4)',

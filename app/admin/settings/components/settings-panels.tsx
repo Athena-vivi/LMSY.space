@@ -21,7 +21,7 @@ export function PrefacePanel({
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border border-white/10 bg-black/30 p-6"
     >
-      <h2 className="mb-6 font-serif text-2xl text-white/90">{label}</h2>
+      <h2 className="mb-6 font-serif text-2xl text-ink">{label}</h2>
       <div className="space-y-5">
         <Field label="Title" value={content.title} onChange={(value) => onChange(lang, 'title', value)} />
         <Field label="Subtitle" value={content.subtitle} onChange={(value) => onChange(lang, 'subtitle', value)} />
@@ -58,7 +58,7 @@ export function LongformPanel({
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border border-white/10 bg-black/30 p-6"
     >
-      <h2 className="mb-6 font-serif text-2xl text-white/90">{label}</h2>
+      <h2 className="mb-6 font-serif text-2xl text-ink">{label}</h2>
       <div className="space-y-5">
         <Field label="Eyebrow" value={content.eyebrow} onChange={(value) => onChange(lang, 'eyebrow', value)} />
         <Field label="Fallback Title" value={content.fallbackTitle} onChange={(value) => onChange(lang, 'fallbackTitle', value)} />
@@ -87,7 +87,7 @@ export function MilestonesPanel({
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border border-white/10 bg-black/30 p-6"
     >
-      <h2 className="mb-6 font-serif text-2xl text-white/90">{label}</h2>
+      <h2 className="mb-6 font-serif text-2xl text-ink">{label}</h2>
       <div className="space-y-5">
         <Field label="Section Title" value={content.sectionTitle} onChange={(value) => onChange(lang, 'sectionTitle', value)} />
         <Field label="2022" value={content.year2022} onChange={(value) => onChange(lang, 'year2022', value)} />
@@ -118,7 +118,7 @@ export function HeroPanel({
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border border-white/10 bg-black/30 p-6"
     >
-      <h2 className="mb-6 font-serif text-2xl text-white/90">{label}</h2>
+      <h2 className="mb-6 font-serif text-2xl text-ink">{label}</h2>
       <div className="space-y-5">
         <TextArea label="Preface" value={content.preface} onChange={(value) => onChange(lang, 'preface', value)} />
         <Field label="Universe Title" value={content.universeTitle} onChange={(value) => onChange(lang, 'universeTitle', value)} />

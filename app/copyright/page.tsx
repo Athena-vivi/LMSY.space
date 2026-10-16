@@ -42,7 +42,7 @@ export default function CopyrightPage() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg md:text-xl text-muted-foreground font-light">
+            <p className="text-lg md:text-xl text-ink-2 font-light">
               {t(language, 'copyright.subtitle')}
             </p>
           </motion.div>
@@ -65,7 +65,7 @@ export default function CopyrightPage() {
                 <ArchiveDisclaimer />
               </div>
 
-              <p className="font-serif text-xl md:text-2xl text-foreground/80 leading-relaxed">
+              <p className="font-serif text-xl md:text-2xl text-ink-2 leading-relaxed">
                 {t(language, 'copyright.intro')}
               </p>
             </motion.div>
@@ -86,7 +86,7 @@ export default function CopyrightPage() {
                   {t(language, 'copyright.disclaimerTitle')}
                 </h2>
               </div>
-              <p className="text-foreground/70 leading-relaxed pl-16">
+              <p className="text-ink-2 leading-relaxed pl-16">
                 {t(language, 'copyright.disclaimerText')}
               </p>
             </motion.div>
@@ -107,7 +107,7 @@ export default function CopyrightPage() {
                   {t(language, 'copyright.fairUseTitle')}
                 </h2>
               </div>
-              <p className="text-foreground/70 leading-relaxed pl-16">
+              <p className="text-ink-2 leading-relaxed pl-16">
                 {t(language, 'copyright.fairUseText')}
               </p>
             </motion.div>
@@ -128,7 +128,7 @@ export default function CopyrightPage() {
                   {t(language, 'creditTitle')}
                 </h2>
               </div>
-              <p className="text-foreground/70 leading-relaxed pl-16">
+              <p className="text-ink-2 leading-relaxed pl-16">
                 {t(language, 'creditText')}
               </p>
             </motion.div>
@@ -151,11 +151,11 @@ export default function CopyrightPage() {
               </div>
 
               <div className="pl-16 space-y-6">
-                <p className="text-foreground/70 leading-relaxed">
+                <p className="text-ink-2 leading-relaxed">
                   {t(language, 'copyright.contactText')}
                 </p>
 
-                <ul className="space-y-3 text-foreground/70">
+                <ul className="space-y-3 text-ink-2">
                   <li>{t(language, 'copyright.contactItem1')}</li>
                   <li>{t(language, 'copyright.contactItem2')}</li>
                   <li>{t(language, 'copyright.contactItem3')}</li>
@@ -163,7 +163,7 @@ export default function CopyrightPage() {
                 </ul>
 
                 <div className="bg-background rounded-xl p-6 border border-border/50">
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <p className="text-sm text-ink-2 mb-2">
                     {t(language, 'copyright.contactEmail')}
                   </p>
                   <a
@@ -174,7 +174,7 @@ export default function CopyrightPage() {
                   </a>
                 </div>
 
-                <p className="text-sm text-muted-foreground italic">
+                <p className="text-sm text-ink-2 italic">
                   {t(language, 'copyright.responseTime')}
                 </p>
               </div>

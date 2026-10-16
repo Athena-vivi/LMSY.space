@@ -78,8 +78,8 @@ export function EditModal({
             className="w-full max-w-2xl max-h-[80vh] overflow-y-auto custom-scrollbar bg-black border border-white/10 rounded-lg p-6"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-serif text-white/90">EDIT_DRAFT</h2>
-              <button onClick={onClose} className="p-2 text-white/65 hover:text-white/60 transition-colors">
+              <h2 className="text-xl font-serif text-ink">EDIT_DRAFT</h2>
+              <button onClick={onClose} className="p-2 text-ink-2 hover:text-ink-2 transition-colors">
                 <X className="h-5 w-5" strokeWidth={1.5} />
               </button>
             </div>
@@ -103,90 +103,90 @@ export function EditModal({
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">TITLE_EN</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">TITLE_EN</label>
                 <input
                   type="text"
                   value={editForm.title.en}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, title: { ...prev.title, en: e.target.value } }))}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">TITLE_ZH</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">TITLE_ZH</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={editForm.title.zh}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, title: { ...prev.title, zh: e.target.value } }))}
-                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   />
                   <TranslateButton lang="zh" translating={translating} onTranslate={onTranslate} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">TITLE_TH</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">TITLE_TH</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={editForm.title.th}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, title: { ...prev.title, th: e.target.value } }))}
-                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   />
                   <TranslateButton lang="th" translating={translating} onTranslate={onTranslate} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_EN</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">DESCRIPTION_EN</label>
                 <textarea
                   value={editForm.description.en}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, description: { ...prev.description, en: e.target.value } }))}
                   rows={2}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_ZH</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">DESCRIPTION_ZH</label>
                 <div className="flex gap-2">
                   <textarea
                     value={editForm.description.zh}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, description: { ...prev.description, zh: e.target.value } }))}
                     rows={2}
-                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                   />
                   <TranslateButton lang="zh" translating={translating} onTranslate={onTranslate} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_TH</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">DESCRIPTION_TH</label>
                 <div className="flex gap-2">
                   <textarea
                     value={editForm.description.th}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, description: { ...prev.description, th: e.target.value } }))}
                     rows={2}
-                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                   />
                   <TranslateButton lang="th" translating={translating} onTranslate={onTranslate} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">EVENT_DATE (when the image happened)</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">EVENT_DATE (when the image happened)</label>
                 <input
                   type="date"
                   value={editForm.event_date}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, event_date: e.target.value }))}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                 />
-                <p className="text-[10px] text-white/65 mt-1">Leave blank to use the ingest time.</p>
+                <p className="text-xs text-ink-2 mt-1">Leave blank to use the ingest time.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/75 mb-1">TAGS (comma-separated)</label>
+                <label className="block text-xs font-mono text-ink-2 mb-1">TAGS (comma-separated)</label>
                 <input
                   type="text"
                   value={editForm.tags.join(', ')}
@@ -199,13 +199,13 @@ export function EditModal({
                         .filter(Boolean),
                     }))
                   }
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   placeholder="tag1, tag2, tag3"
                 />
               </div>
 
               <div className="space-y-3 rounded border border-white/10 p-4">
-                <label className="flex items-center gap-2 text-xs font-mono text-white/60">
+                <label className="flex items-center gap-2 text-xs font-mono text-ink-2">
                   <input
                     type="checkbox"
                     checked={editForm.chronicle_visible}
@@ -216,79 +216,79 @@ export function EditModal({
                 </label>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_TITLE_EN</label>
+                  <label className="block text-xs font-mono text-ink-2 mb-1">CHRONICLE_TITLE_EN</label>
                   <input
                     type="text"
                     value={editForm.chronicle_title.en}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, chronicle_title: { ...prev.chronicle_title, en: e.target.value } }))
                     }
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                     placeholder="Optional override for Chronicle title in English"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_TITLE_ZH</label>
+                  <label className="block text-xs font-mono text-ink-2 mb-1">CHRONICLE_TITLE_ZH</label>
                   <input
                     type="text"
                     value={editForm.chronicle_title.zh}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, chronicle_title: { ...prev.chronicle_title, zh: e.target.value } }))
                     }
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                     placeholder="Optional override for Chronicle title in Chinese"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_TITLE_TH</label>
+                  <label className="block text-xs font-mono text-ink-2 mb-1">CHRONICLE_TITLE_TH</label>
                   <input
                     type="text"
                     value={editForm.chronicle_title.th}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, chronicle_title: { ...prev.chronicle_title, th: e.target.value } }))
                     }
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                     placeholder="Optional override for Chronicle title in Thai"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_EXCERPT_EN</label>
+                  <label className="block text-xs font-mono text-ink-2 mb-1">CHRONICLE_EXCERPT_EN</label>
                   <textarea
                     value={editForm.chronicle_excerpt.en}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, chronicle_excerpt: { ...prev.chronicle_excerpt, en: e.target.value } }))
                     }
                     rows={2}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                     placeholder="Optional override for Chronicle excerpt in English"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_EXCERPT_ZH</label>
+                  <label className="block text-xs font-mono text-ink-2 mb-1">CHRONICLE_EXCERPT_ZH</label>
                   <textarea
                     value={editForm.chronicle_excerpt.zh}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, chronicle_excerpt: { ...prev.chronicle_excerpt, zh: e.target.value } }))
                     }
                     rows={2}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                     placeholder="Optional override for Chronicle excerpt in Chinese"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_EXCERPT_TH</label>
+                  <label className="block text-xs font-mono text-ink-2 mb-1">CHRONICLE_EXCERPT_TH</label>
                   <textarea
                     value={editForm.chronicle_excerpt.th}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, chronicle_excerpt: { ...prev.chronicle_excerpt, th: e.target.value } }))
                     }
                     rows={2}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-ink-2 text-sm focus:outline-none focus:border-lmsy-yellow/40 resize-none"
                     placeholder="Optional override for Chronicle excerpt in Thai"
                   />
                 </div>
@@ -302,7 +302,7 @@ export function EditModal({
                   onChange={(e) => setEditForm((prev) => ({ ...prev, is_featured: e.target.checked }))}
                   className="w-4 h-4 rounded border-white/20 bg-white/5 focus:ring-lmsy-yellow/40"
                 />
-                <label htmlFor="is_featured" className="text-xs font-mono text-white/60">
+                <label htmlFor="is_featured" className="text-xs font-mono text-ink-2">
                   FEATURED_ITEM
                 </label>
               </div>
@@ -319,7 +319,7 @@ export function EditModal({
               </motion.button>
               <motion.button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 bg-white/10 border border-white/20 text-white/60 text-sm font-mono hover:bg-white/15 hover:text-white/80 transition-all rounded"
+                className="flex-1 px-4 py-2 bg-white/10 border border-white/20 text-ink-2 text-sm font-mono hover:bg-white/15 hover:text-ink-2 transition-all rounded"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

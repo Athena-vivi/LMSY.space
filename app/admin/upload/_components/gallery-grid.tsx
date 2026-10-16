@@ -98,17 +98,17 @@ const SortableItem = memo(function SortableItem({
 
       {/* Primary badge */}
       {index === 0 && (
-        <div className="absolute top-0 left-0 bg-lmsy-yellow/95 text-black text-[9px] font-bold px-2 py-0.5 font-mono pointer-events-none z-0">
+        <div className="absolute top-0 left-0 bg-lmsy-yellow/95 text-black text-[10px] font-bold px-2 py-0.5 font-mono pointer-events-none z-0">
           PRIMARY
         </div>
       )}
 
       {/* Catalog ID overlay */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-6 pb-1.5 px-1 pointer-events-none z-0">
-        <div className="text-[8px] font-mono text-white/90 leading-tight">
+        <div className="text-[10px] font-mono text-ink leading-tight">
           {String(index + 1).padStart(3, '0')}
         </div>
-        <div className="text-[7px] font-mono text-lmsy-yellow/70 leading-tight truncate">
+        <div className="text-[10px] font-mono text-lmsy-yellow/70 leading-tight truncate">
           {catalogId}
         </div>
       </div>

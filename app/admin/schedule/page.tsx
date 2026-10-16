@@ -21,7 +21,7 @@ export default function AdminSchedulePage() {
           <h1 className="font-serif text-4xl font-bold text-foreground mb-2">
             Schedule Management
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-ink-2">
             Manage upcoming events, fan meetings, and appearances
           </p>
         </div>
@@ -36,8 +36,8 @@ export default function AdminSchedulePage() {
       </div>
 
       <div className="mb-8 border-2 border-dashed border-border rounded-lg p-6 text-center">
-        <CalendarIcon className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-        <p className="text-muted-foreground">
+        <CalendarIcon className="h-8 w-8 mx-auto mb-3 text-ink-2" />
+        <p className="text-ink-2">
           The schedule module is not enabled yet. Events will appear here once the
           schedule table is set up and the module is switched on.
         </p>
@@ -51,7 +51,7 @@ export default function AdminSchedulePage() {
         </h2>
 
         <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
-          <p className="text-muted-foreground">No upcoming events scheduled</p>
+          <p className="text-ink-2">No upcoming events scheduled</p>
         </div>
       </div>
     </div>

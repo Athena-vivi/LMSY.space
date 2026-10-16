@@ -74,7 +74,7 @@ export default function AdminLoginPage() {
               </h1>
 
               {/* Subtitle */}
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-ink-2">
                 Enter your credentials to access the curator dashboard
               </p>
             </div>
@@ -97,7 +97,7 @@ export default function AdminLoginPage() {
               {/* Email */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <Mail className="w-4 h-4 text-ink-2" />
                   Email Address
                 </label>
                 <div className="relative">
@@ -110,14 +110,14 @@ export default function AdminLoginPage() {
                     className="w-full px-4 py-3 pl-11 bg-background border border-border rounded-lg focus:outline-none focus:border-lmsy-yellow focus:ring-1 focus:ring-lmsy-yellow/20 transition-all"
                     disabled={isSubmitting || loading}
                   />
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-2" />
                 </div>
               </div>
 
               {/* Password */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-muted-foreground" />
+                  <Lock className="w-4 h-4 text-ink-2" />
                   Password
                 </label>
                 <div className="relative">
@@ -130,11 +130,11 @@ export default function AdminLoginPage() {
                     className="w-full px-4 py-3 pl-11 pr-12 bg-background border border-border rounded-lg focus:outline-none focus:border-lmsy-yellow focus:ring-1 focus:ring-lmsy-yellow/20 transition-all"
                     disabled={isSubmitting || loading}
                   />
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-2" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-2 hover:text-foreground transition-colors"
                     disabled={isSubmitting || loading}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -168,7 +168,7 @@ export default function AdminLoginPage() {
             <div className="mt-8 text-center">
               <Link
                 href="/"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
+                className="text-sm text-ink-2 hover:text-foreground transition-colors inline-flex items-center gap-2"
               >
                 <span>←</span>
                 Back to Website
@@ -178,7 +178,7 @@ export default function AdminLoginPage() {
 
           {/* Footer */}
           <div className="px-8 py-4 bg-muted/30 border-t border-border/50">
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 text-xs text-ink-2">
               <Shield className="w-4 h-4" />
               <span>Protected by Supabase Authentication</span>
             </div>
