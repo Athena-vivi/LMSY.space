@@ -71,7 +71,7 @@ node scripts/security-smoke-test.mjs --base http://localhost:3000   # 安全冒�
 | `npm run audit:r2` | R2 对象与数据库引用对账（只读） |
 | `npm run migrate:phase1` | 应用 phase1 迁移（默认 dry-run，需凭据） |
 | `npx tsx scripts/reset-admin-password.ts <email>` | 管理员密码重置（0600 文件交付） |
-| `npx tsx scripts/setup-telegram-webhook.ts https://lmsy.space` | 注册 Telegram webhook |
+| `npx tsx scripts/setup-telegram-webhook.ts register https://lmsy.space` | 注册 Telegram webhook（子命令式；另支持 `status`/`delete`） |
 | `npm run backfill:magazine` | 杂志孤儿图片回填（dry-run 先行，需人工确认） |
 
 `scripts/` 里另有若干历史一次性脚本（`batch-feed-*`、`sync-r2-*`、`delete-fake-data` 等），**不要随手执行**，用前先读脚本头部注释。
@@ -81,6 +81,7 @@ node scripts/security-smoke-test.mjs --base http://localhost:3000   # 安全冒�
 | 文档 | 内容 |
 |---|---|
 | `docs/FULL_AUDIT_REPORT_2026-10-16.md` | **全量审计报告（现状唯一入口，含遗留事项与待决策）** |
+| `docs/REMEDIATION_PLAN.md` | **下一步整改方案（批次/依赖/验收/决策点，v1.1 已经独立评审）** |
 | `docs/BACKUP_AND_RESTORE.md` | 备份/恢复体系与操作手册 |
 | `docs/R2_SETUP.md` | R2 桶与 CDN 配置 |
 | `docs/BATCH_UPLOAD_GUIDE.md` | 后台上传指南 |

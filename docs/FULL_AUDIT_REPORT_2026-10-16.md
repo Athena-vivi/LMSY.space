@@ -4,6 +4,7 @@
 - **仓库：** `Athena-vivi/LMSY.space`（公开）　**分支：** `main`　**HEAD：** `038cd27`（工作区干净）
 - **审计性质：** 只读审计 + 本地验证。**未修改任何生产数据、未删除任何 R2 对象或数据库记录、未改动管理员账号与认证配置、未修改生产环境变量。** 唯一新增文件是只读探测脚本 `temp/audit-rls-reprobe.mjs`（`temp/` 已在 `.gitignore` 中）。
 - **文档整合说明（2026-10-16 当晚）：** 本报告是仓库中**唯一保留的全量审计文档**，也是了解网站现状的唯一入口。此前的初版审计、第一/二阶段整改报告、生产收尾报告、项目快照等过程文档已按「只保留现状与参考、删除实施过程」的原则清理（过程细节仍可在 Git 历史中按需查阅）。两份被删文档中的**遗留待办**已合并进本报告「九、遗留事项与待决策」一节；其中「杂志孤儿图片映射表」（315 个 R2 对象 → 项目的对应关系）已从临时目录转存至 `backups/magazine-orphan-mapping-2026-10-15.json`（本地，未入库），回填决策的数据依据没有丢。
+- **基线说明：** 本审计基于 `038cd27`。当晚的文档整理提交 `3b51cc0` 重写了 README（P3-1「README 严重过期」随之关闭）并新增 `docs/REMEDIATION_PLAN.md`（下一步整改方案，v1.1 已经独立评审修订）。
 
 ---
 
@@ -328,7 +329,7 @@ P1-4（删除保护，否则批量删除误伤线上图）→ P2-2（去重前�
 
 1. **撤销两个 Supabase 个人访问令牌（安全事项，建议最优先）**：此前为应用数据库迁移，你在对话中提供过两个 `sbp_…` 开头的 Management API 令牌。它们具备 SQL 执行权限，虽未写入任何文件或提交，但已在聊天记录明文出现。请到 Supabase Dashboard → Account → Access Tokens 将这两个令牌 **Revoke**，今后如需再用，临时生成、用完即撤。
 2. **Vercel Production 环境变量核验**：确认 `ADMIN_EMAIL`、`TELEGRAM_WEBHOOK_SECRET`、`CRON_SECRET`、`INGEST_API_KEY`、`TELEGRAM_BOT_TOKEN`、`OPENROUTER_API_KEY` 已配置（注意顺序：**先核验变量，再重注册 webhook**，顺序颠倒会导致 Telegram 采集中断）。
-3. **重注册 Telegram Webhook**：变量核验通过后，在可达网络执行 `npx tsx scripts/setup-telegram-webhook.ts https://lmsy.space`。
+3. **重注册 Telegram Webhook**：变量核验通过后，在可达网络执行 `npx tsx scripts/setup-telegram-webhook.ts register https://lmsy.space`，再用 `status` 子命令核对注册结果。注意两个前置：① Vercel Production 已配 `TELEGRAM_WEBHOOK_SECRET`/`TELEGRAM_BOT_TOKEN`；② 本地 `.env.local` 的 `TELEGRAM_WEBHOOK_SECRET` 与 Vercel Production 同值（注册脚本读本地值）。脚本是子命令式，直接传 URL 不会执行注册。
 4. **线上验收**：本机网络无法到达 `lmsy.space` / `api.telegram.org`，以下项目前只能做「本地同代码」替代验证：线上冒烟测试、真实管理员登录端到端、关键业务回归（首页/图库/作品/档案/日程/编年史/灯箱/审核发布/上传）、第二阶段性能与 SEO 的线上复测。
 5. **Supabase PITR / 每日备份 / 保留期核验**：需在 Dashboard 确认并回填状态（免费版可能不包含 PITR，需确认实际保护水平）。
 
