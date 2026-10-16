@@ -342,10 +342,10 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center space-y-2">
-                <p className="text-xs font-mono text-white/20 tracking-widest">
+                <p className="text-xs font-mono text-white/55 tracking-widest">
                   {projectFiltered ? 'NO_ASSETS_FOR_THIS_PROJECT' : 'VAULT_EMPTY'}
                 </p>
-                <p className="text-[10px] font-mono text-white/10 tracking-wider">
+                <p className="text-[10px] font-mono text-white/50 tracking-wider">
                   {projectFiltered ? 'CLEAR_FILTER_TO_VIEW_ALL_ASSETS' : 'WAITING_FOR_SYNC'}
                 </p>
               </div>
@@ -404,7 +404,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                     </div>
                   ) : (
                     <div className="w-full h-48 flex items-center justify-center bg-white/5">
-                      <span className="text-white/20 text-xs">No URL</span>
+                      <span className="text-white/55 text-xs">No URL</span>
                     </div>
                   )}
 
@@ -454,7 +454,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
 
                   {item.catalog_id && (
                     <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[9px] font-mono text-white/30 tracking-wider">
+                      <span className="text-[9px] font-mono text-white/65 tracking-wider">
                         {item.catalog_id}
                       </span>
                     </div>
@@ -505,7 +505,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
             onClick={() => {
               setSelectedIds(new Set());
             }}
-            className="p-1.5 text-white/40 hover:text-white/60 transition-all"
+            className="p-1.5 text-white/75 hover:text-white/60 transition-all"
           >
             ✕
           </button>
@@ -533,7 +533,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                 <h2 className="font-serif text-xl text-white/90 mb-2">
                   LINK_TO_PROJECT
                 </h2>
-                <p className="text-xs font-mono text-white/40 mb-4">
+                <p className="text-xs font-mono text-white/75 mb-4">
                   SELECT_TARGET_PROJECT_FOR_{selectedIds.size}_ITEMS
                 </p>
 
@@ -592,13 +592,13 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                 <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
                   <div>
                     <h2 className="text-lg font-serif text-white/90">Edit Asset Copy</h2>
-                    <p className="text-[10px] font-mono tracking-wider text-white/35">
+                    <p className="text-[10px] font-mono tracking-wider text-white/70">
                       TITLE / CAPTION / EXCERPT · EN / ZH / TH
                     </p>
                   </div>
                   <button
                     onClick={() => setEditingAsset(null)}
-                    className="rounded-full border border-white/10 p-2 text-white/45 transition hover:border-white/20 hover:text-white/70"
+                    className="rounded-full border border-white/10 p-2 text-white/75 transition hover:border-white/20 hover:text-white/70"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -618,12 +618,12 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                             unoptimized
                           />
                         ) : (
-                          <div className="flex min-h-[18rem] items-center justify-center text-xs font-mono tracking-wider text-white/25">
+                          <div className="flex min-h-[18rem] items-center justify-center text-xs font-mono tracking-wider text-white/60">
                             NO_IMAGE_URL
                           </div>
                         )}
                       </div>
-                      <div className="space-y-2 text-[11px] font-mono tracking-wider text-white/35">
+                      <div className="space-y-2 text-[11px] font-mono tracking-wider text-white/70">
                         <div>CATALOG {editingAsset.catalog_id || 'UNSET'}</div>
                         <div>TAG {editingAsset.tag || 'UNSET'}</div>
                         <div>PROJECT {editingAsset.project_id || 'UNLINKED'}</div>
@@ -653,7 +653,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
 
                     {(['title', 'caption', 'excerpt'] as const).map((field) => (
                       <div key={field} className="space-y-3">
-                        <div className="text-xs font-mono uppercase tracking-[0.24em] text-white/30">
+                        <div className="text-xs font-mono uppercase tracking-[0.24em] text-white/65">
                           {field}
                         </div>
                         <div className="grid gap-3 md:grid-cols-3">
@@ -661,7 +661,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                             const key = `${field}_${lang}` as keyof typeof assetForm;
                             return (
                               <div key={key} className="space-y-2">
-                                <label className="text-[10px] font-mono uppercase tracking-[0.24em] text-white/25">
+                                <label className="text-[10px] font-mono uppercase tracking-[0.24em] text-white/60">
                                   {lang}
                                 </label>
                                 {field === 'excerpt' ? (
@@ -690,7 +690,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                       <button
                         onClick={() => setEditingAsset(null)}
                         disabled={savingAsset}
-                        className="rounded-xl border border-white/10 px-4 py-2 text-xs font-mono tracking-wider text-white/55 transition hover:border-white/20 hover:text-white/75"
+                        className="rounded-xl border border-white/10 px-4 py-2 text-xs font-mono tracking-wider text-white/80 transition hover:border-white/20 hover:text-white/75"
                       >
                         CANCEL
                       </button>

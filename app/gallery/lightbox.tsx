@@ -76,7 +76,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
             {/* Minimal close button - top right */}
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 z-10 text-foreground/20 hover:text-foreground transition-colors"
+              className="absolute top-6 right-6 z-10 text-foreground/70 hover:text-foreground transition-colors"
               aria-label="Close"
             >
               <X className="h-8 w-8" />
@@ -97,7 +97,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                     />
                   ) : (
                     <div className="w-full h-96 bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20 rounded-lg flex items-center justify-center">
-                      <p className="text-foreground/30 text-lg">Image not available</p>
+                      <p className="text-foreground/70 text-lg">Image not available</p>
                     </div>
                   )}
                 </div>
@@ -253,7 +253,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20 rounded-lg flex items-center justify-center">
-                  <p className="text-white/50 text-lg">Image not available</p>
+                  <p className="text-white/80 text-lg">Image not available</p>
                 </div>
               )}
 
@@ -266,7 +266,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                   className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
                 >
                   {currentImage.catalog_id && !isEditorial && (
-                    <div className="font-mono text-[10px] text-white/40 mb-2">
+                    <div className="font-mono text-[10px] text-white/80 mb-2">
                       {currentImage.catalog_id}
                     </div>
                   )}

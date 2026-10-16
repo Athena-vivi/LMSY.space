@@ -120,7 +120,7 @@ export default function ProfilesPage() {
               initial={{ opacity: 0, letterSpacing: '0.5em' }}
               animate={{ opacity: 1, letterSpacing: 'normal' }}
               transition={{ duration: 1.2, delay: 0.5 }}
-              className="text-xs md:text-sm font-mono text-white/40 tracking-[0.3em] uppercase mb-6"
+              className="text-xs md:text-sm font-mono text-white/80 tracking-[0.3em] uppercase mb-6"
             >
               The Resonance
             </motion.p>
@@ -147,7 +147,7 @@ export default function ProfilesPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 1.2 }}
-              className="flex items-center justify-center gap-2 text-white/40 text-xs font-mono tracking-wider"
+              className="flex items-center justify-center gap-2 text-white/80 text-xs font-mono tracking-wider"
             >
               <span>SCROLL</span>
               <motion.div
@@ -331,10 +331,10 @@ export default function ProfilesPage() {
               >
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <p className="text-white/30 text-xs font-mono tracking-wider">
+                    <p className="text-white/70 text-xs font-mono tracking-wider">
                       4K GIF PLACEHOLDER
                     </p>
-                    <p className="text-white/20 text-[10px] mt-2">
+                    <p className="text-white/70 text-[10px] mt-2">
                       Moment #{item}
                     </p>
                   </div>

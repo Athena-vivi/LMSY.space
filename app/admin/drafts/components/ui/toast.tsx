@@ -5,6 +5,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 interface DraftsToastProps {
   toast: {
@@ -15,6 +16,8 @@ interface DraftsToastProps {
 }
 
 export function DraftsToast({ toast }: DraftsToastProps) {
+  const { t } = useAdminLang();
+  const label = t('t.' + toast.message);
   return (
     <AnimatePresence>
       {toast.show && (
@@ -32,7 +35,7 @@ export function DraftsToast({ toast }: DraftsToastProps) {
             color: toast.type === 'success' ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.9)',
           }}
         >
-          {toast.message}
+          {label.startsWith('t.') ? toast.message : label}
         </motion.div>
       )}
     </AnimatePresence>

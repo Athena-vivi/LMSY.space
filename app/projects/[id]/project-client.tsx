@@ -51,7 +51,7 @@ export default function ProjectClient({ project }: ProjectClientProps) {
     },
     journal: {
       label: 'Journal',
-      className: 'text-white/40 border-white/10 bg-transparent backdrop-blur-sm',
+      className: 'text-white/80 border-white/10 bg-transparent backdrop-blur-sm',
     },
     commercial: {
       label: 'Commercial',

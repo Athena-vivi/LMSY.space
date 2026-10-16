@@ -55,7 +55,7 @@ export function SpaceHubReturn() {
           transition={{ duration: 0.3, ease: 'easeOut' }}
         >
           <span
-            className="font-serif text-[9px] tracking-[0.35em] uppercase text-white/50"
+            className="font-serif text-[9px] tracking-[0.35em] uppercase text-white/80"
             style={{
               fontFamily: 'Playfair Display, serif',
             }}

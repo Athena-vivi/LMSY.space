@@ -37,7 +37,7 @@ export function UploadTriggerButton({
   const variants = {
     default: "px-4 py-2 bg-gradient-to-br from-lmsy-yellow/10 to-lmsy-blue/10 border border-lmsy-yellow/20 text-white/70 hover:border-lmsy-yellow/40 hover:from-lmsy-yellow/15 hover:to-lmsy-blue/15",
     compact: "px-3 py-1.5 bg-lmsy-yellow/5 border border-lmsy-yellow/10 text-white/60 hover:bg-lmsy-yellow/10 hover:border-lmsy-yellow/20",
-    minimal: "px-2 py-1 text-white/40 hover:text-lmsy-yellow/60 hover:bg-white/5",
+    minimal: "px-2 py-1 text-white/80 hover:text-lmsy-yellow/60 hover:bg-white/5",
   };
 
   return (

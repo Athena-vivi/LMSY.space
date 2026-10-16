@@ -183,12 +183,12 @@ export function AudioPlayer({
             <p className="font-serif text-sm text-white/80 mb-0.5">{title}</p>
           )}
           {subtitle && (
-            <p className="text-xs text-white/40 font-mono">{subtitle}</p>
+            <p className="text-xs text-white/80 font-mono">{subtitle}</p>
           )}
         </div>
 
         {/* Time display */}
-        <div className="text-xs font-mono text-white/30">
+        <div className="text-xs font-mono text-white/70">
           {formatTime(currentTime)} / {formatTime(duration)}
         </div>
 
@@ -208,7 +208,7 @@ export function AudioPlayer({
                 exit={{ rotate: -90, opacity: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <VolumeX className="h-3.5 w-3.5 text-white/40" strokeWidth={1.5} />
+                <VolumeX className="h-3.5 w-3.5 text-white/80" strokeWidth={1.5} />
               </motion.div>
             ) : (
               <motion.div
@@ -218,7 +218,7 @@ export function AudioPlayer({
                 exit={{ rotate: 90, opacity: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <Volume2 className="h-3.5 w-3.5 text-white/40" strokeWidth={1.5} />
+                <Volume2 className="h-3.5 w-3.5 text-white/80" strokeWidth={1.5} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -353,7 +353,7 @@ export function AmbientPlayer({ src, isPlaying, onTogglePlay, className }: Ambie
                 animate={{ scale: 1, rotate: 0 }}
                 exit={{ scale: 0, rotate: 90 }}
               >
-                <Play className="h-4 w-4 text-white/50" strokeWidth={1.5} fill="currentColor" />
+                <Play className="h-4 w-4 text-white/80" strokeWidth={1.5} fill="currentColor" />
               </motion.div>
             )}
           </AnimatePresence>

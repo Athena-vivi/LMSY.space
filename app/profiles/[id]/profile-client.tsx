@@ -74,7 +74,7 @@ export default function ProfileClient({ member }: ProfileClientProps) {
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="font-serif text-9xl text-muted-foreground/20">
+                    <div className="font-serif text-9xl text-muted-foreground/70">
                       {member.name[0]}
                     </div>
                   </div>

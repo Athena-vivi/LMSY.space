@@ -131,7 +131,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
           <h3 className="text-sm font-mono text-lmsy-yellow/90 tracking-wider">
             HOMEPAGE_MILESTONES
           </h3>
-          <span className="text-xs font-mono text-white/30 ml-auto">
+          <span className="text-xs font-mono text-white/65 ml-auto">
             SELECT_IMAGES_FOR_EACH_YEAR
           </span>
         </div>
@@ -160,8 +160,8 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center space-y-2">
-                      <Star className="h-6 w-6 text-white/10 mx-auto" strokeWidth={1.5} />
-                      <span className="text-xs font-mono text-white/20">{year}</span>
+                      <Star className="h-6 w-6 text-white/50 mx-auto" strokeWidth={1.5} />
+                      <span className="text-xs font-mono text-white/55">{year}</span>
                     </div>
                   </div>
                 )}
@@ -221,7 +221,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                     <h2 className="font-serif text-xl text-lmsy-yellow/90 mb-1">
                       SET_MILESTONE_FOR_{selectedYear}
                     </h2>
-                    <p className="text-xs font-mono text-white/40">
+                    <p className="text-xs font-mono text-white/75">
                       SELECT_AN_IMAGE_FROM_THE_VAULT_BELOW
                     </p>
                   </div>

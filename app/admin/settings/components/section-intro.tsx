@@ -24,7 +24,7 @@ export function SectionIntro({
         <FileText className={`h-5 w-5 ${iconColor}`} />
         <h2 className="font-serif text-2xl text-white/90">{title}</h2>
       </div>
-      <p className="text-sm text-white/45">
+      <p className="text-sm text-white/75">
         {description}
         <span className="mx-1 font-mono text-white/60">{blockKey}</span>.
       </p>

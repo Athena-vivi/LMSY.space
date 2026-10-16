@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+    <div className="admin-root min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
       {/* Ambient Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Yellow glow from top-left */}

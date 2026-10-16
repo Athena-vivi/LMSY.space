@@ -215,13 +215,13 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
               </div>
               <div>
                 <h2 className="font-serif text-xl text-white/90">Bulk Upload</h2>
-                <p className="text-xs text-white/40 font-mono">Import images to draft inbox</p>
+                <p className="text-xs text-white/80 font-mono">Import images to draft inbox</p>
               </div>
             </div>
             <button
               onClick={() => !isUploading && !ingestionMonitor.visible && onClose()}
               disabled={isUploading || ingestionMonitor.visible}
-              className="p-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 rounded-lg text-white/70 hover:text-white/60 hover:bg-white/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <X className="h-5 w-5" strokeWidth={1.5} />
             </button>
@@ -296,10 +296,10 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
           <div className="px-6 py-3 border-t flex items-center justify-between text-xs font-mono flex-shrink-0"
             style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
           >
-            <span className="text-white/30">
+            <span className="text-white/70">
               {uploadState.uploadItems.length} files selected
             </span>
-            <span className="text-white/30">
+            <span className="text-white/70">
               Press ESC to close
             </span>
           </div>

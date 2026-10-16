@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { supabase, type Project } from '@/lib/supabase';
 import EditProjectModal from './_components/edit-project-modal';
+import { useAdminLang } from '@/lib/admin-i18n';
 import { getImageUrl } from '@/lib/image-url';
 
 interface ProjectPreviewAsset {
@@ -18,6 +19,7 @@ interface ProjectPreviewAsset {
 }
 
 export default function AdminProjectsPage() {
+  const { t } = useAdminLang();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,7 +120,7 @@ export default function AdminProjectsPage() {
   };
 
   const handleMerge = async (project: Project) => {
-    const input = prompt('Merge into which project? Enter target project title or ID.');
+    const input = prompt(t('p.mergePrompt'));
     if (!input) return;
 
     const target = projects.find((item) =>
@@ -157,7 +159,7 @@ export default function AdminProjectsPage() {
   };
 
   const handleSplit = async (project: Project) => {
-    const title = prompt('New split project title');
+    const title = prompt(t('p.splitPrompt'));
     if (!title?.trim()) return;
 
     try {
@@ -284,32 +286,32 @@ export default function AdminProjectsPage() {
     className: string;
   }> = {
     series: {
-      label: 'TV_SERIES',
+      label: 'cat.TV_SERIES',
       className: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5 backdrop-blur-sm',
     },
     editorial: {
-      label: 'EDITORIAL',
+      label: 'cat.EDITORIAL',
       className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
     },
     appearance: {
-      label: 'APPEARANCE',
+      label: 'cat.APPEARANCE',
       className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
     },
     journal: {
-      label: 'JOURNAL',
-      className: 'text-white/40 border-white/10 bg-transparent backdrop-blur-sm',
+      label: 'cat.JOURNAL',
+      className: 'text-white/75 border-white/10 bg-transparent backdrop-blur-sm',
     },
     commercial: {
-      label: 'COMMERCIAL',
+      label: 'cat.COMMERCIAL',
       className: 'text-amber-200/70 border-amber-500/20 bg-amber-500/5 backdrop-blur-sm',
     },
     // Legacy support
     music: {
-      label: 'MUSIC_VIDEO',
+      label: 'cat.MUSIC_VIDEO',
       className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
     },
     magazine: {
-      label: 'MAGAZINE',
+      label: 'cat.MAGAZINE',
       className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
     },
   };
@@ -354,14 +356,14 @@ export default function AdminProjectsPage() {
           <h1 className="font-serif text-3xl font-light text-white/90 tracking-tight">
             PROJECTS_ARCHIVE
           </h1>
-          <p className="text-xs font-mono text-white/30 tracking-wider">
+          <p className="text-xs font-mono text-white/65 tracking-wider">
             CAREER_HISTORY_MANAGEMENT_SYSTEM
           </p>
         </div>
 
         {/* Add Project Button - Outline Style */}
         <motion.button
-          className="flex items-center gap-3 px-4 py-2 border border-white/10 text-white/40 text-xs font-mono hover:text-white/60 hover:border-white/20 transition-all"
+          className="flex items-center gap-3 px-4 py-2 border border-white/10 text-white/75 text-xs font-mono hover:text-white/60 hover:border-white/20 transition-all"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -373,7 +375,7 @@ export default function AdminProjectsPage() {
               backgroundClip: 'text',
             }} />
           </div>
-          <span>ADD_NEW_ENTRY</span>
+          <span>{t('p.addNew')}</span>
         </motion.button>
       </motion.div>
 
@@ -387,8 +389,8 @@ export default function AdminProjectsPage() {
             exit={{ opacity: 0 }}
             className="flex items-center justify-center py-32"
           >
-            <div className="text-xs font-mono text-white/20 tracking-wider">
-              <span className="animate-pulse">LOADING_PROJECT_DATA_</span>
+            <div className="text-xs font-mono text-white/55 tracking-wider">
+              <span className="animate-pulse">{t('common.loading')}</span>
             </div>
           </motion.div>
         ) : projects.length === 0 ? (
@@ -423,18 +425,18 @@ export default function AdminProjectsPage() {
             {/* Empty State Message */}
             <div className="pl-20">
               <div className="space-y-2">
-                <p className="text-xs font-mono text-white/20 tracking-widest">
+                <p className="text-xs font-mono text-white/55 tracking-widest">
                   HISTORY_RECORD_START
                 </p>
-                <p className="text-[10px] font-mono text-white/10 tracking-wider">
+                <p className="text-[10px] font-mono text-white/50 tracking-wider">
                   NO_PROJECT_ENTRIES_FOUND
                 </p>
                 <motion.button
-                  className="mt-4 flex items-center gap-2 px-4 py-2 border border-white/10 text-white/30 text-xs font-mono hover:text-white/50 hover:border-white/20 transition-all"
+                  className="mt-4 flex items-center gap-2 px-4 py-2 border border-white/10 text-white/65 text-xs font-mono hover:text-white/80 hover:border-white/20 transition-all"
                   whileHover={{ x: 4 }}
                 >
                   <Plus className="h-3 w-3" strokeWidth={2} />
-                  <span>INITIALIZE_FIRST_RECORD</span>
+                  <span>{t('p.initializeFirst')}</span>
                 </motion.button>
               </div>
             </div>
@@ -454,8 +456,8 @@ export default function AdminProjectsPage() {
                 <input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="SEARCH_PROJECTS"
-                  className="w-full border bg-transparent px-3 py-2 font-mono text-xs tracking-wider text-white/80 outline-none transition-colors placeholder:text-white/20 md:max-w-sm"
+                  placeholder={t('wb.searchPlaceholder')}
+                  className="w-full border bg-transparent px-3 py-2 font-mono text-xs tracking-wider text-white/80 outline-none transition-colors placeholder:text-white/55 md:max-w-sm"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                 />
                 <select
@@ -466,7 +468,7 @@ export default function AdminProjectsPage() {
                 >
                   {categoryOptions.map((option) => (
                     <option key={option} value={option}>
-                      {option === 'all' ? 'ALL_CATEGORIES' : option.toUpperCase()}
+                      {option === 'all' ? t('cat.ALL') : t('cat.'+option)}
                     </option>
                   ))}
                 </select>
@@ -476,14 +478,14 @@ export default function AdminProjectsPage() {
                   className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-white/70 outline-none transition-colors"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                 >
-                  <option value="all">ALL_STATUS</option>
-                  <option value="published">PUBLISHED</option>
-                  <option value="draft">DRAFT</option>
-                  <option value="archived">ARCHIVED</option>
-                  <option value="available">AVAILABLE</option>
+                  <option value="all">{t('wb.filterAll')}</option>
+                  <option value="published">{t('status.published')}</option>
+                  <option value="draft">{t('status.candidate')}</option>
+                  <option value="archived">{t('status.archived')}</option>
+                  <option value="available">{t('status.available')}</option>
                 </select>
               </div>
-              <div className="text-xs font-mono tracking-wider text-white/30">
+              <div className="text-xs font-mono tracking-wider text-white/65">
                 {filteredProjects.length} / {projects.length}
               </div>
             </div>
@@ -492,11 +494,11 @@ export default function AdminProjectsPage() {
             <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b text-xs font-mono font-medium tracking-wider"
               style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
             >
-              <div className="col-span-4 text-white/40">PROJECT_TITLE</div>
-              <div className="col-span-2 text-white/40">CATEGORY</div>
-              <div className="col-span-2 text-white/40">RELEASE_DATE</div>
-              <div className="col-span-3 text-white/40">STATUS</div>
-              <div className="col-span-1 text-white/40 text-right">ACTIONS</div>
+              <div className="col-span-4 text-white/75">{t('p.projectTitle')}</div>
+              <div className="col-span-2 text-white/75">{t('common.category')}</div>
+              <div className="col-span-2 text-white/75">{t('common.date')}</div>
+              <div className="col-span-3 text-white/75">{t('common.status')}</div>
+              <div className="col-span-1 text-white/75 text-right">{t('common.actions')}</div>
             </div>
 
             {/* Table Rows */}
@@ -519,7 +521,7 @@ export default function AdminProjectsPage() {
                       <Link
                         href={`/admin/projects/${project.id}/curate`}
                         className="relative block w-16 h-10 flex-shrink-0 bg-white/5 overflow-hidden transition-opacity hover:opacity-80"
-                        title="Preview, reorder and rotate project images"
+                        title={t('p.viewAssets')}
                       >
                         {(() => {
                           const coverUrl = getImageUrl(project.cover_url);
@@ -533,7 +535,7 @@ export default function AdminProjectsPage() {
                               />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-4 w-4 text-white/10" strokeWidth={1.5} />
+                              <Play className="h-4 w-4 text-white/50" strokeWidth={1.5} />
                             </div>
                           );
                         })()}
@@ -543,7 +545,7 @@ export default function AdminProjectsPage() {
                           {project.title}
                         </h3>
                         {project.description && (
-                          <p className="text-[10px] text-white/30 font-mono truncate mt-0.5">
+                          <p className="text-[10px] text-white/65 font-mono truncate mt-0.5">
                             {project.description}
                           </p>
                         )}
@@ -571,14 +573,14 @@ export default function AdminProjectsPage() {
                                     <button
                                       onClick={() => handleRotateAsset(asset, 'left')}
                                       className="text-white/60 transition-colors hover:text-white"
-                                      title="Rotate Left"
+                                      title={t('c.rotateLeft')}
                                     >
                                       <RotateCcw className="h-3 w-3" strokeWidth={1.8} />
                                     </button>
                                     <button
                                       onClick={() => handleRotateAsset(asset, 'right')}
                                       className="text-white/60 transition-colors hover:text-white"
-                                      title="Rotate Right"
+                                      title={t('c.rotateRight')}
                                     >
                                       <RotateCw className="h-3 w-3" strokeWidth={1.8} />
                                     </button>
@@ -601,14 +603,14 @@ export default function AdminProjectsPage() {
                       }}
                       transition={{ duration: 0.2 }}
                     >
-                      {config.label}
+                      {t(config.label)}
                     </motion.span>
                   </div>
 
                   {/* Release Date */}
                   <div className="col-span-2">
                     {project.release_date ? (
-                      <div className="flex items-center gap-2 text-xs text-white/40">
+                      <div className="flex items-center gap-2 text-xs text-white/75">
                         <Calendar className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
                         <span className="font-mono tracking-wide">
                           {new Date(project.release_date).toLocaleDateString('en-US', {
@@ -619,7 +621,7 @@ export default function AdminProjectsPage() {
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs text-white/20 font-mono">—</span>
+                      <span className="text-xs text-white/55 font-mono">—</span>
                     )}
                   </div>
 
@@ -632,11 +634,11 @@ export default function AdminProjectsPage() {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-xs text-lmsy-blue/60 hover:text-lmsy-blue/80 transition-colors group/link"
                       >
-                        <span className="font-mono tracking-wider">AVAILABLE</span>
+                        <span className="font-mono tracking-wider">{t('status.available')}</span>
                         <ChevronRight className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" strokeWidth={2} />
                       </a>
                     ) : (
-                      <span className="text-xs text-white/20 font-mono">ARCHIVED</span>
+                      <span className="text-xs text-white/55 font-mono">{t('status.archived')}</span>
                     )}
                   </div>
 
@@ -646,42 +648,42 @@ export default function AdminProjectsPage() {
                       href={`/projects/${project.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-white/20 hover:text-lmsy-blue/80 hover:bg-lmsy-blue/5 transition-all"
-                      title="View Live"
+                      className="p-1.5 text-white/55 hover:text-lmsy-blue/80 hover:bg-lmsy-blue/5 transition-all"
+                      title={t('p.viewLive')}
                     >
                       <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </Link>
                     <Link
                       href={`/admin/gallery?tab=all&projectId=${project.id}`}
-                      className="p-1.5 text-white/20 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all"
-                      title="View Assets"
+                      className="p-1.5 text-white/55 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all"
+                      title={t('p.viewAssets')}
                     >
                       <Images className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </Link>
                     <button
                       onClick={() => handleMerge(project)}
-                      className="p-1.5 text-white/20 hover:text-white/70 hover:bg-white/5 transition-all"
-                      title="Merge Project"
+                      className="p-1.5 text-white/55 hover:text-white/70 hover:bg-white/5 transition-all"
+                      title={t('p.merge')}
                     >
                       <ArrowRightLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
                       onClick={() => handleSplit(project)}
-                      className="p-1.5 text-white/20 hover:text-white/70 hover:bg-white/5 transition-all"
-                      title="Split Project"
+                      className="p-1.5 text-white/55 hover:text-white/70 hover:bg-white/5 transition-all"
+                      title={t('p.split')}
                     >
                       <SplitSquareVertical className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
                       onClick={() => handleEdit(project)}
-                      className="p-1.5 text-white/20 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
+                      className="p-1.5 text-white/55 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
                     >
                       <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
                     <button
                       onClick={() => handleDeleteClick(project)}
                       disabled={deletingProjectId === project.id}
-                      className="p-1.5 text-white/20 hover:text-red-400/80 hover:bg-red-500/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-1.5 text-white/55 hover:text-red-400/80 hover:bg-red-500/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       {deletingProjectId === project.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
@@ -696,7 +698,7 @@ export default function AdminProjectsPage() {
 
             {filteredProjects.length === 0 && (
               <div
-                className="border px-4 py-10 text-center text-xs font-mono tracking-wider text-white/25"
+                className="border px-4 py-10 text-center text-xs font-mono tracking-wider text-white/60"
                 style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
               >
                 NO_MATCHING_PROJECTS
@@ -752,7 +754,7 @@ export default function AdminProjectsPage() {
                   </div>
                   <motion.button
                     onClick={cancelDelete}
-                    className="text-white/30 hover:text-white/60 transition-colors"
+                    className="text-white/65 hover:text-white/60 transition-colors"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -770,7 +772,7 @@ export default function AdminProjectsPage() {
                     <p className="text-sm text-white/90 font-serif truncate">
                       {deleteConfirm.projectTitle}
                     </p>
-                    <p className="text-[10px] font-mono text-white/30 mt-1">
+                    <p className="text-[10px] font-mono text-white/65 mt-1">
                       ID: {deleteConfirm.projectId}
                     </p>
                   </div>
@@ -848,7 +850,7 @@ export default function AdminProjectsPage() {
               color: toast.type === 'success' ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255, 255, 255, 0.9)',
             }}
           >
-            {toast.message}
+            {t('t.' + toast.message).startsWith('t.') ? toast.message : t('t.' + toast.message)}
           </motion.div>
         )}
       </AnimatePresence>

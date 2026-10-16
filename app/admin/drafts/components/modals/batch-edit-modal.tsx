@@ -85,14 +85,14 @@ export function BatchEditModal({
             <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-serif text-white/90">BATCH_EDIT ({selectedIds.size} ITEMS)</h2>
-                <button onClick={onClose} className="p-2 text-white/30 hover:text-white/60 transition-colors">
+                <button onClick={onClose} className="p-2 text-white/65 hover:text-white/60 transition-colors">
                   <X className="h-5 w-5" strokeWidth={1.5} />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TITLE_EN</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TITLE_EN</label>
                   <input
                     type="text"
                     value={batchEditForm.title.en}
@@ -102,7 +102,7 @@ export function BatchEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TITLE_ZH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TITLE_ZH</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -115,7 +115,7 @@ export function BatchEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TITLE_TH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TITLE_TH</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -128,7 +128,7 @@ export function BatchEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_EN</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_EN</label>
                   <textarea
                     value={batchEditForm.description.en}
                     onChange={(e) =>
@@ -140,7 +140,7 @@ export function BatchEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_ZH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_ZH</label>
                   <div className="flex gap-2">
                     <textarea
                       value={batchEditForm.description.zh}
@@ -155,7 +155,7 @@ export function BatchEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_TH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_TH</label>
                   <div className="flex gap-2">
                     <textarea
                       value={batchEditForm.description.th}
@@ -170,18 +170,18 @@ export function BatchEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">EVENT_DATE (when the image happened)</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">EVENT_DATE (when the image happened)</label>
                   <input
                     type="date"
                     value={batchEditForm.event_date}
                     onChange={(e) => setBatchEditForm((prev) => ({ ...prev, event_date: e.target.value }))}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   />
-                  <p className="text-[10px] text-white/30 mt-1">Leave blank to use the ingest time.</p>
+                  <p className="text-[10px] text-white/65 mt-1">Leave blank to use the ingest time.</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TAGS (comma-separated)</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TAGS (comma-separated)</label>
                   <input
                     type="text"
                     value={batchEditForm.tags.join(', ')}
@@ -319,7 +319,7 @@ export function BatchEditModal({
 
                   return (
                     <motion.div key={id} layout className="flex items-center gap-2 p-2 bg-black/50 border border-white/10 rounded">
-                      <span className="text-xs font-mono text-white/40 w-6">{index + 1}</span>
+                      <span className="text-xs font-mono text-white/75 w-6">{index + 1}</span>
                       {item.r2_media_url && (
                         <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
                           <Image
@@ -339,14 +339,14 @@ export function BatchEditModal({
                         <button
                           onClick={() => onMoveItem(index, 'up')}
                           disabled={index === 0}
-                          className="p-1 text-white/30 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
+                          className="p-1 text-white/65 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
                         >
                           <ChevronUp className="h-3 w-3" strokeWidth={2} />
                         </button>
                         <button
                           onClick={() => onMoveItem(index, 'down')}
                           disabled={index === batchOrder.length - 1}
-                          className="p-1 text-white/30 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
+                          className="p-1 text-white/65 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
                         >
                           <ChevronDown className="h-3 w-3" strokeWidth={2} />
                         </button>

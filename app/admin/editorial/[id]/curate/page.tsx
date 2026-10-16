@@ -211,7 +211,7 @@ export default function CurateEditorialPage({ params }: { params: { id: string }
             {/* Back Button */}
             <Link
               href="/admin/editorial"
-              className="p-2 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+              className="p-2 rounded-lg hover:bg-white/5 text-white/75 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
             </Link>
@@ -221,7 +221,7 @@ export default function CurateEditorialPage({ params }: { params: { id: string }
               <h1 className="font-serif text-2xl text-white/90 tracking-tight">
                 {project?.title || 'Untitled Magazine'}
               </h1>
-              <p className="text-xs font-mono text-white/30 tracking-wider uppercase mt-1">
+              <p className="text-xs font-mono text-white/65 tracking-wider uppercase mt-1">
                 {project?.catalog_id} · {images.length} ARTIFACTS
               </p>
             </div>
@@ -270,10 +270,10 @@ export default function CurateEditorialPage({ params }: { params: { id: string }
       {/* Instructions Footer */}
       <footer className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/5 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          <p className="text-xs font-mono text-white/30">
+          <p className="text-xs font-mono text-white/65">
             <span className="text-lmsy-yellow/60">DRAG</span> to reorder · Auto-saves on drop
           </p>
-          <p className="text-xs font-mono text-white/20">
+          <p className="text-xs font-mono text-white/55">
             MIRrored Curation v1.0 · MAGAZINE_ARCHIVE
           </p>
         </div>

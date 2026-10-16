@@ -102,7 +102,7 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
             <p className="text-lg md:text-xl text-white/60 max-w-2xl">
               {mapping.description}
             </p>
-            <div className="mt-8 flex items-center gap-4 text-sm text-white/40">
+            <div className="mt-8 flex items-center gap-4 text-sm text-white/80">
               <span>{projects.length} Projects</span>
               <span>•</span>
               <span>{allImages.length} Images</span>
@@ -194,7 +194,7 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
                             {project.tags.slice(0, 3).map((tag: string) => (
                               <span
                                 key={tag}
-                                className="text-[10px] text-white/50 font-mono"
+                                className="text-[10px] text-white/80 font-mono"
                               >
                                 #{tag}
                               </span>
@@ -229,7 +229,7 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
             </div>
           ) : (
             <div className="text-center py-24">
-              <p className="text-white/40 text-lg">No projects found in this category yet.</p>
+              <p className="text-white/80 text-lg">No projects found in this category yet.</p>
               <Link
                 href="/"
                 className="inline-block mt-6 text-lmsy-yellow hover:text-lmsy-blue transition-colors"

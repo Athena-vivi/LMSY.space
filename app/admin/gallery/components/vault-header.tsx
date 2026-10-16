@@ -27,7 +27,7 @@ export function VaultHeader({ activeTab }: VaultHeaderProps) {
       <h1 className="font-serif text-3xl md:text-4xl font-light text-white/90 tracking-tight">
         {title}
       </h1>
-      <p className="text-xs font-mono text-white/30 tracking-wider">
+      <p className="text-xs font-mono text-white/65 tracking-wider">
         {subtitle}
       </p>
     </motion.div>

@@ -157,13 +157,13 @@ export default function QuickProjectModal({
               <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <div>
                   <h2 className="text-lg font-serif text-white/90">New Orbit Project</h2>
-                  <p className="text-[10px] font-mono text-white/30 tracking-wider uppercase mt-0.5">
+                  <p className="text-[10px] font-mono text-white/65 tracking-wider uppercase mt-0.5">
                     Quick Establishment
                   </p>
                 </div>
                 <motion.button
                   onClick={onClose}
-                  className="text-white/30 hover:text-white/60 transition-colors"
+                  className="text-white/65 hover:text-white/60 transition-colors"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -175,7 +175,7 @@ export default function QuickProjectModal({
               <form onSubmit={handleSubmit} className="p-6 space-y-5">
                 {/* Title */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     Title *
                   </label>
                   <input
@@ -183,7 +183,7 @@ export default function QuickProjectModal({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter project title..."
-                    className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+                    className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55"
                     style={{
                       borderColor: 'rgba(255, 255, 255, 0.1)',
                       fontFamily: 'var(--font-playfair), Georgia, serif',
@@ -195,7 +195,7 @@ export default function QuickProjectModal({
 
                 {/* Category */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     Category
                   </label>
                   <CategoryDropdown
@@ -215,7 +215,7 @@ export default function QuickProjectModal({
 
                 {/* Release Date */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     Release Date
                   </label>
                   <input

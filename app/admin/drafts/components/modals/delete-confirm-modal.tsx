@@ -6,6 +6,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Trash2, X } from 'lucide-react';
+import { useAdminLang } from '@/lib/admin-i18n';
 import type { DeleteConfirmState } from '../../hooks/use-draft-actions';
 
 interface DeleteConfirmModalProps {
@@ -15,6 +16,7 @@ interface DeleteConfirmModalProps {
 }
 
 export function DeleteConfirmModal({ deleteConfirm, onExecute, onClose }: DeleteConfirmModalProps) {
+  const { t } = useAdminLang();
   return (
     <AnimatePresence>
       {deleteConfirm.show && (
@@ -41,15 +43,15 @@ export function DeleteConfirmModal({ deleteConfirm, onExecute, onClose }: Delete
                 <Trash2 className="h-5 w-5 text-red-400" strokeWidth={1.5} />
               </div>
               <h2 className="text-lg font-serif text-white/90">
-                {deleteConfirm.type === 'batch' ? 'DELETE_MULTIPLE_ITEMS' : 'DELETE_ITEM'}
+                {deleteConfirm.type === 'batch' ? t('d.deleteMany') : t('d.deleteOne')}
               </h2>
             </div>
 
             {/* Message */}
             <p className="text-white/60 text-sm mb-6">
               {deleteConfirm.type === 'batch'
-                ? `Are you sure you want to delete ${deleteConfirm.count} items? This action cannot be undone.`
-                : 'Are you sure you want to delete this item? This action cannot be undone.'}
+                ? `${t('d.deleteConfirmMany')} ${deleteConfirm.count} ${t('common.images')}。`
+                : t('d.deleteConfirmOne')}
             </p>
 
             {/* Actions */}
@@ -60,7 +62,7 @@ export function DeleteConfirmModal({ deleteConfirm, onExecute, onClose }: Delete
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                CONFIRM_DELETE
+                {t('common.confirm')}
               </motion.button>
               <motion.button
                 onClick={onClose}
@@ -68,7 +70,7 @@ export function DeleteConfirmModal({ deleteConfirm, onExecute, onClose }: Delete
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                CANCEL
+                {t('common.cancel')}
               </motion.button>
             </div>
           </motion.div>

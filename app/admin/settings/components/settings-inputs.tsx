@@ -11,7 +11,7 @@ export function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-mono uppercase tracking-wider text-white/35">
+      <label className="block text-xs font-mono uppercase tracking-wider text-white/70">
         {label}
       </label>
       <input
@@ -35,7 +35,7 @@ export function TextArea({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-mono uppercase tracking-wider text-white/35">
+      <label className="block text-xs font-mono uppercase tracking-wider text-white/70">
         {label}
       </label>
       <textarea

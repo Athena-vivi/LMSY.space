@@ -157,7 +157,7 @@ export default function AdminMessagesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-sm text-white/40 font-light"
+            className="text-sm text-white/75 font-light"
           >
             Review and approve visitor messages
           </motion.p>
@@ -193,7 +193,7 @@ export default function AdminMessagesPage() {
             'relative px-4 py-3 text-sm font-mono transition-colors',
             filter === 'pending'
               ? 'text-lmsy-yellow'
-              : 'text-white/30 hover:text-white/50'
+              : 'text-white/65 hover:text-white/80'
           )}
         >
           Pending
@@ -211,7 +211,7 @@ export default function AdminMessagesPage() {
             'px-4 py-3 text-sm font-mono transition-colors',
             filter === 'approved'
               ? 'text-lmsy-blue'
-              : 'text-white/30 hover:text-white/50'
+              : 'text-white/65 hover:text-white/80'
           )}
         >
           Approved
@@ -222,7 +222,7 @@ export default function AdminMessagesPage() {
             'px-4 py-3 text-sm font-mono transition-colors',
             filter === 'all'
               ? 'text-white/70'
-              : 'text-white/30 hover:text-white/50'
+              : 'text-white/65 hover:text-white/80'
           )}
         >
           All
@@ -234,12 +234,12 @@ export default function AdminMessagesPage() {
         {loading ? (
           <div className="text-center py-20">
             <div className="inline-block w-8 h-8 border-2 border-lmsy-yellow/30 border-t-lmsy-yellow rounded-full animate-spin" />
-            <p className="mt-4 text-sm text-white/30 font-mono">Loading messages...</p>
+            <p className="mt-4 text-sm text-white/65 font-mono">Loading messages...</p>
           </div>
         ) : filteredMessages.length === 0 ? (
           <div className="text-center py-20">
-            <MessageSquare className="w-16 h-16 text-white/10 mx-auto mb-4" />
-            <p className="text-white/30 font-light italic">
+            <MessageSquare className="w-16 h-16 text-white/50 mx-auto mb-4" />
+            <p className="text-white/65 font-light italic">
               {filter === 'pending' ? 'No pending messages' : 'No messages yet'}
             </p>
           </div>
@@ -295,22 +295,22 @@ export default function AdminMessagesPage() {
 
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-white/30">—</span>
+                    <span className="text-white/65">—</span>
                     <span className="text-white/60">{message.author}</span>
                   </div>
                   {message.location && (
                     <>
-                      <span className="text-white/20">·</span>
-                      <span className="text-white/40 font-mono text-xs">
+                      <span className="text-white/55">·</span>
+                      <span className="text-white/75 font-mono text-xs">
                         {message.location}
                       </span>
                     </>
                   )}
-                  <span className="text-white/20">·</span>
-                  <span className="text-white/30 font-mono text-xs">
+                  <span className="text-white/55">·</span>
+                  <span className="text-white/65 font-mono text-xs">
                     {formatDate(message.created_at)}
                   </span>
-                  <span className="text-white/20">·</span>
+                  <span className="text-white/55">·</span>
                   <span className={`text-xs font-mono ${
                     message.color_pref === 'yellow' ? 'text-lmsy-yellow/60' : 'text-lmsy-blue/60'
                   }`}>

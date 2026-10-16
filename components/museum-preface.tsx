@@ -231,7 +231,7 @@ export function MuseumPreface() {
             <p className="font-light text-base md:text-lg text-foreground/70 italic tracking-wide mb-4">
               {currentContent.curatorSignature}
             </p>
-            <p className="font-mono text-xs text-muted-foreground/50 tracking-wider">
+            <p className="font-mono text-xs text-muted-foreground/80 tracking-wider">
               {currentContent.date}
             </p>
           </motion.div>

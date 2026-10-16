@@ -15,6 +15,7 @@ import {
   Send,
   Clock,
 } from 'lucide-react';
+import { useAdminLang } from '@/lib/admin-i18n';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -87,6 +88,7 @@ function SortableImage({
   onDelete: (image: GalleryImage) => void;
   onSetCover: (image: GalleryImage) => void;
 }) {
+  const { t } = useAdminLang();
   const {
     attributes,
     listeners,
@@ -129,7 +131,7 @@ function SortableImage({
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white/5 to-transparent">
-            <span className="text-[10px] font-mono text-white/30 tracking-wider">
+            <span className="text-[10px] font-mono text-white/65 tracking-wider">
               MISSING_IMAGE_URL
             </span>
           </div>
@@ -170,7 +172,7 @@ function SortableImage({
                 type="button"
                 onClick={() => onRotate(image, 'left')}
                 className="rounded bg-black/70 p-1 text-white/60 transition-colors hover:text-white"
-                title="Rotate Left"
+                title={t('c.rotateLeft')}
               >
                 <RotateCcw className="h-3 w-3" strokeWidth={1.8} />
               </button>
@@ -178,7 +180,7 @@ function SortableImage({
                 type="button"
                 onClick={() => onRotate(image, 'right')}
                 className="rounded bg-black/70 p-1 text-white/60 transition-colors hover:text-white"
-                title="Rotate Right"
+                title={t('c.rotateRight')}
               >
                 <RotateCw className="h-3 w-3" strokeWidth={1.8} />
               </button>
@@ -186,7 +188,7 @@ function SortableImage({
                 type="button"
                 onClick={() => onDelete(image)}
                 className="rounded bg-black/70 p-1 text-red-300/70 transition-colors hover:text-red-200"
-                title="Delete Image"
+                title={t('common.delete')}
               >
                 <Trash2 className="h-3 w-3" strokeWidth={1.8} />
               </button>
@@ -226,6 +228,7 @@ function DraftCard({
   onUnlink: (draft: DraftImage) => void;
   busy: boolean;
 }) {
+  const { t } = useAdminLang();
   const imageUrl = getImageUrl(draft.r2_media_url);
   return (
     <div
@@ -238,8 +241,8 @@ function DraftCard({
         {imageUrl ? (
           <Image src={imageUrl} alt={draftTitle(draft.title)} fill className="object-contain bg-black/40 p-2" unoptimized />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-white/30">
-            MISSING_MEDIA
+          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-white/65">
+            {t('c.missingMedia')}
           </div>
         )}
 
@@ -264,9 +267,9 @@ function DraftCard({
       {/* Meta */}
       <div className="px-3 py-2 space-y-1.5">
         <p className="text-[10px] font-mono text-white/60 truncate">{draftTitle(draft.title)}</p>
-        <div className="flex items-center justify-between gap-2 text-[9px] font-mono text-white/30">
+        <div className="flex items-center justify-between gap-2 text-[9px] font-mono text-white/65">
           <span>
-            {draft.source_platform || 'unknown-source'}
+            {draft.source_platform || t('d.unknownSource')}
             {draft.source_account ? ` · @${draft.source_account}` : ''}
           </span>
           {draft.source_url && (
@@ -275,7 +278,7 @@ function DraftCard({
               target="_blank"
               rel="noopener noreferrer"
               className="text-lmsy-blue/70 hover:text-lmsy-blue"
-              title="Open source"
+              title={t('common.link')}
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
@@ -291,10 +294,10 @@ function DraftCard({
               onPromote(draft);
             }}
             className="flex items-center gap-1 rounded bg-black/60 border border-lmsy-yellow/30 px-2 py-1 text-[9px] font-mono tracking-widest text-lmsy-yellow/80 transition-colors hover:text-lmsy-yellow disabled:opacity-40"
-            title="Promote to gallery assets"
+            title={t('c.promote')}
           >
             <Send className="h-2.5 w-2.5" strokeWidth={1.8} />
-            PROMOTE
+            {t('c.promote')}
           </button>
           <button
             type="button"
@@ -303,11 +306,11 @@ function DraftCard({
               e.stopPropagation();
               onUnlink(draft);
             }}
-            className="flex items-center gap-1 rounded bg-black/60 border border-white/15 px-2 py-1 text-[9px] font-mono tracking-widest text-white/50 transition-colors hover:text-white/80 disabled:opacity-40"
-            title="Remove from this project (back to ungrouped)"
+            className="flex items-center gap-1 rounded bg-black/60 border border-white/15 px-2 py-1 text-[9px] font-mono tracking-widest text-white/80 transition-colors hover:text-white/80 disabled:opacity-40"
+            title={t('c.unlinkHint')}
           >
             <Unlink className="h-2.5 w-2.5" strokeWidth={1.8} />
-            UNLINK
+            {t('c.unlink')}
           </button>
         </div>
       </div>
@@ -317,6 +320,7 @@ function DraftCard({
 
 export default function CurateProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { t } = useAdminLang();
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [drafts, setDrafts] = useState<DraftImage[]>([]);
@@ -628,7 +632,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
       else failed += 1;
     }
     setBusyDraftAction(false);
-    setSaveStatus(`PROMOTED ${created} · SKIPPED ${skipped}${failed ? ` · FAILED ${failed}` : ''}`);
+    setSaveStatus(`${t('ss.PROMOTED')} ${created} · ${t('ss.SKIPPED')} ${skipped}${failed ? ` · ${t('ss.FAILED')} ${failed}` : ''}`);
     setTimeout(() => setSaveStatus(null), 4000);
     await fetchProjectAndImages();
   };
@@ -656,7 +660,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || 'UNLINK_FAILED');
-      setSaveStatus(`UNLINKED ${result.unlinked}`);
+      setSaveStatus(`${t('ss.UNLINKED')} ${result.unlinked}`);
       setTimeout(() => setSaveStatus(null), 2500);
       await fetchProjectAndImages();
     } catch (error) {
@@ -700,7 +704,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || 'DELETE_FAILED');
-      setSaveStatus(`DELETED ${result.deleted ?? selectedDraftIds.size}`);
+      setSaveStatus(`${t('ss.DELETED')} ${result.deleted ?? selectedDraftIds.size}`);
       setTimeout(() => setSaveStatus(null), 2500);
       await fetchProjectAndImages();
     } catch (error) {
@@ -729,7 +733,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
             {/* Back Button */}
             <Link
               href="/admin"
-              className="p-2 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+              className="p-2 rounded-lg hover:bg-white/5 text-white/75 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
             </Link>
@@ -737,10 +741,10 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
             {/* Project Info */}
             <div>
               <h1 className="font-serif text-2xl text-white/90 tracking-tight">
-                {project?.title || 'Untitled Project'}
+                {project?.title || t('c.untitled')}
               </h1>
-              <p className="text-xs font-mono text-white/30 tracking-wider uppercase mt-1">
-                {project?.catalog_id} · {images.length} PUBLISHED · {drafts.length} PENDING
+              <p className="text-xs font-mono text-white/65 tracking-wider uppercase mt-1">
+                {project?.catalog_id} · {images.length} {t('wb.published')} · {drafts.length} {t('wb.pending')}
               </p>
             </div>
           </div>
@@ -749,19 +753,19 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center gap-4">
             <button
               onClick={() => setEditModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-mono text-white/50 transition-colors hover:border-lmsy-yellow/30 hover:bg-lmsy-yellow/5 hover:text-lmsy-yellow/80"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-mono text-white/80 transition-colors hover:border-lmsy-yellow/30 hover:bg-lmsy-yellow/5 hover:text-lmsy-yellow/80"
             >
               <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-              PROJECT_INFO
+              {t('c.projectInfo')}
             </button>
             <Link
               href={`/projects/${id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-mono text-white/50 transition-colors hover:border-lmsy-blue/30 hover:bg-lmsy-blue/5 hover:text-lmsy-blue/80"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-mono text-white/80 transition-colors hover:border-lmsy-blue/30 hover:bg-lmsy-blue/5 hover:text-lmsy-blue/80"
             >
               <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
-              VIEW_LIVE
+              {t('p.viewLive')}
             </Link>
             {saveStatus && (
               <span className={`text-xs font-mono ${
@@ -769,7 +773,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
                 saveStatus.includes('✗') || saveStatus.includes('ERROR') ? 'text-red-400/80' :
                 'text-lmsy-yellow/80'
               }`}>
-                {saveStatus}
+                {t('ss.' + saveStatus).startsWith('ss.') ? saveStatus : t('ss.' + saveStatus)}
               </span>
             )}
             {saving && <Loader2 className="h-4 w-4 text-lmsy-yellow/60 animate-spin" />}
@@ -788,7 +792,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xs font-mono tracking-widest text-lmsy-yellow/70 uppercase">
-                  Pending drafts ({drafts.length}) — not yet published
+                  {t('c.pendingSection')} ({drafts.length}) — {t('c.pendingHint')}
                 </h2>
                 {drafts.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -796,30 +800,30 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
                       onClick={() =>
                         setSelectedDraftIds(allDraftsSelected ? new Set() : new Set(drafts.map((d) => d.id)))
                       }
-                      className="border border-white/10 px-3 py-1.5 text-[10px] font-mono tracking-widest text-white/50 transition-colors hover:text-white/80"
+                      className="border border-white/10 px-3 py-1.5 text-[10px] font-mono tracking-widest text-white/80 transition-colors hover:text-white/80"
                     >
-                      {allDraftsSelected ? 'DESELECT_ALL' : 'SELECT_ALL'}
+                      {allDraftsSelected ? t('common.deselectAll') : t('common.selectAll')}
                     </button>
                     <button
                       onClick={handlePromoteSelected}
                       disabled={busyDraftAction || selectedDraftIds.size === 0}
                       className="border border-lmsy-yellow/30 px-3 py-1.5 text-[10px] font-mono tracking-widest text-lmsy-yellow/80 transition-colors hover:text-lmsy-yellow disabled:opacity-30"
                     >
-                      PROMOTE_SELECTED ({selectedDraftIds.size})
+                      {t('c.promote')} ({selectedDraftIds.size})
                     </button>
                     <button
                       onClick={handleUnlinkSelected}
                       disabled={busyDraftAction || selectedDraftIds.size === 0}
-                      className="border border-white/10 px-3 py-1.5 text-[10px] font-mono tracking-widest text-white/50 transition-colors hover:text-white/80 disabled:opacity-30"
+                      className="border border-white/10 px-3 py-1.5 text-[10px] font-mono tracking-widest text-white/80 transition-colors hover:text-white/80 disabled:opacity-30"
                     >
-                      UNLINK
+                      {t('c.unlink')}
                     </button>
                     <button
                       onClick={handleDeleteSelected}
                       disabled={busyDraftAction || selectedDraftIds.size === 0}
                       className="border border-red-500/20 px-3 py-1.5 text-[10px] font-mono tracking-widest text-red-400/60 transition-colors hover:text-red-300 disabled:opacity-30"
                     >
-                      DELETE
+                      {t('common.delete')}
                     </button>
                   </div>
                 )}
@@ -827,10 +831,10 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
 
               {drafts.length === 0 ? (
                 <div className="rounded-xl border border-white/10 bg-white/[0.02] px-6 py-6 text-center">
-                  <p className="text-xs font-mono text-white/40">
-                    No pending drafts in this project. Ungrouped collected images live in{' '}
-                    <Link href="/admin/drafts" className="text-lmsy-blue/70 hover:text-lmsy-blue">Draft Inbox</Link> —
-                    select them there and link them to this project.
+                  <p className="text-xs font-mono text-white/75">
+                    {t('c.emptyPendingLong')}{' '}
+                    <Link href="/admin/drafts" className="text-lmsy-blue/70 hover:text-lmsy-blue">{t('d.title')}</Link> —
+                    {t('c.emptyPendingHow')}
                   </p>
                 </div>
               ) : (
@@ -852,14 +856,14 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
 
             {/* ==================== Published assets (drag to reorder) ==================== */}
             <section>
-              <h2 className="text-xs font-mono tracking-widest text-white/40 uppercase mb-4">
-                Published assets ({images.length}) — drag to reorder
+              <h2 className="text-xs font-mono tracking-widest text-white/75 uppercase mb-4">
+                {t('c.publishedSection')} ({images.length}) — {t('c.dragHint')}
               </h2>
               {images.length === 0 ? (
                 <div className="rounded-xl border border-white/10 bg-white/[0.02] px-6 py-8 text-center">
-                  <p className="text-sm font-mono text-white/60">NO_PUBLISHED_ASSETS_YET</p>
-                  <p className="mt-3 text-xs font-mono text-white/30">
-                    Promote pending drafts above, or transfer assets from the Asset Vault.
+                  <p className="text-sm font-mono text-white/60">{t('c.emptyPublished')}</p>
+                  <p className="mt-3 text-xs font-mono text-white/65">
+                    {t('c.emptyPublishedHint')}
                   </p>
                 </div>
               ) : (
@@ -897,12 +901,12 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
       {/* Instructions Footer */}
       <footer className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/5 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          <p className="text-xs font-mono text-white/30">
-            <span className="text-lmsy-yellow/60">DRAG</span> to reorder · Auto-saves on drop ·{' '}
-            <span className="text-lmsy-yellow/60">CLICK</span> drafts to select
+          <p className="text-xs font-mono text-white/65">
+            <span className="text-lmsy-yellow/60">{t('c.dragHint')}</span> · {t('c.autoSave')} ·{' '}
+            <span className="text-lmsy-yellow/60">{t('c.clickSelect')}</span>
           </p>
-          <p className="text-xs font-mono text-white/20">
-            Project Workspace v2.0
+          <p className="text-xs font-mono text-white/55">
+            {t('c.title')}
           </p>
         </div>
       </footer>

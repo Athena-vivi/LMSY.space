@@ -11,6 +11,7 @@ import { Check, Edit2, Trash2, Play, RotateCcw, ImagePlus, Star, Link2 } from 'l
 import Image from 'next/image';
 import { platformIcons, platformColors, statusBadges, stageBadges } from '../constants';
 import { formatRelativeTime, getDisplayTitle } from '../utils';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 interface DraftCardProps {
   draft: {
@@ -59,6 +60,7 @@ export function DraftCard({
   onEdit,
   onDelete,
 }: DraftCardProps) {
+  const { t } = useAdminLang();
   const isVideo = draft.media_type === 'video';
   const canCreateAsset = draft.media_type === 'image' && !!draft.r2_media_url;
   const hasProject = !!draft.project_id;
@@ -96,12 +98,12 @@ export function DraftCard({
       <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
         {statusBadges[draft.status] && (
           <span className={`px-2 py-0.5 border text-[9px] font-mono tracking-wider ${statusBadges[draft.status].className}`}>
-            {statusBadges[draft.status].label}
+            {t('db.'+draft.status)}
           </span>
         )}
         {stageBadges[draft.ingestion_stage] && draft.ingestion_stage !== 'ready' && (
           <span className={`px-2 py-0.5 border text-[9px] font-mono tracking-wider ${stageBadges[draft.ingestion_stage].className}`}>
-            {stageBadges[draft.ingestion_stage].label}
+            {t('db.'+draft.ingestion_stage)}
           </span>
         )}
       </div>
@@ -153,7 +155,7 @@ export function DraftCard({
           )
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-white/5">
-            <span className="text-white/20 text-xs">NO_MEDIA</span>
+            <span className="text-white/55 text-xs">{t('d.noMedia')}</span>
           </div>
         )}
       </div>
@@ -177,12 +179,12 @@ export function DraftCard({
             {/* Show translations on hover */}
             <div className="space-y-0.5">
               {draft.title.zh && (
-                <p className="text-white/50 text-[10px] line-clamp-1">
+                <p className="text-white/80 text-[10px] line-clamp-1">
                   {draft.title.zh}
                 </p>
               )}
               {draft.title.th && (
-                <p className="text-white/40 text-[10px] line-clamp-1">
+                <p className="text-white/75 text-[10px] line-clamp-1">
                   {draft.title.th}
                 </p>
               )}
@@ -190,10 +192,10 @@ export function DraftCard({
           </div>
 
           {/* Meta info */}
-          <div className="flex items-center gap-2 text-[9px] font-mono text-white/30">
+          <div className="flex items-center gap-2 text-[9px] font-mono text-white/65">
             <span>{formatRelativeTime(draft.created_at)}</span>
             {draft.is_featured && (
-              <span className="text-lmsy-yellow/60">⭐ FEATURED</span>
+              <span className="text-lmsy-yellow/60">⭐ {t('d.featured')}</span>
             )}
           </div>
 
@@ -206,7 +208,7 @@ export function DraftCard({
                 className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-blue/10 border border-lmsy-blue/30 text-lmsy-blue/80 text-[10px] font-mono hover:bg-lmsy-blue/20 transition-all"
               >
                 <RotateCcw className="h-3 w-3" strokeWidth={2} />
-                <span>UNPUBLISH</span>
+                <span>{t('d.unpublish')}</span>
               </button>
             ) : (
               // Draft state - show PUBLISH button
@@ -215,7 +217,7 @@ export function DraftCard({
                 className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-green-500/10 border border-green-500/30 text-green-400/80 text-[10px] font-mono hover:bg-green-500/20 transition-all"
               >
                 <Check className="h-3 w-3" strokeWidth={2} />
-                <span>PUBLISH</span>
+                <span>{t('d.publish')}</span>
               </button>
             )}
             <button
@@ -223,14 +225,14 @@ export function DraftCard({
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-white/60 text-[10px] font-mono hover:bg-white/15 hover:text-white/80 transition-all"
             >
               <Edit2 className="h-3 w-3" strokeWidth={2} />
-              <span>EDIT</span>
+              <span>{t('common.edit')}</span>
             </button>
             <button
               onClick={() => onDelete(draft.id, draft.r2_key)}
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400/80 text-[10px] font-mono hover:bg-red-500/20 transition-all"
             >
               <Trash2 className="h-3 w-3" strokeWidth={2} />
-              <span>DELETE</span>
+              <span>{t('common.delete')}</span>
             </button>
           </div>
 
@@ -241,14 +243,14 @@ export function DraftCard({
               className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-blue/10 border border-lmsy-blue/30 text-lmsy-blue/80 text-[10px] font-mono hover:bg-lmsy-blue/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Check className="h-3 w-3" strokeWidth={2} />
-              <span>{hasProject ? 'PROJECT_LINKED' : 'NEW_PROJECT'}</span>
+              <span>{hasProject ? t('d.projectLinked') : t('d.createProject')}</span>
             </button>
             <button
               onClick={() => onLinkExistingProject(draft.id)}
               className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-white/75 text-[10px] font-mono hover:bg-white/15 transition-all"
             >
               <Link2 className="h-3 w-3" strokeWidth={2} />
-              <span>{hasProject ? 'RELINK_EXISTING' : 'LINK_EXISTING'}</span>
+              <span>{hasProject ? t('d.relink') : t('d.linkProject')}</span>
             </button>
             <button
               onClick={() => onAddToAssets(draft.id)}
@@ -256,7 +258,7 @@ export function DraftCard({
               className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-yellow/10 border border-lmsy-yellow/30 text-lmsy-yellow/80 text-[10px] font-mono hover:bg-lmsy-yellow/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ImagePlus className="h-3 w-3" strokeWidth={2} />
-              <span>WRITE_TO_ASSETS</span>
+              <span>{t('d.addToAssets')}</span>
             </button>
             <div className="grid grid-cols-5 gap-1">
               {[

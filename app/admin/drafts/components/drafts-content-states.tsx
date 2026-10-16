@@ -7,6 +7,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useAdminLang } from '@/lib/admin-i18n';
 import { DraftCard } from './draft-card';
 
 interface LoadingStateProps {
@@ -38,6 +39,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ hasDrafts }: EmptyStateProps) {
+  const { t } = useAdminLang();
   return (
     <motion.div
       key="empty"
@@ -46,11 +48,11 @@ export function EmptyState({ hasDrafts }: EmptyStateProps) {
       exit={{ opacity: 0, scale: 0.95 }}
       className="relative py-32 text-center"
     >
-      <p className="text-xs font-mono text-white/20 tracking-widest">
-        INBOX_EMPTY
+      <p className="text-xs font-mono text-white/55 tracking-widest">
+        {t('d.title')}
       </p>
-      <p className="text-[10px] font-mono text-white/10 tracking-wider mt-2">
-        {hasDrafts ? 'NO_MATCHING_RESULTS' : 'WAITING_FOR_INGESTION'}
+      <p className="text-[10px] font-mono text-white/50 tracking-wider mt-2">
+        {t(hasDrafts ? 'common.noResults' : 'd.waitingIngestion')}
       </p>
     </motion.div>
   );

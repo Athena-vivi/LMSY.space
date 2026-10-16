@@ -4,19 +4,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Upload, Images, FolderKanban, FileText, PenTool, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 const mobileNavItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-  { icon: Upload, label: 'Upload', href: '/admin/upload' },
-  { icon: Images, label: 'Gallery', href: '/admin/gallery' },
-  { icon: FolderKanban, label: 'Projects', href: '/admin/projects' },
-  { icon: FileText, label: 'Chronicle', href: '/admin/chronicle' },
-  { icon: PenTool, label: 'Editorial', href: '/admin/editorial' },
-  { icon: MessageSquare, label: 'Messages', href: '/admin/messages' },
+  { icon: LayoutDashboard, label: 'nav.workbench', href: '/admin' },
+  { icon: Upload, label: 'u.title', href: '/admin/upload' },
+  { icon: Images, label: 'nav.vault', href: '/admin/gallery' },
+  { icon: FolderKanban, label: 'nav.projects', href: '/admin/projects' },
+  { icon: FileText, label: 'nav.chronicle', href: '/admin/chronicle' },
+  { icon: PenTool, label: 'nav.editorial', href: '/admin/editorial' },
+  { icon: MessageSquare, label: 'nav.community', href: '/admin/messages' },
 ];
 
 export function AdminMobileNav() {
   const pathname = usePathname();
+  const { t } = useAdminLang();
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t"
@@ -39,11 +41,11 @@ export function AdminMobileNav() {
                 'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors',
                 isActive
                   ? 'text-lmsy-yellow'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-white/75 hover:text-foreground'
               )}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-medium">{t(item.label)}</span>
             </Link>
           );
         })}

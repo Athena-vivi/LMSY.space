@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getImageUrl } from '@/lib/image-url';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 interface ProjectOption {
   id: string;
@@ -33,6 +34,7 @@ export function LinkProjectModal({
   onClose,
   onSelect,
 }: LinkProjectModalProps) {
+  const { t } = useAdminLang();
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [submittingProjectId, setSubmittingProjectId] = useState<string | null>(null);
@@ -123,8 +125,8 @@ export function LinkProjectModal({
           <DialogTitle className="font-serif text-xl font-light tracking-wide text-white/90">
             Link Existing Project
           </DialogTitle>
-          <DialogDescription className="font-mono text-[11px] tracking-wider text-white/35">
-            Select an existing project for this draft, then continue with WRITE_TO_ASSETS.
+          <DialogDescription className="font-mono text-[11px] tracking-wider text-white/70">
+            {t('p.linkHint')}
           </DialogDescription>
         </DialogHeader>
 
@@ -133,13 +135,13 @@ export function LinkProjectModal({
             type="text"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search by project title, ID, or category"
-            className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-white/85 outline-none transition-colors placeholder:text-white/25 focus:border-lmsy-yellow/40"
+            placeholder={t('p.searchLink')}
+            className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-white/85 outline-none transition-colors placeholder:text-white/60 focus:border-lmsy-yellow/40"
           />
 
           {loading ? (
             <div className="flex h-64 items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+              <Loader2 className="h-5 w-5 animate-spin text-white/75" />
             </div>
           ) : error ? (
             <div className="rounded border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200/80">
@@ -169,7 +171,7 @@ export function LinkProjectModal({
                           unoptimized
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-white/20">
+                        <div className="flex h-full w-full items-center justify-center text-white/55">
                           <Link2 className="h-4 w-4" />
                         </div>
                       )}
@@ -179,10 +181,10 @@ export function LinkProjectModal({
                       <div className="truncate font-serif text-sm text-white/90">
                         {project.title}
                       </div>
-                      <div className="font-mono text-[10px] tracking-wider text-white/35">
+                      <div className="font-mono text-[10px] tracking-wider text-white/70">
                         {project.category.toUpperCase()} {project.release_date ? `· ${project.release_date}` : '· NO_DATE'}
                       </div>
-                      <div className="truncate font-mono text-[10px] text-white/25">
+                      <div className="truncate font-mono text-[10px] text-white/60">
                         {project.id}
                       </div>
                     </div>
@@ -195,7 +197,7 @@ export function LinkProjectModal({
               })}
 
               {filteredProjects.length === 0 && (
-                <div className="rounded border border-white/10 bg-white/[0.02] px-4 py-8 text-center font-mono text-xs tracking-wider text-white/30">
+                <div className="rounded border border-white/10 bg-white/[0.02] px-4 py-8 text-center font-mono text-xs tracking-wider text-white/65">
                   NO_MATCHING_PROJECTS
                 </div>
               )}

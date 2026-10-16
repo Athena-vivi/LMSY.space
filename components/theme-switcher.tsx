@@ -18,7 +18,7 @@ export function ThemeSwitcher() {
     return (
       <div className="flex items-center gap-3">
         <span className="text-xs font-sans tracking-wider text-lmsy-yellow font-bold">DAY</span>
-        <span className="text-muted-foreground/40 text-xs">/</span>
+        <span className="text-muted-foreground/80 text-xs">/</span>
         <span className="text-xs font-sans tracking-wider text-muted-foreground/60">SPACE</span>
       </div>
     );
@@ -48,7 +48,7 @@ export function ThemeSwitcher() {
           />
         )}
       </motion.button>
-      <span className="text-muted-foreground/40 text-xs">/</span>
+      <span className="text-muted-foreground/80 text-xs">/</span>
       <motion.button
         onClick={() => setTheme('dark')}
         className={`

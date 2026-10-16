@@ -273,7 +273,7 @@ export function ChronicleSection() {
         </div>
 
         <motion.p
-          className="mt-16 text-center font-serif text-sm italic text-white/40 md:text-base"
+          className="mt-16 text-center font-serif text-sm italic text-white/80 md:text-base"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}

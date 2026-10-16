@@ -64,8 +64,8 @@ function MasonryImage({ src, index }: { src: string; index: number }) {
       {!src && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center p-4">
-            <Camera className="w-8 h-8 mx-auto text-foreground/20 mb-2" />
-            <p className="text-xs text-foreground/40">Image from Gallery</p>
+            <Camera className="w-8 h-8 mx-auto text-foreground/70 mb-2" />
+            <p className="text-xs text-foreground/80">Image from Gallery</p>
           </div>
         </div>
       )}

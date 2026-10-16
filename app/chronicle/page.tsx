@@ -44,21 +44,21 @@ export default async function ChroniclePage() {
             </div>
 
             <div className="mb-6 max-w-[220px] border-l border-lmsy-blue/25 pl-4">
-              <p className="text-sm leading-relaxed text-white/45">
+              <p className="text-sm leading-relaxed text-white/80">
                 The right column holds the image-led sequence. Each entry can be opened for a closer look.
               </p>
             </div>
 
             <div className="max-w-[220px] space-y-3 border-t border-white/10 pt-5">
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/35">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/70">
                 <span>Entries</span>
                 <span className="text-white/65">{eventCount}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/35">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/70">
                 <span>Type</span>
                 <span className="text-white/65">Published</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/35">
+              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-white/70">
                 <span>View</span>
                 <span className="text-white/65">Image First</span>
               </div>

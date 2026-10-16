@@ -56,7 +56,7 @@ export default function CategoryDropdown({ options, value, onChange }: CategoryD
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <ChevronDown className="w-4 h-4 text-white/30" />
+          <ChevronDown className="w-4 h-4 text-white/65" />
         </motion.div>
       </motion.button>
 

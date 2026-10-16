@@ -224,7 +224,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
     },
     journal: {
       label: 'Journal',
-      className: 'text-white/40 border-white/10 bg-transparent backdrop-blur-sm',
+      className: 'text-white/80 border-white/10 bg-transparent backdrop-blur-sm',
     },
     commercial: {
       label: 'Commercial',
@@ -303,7 +303,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               transition={{ duration: 0.6, delay: 0.22 }}
               className="mb-6 max-w-[220px]"
             >
-              <p className="border-l border-lmsy-yellow/30 pl-4 text-sm leading-relaxed text-white/45 whitespace-pre-line">
+              <p className="border-l border-lmsy-yellow/30 pl-4 text-sm leading-relaxed text-white/80 whitespace-pre-line">
                 {localizedThemeStatement}
               </p>
             </motion.div>
@@ -347,11 +347,11 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                     className={`relative px-4 py-2 text-xs font-mono tracking-wider uppercase transition-all duration-300 ${
                       activeTab === cat.value
                         ? 'text-white'
-                        : 'text-white/40 hover:text-white/60'
+                        : 'text-white/80 hover:text-white/60'
                     }`}
                   >
                     {cat.label}
-                    <span className="ml-2 text-white/20">({count})</span>
+                    <span className="ml-2 text-white/70">({count})</span>
                     {activeTab === cat.value && (
                       <motion.div
                         layoutId="activeTab"
@@ -498,8 +498,8 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               animate={{ opacity: 1 }}
               className="text-center py-24"
             >
-              <p className="text-white/40 text-lg">No images in this category yet.</p>
-              <p className="text-white/20 text-sm mt-2">More content will be added soon.</p>
+              <p className="text-white/80 text-lg">No images in this category yet.</p>
+              <p className="text-white/70 text-sm mt-2">More content will be added soon.</p>
             </motion.div>
           )}
         </div>

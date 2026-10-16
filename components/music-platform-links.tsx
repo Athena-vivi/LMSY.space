@@ -66,7 +66,7 @@ export function MusicPlatformLinks({
     // Minimal version: Show elegant links on profile pages
     return (
       <div className="space-y-3">
-        <p className="text-[10px] font-mono text-white/30 tracking-widest uppercase">Available On</p>
+        <p className="text-[10px] font-mono text-white/70 tracking-widest uppercase">Available On</p>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           {platformLinks.map((platform, index) => (
             <motion.a
@@ -79,7 +79,7 @@ export function MusicPlatformLinks({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.4 }}
             >
-              <span className="font-serif text-sm text-white/40 tracking-wider hover:text-white/70 transition-colors duration-300">
+              <span className="font-serif text-sm text-white/80 tracking-wider hover:text-white/70 transition-colors duration-300">
                 {platform.displayName}
               </span>
               <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/20 group-hover:w-full transition-all duration-300" />
@@ -97,7 +97,7 @@ export function MusicPlatformLinks({
       <div className="text-center mt-4 pt-3 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.04)' }}>
         <motion.button
           onClick={() => setShowModal(true)}
-          className="text-[9px] text-white/20 hover:text-white/40 transition-colors duration-300 font-serif tracking-wide"
+          className="text-[9px] text-white/70 hover:text-white/80 transition-colors duration-300 font-serif tracking-wide"
           whileHover={{ scale: 1.02 }}
         >
           To hear the full resonance, support them on official platforms.
@@ -129,12 +129,12 @@ export function MusicPlatformLinks({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}>
               <div>
-                <p className="text-[10px] font-mono text-white/30 tracking-wider uppercase">Stream On</p>
+                <p className="text-[10px] font-mono text-white/70 tracking-wider uppercase">Stream On</p>
                 {trackName && <p className="font-serif text-sm text-white/60 mt-1">{trackName}</p>}
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/30 hover:text-white/60"
+                className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/70 hover:text-white/60"
               >
                 <X className="h-4 w-4" strokeWidth={1.5} />
               </button>
@@ -170,14 +170,14 @@ export function MusicPlatformLinks({
                       {platform.displayName.replace('_', ' ')}
                     </span>
                   </div>
-                  <ExternalLink className="h-4 w-4 text-white/30 group-hover:text-white/50 transition-colors" strokeWidth={1.5} />
+                  <ExternalLink className="h-4 w-4 text-white/70 group-hover:text-white/80 transition-colors" strokeWidth={1.5} />
                 </motion.a>
               ))}
             </div>
 
             {/* Footer */}
             <div className="px-6 py-3 text-center" style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
-              <p className="text-[9px] font-mono text-white/20 tracking-wide">
+              <p className="text-[9px] font-mono text-white/70 tracking-wide">
                 Support LMSY on your favorite platform
               </p>
             </div>

@@ -186,11 +186,11 @@ export function ChronicleTimeline({ events }: ChronicleTimelineProps) {
       {events.length === 0 && (
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
-            <Calendar className="h-12 w-12 text-white/20 mx-auto mb-4" strokeWidth={1} />
-            <p className="text-white/40 text-sm font-mono">
+            <Calendar className="h-12 w-12 text-white/70 mx-auto mb-4" strokeWidth={1} />
+            <p className="text-white/80 text-sm font-mono">
               NO_EVENTS_RECORDED
             </p>
-            <p className="text-white/20 text-xs font-mono mt-2">
+            <p className="text-white/70 text-xs font-mono mt-2">
               Published items will appear here
             </p>
           </div>

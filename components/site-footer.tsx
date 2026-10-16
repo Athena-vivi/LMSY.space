@@ -53,35 +53,35 @@ export function SiteFooter() {
           <nav className="flex flex-wrap justify-center gap-6 mb-4">
             <Link
               href="/chronicle"
-              className="text-[10px] md:text-xs font-light text-white/30 hover:text-white/60 transition-colors tracking-wider uppercase"
+              className="text-[10px] md:text-xs font-light text-white/70 hover:text-white/60 transition-colors tracking-wider uppercase"
             >
               {t(language, 'nav.chronicle')}
             </Link>
-            <span className="text-[10px] text-white/20">•</span>
+            <span className="text-[10px] text-white/70">•</span>
             <Link
               href="/exhibitions"
-              className="text-[10px] md:text-xs font-light text-white/30 hover:text-white/60 transition-colors tracking-wider uppercase"
+              className="text-[10px] md:text-xs font-light text-white/70 hover:text-white/60 transition-colors tracking-wider uppercase"
             >
               {t(language, 'nav.exhibitions')}
             </Link>
-            <span className="text-[10px] text-white/20">•</span>
+            <span className="text-[10px] text-white/70">•</span>
             <Link
               href="/editorial"
-              className="text-[10px] md:text-xs font-light text-white/30 hover:text-white/60 transition-colors tracking-wider uppercase"
+              className="text-[10px] md:text-xs font-light text-white/70 hover:text-white/60 transition-colors tracking-wider uppercase"
             >
               {t(language, 'nav.editorial')}
             </Link>
-            <span className="text-[10px] text-white/20">•</span>
+            <span className="text-[10px] text-white/70">•</span>
             <Link
               href="/profiles"
-              className="text-[10px] md:text-xs font-light text-white/30 hover:text-white/60 transition-colors tracking-wider uppercase"
+              className="text-[10px] md:text-xs font-light text-white/70 hover:text-white/60 transition-colors tracking-wider uppercase"
             >
               {t(language, 'nav.duality')}
             </Link>
-            <span className="text-[10px] text-white/20">•</span>
+            <span className="text-[10px] text-white/70">•</span>
             <Link
               href="/copyright"
-              className="text-[10px] md:text-xs font-light text-white/30 hover:text-white/60 transition-colors tracking-wider uppercase"
+              className="text-[10px] md:text-xs font-light text-white/70 hover:text-white/60 transition-colors tracking-wider uppercase"
             >
               Copyright
             </Link>
@@ -91,10 +91,10 @@ export function SiteFooter() {
           <div className="text-center">
             <button
               onClick={handleCopyrightClick}
-              className="text-[10px] text-white/20 hover:text-white/40 transition-colors cursor-pointer font-light tracking-wide"
+              className="text-[10px] text-white/70 hover:text-white/80 transition-colors cursor-pointer font-light tracking-wide"
               aria-label="Copyright information"
             >
-              © 2025 lmsy.space | <span className="text-white/30">Curated by Astra. Made with love for LMSY & Besties.</span>
+              © 2025 lmsy.space | <span className="text-white/70">Curated by Astra. Made with love for LMSY & Besties.</span>
             </button>
           </div>
         </div>

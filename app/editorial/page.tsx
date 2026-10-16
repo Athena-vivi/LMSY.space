@@ -188,7 +188,7 @@ export default function EditorialPage() {
                 The Editorials
               </span>
             </h1>
-            <p className="font-mono text-xs text-white/40 tracking-[0.3em]">
+            <p className="font-mono text-xs text-white/80 tracking-[0.3em]">
               MAGAZINE ARCHIVE COLLECTION
             </p>
           </motion.div>
@@ -276,7 +276,7 @@ export default function EditorialPage() {
       {/* Footer - Archive Metadata */}
       <footer className="relative z-10 border-t border-white/5 py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="font-mono text-[10px] text-white/20 tracking-[0.3em] uppercase">
+          <p className="font-mono text-[10px] text-white/70 tracking-[0.3em] uppercase">
             LMSY.SPACE · EDITORIAL_ARCHIVE_VOL_001 · {`${magazines.length}`} ISSUES CURATED
           </p>
         </div>
@@ -454,7 +454,7 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
                 <div className="w-6 h-6 rotate-45 border border-white/20" />
                 <div className="absolute inset-0 w-6 h-6 border border-white/10 rotate-45 scale-75" />
               </div>
-              <p className="font-mono text-[8px] text-white/10 tracking-[0.2em] uppercase text-center leading-relaxed">
+              <p className="font-mono text-[8px] text-white/70 tracking-[0.2em] uppercase text-center leading-relaxed">
                 NO_COVER
               </p>
             </div>

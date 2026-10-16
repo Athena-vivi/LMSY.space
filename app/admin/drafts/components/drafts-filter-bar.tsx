@@ -17,6 +17,7 @@
 import { motion } from 'framer-motion';
 import { Search, Check } from 'lucide-react';
 import { UploadTriggerButton } from '@/components/upload';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 type FilterStatus = 'all' | 'draft' | 'ready' | 'failed';
 type MediaType = 'all' | 'image' | 'video';
@@ -56,6 +57,7 @@ export function DraftsFilterBar({
   fetchDrafts,
   loading,
 }: DraftsFilterBarProps) {
+  const { t } = useAdminLang();
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -66,13 +68,13 @@ export function DraftsFilterBar({
     >
       {/* Search */}
       <div className="flex-1 min-w-[200px] relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/20" strokeWidth={1.5} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/55" strokeWidth={1.5} />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="SEARCH_DRAFTS..."
-          className="w-full pl-9 pr-4 py-1.5 bg-transparent text-white/60 text-sm font-mono focus:outline-none placeholder:text-white/20 tracking-wide"
+          placeholder={t('d.searchPlaceholder')}
+          className="w-full pl-9 pr-4 py-1.5 bg-transparent text-white/60 text-sm font-mono focus:outline-none placeholder:text-white/55 tracking-wide"
         />
       </div>
 
@@ -80,23 +82,23 @@ export function DraftsFilterBar({
       <select
         value={filterStatus}
         onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
-        className="px-3 py-1.5 bg-transparent text-white/40 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
+        className="px-3 py-1.5 bg-transparent text-white/75 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
       >
-        <option value="all">ALL_STATUS</option>
-        <option value="draft">DRAFT</option>
-        <option value="ready">READY</option>
-        <option value="failed">FAILED</option>
+        <option value="all">{t('d.status.all')}</option>
+        <option value="draft">{t('d.status.draft')}</option>
+        <option value="ready">{t('d.status.ready')}</option>
+        <option value="failed">{t('d.status.failed')}</option>
       </select>
 
       {/* Media Type Filter */}
       <select
         value={filterMediaType}
         onChange={(e) => setFilterMediaType(e.target.value as MediaType)}
-        className="px-3 py-1.5 bg-transparent text-white/40 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
+        className="px-3 py-1.5 bg-transparent text-white/75 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
       >
-        <option value="all">ALL_MEDIA</option>
-        <option value="image">IMAGES</option>
-        <option value="video">VIDEOS</option>
+        <option value="all">{t('d.type.all')}</option>
+        <option value="image">{t('d.type.image')}</option>
+        <option value="video">{t('d.type.video')}</option>
       </select>
 
       {/* Batch filter (batch 2): paste a batch id to review one ingestion run */}
@@ -104,9 +106,9 @@ export function DraftsFilterBar({
         type="text"
         value={filterBatchId ?? ''}
         onChange={(e) => setFilterBatchId?.(e.target.value)}
-        placeholder="BATCH_ID"
-        title="按批次 ID 筛选，例如 b20261016-01"
-        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/20 tracking-wider"
+        placeholder={t('d.batchId')}
+        title={t('d.batchIdHint')}
+        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/55 tracking-wider"
       />
 
       {/* Project filter (batch 2): paste a project id to review one project */}
@@ -114,28 +116,28 @@ export function DraftsFilterBar({
         type="text"
         value={filterProjectId ?? ''}
         onChange={(e) => setFilterProjectId?.(e.target.value)}
-        placeholder="PROJECT_ID"
-        title="按项目 ID 筛选（项目审核用）"
-        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/20 tracking-wider"
+        placeholder={t('d.projectId')}
+        title={t('d.projectIdHint')}
+        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/55 tracking-wider"
       />
 
       {/* Select All */}
       {filteredDrafts.length > 0 && (
         <motion.button
           onClick={toggleSelectAll}
-          className="flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/30 text-xs font-mono hover:text-white/60 hover:border-white/20 transition-all"
+          className="flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/65 text-xs font-mono hover:text-white/60 hover:border-white/20 transition-all"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
           {selectedIds.size === filteredDrafts.length ? (
             <>
               <Check className="h-3 w-3" strokeWidth={2} />
-              <span>SELECTED_ALL</span>
+              <span>{t('common.deselectAll')}</span>
             </>
           ) : (
             <>
               <div className="h-3 w-3 border border-white/30" />
-              <span>SELECT_ALL</span>
+              <span>{t('common.selectAll')}</span>
             </>
           )}
         </motion.button>
@@ -145,10 +147,10 @@ export function DraftsFilterBar({
       <motion.button
         onClick={fetchDrafts}
         disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-white/40 text-xs font-mono hover:text-lmsy-yellow hover:border-lmsy-yellow/40 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 px-3 py-1.5 border border-white/10 text-white/75 text-xs font-mono hover:text-lmsy-yellow hover:border-lmsy-yellow/40 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         whileHover={{ scale: loading ? 1 : 1.02 }}
         whileTap={{ scale: loading ? 1 : 0.98 }}
-        title="刷新草稿箱"
+        title={t('d.refreshHint')}
       >
         <motion.span
           animate={{ rotate: loading ? 360 : 0 }}
@@ -156,7 +158,7 @@ export function DraftsFilterBar({
         >
           ↻
         </motion.span>
-        <span>REFRESH</span>
+        <span>{t('d.refresh')}</span>
       </motion.button>
 
       {/* Bulk Upload Button */}

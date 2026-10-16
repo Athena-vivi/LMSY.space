@@ -30,7 +30,7 @@ const platformColors: Record<string, string> = {
   xiaohongshu: 'text-red-500/80',
   youtube: 'text-red-500/80',
   tiktok: 'text-white/80',
-  manual: 'text-white/40',
+  manual: 'text-white/75',
 };
 
 // Status badges
@@ -44,7 +44,7 @@ const statusBadges: Record<string, { label: string; className: string }> = {
 
 // Ingestion stage badges
 const stageBadges: Record<string, { label: string; className: string }> = {
-  pending: { label: 'PENDING', className: 'bg-white/5 border-white/10 text-white/30' },
+  pending: { label: 'PENDING', className: 'bg-white/5 border-white/10 text-white/65' },
   downloading: { label: 'DOWNLOADING', className: 'bg-blue-500/10 border-blue-500/20 text-blue-400/70' },
   uploading: { label: 'UPLOADING', className: 'bg-blue-500/10 border-blue-500/20 text-blue-400/70' },
   translating: { label: 'TRANSLATING', className: 'bg-purple-500/10 border-purple-500/20 text-purple-400/70' },
@@ -571,7 +571,7 @@ export default function DraftsPage() {
         <h1 className="font-serif text-3xl font-light text-white/90 tracking-tight">
           DRAFT_INBOX
         </h1>
-        <p className="text-xs font-mono text-white/30 tracking-wider">
+        <p className="text-xs font-mono text-white/65 tracking-wider">
           CONTENT_INGESTION_CURATION_INTERFACE
         </p>
       </motion.div>
@@ -615,10 +615,10 @@ export default function DraftsPage() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="relative py-32 text-center"
           >
-            <p className="text-xs font-mono text-white/20 tracking-widest">
+            <p className="text-xs font-mono text-white/55 tracking-widest">
               INBOX_EMPTY
             </p>
-            <p className="text-[10px] font-mono text-white/10 tracking-wider mt-2">
+            <p className="text-[10px] font-mono text-white/50 tracking-wider mt-2">
               {drafts.length === 0 ? 'WAITING_FOR_INGESTION' : 'NO_MATCHING_RESULTS'}
             </p>
           </motion.div>
@@ -726,7 +726,7 @@ export default function DraftsPage() {
                       )
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-white/5">
-                        <span className="text-white/20 text-xs">NO_MEDIA</span>
+                        <span className="text-white/55 text-xs">NO_MEDIA</span>
                       </div>
                     )}
                   </div>
@@ -750,12 +750,12 @@ export default function DraftsPage() {
                         {/* Show translations on hover */}
                         <div className="space-y-0.5">
                           {draft.title.zh && (
-                            <p className="text-white/50 text-[10px] line-clamp-1">
+                            <p className="text-white/80 text-[10px] line-clamp-1">
                               {draft.title.zh}
                             </p>
                           )}
                           {draft.title.th && (
-                            <p className="text-white/40 text-[10px] line-clamp-1">
+                            <p className="text-white/75 text-[10px] line-clamp-1">
                               {draft.title.th}
                             </p>
                           )}
@@ -763,7 +763,7 @@ export default function DraftsPage() {
                       </div>
 
                       {/* Meta info */}
-                      <div className="flex items-center gap-2 text-[9px] font-mono text-white/30">
+                      <div className="flex items-center gap-2 text-[9px] font-mono text-white/65">
                         <span>{formatRelativeTime(draft.created_at)}</span>
                         {draft.is_featured && (
                           <span className="text-lmsy-yellow/60">⭐ FEATURED</span>
@@ -864,7 +864,7 @@ export default function DraftsPage() {
               </motion.button>
               <motion.button
                 onClick={() => setSelectedIds(new Set())}
-                className="p-2 text-white/30 hover:text-white/60 transition-colors"
+                className="p-2 text-white/65 hover:text-white/60 transition-colors"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
@@ -897,7 +897,7 @@ export default function DraftsPage() {
                 <h2 className="text-xl font-serif text-white/90">EDIT_DRAFT</h2>
                 <button
                   onClick={handleCloseEdit}
-                  className="p-2 text-white/30 hover:text-white/60 transition-colors"
+                  className="p-2 text-white/65 hover:text-white/60 transition-colors"
                 >
                   <X className="h-5 w-5" strokeWidth={1.5} />
                 </button>
@@ -929,7 +929,7 @@ export default function DraftsPage() {
               <div className="space-y-4">
                 {/* Title EN */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TITLE_EN</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TITLE_EN</label>
                   <input
                     type="text"
                     value={editForm.title.en}
@@ -940,7 +940,7 @@ export default function DraftsPage() {
 
                 {/* Title ZH */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TITLE_ZH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TITLE_ZH</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -961,7 +961,7 @@ export default function DraftsPage() {
 
                 {/* Title TH */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TITLE_TH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TITLE_TH</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -982,7 +982,7 @@ export default function DraftsPage() {
 
                 {/* Description EN */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_EN</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_EN</label>
                   <textarea
                     value={editForm.description.en}
                     onChange={(e) => setEditForm(prev => ({ ...prev, description: { ...prev.description, en: e.target.value } }))}
@@ -993,7 +993,7 @@ export default function DraftsPage() {
 
                 {/* Description ZH */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_ZH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_ZH</label>
                   <div className="flex gap-2">
                     <textarea
                       value={editForm.description.zh}
@@ -1014,7 +1014,7 @@ export default function DraftsPage() {
 
                 {/* Description TH */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_TH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_TH</label>
                   <div className="flex gap-2">
                     <textarea
                       value={editForm.description.th}
@@ -1035,19 +1035,19 @@ export default function DraftsPage() {
 
                 {/* Event Date - 图片拍摄时间 */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">EVENT_DATE (图片发生时间)</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">EVENT_DATE (图片发生时间)</label>
                   <input
                     type="date"
                     value={editForm.event_date}
                     onChange={(e) => setEditForm(prev => ({ ...prev, event_date: e.target.value }))}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                   />
-                  <p className="text-[10px] text-white/30 mt-1">留空则使用抓取时间</p>
+                  <p className="text-[10px] text-white/65 mt-1">留空则使用抓取时间</p>
                 </div>
 
                 {/* Tags */}
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">TAGS (comma-separated)</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">TAGS (comma-separated)</label>
                   <input
                     type="text"
                     value={editForm.tags.join(', ')}
@@ -1120,7 +1120,7 @@ export default function DraftsPage() {
                   <h2 className="text-xl font-serif text-white/90">BATCH_EDIT ({selectedIds.size} ITEMS)</h2>
                   <button
                     onClick={handleCloseBatchEdit}
-                    className="p-2 text-white/30 hover:text-white/60 transition-colors"
+                    className="p-2 text-white/65 hover:text-white/60 transition-colors"
                   >
                     <X className="h-5 w-5" strokeWidth={1.5} />
                   </button>
@@ -1130,7 +1130,7 @@ export default function DraftsPage() {
                 <div className="space-y-4">
                   {/* Title EN */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">TITLE_EN</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">TITLE_EN</label>
                     <input
                       type="text"
                       value={batchEditForm.title.en}
@@ -1141,7 +1141,7 @@ export default function DraftsPage() {
 
                   {/* Title ZH */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">TITLE_ZH</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">TITLE_ZH</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -1162,7 +1162,7 @@ export default function DraftsPage() {
 
                   {/* Title TH */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">TITLE_TH</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">TITLE_TH</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -1183,7 +1183,7 @@ export default function DraftsPage() {
 
                   {/* Description EN */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_EN</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_EN</label>
                     <textarea
                       value={batchEditForm.description.en}
                       onChange={(e) => setBatchEditForm(prev => ({ ...prev, description: { ...prev.description, en: e.target.value } }))}
@@ -1194,7 +1194,7 @@ export default function DraftsPage() {
 
                   {/* Description ZH */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_ZH</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_ZH</label>
                     <div className="flex gap-2">
                       <textarea
                         value={batchEditForm.description.zh}
@@ -1215,7 +1215,7 @@ export default function DraftsPage() {
 
                   {/* Description TH */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_TH</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_TH</label>
                     <div className="flex gap-2">
                       <textarea
                         value={batchEditForm.description.th}
@@ -1236,19 +1236,19 @@ export default function DraftsPage() {
 
                   {/* Event Date - 图片拍摄时间 */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">EVENT_DATE (图片发生时间)</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">EVENT_DATE (图片发生时间)</label>
                     <input
                       type="date"
                       value={batchEditForm.event_date}
                       onChange={(e) => setBatchEditForm(prev => ({ ...prev, event_date: e.target.value }))}
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                     />
-                    <p className="text-[10px] text-white/30 mt-1">留空则使用抓取时间</p>
+                    <p className="text-[10px] text-white/65 mt-1">留空则使用抓取时间</p>
                   </div>
 
                   {/* Tags */}
                   <div>
-                    <label className="block text-xs font-mono text-white/40 mb-1">TAGS (comma-separated)</label>
+                    <label className="block text-xs font-mono text-white/75 mb-1">TAGS (comma-separated)</label>
                     <input
                       type="text"
                       value={batchEditForm.tags.join(', ')}
@@ -1310,7 +1310,7 @@ export default function DraftsPage() {
                         layout
                         className="flex items-center gap-2 p-2 bg-black/50 border border-white/10 rounded"
                       >
-                        <span className="text-xs font-mono text-white/40 w-6">{index + 1}</span>
+                        <span className="text-xs font-mono text-white/75 w-6">{index + 1}</span>
                         {item.r2_media_url && (
                           <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
                             <Image
@@ -1332,14 +1332,14 @@ export default function DraftsPage() {
                           <button
                             onClick={() => handleMoveItem(index, 'up')}
                             disabled={index === 0}
-                            className="p-1 text-white/30 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
+                            className="p-1 text-white/65 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
                           >
                             <ChevronUp className="h-3 w-3" strokeWidth={2} />
                           </button>
                           <button
                             onClick={() => handleMoveItem(index, 'down')}
                             disabled={index === batchOrder.length - 1}
-                            className="p-1 text-white/30 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
+                            className="p-1 text-white/65 hover:text-white/60 disabled:opacity-20 disabled:cursor-not-allowed"
                           >
                             <ChevronDown className="h-3 w-3" strokeWidth={2} />
                           </button>

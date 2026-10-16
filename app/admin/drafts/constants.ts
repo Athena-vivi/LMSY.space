@@ -23,7 +23,7 @@ export const platformColors: Record<string, string> = {
   xiaohongshu: 'text-red-500/80',
   youtube: 'text-red-500/80',
   tiktok: 'text-white/80',
-  manual: 'text-white/40',
+  manual: 'text-white/75',
 };
 
 // Status badges
@@ -37,7 +37,7 @@ export const statusBadges: Record<string, { label: string; className: string }> 
 
 // Ingestion stage badges
 export const stageBadges: Record<string, { label: string; className: string }> = {
-  pending: { label: 'PENDING', className: 'bg-white/5 border-white/10 text-white/30' },
+  pending: { label: 'PENDING', className: 'bg-white/5 border-white/10 text-white/65' },
   downloading: { label: 'DOWNLOADING', className: 'bg-blue-500/10 border-blue-500/20 text-blue-400/70' },
   uploading: { label: 'UPLOADING', className: 'bg-blue-500/10 border-blue-500/20 text-blue-400/70' },
   translating: { label: 'TRANSLATING', className: 'bg-purple-500/10 border-purple-500/20 text-purple-400/70' },

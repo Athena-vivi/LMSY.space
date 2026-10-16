@@ -187,7 +187,7 @@ export default function WhispersPage() {
               <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-light text-foreground/90 tracking-tight mb-4">
                 WHISPERS
               </h1>
-              <p className="text-[10px] md:text-xs tracking-[0.4em] text-muted-foreground/50 font-mono uppercase">
+              <p className="text-[10px] md:text-xs tracking-[0.4em] text-muted-foreground/80 font-mono uppercase">
                 Collecting the Resonance of Besties
               </p>
             </motion.div>
@@ -199,7 +199,7 @@ export default function WhispersPage() {
           <div className="max-w-7xl mx-auto">
             {loading ? (
               <div className="text-center py-32">
-                <Loader2 className="w-8 h-8 text-muted-foreground/20 animate-spin mx-auto" />
+                <Loader2 className="w-8 h-8 text-muted-foreground/70 animate-spin mx-auto" />
               </div>
             ) : messages.length === 0 ? (
               <div className="text-center py-32">
@@ -250,7 +250,7 @@ export default function WhispersPage() {
                   </svg>
                 </motion.div>
                 <motion.p
-                  className="text-xs tracking-[0.3em] text-muted-foreground/30 font-mono uppercase"
+                  className="text-xs tracking-[0.3em] text-muted-foreground/70 font-mono uppercase"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
                   transition={{ duration: 3, repeat: Infinity }}
@@ -338,12 +338,12 @@ export default function WhispersPage() {
                             >
                               {message.author.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-xs text-foreground/50 font-mono">
+                            <span className="text-xs text-foreground/80 font-mono">
                               {message.author}
                             </span>
                           </div>
 
-                          <span className="text-[9px] text-muted-foreground/30 font-mono">
+                          <span className="text-[9px] text-muted-foreground/70 font-mono">
                             {formatDate(message.created_at)}
                           </span>
                         </div>
@@ -359,7 +359,7 @@ export default function WhispersPage() {
         {/* Footer */}
         <footer className="relative py-12 px-6 border-t border-border/5">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-[10px] tracking-[0.2em] text-muted-foreground/20 font-mono uppercase">
+            <p className="text-[10px] tracking-[0.2em] text-muted-foreground/70 font-mono uppercase">
               All signals are reviewed before entering the archive
             </p>
           </div>
@@ -405,7 +405,7 @@ export default function WhispersPage() {
                 whileTap={{ scale: 0.9 }}
                 disabled={submitting}
               >
-                <X className="w-5 h-5 text-foreground/40" />
+                <X className="w-5 h-5 text-foreground/80" />
               </motion.button>
 
               {/* Form Content */}
@@ -419,14 +419,14 @@ export default function WhispersPage() {
                     <h2 className="font-serif text-3xl text-foreground/90 mb-2">
                       Transmit Your Signal
                     </h2>
-                    <p className="text-xs text-muted-foreground/40 font-mono uppercase tracking-wider mb-8">
+                    <p className="text-xs text-muted-foreground/80 font-mono uppercase tracking-wider mb-8">
                       Your whisper will be reviewed before joining the archive
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-10" noValidate>
                       {/* Message - Transparent with animated gradient bottom border */}
                       <div>
-                        <label className="block text-[10px] font-mono text-muted-foreground/40 tracking-[0.3em] uppercase mb-4">
+                        <label className="block text-[10px] font-mono text-muted-foreground/80 tracking-[0.3em] uppercase mb-4">
                           Your Message
                         </label>
                         <div className="relative group">
@@ -447,7 +447,7 @@ export default function WhispersPage() {
                               placeholder="Leave a signal in this space..."
                               maxLength={500}
                               rows={5}
-                              className="w-full px-0 py-4 bg-transparent text-foreground/80 placeholder:text-muted-foreground/20 focus:outline-none resize-none font-serif text-xl leading-relaxed transition-all duration-300"
+                              className="w-full px-0 py-4 bg-transparent text-foreground/80 placeholder:text-muted-foreground/70 focus:outline-none resize-none font-serif text-xl leading-relaxed transition-all duration-300"
                               style={{
                                 background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
                                 backdropFilter: 'blur(4px)',
@@ -481,7 +481,7 @@ export default function WhispersPage() {
                               REQUIRED_SIGNAL_MISSING
                             </motion.p>
                           )}
-                          <p className="text-[9px] text-muted-foreground/20 mt-2 text-right font-mono">
+                          <p className="text-[9px] text-muted-foreground/70 mt-2 text-right font-mono">
                             {formData.content.length}/500
                           </p>
                         </div>
@@ -490,7 +490,7 @@ export default function WhispersPage() {
                       {/* Author & Location */}
                       <div className="grid md:grid-cols-2 gap-8">
                         <div>
-                          <label className="block text-[10px] font-mono text-muted-foreground/40 tracking-[0.3em] uppercase mb-4">
+                          <label className="block text-[10px] font-mono text-muted-foreground/80 tracking-[0.3em] uppercase mb-4">
                             Signature
                           </label>
                           <motion.div
@@ -508,7 +508,7 @@ export default function WhispersPage() {
                               }}
                               placeholder="Your name"
                               maxLength={100}
-                              className="w-full px-0 py-3 bg-transparent text-foreground/80 placeholder:text-muted-foreground/20 focus:outline-none font-mono text-sm border-b transition-all duration-300"
+                              className="w-full px-0 py-3 bg-transparent text-foreground/80 placeholder:text-muted-foreground/70 focus:outline-none font-mono text-sm border-b transition-all duration-300"
                               style={{
                                 borderBottomColor: validationErrors.author
                                   ? 'rgba(220, 38, 38, 0.8)'
@@ -530,7 +530,7 @@ export default function WhispersPage() {
                           )}
                         </div>
                         <div>
-                          <label className="block text-[10px] font-mono text-muted-foreground/40 tracking-[0.3em] uppercase mb-4">
+                          <label className="block text-[10px] font-mono text-muted-foreground/80 tracking-[0.3em] uppercase mb-4">
                             Coordinates (Optional)
                           </label>
                           <input
@@ -539,14 +539,14 @@ export default function WhispersPage() {
                             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                             placeholder="City or Galaxy"
                             maxLength={200}
-                            className="w-full px-0 py-3 bg-transparent text-foreground/80 placeholder:text-muted-foreground/20 focus:outline-none font-mono text-sm border-b border-foreground/10 focus:border-lmsy-blue/50 transition-colors"
+                            className="w-full px-0 py-3 bg-transparent text-foreground/80 placeholder:text-muted-foreground/70 focus:outline-none font-mono text-sm border-b border-foreground/10 focus:border-lmsy-blue/50 transition-colors"
                           />
                         </div>
                       </div>
 
                       {/* Energy Color Selector - With Glow Ring */}
                       <div>
-                        <label className="block text-[10px] font-mono text-muted-foreground/40 tracking-[0.3em] uppercase mb-4">
+                        <label className="block text-[10px] font-mono text-muted-foreground/80 tracking-[0.3em] uppercase mb-4">
                           Choose Your Energy Color
                         </label>
                         <div className="flex gap-6">

@@ -8,6 +8,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Edit2, Trash2, X, ImagePlus } from 'lucide-react';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 interface DraftsActionsBarProps {
   selectedIds: Set<string>;
@@ -26,6 +27,7 @@ export function DraftsActionsBar({
   onBatchEdit,
   onClearSelection,
 }: DraftsActionsBarProps) {
+  const { t } = useAdminLang();
   return (
     <AnimatePresence>
       {selectedIds.size > 0 && (
@@ -43,7 +45,7 @@ export function DraftsActionsBar({
             }}
           >
             <span className="text-white/60 text-sm font-mono">
-              {selectedIds.size} SELECTED
+              {t('common.selected')} {selectedIds.size}
             </span>
             <div className="w-px h-4 bg-white/10" />
             <motion.button
@@ -53,17 +55,17 @@ export function DraftsActionsBar({
               whileTap={{ scale: 0.95 }}
             >
               <Check className="h-3.5 w-3.5" strokeWidth={2} />
-              <span>PUBLISH_ALL</span>
+              <span>{t('d.batchPublish')}</span>
             </motion.button>
             <motion.button
               onClick={() => onBatchToGallery(Array.from(selectedIds))}
-              title="把选中草稿逐条转正为图库资产（循环调用单条接口，逐条回报）"
+              title={t('d.toGalleryAllHint')}
               className="flex items-center gap-2 px-4 py-2 bg-lmsy-yellow/20 border border-lmsy-yellow/40 text-lmsy-yellow/90 text-xs font-mono hover:bg-lmsy-yellow/30 transition-all rounded-full"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
-              <span>TO_GALLERY_ALL</span>
+              <span>{t('d.toGalleryAll')}</span>
             </motion.button>
             <motion.button
               onClick={onBatchDelete}
@@ -72,7 +74,7 @@ export function DraftsActionsBar({
               whileTap={{ scale: 0.95 }}
             >
               <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-              <span>DELETE_ALL</span>
+              <span>{t('d.batchDelete')}</span>
             </motion.button>
             <motion.button
               onClick={onBatchEdit}
@@ -81,11 +83,11 @@ export function DraftsActionsBar({
               whileTap={{ scale: 0.95 }}
             >
               <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
-              <span>EDIT_ALL</span>
+              <span>{t('d.batchEdit')}</span>
             </motion.button>
             <motion.button
               onClick={onClearSelection}
-              className="p-2 text-white/30 hover:text-white/60 transition-colors"
+              className="p-2 text-white/65 hover:text-white/60 transition-colors"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >

@@ -339,11 +339,11 @@ export function VinylPlayer() {
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-lmsy-yellow animate-pulse" />
-                    <p className="text-[10px] font-mono text-white/40 tracking-wider uppercase">Preview</p>
+                    <p className="text-[10px] font-mono text-white/80 tracking-wider uppercase">Preview</p>
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-white/30 hover:text-white/60"
+                    className="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-white/70 hover:text-white/60"
                   >
                     <X className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </button>
@@ -378,7 +378,7 @@ export function VinylPlayer() {
 
                     <div className="flex-1 min-w-0">
                       <h4 className="font-serif text-sm text-white/90 truncate">{currentTrack.title}</h4>
-                      <p className="text-xs text-white/40 truncate">{currentTrack.artist}</p>
+                      <p className="text-xs text-white/80 truncate">{currentTrack.artist}</p>
                     </div>
                   </div>
 
@@ -396,7 +396,7 @@ export function VinylPlayer() {
                         }}
                       />
                     </div>
-                    <div className="flex justify-between text-[8px] font-mono text-white/30">
+                    <div className="flex justify-between text-[8px] font-mono text-white/70">
                       <span>{formatTime((progress / 100) * (currentTrack.duration || 30))}</span>
                       <span>0:30</span>
                     </div>
@@ -406,7 +406,7 @@ export function VinylPlayer() {
                   <div className="flex items-center justify-center gap-4">
                     <button
                       onClick={playPrevious}
-                      className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white/60"
+                      className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/80 hover:text-white/60"
                     >
                       <SkipBack className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
@@ -448,14 +448,14 @@ export function VinylPlayer() {
 
                     <button
                       onClick={playNext}
-                      className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white/60"
+                      className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/80 hover:text-white/60"
                     >
                       <SkipForward className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </button>
 
                     <button
                       onClick={() => setIsMuted(!isMuted)}
-                      className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/40 hover:text-white/60"
+                      className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/80 hover:text-white/60"
                     >
                       {isMuted ? (
                         <VolumeX className="h-3 w-3" strokeWidth={1.5} />
@@ -469,7 +469,7 @@ export function VinylPlayer() {
                   <div className="pt-4 border-t"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.04)' }}
                   >
-                    <p className="text-[7px] font-mono text-white/20 mb-2 tracking-wider uppercase">Up Next</p>
+                    <p className="text-[7px] font-mono text-white/70 mb-2 tracking-wider uppercase">Up Next</p>
                     <div className="space-y-1">
                       {playlist.slice(currentTrackIndex + 1, currentTrackIndex + 3).map((track) => (
                         <div
@@ -498,8 +498,8 @@ export function VinylPlayer() {
                             })()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-thin font-serif text-white/50 truncate">{track.title}</p>
-                            <p className="text-[9px] text-white/20 truncate">{track.artist}</p>
+                            <p className="text-xs font-thin font-serif text-white/80 truncate">{track.title}</p>
+                            <p className="text-[9px] text-white/70 truncate">{track.artist}</p>
                           </div>
                         </div>
                       ))}

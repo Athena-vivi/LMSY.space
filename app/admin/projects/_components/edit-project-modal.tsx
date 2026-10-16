@@ -258,13 +258,13 @@ export default function EditProjectModal({
               <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                 <div>
                   <h2 className="text-lg font-serif text-white/90">EDIT_PROJECT_RECORD</h2>
-                  <p className="text-[10px] font-mono text-white/30 tracking-wider uppercase mt-0.5">
+                  <p className="text-[10px] font-mono text-white/65 tracking-wider uppercase mt-0.5">
                     ARCHIVE_MODIFICATION_PROTOCOL
                   </p>
                 </div>
                 <motion.button
                   onClick={onClose}
-                  className="text-white/30 hover:text-white/60 transition-colors"
+                  className="text-white/65 hover:text-white/60 transition-colors"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -276,7 +276,7 @@ export default function EditProjectModal({
               <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-5 custom-scrollbar">
                 {/* Title */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     TITLE_EN *
                   </label>
                   <input
@@ -284,7 +284,7 @@ export default function EditProjectModal({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter project title..."
-                    className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+                    className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55"
                     style={{
                       borderColor: 'rgba(255, 255, 255, 0.1)',
                       fontFamily: 'var(--font-playfair), Georgia, serif',
@@ -314,7 +314,7 @@ export default function EditProjectModal({
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       TITLE_ZH
                     </label>
                     <input
@@ -322,12 +322,12 @@ export default function EditProjectModal({
                       value={titleZh}
                       onChange={(e) => setTitleZh(e.target.value)}
                       placeholder="Chinese title..."
-                      className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+                      className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       TITLE_TH
                     </label>
                     <input
@@ -335,7 +335,7 @@ export default function EditProjectModal({
                       value={titleTh}
                       onChange={(e) => setTitleTh(e.target.value)}
                       placeholder="Thai title..."
-                      className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20"
+                      className="w-full px-0 py-2 bg-transparent text-white/90 focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                     />
                   </div>
@@ -343,7 +343,7 @@ export default function EditProjectModal({
 
                 {/* Category */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     CATEGORY
                   </label>
                   <CategoryDropdown
@@ -355,7 +355,7 @@ export default function EditProjectModal({
 
                 {/* Release Date */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     RELEASE_DATE
                   </label>
                   <input
@@ -369,7 +369,7 @@ export default function EditProjectModal({
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     DESCRIPTION_EN
                   </label>
                   <textarea
@@ -377,14 +377,14 @@ export default function EditProjectModal({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Project description..."
                     rows={3}
-                    className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                    className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 resize-none"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       DESCRIPTION_ZH
                     </label>
                     <textarea
@@ -392,12 +392,12 @@ export default function EditProjectModal({
                       onChange={(e) => setDescriptionZh(e.target.value)}
                       placeholder="Project description in Chinese..."
                       rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 resize-none"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       DESCRIPTION_TH
                     </label>
                     <textarea
@@ -405,7 +405,7 @@ export default function EditProjectModal({
                       onChange={(e) => setDescriptionTh(e.target.value)}
                       placeholder="Project description in Thai..."
                       rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 resize-none"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                     />
                   </div>
@@ -414,7 +414,7 @@ export default function EditProjectModal({
                 {/* Portal Controls */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       PORTAL_VISIBLE
                     </label>
                     <label className="flex items-center gap-2 text-sm text-white/70">
@@ -428,7 +428,7 @@ export default function EditProjectModal({
                     </label>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       PORTAL_PRIORITY
                     </label>
                     <input
@@ -442,7 +442,7 @@ export default function EditProjectModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     CURATION_STATUS
                   </label>
                   <select
@@ -458,7 +458,7 @@ export default function EditProjectModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     THEME_STATEMENT_EN
                   </label>
                   <textarea
@@ -466,14 +466,14 @@ export default function EditProjectModal({
                     onChange={(e) => setThemeStatement(e.target.value)}
                     placeholder="Curatorial theme statement for exhibitions and themed presentation..."
                     rows={3}
-                    className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                    className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 resize-none"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       THEME_STATEMENT_ZH
                     </label>
                     <textarea
@@ -481,12 +481,12 @@ export default function EditProjectModal({
                       onChange={(e) => setThemeStatementZh(e.target.value)}
                       placeholder="Curatorial theme statement in Chinese..."
                       rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 resize-none"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       THEME_STATEMENT_TH
                     </label>
                     <textarea
@@ -494,7 +494,7 @@ export default function EditProjectModal({
                       onChange={(e) => setThemeStatementTh(e.target.value)}
                       placeholder="Curatorial theme statement in Thai..."
                       rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 resize-none"
+                      className="w-full px-3 py-2 bg-transparent text-white/70 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 resize-none"
                       style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                     />
                   </div>
@@ -503,7 +503,7 @@ export default function EditProjectModal({
                 {/* Tags */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                    <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                       TAGS
                     </label>
                     <span className="text-[8px] font-mono" style={{ color: tags.length >= MAX_TAGS ? 'rgba(239, 68, 68, 0.7)' : 'rgba(255, 255, 255, 0.2)' }}>
@@ -548,13 +548,13 @@ export default function EditProjectModal({
                     onKeyDown={handleTagInputKeyDown}
                     placeholder={tags.length >= MAX_TAGS ? "Maximum tags reached" : "+ Add tag"}
                     disabled={tags.length >= MAX_TAGS}
-                    className="w-full px-0 py-1.5 bg-transparent text-white/40 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="w-full px-0 py-1.5 bg-transparent text-white/75 font-mono text-xs focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-white/55 disabled:opacity-30 disabled:cursor-not-allowed"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
                   />
 
                   {/* Quick Add Tags */}
                   <div className="pt-2">
-                    <div className="text-[8px] font-mono text-white/15 tracking-wider uppercase mb-2">
+                    <div className="text-[8px] font-mono text-white/50 tracking-wider uppercase mb-2">
                       Quick Add
                     </div>
                     <div className="flex flex-wrap gap-1">
@@ -595,7 +595,7 @@ export default function EditProjectModal({
 
                 {/* Reference Link */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                  <label className="block text-[10px] font-mono text-white/65 tracking-[0.2em] uppercase">
                     REFERENCE_LINK
                   </label>
                   <input
@@ -603,7 +603,7 @@ export default function EditProjectModal({
                     value={referenceUrl}
                     onChange={(e) => setReferenceUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full px-0 py-2 bg-transparent text-white/70 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-white/20"
+                    className="w-full px-0 py-2 bg-transparent text-white/70 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-white/55"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   />
                 </div>

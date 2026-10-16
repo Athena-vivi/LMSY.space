@@ -115,7 +115,7 @@ export default function EditorialHeader({
             </div>
           </div>
         </div>
-        <div className="text-[9px] font-mono text-white/15 tracking-[0.3em] uppercase">
+        <div className="text-[9px] font-mono text-white/50 tracking-[0.3em] uppercase">
           Orbit Title
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function EditorialHeader({
             e.target.style.textShadow = 'none';
           }}
         />
-        <div className="text-[9px] font-mono text-white/15 tracking-[0.3em] uppercase">
+        <div className="text-[9px] font-mono text-white/50 tracking-[0.3em] uppercase">
           Curator's Statement
         </div>
       </div>

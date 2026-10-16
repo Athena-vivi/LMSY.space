@@ -75,7 +75,7 @@ export function CompactCatalogNumber({
     <div
       className={`
         text-[9px] font-mono tracking-wide
-        text-foreground/40
+        text-foreground/80
         ${className}
       `}
       style={{

@@ -272,7 +272,7 @@ export function SearchCommand() {
                     </div>
                   ) : query ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <Search className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                      <Search className="h-12 w-12 text-muted-foreground/70 mb-3" />
                       <p className="text-muted-foreground">No results found for "{query}"</p>
                       <p className="text-sm text-muted-foreground mt-1">
                         Try different keywords or browse the gallery

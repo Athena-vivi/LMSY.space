@@ -21,6 +21,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/auth-provider';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 interface NavItem {
   icon: LucideIcon;
@@ -36,29 +37,29 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    title: 'DASHBOARD',
+    title: 'nav.workbench',
     items: [
-      { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
+      { icon: LayoutDashboard, label: 'nav.workbench', href: '/admin' },
     ],
   },
   {
-    title: 'CONTENT FLOW',
+    title: 'nav.contentFlow',
     items: [
-      { icon: Inbox, label: 'Draft Inbox', href: '/admin/drafts', showBadge: true },
-      { icon: Layers, label: 'Batches', href: '/admin/batches' },
-      { icon: Images, label: 'Asset Vault', href: '/admin/gallery' },
+      { icon: Inbox, label: 'nav.drafts', href: '/admin/drafts', showBadge: true },
+      { icon: Layers, label: 'nav.batches', href: '/admin/batches' },
+      { icon: Images, label: 'nav.vault', href: '/admin/gallery' },
     ],
   },
   {
-    title: 'COLLECTIONS',
+    title: 'nav.projects',
     items: [
-      { icon: FolderKanban, label: 'Collections', href: '/admin/projects' },
+      { icon: FolderKanban, label: 'nav.projects', href: '/admin/projects' },
     ],
   },
   {
-    title: 'COMMUNITY',
+    title: 'nav.community',
     items: [
-      { icon: MessageSquare, label: 'Community', href: '/admin/messages' },
+      { icon: MessageSquare, label: 'nav.community', href: '/admin/messages' },
     ],
   },
 ];
@@ -71,6 +72,7 @@ interface AdminSidebarProps {
 export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
   const pathname = usePathname();
   const { signOut } = useAuth();
+  const { t, lang, setLang } = useAdminLang();
   const [draftCount, setDraftCount] = useState(0);
 
   // Fetch draft count for badge
@@ -128,7 +130,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
           )}
           <button
             onClick={onToggle}
-            className="rounded-lg p-1.5 hover:bg-white/5 transition-colors flex-shrink-0 text-white/40 hover:text-white/60"
+            className="rounded-lg p-1.5 hover:bg-white/5 transition-colors flex-shrink-0 text-white/75 hover:text-white/60"
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
@@ -141,6 +143,16 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
 
         {/* Navigation */}
         <nav className="custom-scrollbar flex-1 overflow-y-auto py-4 px-3 space-y-6">
+          {/* Language switch */}
+          <div className={cn('flex', isCollapsed ? 'justify-center' : 'justify-start px-3')}>
+            <button
+              onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+              className="rounded-md border border-white/15 px-2.5 py-1 text-[12px] font-medium text-white/75 hover:text-white hover:border-white/30 transition-colors"
+              title={lang === 'zh' ? 'Switch to English' : '切换到中文'}
+            >
+              {t('nav.langSwitch')}
+            </button>
+          </div>
           {navSections.map((section) => (
             <div key={section.title}>
               {!isCollapsed && (
@@ -149,8 +161,8 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                   animate={{ opacity: 1 }}
                   className="px-3 mb-2"
                 >
-                  <h3 className="text-[10px] font-medium text-white/30 uppercase tracking-widest">
-                    {section.title}
+                  <h3 className="text-[10px] font-medium text-white/65 uppercase tracking-widest">
+                    {t(section.title)}
                   </h3>
                 </motion.div>
               )}
@@ -167,7 +179,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                         'flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 relative overflow-hidden group',
                         isActive
                           ? 'text-white/90 font-medium'
-                          : 'text-white/40 hover:text-white/70'
+                          : 'text-white/75 hover:text-white/70'
                       )}
                     >
                       {/* Glow effect for active item */}
@@ -194,7 +206,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                             className="flex items-center gap-2 flex-1 min-w-0"
                           >
                             <span className="font-light text-sm whitespace-nowrap">
-                              {item.label}
+                              {t(item.label)}
                             </span>
                             {/* Draft Inbox Badge */}
                             {item.showBadge && draftCount > 0 && (
@@ -226,7 +238,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
               'flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 relative overflow-hidden group',
               pathname?.startsWith('/admin/settings')
                 ? 'text-white/90 font-medium'
-                : 'text-white/40 hover:text-white/70'
+                : 'text-white/75 hover:text-white/70'
             )}
           >
             {pathname?.startsWith('/admin/settings') && (
@@ -251,7 +263,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                   transition={{ duration: 0.2 }}
                   className="text-sm font-light whitespace-nowrap"
                 >
-                  Settings
+                  {t('nav.settings')}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -263,7 +275,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
           <button
             onClick={signOut}
             className={cn(
-              'w-full flex items-center gap-3 rounded-lg px-3 py-2 text-white/30 hover:text-red-400/80 hover:bg-red-500/5 transition-all duration-200',
+              'w-full flex items-center gap-3 rounded-lg px-3 py-2 text-white/65 hover:text-red-400/80 hover:bg-red-500/5 transition-all duration-200',
               isCollapsed && 'justify-center px-2'
             )}
             aria-label="Sign out"
@@ -278,7 +290,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
                   transition={{ duration: 0.2 }}
                   className="text-sm font-light whitespace-nowrap"
                 >
-                  SIGN OUT
+                  {t('nav.logout')}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -302,7 +314,7 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
         </div>
         <Link
           href="/"
-          className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/40"
+          className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/75"
           aria-label="Exit admin"
         >
           <X className="h-4 w-4" strokeWidth={1.5} />

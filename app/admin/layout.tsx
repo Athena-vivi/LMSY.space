@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { AdminMobileNav } from '@/components/admin-mobile-nav';
 import { UploadProvider } from '@/components/upload';
+import { AdminLangProvider } from '@/lib/admin-i18n';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout({
@@ -35,7 +36,7 @@ export default function AdminLayout({
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Shield className="h-12 w-12 text-lmsy-yellow mx-auto mb-4 animate-pulse" />
-          <p className="text-white/40 font-mono text-sm">Verifying admin access...</p>
+          <p className="text-white/75 font-mono text-sm">Verifying admin access...</p>
         </div>
       </div>
     );
@@ -52,8 +53,9 @@ export default function AdminLayout({
   }
 
   return (
+    <AdminLangProvider>
     <UploadProvider>
-      <div className="relative min-h-screen">
+      <div className="admin-root relative min-h-screen">
         {/* Desktop Sidebar */}
         <AdminSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
 
@@ -85,5 +87,6 @@ export default function AdminLayout({
       `}</style>
       </div>
     </UploadProvider>
+    </AdminLangProvider>
   );
 }

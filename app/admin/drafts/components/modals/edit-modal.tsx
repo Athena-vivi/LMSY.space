@@ -79,7 +79,7 @@ export function EditModal({
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-serif text-white/90">EDIT_DRAFT</h2>
-              <button onClick={onClose} className="p-2 text-white/30 hover:text-white/60 transition-colors">
+              <button onClick={onClose} className="p-2 text-white/65 hover:text-white/60 transition-colors">
                 <X className="h-5 w-5" strokeWidth={1.5} />
               </button>
             </div>
@@ -103,7 +103,7 @@ export function EditModal({
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">TITLE_EN</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">TITLE_EN</label>
                 <input
                   type="text"
                   value={editForm.title.en}
@@ -113,7 +113,7 @@ export function EditModal({
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">TITLE_ZH</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">TITLE_ZH</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -126,7 +126,7 @@ export function EditModal({
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">TITLE_TH</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">TITLE_TH</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -139,7 +139,7 @@ export function EditModal({
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_EN</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_EN</label>
                 <textarea
                   value={editForm.description.en}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, description: { ...prev.description, en: e.target.value } }))}
@@ -149,7 +149,7 @@ export function EditModal({
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_ZH</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_ZH</label>
                 <div className="flex gap-2">
                   <textarea
                     value={editForm.description.zh}
@@ -162,7 +162,7 @@ export function EditModal({
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">DESCRIPTION_TH</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">DESCRIPTION_TH</label>
                 <div className="flex gap-2">
                   <textarea
                     value={editForm.description.th}
@@ -175,18 +175,18 @@ export function EditModal({
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">EVENT_DATE (when the image happened)</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">EVENT_DATE (when the image happened)</label>
                 <input
                   type="date"
                   value={editForm.event_date}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, event_date: e.target.value }))}
                   className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-white/80 text-sm focus:outline-none focus:border-lmsy-yellow/40"
                 />
-                <p className="text-[10px] text-white/30 mt-1">Leave blank to use the ingest time.</p>
+                <p className="text-[10px] text-white/65 mt-1">Leave blank to use the ingest time.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-white/40 mb-1">TAGS (comma-separated)</label>
+                <label className="block text-xs font-mono text-white/75 mb-1">TAGS (comma-separated)</label>
                 <input
                   type="text"
                   value={editForm.tags.join(', ')}
@@ -216,7 +216,7 @@ export function EditModal({
                 </label>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_TITLE_EN</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_TITLE_EN</label>
                   <input
                     type="text"
                     value={editForm.chronicle_title.en}
@@ -229,7 +229,7 @@ export function EditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_TITLE_ZH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_TITLE_ZH</label>
                   <input
                     type="text"
                     value={editForm.chronicle_title.zh}
@@ -242,7 +242,7 @@ export function EditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_TITLE_TH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_TITLE_TH</label>
                   <input
                     type="text"
                     value={editForm.chronicle_title.th}
@@ -255,7 +255,7 @@ export function EditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_EXCERPT_EN</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_EXCERPT_EN</label>
                   <textarea
                     value={editForm.chronicle_excerpt.en}
                     onChange={(e) =>
@@ -268,7 +268,7 @@ export function EditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_EXCERPT_ZH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_EXCERPT_ZH</label>
                   <textarea
                     value={editForm.chronicle_excerpt.zh}
                     onChange={(e) =>
@@ -281,7 +281,7 @@ export function EditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-white/40 mb-1">CHRONICLE_EXCERPT_TH</label>
+                  <label className="block text-xs font-mono text-white/75 mb-1">CHRONICLE_EXCERPT_TH</label>
                   <textarea
                     value={editForm.chronicle_excerpt.th}
                     onChange={(e) =>

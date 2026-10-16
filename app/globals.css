@@ -377,3 +377,9 @@
 .prose td {
   border-top: 1px solid theme('colors.border');
 }
+
+/* Admin readability: brighter muted foreground inside the admin shell only.
+   Scoped so the public site keeps its original #9CA3AF. */
+.admin-root {
+  --muted-foreground: #d1d5db;
+}
