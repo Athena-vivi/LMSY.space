@@ -1,237 +1,316 @@
 # LMSY.space 项目状态盘点与第三阶段方案（图片数据批量更新）
 
-- **日期：** 2026-10-16
-- **性质：** 盘点 + 方案文档。本轮**未**启动图片采集、未批量上传、未发布草稿、未修改任何生产数据；全部生产侧检查为只读（PostgREST SELECT、R2 列表、Telegram getWebhookInfo 尝试、生产 HTTP GET/非法请求探测）。
-- **证据约定：** 每个结论标注证据来源。本机网络**无法到达** `lmsy.space` 与 `api.telegram.org`（实测 fetch failed，见 §1.4），所有「线上 HTTP」类验收只能列待办，不冒充完成。
+- **日期：** 2026-10-16　**版本：** v1.1（按站长复核指令修订，修订记录见 §0）
+- **性质：** 盘点 + 方案文档。两轮均为只读：未启动采集、未批量上传、未发布草稿、未修改任何生产数据。
+- **证据约定：** 结论标注证据来源。本机网络无法到达 `lmsy.space` 与 `api.telegram.org`（实测 fetch failed，§1.5），所有「线上 HTTP」类验收列为待办，不用本地测试冒充生产验证。
+
+## 0. v1.1 修订记录（对应站长复核指令六条要求）
+
+| 指令要求 | 修订结果 | 主要依据 |
+|---|---|---|
+| §1 前两阶段收尾逐项列出权限/执行方式/验收证据 | 新 §1.6 收尾清单（四列表格） | git/探针/文档核对 |
+| §2 来源丢失深度检查（字段映射/迁移/兼容/前台展示/回查） | 新 §3（替换原 §4.4 简述）：完整字段映射表 + 迁移方案 + 兼容性 + 测试方案 + 前台展示方案 | `to-gallery/route.ts` 全文、探针实测 18/330 可回查 |
+| §3 日期/事件语义逐项核实 | 新 §4：九类语义字段对照表 + 系统性日期混用实证（30/30 电报草稿 event_date=采集日期） | webhook/ingest 代码 + 探针 |
+| §4 历史回填范围核对 | 新 §5：**推翻 v1.0 记载——杂志回填已执行完毕**（312/312 已在库，0 缺失）；仅 2 组 20 张因无项目挂靠被有意跳过 | `backups/magazine-orphan-mapping-2026-10-15.json` 与生产库逐条比对 |
+| §5 最小可行流程（自动/人工分工、批次追踪、幂等恢复） | 新 §7 | 现有管道代码 + 已验证的去重/幂等机制 |
+| §6 交付要求（映射/生命周期/证据规则/兼容核对/分阶段验收/待批清单） | §3/§4/§5/§6/§7/§8/§9 对应覆盖 | — |
+
+v1.0 中「X1 建议作为演练批先做」的建议**作废**（回填已执行，见 §5）。
 
 ---
 
-## 1. 项目当前版本、分支、提交与部署状态
+## 1. 前两阶段收尾状态
+
+### 1.1 版本与部署
 
 | 项 | 状态 | 证据 |
 |---|---|---|
-| 分支 / 工作区 | `main`，工作区干净（无未提交修改） | `git status --short --branch` → `## main...origin/main [ahead 1]`，无文件行 |
-| 最新提交 | `8a47a85`（仅文档：扩展弃用裁定 + U3 改为先验证） | `git log --oneline -1`、`git show 8a47a85 --stat`（2 个 docs 文件） |
-| 未推送 | **1 个提交未推送**（`8a47a85`，纯文档）。此前 GitHub 443 间歇不可达导致推送失败；本轮未再尝试推送（避免与盘点无关动作），待网络窗口补推 | `git rev-list origin/main..main --count` → 1 |
-| 生产部署对应关系 | `origin/main` HEAD = `8857e7d`（第二批代码，含去重前移 + SSRF 黑名单）。`84c820e`、`b2813ee`、`8857e7d` 均已验证为 `origin/main` 祖先 | `git merge-base --is-ancestor` 三项均通过 |
-| Vercel 部署 | **无法从本机直接核验**（lmsy.space 不可达、无 Vercel API 凭据）。按 Vercel-GitHub 自动部署流程，origin/main 更新即部署；此前批次验收记录（docs/FULL_AUDIT_REPORT_2026-10-16.md）记载 `c797ff6`、`8857e7d` 部署已验证。**状态：代码已推送（已验证），线上版本 = 8857e7d（依据部署记录，非本轮直接核验）** | git 祖先验证 + 审计报告记录 |
+| 分支 / 工作区 | `main`，工作区干净 | `git status --short --branch` |
+| 最新提交 | `a5d6393`（v1.0 盘点文档）；`8a47a85`（扩展弃用裁定文档） | `git log --oneline -2` |
+| 未推送 | 2 个纯文档提交未推送（GitHub 443 间歇不可达，本轮尝试推送返回 `Empty reply from server`） | `git rev-list origin/main..main --count` → 2；push 报错原文 |
+| 生产代码版本 | `origin/main` = `8857e7d`（去重前移 + SSRF 黑名单）；`84c820e`/`b2813ee` 均为祖先（merge-base 验证通过） | git 祖先验证 |
+| Vercel 部署 | 无法本机直验（网络+无凭据）；历史验收记录记载 `c797ff6`/`8857e7d` 已部署验证 | docs/FULL_AUDIT_REPORT_2026-10-16.md |
 
-## 2. 维护与安全收尾状态表
-
-状态定义：✅ 已实现且已验证｜🔶 代码完成、生产验证不完整｜⚪ 未实现｜🔒 本机权限/网络无法验证。
-
-| 项 | 状态 | 证据与说明 |
-|---|---|---|
-| `84c820e` 安全整改（admin 鉴权、上传收紧、备份脚本、数据完整性） | ✅ 已合入并推送 | `git show 84c820e --stat`（40+ 文件：admin 路由 requireAdmin、删除 diagnose 页等）；祖先验证通过 |
-| 迁移 `20261015_phase1_baseline_gallery_assets.sql` | ✅ 生产已应用（间接功能证据） | 基线建表脚本（75 行，全部 IF NOT EXISTS）；生产 `gallery_assets` 可经 anon key 正常读取、列集合与基线定义一致（OpenAPI 探针，见 §4.1）。直接 SQL 查询 pg_class 无权限，标间接证据 |
-| 迁移 `20261015_phase1_data_integrity.sql` | ✅ 生产已应用（间接功能证据） | ① `draft_items.source_platform` 含 `telegram` 的 CHECK：生产 30 条 telegram 草稿正常入库（探针实测），旧约束（无 telegram）下不可能；② 唯一索引：实测 0 重复 `image_url`（gallery_assets）、0 重复 `r2_media_url` 与 0 重复 `file_hash` 依赖约束（探针）；③ 提交 `40c14be` 记录迁移应用 |
-| 迁移 `20261015_phase1_rls_hardening.sql` | ✅ 生产已应用（**功能性实测**） | anon key 读 `draft_items` → **HTTP 401**；读 `admin_users` → **HTTP 401**；读 `gallery_assets`/`projects`/`chronicle_events`/`site_content_blocks` → **HTTP 200**（本轮探针实测，即「匿名/普通用户读不到草稿与管理员表、公开表正常」的直接证据） |
-| 匿名/authenticated 写入面 | ✅ 收紧 | 迁移 REVOKE 全部写权限 + 丢弃 permissive 写策略（迁移文件 §1/§2）；应用层所有写走 service_role（`lib/supabase/admin.ts`） |
-| 管理员认证/会话/登出/权限 | 🔶 代码完成；线上端到端未复测 | `requireAdmin` 语义 401/403/503 有单测与冒烟（`scripts/security-smoke-test.mjs` 51/51，本地）；本机不可达 lmsy.space，线上登录端到端属 X2 待办 |
-| 生产环境变量 `ADMIN_EMAIL`/`TELEGRAM_WEBHOOK_SECRET`/`CRON_SECRET`/`INGEST_API_KEY` 等 | 🔒 无法核验（需 Vercel Dashboard，用户侧 U2） | 本机 `.env.local` 14 个变量齐全（键名核对），但 Vercel Production 值本机不可读。替代方案：生产 API 无凭据探测（期望 503=未配置/401=不匹配）因网络不可达未执行，列入 X2 |
-| Telegram Webhook 注册 | 🔶 **功能性在活**（间接证据强）；注册参数直接核验被网络挡住 | ① 数据库实测：最新 15 条草稿全部 `source_platform=telegram` 且均带 R2 对象；10-15 05:57:08–05:57:27 UTC（北京 13:57）20 秒连续入库 10 条 = 批量发送场景实测通过；10 月累计 12 条（探针 `temp/webhook-verify.mjs`）。② secret 不匹配时 Telegram 投递会被 401 全拒——有新草稿即证明 secret/URL 链路正确。③ `api.telegram.org` getWebhookInfo 本机 fetch failed（2 次重试），注册参数（URL/secret 指纹）待可换网络跑 `npx tsx scripts/setup-telegram-webhook.ts status`（只读） |
-| 合法 vs 非法 webhook 请求处理 | 🔶 单测+冒烟已覆盖（本地）；线上探测列入 X2 | 单测覆盖 secret 未配置 503/不匹配 401（lib/webhook-auth 测试）；本机不可达生产 |
-| 数据库备份 | ✅ 已执行（本地产物在库） | `backups/db/` 4 次运行（10-15 两次、10-16 两次，含 gallery_assets/projects JSON 全量）；`backups/db-offsite/offsite-report.json`（10-16 06:45） |
-| R2 备份 | ✅ 已执行 | `backups/r2/` 4 次 + `backups/r2-offsite/offsite-report.json`（10-16 06:51） |
-| 恢复演练 | ✅ 已执行 | `backups/restore-drill/` 4 次运行记录（最近 10-16 06:51） |
-| 平台侧备份/PITR（Supabase Dashboard） | 🔒 用户侧待核验（U4） | 免费档是否含 PITR 未知，本机无 Dashboard 权限 |
-| U1（撤销 sbp_ 令牌） | 🔒 用户侧，无法代验 | 需 Dashboard 操作确认 |
-
-## 3. 性能优化状态表（`b2813ee`）
+### 1.2 安全收尾（生产实证部分）
 
 | 项 | 状态 | 证据 |
 |---|---|---|
-| 代码推送 | ✅ | `b2813ee` 为 `origin/main` 祖先（merge-base 验证） |
-| 缓存策略（静态资源/公开页/API/后台边界） | 🔶 代码完成，线上 Header 未复测 | `next.config.ts`（该提交 106 行改动）定义 headers；本机不可达生产，无法抓线上 `cache-control`（X2 待办） |
-| 图片优化（next/image 管线、尺寸预生成） | 🔶 代码完成 + 本地构建通过；线上传输体积未复测 | `lib/image-dimensions.ts` + `lib/generated/image-dimensions.json` 入库；本地 `next build` exit 0（历史批次记录）。线上 LCP/体积属 X2 |
-| `/gallery`、`/projects` 分页筛选排序 | 🔶 代码完成；本地冒烟 51/51；线上未复测 | 同上 + `app/gallery/page.tsx` 252 行改动记录 |
-| 首页/人物/日程/编年史回归 | 🔶 本地冒烟通过；线上未复测 | 冒烟清单覆盖首页/图库/作品/档案/日程/编年史（X2 清单） |
-| SEO：sitemap/robots/canonical/404 | 🔶 代码完成；线上文件未抓取 | `app/sitemap.ts`（97 行重写）、`lib/seo.ts`；既有已知问题：**动态详情页对不存在 id 渲染 not-found UI 但返回 HTTP 200**（profiles/editorial/projects 同行为，审计已登记，未修） |
-| 性能数字基线 | 📄 历史记录可用，非线上实测 | `docs/PHASE2_PERFORMANCE_REPORT.md`（424 行，含测试环境与方法说明） |
+| RLS 生产生效 | ✅ 实测 | anon 读 `draft_items`/`admin_users` → HTTP 401；读公开表 → 200（探针） |
+| 三个 phase1 迁移已应用 | ✅（间接功能证据） | telegram 草稿可入库（source_platform CHECK 含 telegram）；0 重复 catalog_id/file_hash/r2_media_url；列集与基线一致（OpenAPI）；`40c14be` 记录应用 |
+| 采集链路在活 | ✅ 实测 | 最新 15 条草稿全 telegram 均带 R2 对象；10-15 20 秒批量入库 10 条；10 月累计 12 条 |
+| 备份/异地/恢复演练 | ✅ 有产物 | `backups/db/`×4、`backups/r2/`×4、`restore-drill/`×4、offsite-report×2（最新 10-16 06:45/06:51） |
+| R2 对账 | ✅ 实测 | 408 对象 / 383 引用 / 25 孤儿（与第二批验收持平，未增长）/ 0 悬空 |
 
-**收尾结论：** 性能批次的**代码与本地验证已完成**；缺口集中在「线上复测」一类，全部归入 X2（依赖可访问 lmsy.space 的网络环境），不存在需要新写代码的缺口。
+### 1.3 性能优化（b2813ee）收尾结论
 
-## 4. 图片数据系统现状（只读盘点）
+代码与本地验证完成（typecheck 0 / 单测 83/83 / 构建 exit 0 / 冒烟 51/51，历史记录）；`next.config.ts` 缓存头、图片尺寸预生成（`lib/image-dimensions.ts`）、sitemap 重写（`app/sitemap.ts`）均已入库。**缺口全部集中在「线上复测」**，归入 X2，无需新写代码。基线数字见 `docs/PHASE2_PERFORMANCE_REPORT.md`（424 行，含环境与方法说明），不作为线上体验结论。
 
-### 4.1 数据库结构（OpenAPI 实测，非文档转抄）
+### 1.4 已知未修问题
 
-- **`gallery_assets`**（发布图库，330 行）：30 列。关联/背景字段：`project_id`（→projects）、`event_date`、`tag`、`catalog_id`、`magazine_issue`、`credits`、`curator_note`、`title/caption/excerpt` 三语 i18n。**没有 `source_url`/`source_platform`/`source_account` 列** —— 发布后的图无法保留原始出处链接（§4.4 详述）。
-- **`draft_items`**（采集草稿，71 行：65 draft / 6 published）：32 列。溯源字段完整：`source_url`、`source_platform`、`source_post_id`、`raw_event_date`、`event_date`、`file_hash`（去重键，唯一索引）、`tags`、`project_id`、编年史字段。
-- **`projects`**（25 行）：作品/项目/图集实体，含 `category`、`release_date`、`start_date/end_date`、封面、三语 i18n、portal 字段。
-- **`profiles`**（2 行）：人物档案（`ig_handle`、`x_handle`）。
-- **`chronicle_events`**（**0 行**）：编年史事件实体（`event_date`、`event_type`、`image_ids`）——结构已建好但从未使用。
-- **`site_content_blocks`**（4 行）：站点文案块。
-- **`admin_users`**：管理员表（anon 401，已验证）。
+1. 动态详情页对不存在 id 渲染 not-found UI 但返回 HTTP 200（profiles/editorial/projects 同行为，审计已登记）。
+2. `gallery` 灯箱不显示日期与来源（§3.4 详述）。
 
-### 4.2 R2 存储与 CDN
+### 1.5 本机网络限制（影响验收方式）
 
-- `npm run audit:r2` 实测（本轮）：**408 个对象，383 个被引用，25 个孤儿，0 个悬空引用**（数据库指向的每个对象都存在，无坏图）。孤儿数与第二批验收时一致（25→25），说明去重前移后没有新增垃圾。
-- 命名规则：`draft/<uuid>.<ext>` 暂存，发布资产走正式前缀；访问经 `https://cdn.lmsy.space` 自定义域（代码 `lib/r2-client.ts`、探针引用）。
-- 18 个已发布资产在 `draft/` 前缀（audit 输出），历史路径不规范但可用。
+`https://lmsy.space` 与 `https://api.telegram.org` 从本机均 fetch failed（本轮多次实测）。因此：生产 HTTP 行为、webhook 注册参数直查均列为待办。**这些项不得用本地测试替代**，网络可达后按下表逐项销项。
 
-### 4.3 数据质量实测（全表扫描）
+### 1.6 收尾清单（权限 / 执行方式 / 验收证据）
+
+| # | 事项 | 需要的权限 | 执行方式 | 验收证据 |
+|---|---|---|---|---|
+| 1 | 补推 2 个文档提交 | 本机 git（已有） | 网络窗口内 `git push origin main` | `git rev-list origin/main..main --count` → 0 |
+| 2 | U1 撤销 sbp_ 令牌 | Supabase Dashboard（站长） | Dashboard → Account → Access Tokens → Revoke | 站长确认；令牌失效后脚本无法再用其执行 SQL |
+| 3 | U2 Vercel Production 环境变量核验 | Vercel Dashboard（站长） | 核对 `ADMIN_EMAIL`/`TELEGRAM_WEBHOOK_SECRET`/`CRON_SECRET`/`INGEST_API_KEY`/`TELEGRAM_BOT_TOKEN`/`OPENROUTER_API_KEY` 与 `.env.local` 同值 | 站长回填核对结果到本表 |
+| 4 | U3 Telegram webhook 注册参数核验 | 可达 api.telegram.org 的网络 | `npx tsx scripts/setup-telegram-webhook.ts status`（只读子命令） | URL=`https://lmsy.space/api/webhooks/telegram`、last_error 为空、pending 正常；**功能已在活的强间接证据**：草稿持续到达 + secret 不匹配会全拒 |
+| 5 | U4 Supabase 平台备份/PITR 核验 | Dashboard（站长） | Database → Backups 查看每日备份与 PITR 选项 | 把实际保留期/是否含 PITR 回填本文档 |
+| 6 | X2 线上验收套件 | 可达 lmsy.space 的网络 | 跑既有冒烟脚本指向生产 + 手工回归清单 + 抓缓存头/sitemap/robots + 非法请求探测（webhook 无 secret→401/503、cron 无 secret→同、ingest 无 key→同） | 每项留 HTTP 状态码与输出记录；结果回写审计报告 |
+| 7 | B3-T3 RSS 死通道注释 | 本机开发 | 一处代码注释（为什么禁、启用前必须产品化两个测试参数） | 提交 + 单测全绿 |
+| 8 | B3-T1 webhook 持久错误记录 + chat 白名单 | 本机开发 | 代码 + 单测（建议并入第三阶段管道批，§9） | 失败记录可从持久位置查到；白名单未配置时行为不变 |
+| 9 | 动态页 200/404 语义修正 | 本机开发 | 各详情页 notFound() 分支（低优先级） | 不存在 id 返回 404 状态码 |
+
+---
+
+## 2. 图片数据系统现状（只读盘点，2026-10-16 探针）
+
+### 2.1 表与规模
+
+| 表 | 行数 | 角色 |
+|---|---|---|
+| `gallery_assets` | 330 | 发布图库（前台唯一公开图源） |
+| `projects` | 25 | 项目/图集/杂志期实体 |
+| `draft_items` | 71（65 draft / 6 published） | 采集草稿（weibo 35 / telegram 30 / twitter 6） |
+| `profiles` | 2 | 人物档案（与图片无外键关联） |
+| `chronicle_events` | 0 | 编年史事件（结构闲置） |
+| `site_content_blocks` | 4 | 站点文案块 |
+
+### 2.2 数据卫生
+
+- `gallery_assets`：event_date 缺失 **0**；caption_i18n 缺失 **318/330**；catalog_id 缺 18；title 缺 15；重复 image_url **0**。
+- `draft_items`：source_url / event_date / title 缺失均为 **0**；重复 r2_media_url **0**。
+- R2：408 对象，383 被引用，25 孤儿（稳定），0 悬空引用（`npm run audit:r2` 本轮实测）。
+
+---
+
+## 3. 发布后的来源丢失（深度检查结果）
+
+### 3.1 转正流程实际复制的字段（`app/api/admin/drafts/[id]/to-gallery/route.ts` 全文核对）
+
+草稿转正走 `to-gallery`（insert 进 `gallery_assets`，前置条件：必须已挂 `project_id`）。字段映射实测如下：
+
+**已复制（draft_items → gallery_assets）：**
+
+| 草稿字段 | 资产字段 | 说明 |
+|---|---|---|
+| `r2_media_url` | `image_url` | |
+| `title` / `description` | `title`(+`title_i18n`) / `excerpt`(+`excerpt_i18n`) / `caption`(+`caption_i18n`) | pickLocalizedText 取 en→zh→th 首个非空 |
+| `tags[0]` | `tag` | **语义有损**：telegram 草稿 tags=['Telegram', chatType, chatName]，转正后 tag 固定为 'Telegram'（生产 3 条 'Telegram' 标签图即此来源） |
+| `is_featured` | `is_featured` | |
+| `project_id` | `project_id` | |
+| `event_date` | `event_date` | |
+| —（常量） | `integrity_status='ok'`、`display_role='regular'` | |
+
+**未复制且无处安放（丢失）：** `source_url`、`source_platform`、`source_post_id`、`raw_event_date`、`tags`（完整数组）、`file_hash`、`media_metadata`、`curator_note`、`chronicle_*`。其中 `source_url`/`source_platform` 是**表上根本没有对应列**，其余是有列但转正代码未带。
+
+另一条发布路径 `publish`（status='published'）只改草稿状态，不产生 `gallery_assets` 行；而 `draft_items` 对匿名完全不可读（RLS 401 实测），所以 status=published 的 6 条草稿对公众不可见——**公开图库的唯一入口就是 to-gallery**，溯源断链发生在这一步。
+
+### 3.2 已发布图片今天能否回查来源（探针实测）
+
+- 按 `gallery_assets.image_url == draft_items.r2_media_url` 归一化匹配：**330 张中仅 18 张能回查到草稿及其 source_url**（即 18 个仍在 `draft/` 前缀的资产）。
+- 其余 **312 张（全部为 `magazines/*` 杂志页，§5）完全无草稿踪迹**，原始出处目前无处可查——只有 catalog_id（如 `LMSY-AD-20240214-001`）隐含期号与日期。
+- 结论：**现状追溯率 18/330 ≈ 5%**。这是第三阶段要解决的核心缺口。
+
+### 3.3 迁移方案与兼容性分析（待批准，未执行）
+
+**迁移文件：`supabase/migrations/20261016_add_source_provenance.sql`**（新建，进版本库，不在 Dashboard 手改）
+
+```sql
+-- 1) nullable new columns; existing rows untouched
+ALTER TABLE lmsy_archive.gallery_assets ADD COLUMN IF NOT EXISTS source_url text;
+ALTER TABLE lmsy_archive.gallery_assets ADD COLUMN IF NOT EXISTS source_platform text;
+ALTER TABLE lmsy_archive.gallery_assets ADD COLUMN IF NOT EXISTS source_account text;
+COMMENT ON COLUMN lmsy_archive.gallery_assets.source_url IS 'Original public page URL this image came from; NULL = unknown/legacy';
+
+-- 2) idempotent one-time backfill for rows whose provenance is still
+--    recoverable via the draft queue (measured scope: 18 rows)
+UPDATE lmsy_archive.gallery_assets ga
+SET source_url = d.source_url,
+    source_platform = d.source_platform
+FROM lmsy_archive.draft_items d
+WHERE d.r2_media_url = ga.image_url
+  AND ga.source_url IS DISTINCT FROM d.source_url;
+```
+
+**兼容性分析：**
+- 三列均可空、无默认值、无约束 → 不影响任何现有 INSERT/SELECT；前台与 admin 现有查询不受影响。
+- RLS：新列随表的 `phase1_public_read` SELECT 策略自动生效，无需额外策略；写仍走 service_role。
+- 语义：NULL = 「来源未知（历史数据）」，不是错误状态；前台对 null 隐藏来源区块（见 3.4）。
+- 回填范围实测锁定为 18 行（§3.2），幂等（`IS DISTINCT FROM`），重复执行无副作用。
+
+**待批改动 2（转正代码）：** `to-gallery` select 与 insert 各加 `source_url`、`source_platform`、`source_account`（草稿侧账号暂从 tags 提取或置 null，实施时定）；`publish`/`create-project`/`link-project` 路径如同样产出资产则同批对齐——实施时先核对调用图，本轮未改。
+
+**测试方案：**
+1. 单测：to-gallery 转正后资产含来源字段；无来源草稿（null）转正 → 列为 null 不报错。
+2. 迁移后探针：列存在、18 行回填值与对应草稿一致、其余行 NULL、总行数不变（330）、audit:r2 结果不变。
+3. 本地 `next start` 真实走一次 draft→to-gallery→前台可见来源链接。
+4. 回滚：迁移纯增量（DROP COLUMN 即回滚）；代码单提交 revert。
+
+### 3.4 前台展示原始出处的方案（待批准）
+
+- **灯箱（`app/gallery/lightbox.tsx`）**：现展示 caption/tag/catalog_id（grep 实证，无日期无来源）。在 catalog_id 行下方加「来源」行：`source_url` 非空时渲染外链（新标签页打开原文）；`source_url` 为空时**整行不渲染**（历史图不显示空占位）。
+- **项目详情页**：可选在图章信息里带同一来源链接（第二期，不阻塞）。
+- 不新增任何接口；数据随现有 gallery 查询返回（三小列）。
+
+### 3.5 后台/数据库回查来源的三层能力（方案）
+
+1. 草稿阶段：`draft_items.source_url` 直接可查（现状已有）。
+2. 发布阶段：迁移后 `gallery_assets.source_url` 可查。
+3. 历史无来源的 312 张：无草稿、无来源列 → **只能靠 catalog_id/组号人工定位期号**（现状极限，明确标注为「来源未知」，不编造）。
+
+---
+
+## 4. 图片数据语义逐项核实（指令 §3）
+
+### 4.1 九类语义 × 现有字段 × 现状
+
+| 语义概念 | 现有承载 | 允许为空？ | 现状核实结果 |
+|---|---|---|---|
+| 事件名称/描述 | 无专列。靠 `projects.title/description`（项目=事件容器）+ `caption`；草稿有 `chronicle_title/excerpt` 但编年史实体 0 行闲置 | — | 事件=project 的模型成立（330 张图全部有 project_id，探针实证） |
+| **事件实际发生日期** | `gallery_assets.event_date`、`draft_items.event_date`（schema 均为可空 `date`，无 NOT NULL） | ✅ 允许 | **数据 100% 有值，但证据链缺失**（见 4.2 系统性混用实证） |
+| **原始内容发布日期** | `draft_items.raw_event_date`（仅草稿有；转正**不带走**，资产表无对应列） | ✅ | 30/30 电报草稿 raw=event 同值（webhook 代码把 message.date 同时写进两列） |
+| **图片采集日期** | `draft_items.created_at`、`gallery_assets.created_at` | NOT NULL | 正确分离，无问题 |
+| 来源链接 | `draft_items.source_url`（资产表无列，§3） | ✅ | 发布即丢（18/330 例外） |
+| 来源平台 | `draft_items.source_platform`（有 CHECK 约束含 8 平台；资产表无列） | ✅ | 同上 |
+| 发布账号 | **无任何专列**；仅散落在 `draft_items.tags` 数组尾部（telegram: chatName） | — | 结构性缺失；建议随 §3.3 迁移加 `source_account text` 可空列（待批） |
+| 人物↔事件关联 | 无人物实体关联（profiles 2 行与图片无外键）；靠 project 隐含 | — | 维持「人物≈常量（LMSY）」模型，不建关联表 |
+| 已核实 vs 推测 | `gallery_assets.integrity_status`（'ok'/'unchecked'）、`curator_note` 自由文本 | ✅ | 无结构化证据字段；推测信息无处规范标注，靠 curator_note 约定 |
+
+### 4.2 日期证据现状（探针实测，问题量化）
+
+- **30/30 条 telegram 草稿：`event_date` == 采集/发送日期**（webhook 代码 `event_date: new Date(message.date*1000)` —— message.date 是**发送到 Telegram 的时刻**，不是事件发生日）。前天批量 10 张全部被打上 2026-10-15，实际拍摄日期未知。
+- 其余平台草稿 41 条中 40 条同样 event_date == created_at 日期。
+- `raw_event_date` 与 `event_date` 0/30 不一致（同源同值，未起到分离作用）。
+- `gallery_assets.event_date` 100% 有值但**无任何证据字段**可考；唯一例外是 312 张杂志页——日期来自期号（`LMSY-AD-20240214` → 2024-02-14，写于回填映射），属有依据的推定。
+
+**结论：现有数据的 event_date 实质是「发布/采集日期冒充」。历史数据不回改（无证据可考，回改即编造），但管道必须改。**
+
+### 4.3 日期与事件信息的证据规则（第三阶段起执行）
+
+1. `event_date` 允许为空；**空=未知**。前台已兼容：项目详情按 event_date 分章的代码会 filter 掉空值（`project-detail-client.tsx:96` 实证）；灯箱对空值不渲染日期行。
+2. **禁止**把网页发布日期、文件名、采集时间写入 `event_date`。三者各归各位：`raw_event_date`（原文日期串；仅当原文明确说「这是 X 月 X 日的活动」才据此填 event_date）、`created_at`（采集）、`source_url`（证据）。
+3. Telegram 管道修正（待批改动 3）：webhook 不再把 `message.date` 写进 `event_date`——改为 `event_date: null`、`raw_event_date: <ISO(message.date)>`，caption 中有明确日期时由**人工审核**填 event_date。
+4. 推测性信息一律写 `curator_note` 并带前缀「推测：」，与 `source_url`（证据）分离；无来源的图不得发布（§7 流程门禁）。
+5. 历史数据：不回改、不删除；`source_url IS NULL` 即「来源未知」的明确标记。
+
+---
+
+## 5. 历史回填范围核对结果（指令 §4，**推翻 v1.0 记载**）
+
+### 5.1 核对方法
+
+以 `backups/magazine-orphan-mapping-2026-10-15.json`（generatedAt 2026-10-15T07:29Z，mode=apply）为基准，逐条与生产 `gallery_assets` 按 `image_url` 归一化比对（本轮探针，全表 330 行）。
+
+### 5.2 映射文件实际内容
+
+- 19 个组 / 332 页：AD×5、MAG×10、STAGE×1、STILL×1、TRV×2；`rowsToInsert` 312 条；`pendingGroups` 2 组（AD-20251216、TRV-20251216，即 332-312=**20 张**，生成时因无可挂靠项目被有意跳过）。
+- 每条计划行含：image_url、title/caption（`<Project> - Page NNN`）、catalog_id（`LMSY-<TYPE>-<ISSUEDATE>-<SEQ>`）、project_id（目标项目）、event_date=期号日期、tag。
+
+### 5.3 与生产数据比对结果
 
 | 指标 | 结果 |
 |---|---|
-| `gallery_assets` tag 分布 | Magazine 237 / Advertising 54 / STAGE 12 / STILL 9 / Telegram 3 / 空 15 |
-| `gallery_assets` 缺 `event_date` | **0**（100% 有日期） |
-| `gallery_assets` 缺 `caption_i18n` | **318/330**（96% 无多语说明） |
-| `gallery_assets` 缺 `catalog_id` / `title` | 18 / 15 |
-| `gallery_assets` 重复 `image_url` | **0** |
-| `draft_items` 缺 `source_url` / `event_date` / `title` | 0 / 0 / 0 |
-| `draft_items` 重复 `r2_media_url` | **0** |
-| `draft_items` 来源分布 | weibo 35 / telegram 30 / twitter 6 |
-| 编年史 | 0 行（结构闲置） |
+| 计划 312 条中已在 `gallery_assets` | **312/312（100%）**，且 project_id 全部就位 |
+| 缺失待补 | **0** |
+| 在库但无项目挂靠 | 0 |
+| 当前 `magazine_issue` 有值但无 project 的孤儿 | 0 |
 
-**结论：** 数据卫生现状**好于审计预期**（日期全覆盖、零重复、零悬空引用）。真实缺口是**语义富集**（caption/事件背景）与**发布后溯源**（见 4.4），不是脏数据清理。
+### 5.4 结论
 
-### 4.4 采集→审核→发布链路的关键断点（本轮核实的新发现）
-
-链路：Telegram Bot → `/api/webhooks/telegram`（或任意调用方 → `/api/ingest`）→ 下载→hash 去重→R2→`draft_items`（draft）→ 后台审核 → `to-gallery`/`publish` 转正。
-
-**断点：`to-gallery` 转正时 `source_url`/`source_platform` 不带走。** 证据：`app/api/admin/drafts/[id]/to-gallery/route.ts` 第 33 行 select 列表为 `id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_*`，且 `gallery_assets` 表根本没有这两列。也就是说：草稿阶段溯源信息完整，**一旦发布，用户在前台看不到任何原始出处，管理员也无法回查这张图从哪来**。这是第三阶段「来源可追溯」验收要求下的第一优先缺口。
-
-次要缺口：① 无独立「事件」实体在用（chronicle_events 0 行），事件背景目前靠 `project_id` + `tags` + `curator_note` 承载；② `draft_items.tags` 是自由数组（含来源账号名），gallery_assets.tag 是单一分类字符串，两者语义不同（来源 vs 内容分类），转正时 info 有损；③ 无批次（batch）概念，无法回答「这 50 张是哪次采的、成功率多少」。
-
-### 4.5 现有检索能力
-
-- 前台：`/api/search` 已改查 `gallery_assets.caption_i18n/tag` + `projects`（第二批上线，实测命中）；`/gallery` 标签筛选四个真实 tag 均非空。
-- 数据层：`gallery_assets` 有 `event_date`、`project_id`、`tag`、`catalog_id` 索引（迁移实测创建）；**按人物检索不支持**（无 person 关联列，profiles 与 gallery_assets 无外键）——当前「人物」维度靠项目归属与 tag 间接表达。
-
-## 5. 已发现问题与证据汇总（本轮新增/确认）
-
-1. **发布后溯源丢失**（新发现，P0 级 for Phase 3 目标）：`to-gallery` 不带 `source_url`，`gallery_assets` 无该列。证据：§4.4 代码行号。
-2. **动态页 404 语义错误**（已知未修）：不存在 id 返回 HTTP 200。证据：审计报告登记 + 本地冒烟观察。
-3. **caption_i18n 96% 为空**：多语内容工程未做。证据：§4.3 探针。
-4. **25 个 R2 孤儿**：稳定未增长，处置待决策（保留或清理）。
-5. **线上验收（X2）积压**：本机网络不可达 lmsy.space/api.telegram.org，线上复测全部排队。证据：本轮 fetch failed 实测。
-6. **8a47a85 未推送**：纯文档，网络窗口补推。
-7. **webhook 注册参数未直接核验**：功能在活（强间接证据），`status` 直查被网络挡住。
-
-## 6. 尚未完成 / 无法验证事项清单（前两阶段收尾）
-
-| 项 | 类型 | 阻塞点 |
-|---|---|---|
-| U1 撤销 sbp_ 令牌 | 用户操作 | Dashboard |
-| U2 Vercel Production 变量核验 | 用户操作 | Dashboard |
-| U3 webhook `status` 只读核验 | 网络可达后一条命令 | api.telegram.org 不可达 |
-| U4 PITR/平台备份核验 | 用户操作 | Dashboard |
-| X2 线上验收套件（性能/SEO/端到端/非法请求探测） | 网络可达后执行 | lmsy.space 不可达 |
-| X1 杂志孤儿回填（283 张，脚本就绪） | 待站长决策 D3 | 决策本身；**建议并入第三阶段作为首批演练**（见 §9） |
-| B3-T1 webhook 持久错误记录 + chat 白名单 | 代码待做 | 排期（建议随 Phase 3 管道一起做） |
-| B3-T3 RSS 死通道注释 | 一处注释待写 | 排期（5 分钟） |
-| B4-T1/T2 批量 API 与共享管道抽取 | 代码待做 | **即第三阶段技术方案主体**（§8） |
-| B5-T1..T9 清理项 | 低优先级 | 可裁剪，不阻塞 Phase 3 |
-| 动态页 200/404 语义 | 代码待做 | 排期 |
-
-## 7. 第三阶段目标与数据模型建议
-
-**目标（验收口径）：** 网站能持续增加图片，且每张新图尽可能具备：明确事件背景、事件日期（含精度）、可点击回查的原始出处。**不以图片数量为成功标准，以「可追溯率 + 元数据完整度 + 零错误关联」为标准。**
-
-**数据模型结论：现有结构基本够用，只差三处增量**（均为小迁移，需你批准后才动）：
-
-1. `gallery_assets` 加 `source_url text`、`source_platform text`（可空）→ 修复 §4.4 断点，发布后可回查原始内容；前台详情/灯箱可展示「来源」。
-2. `draft_items` 加 `batch_id text`（可空，应用生成如 `b20261017-01`）→ 批次追踪：每批采集的条数/成功/重复/失败可统计，幂等重跑可对账。**不建新表**（符合护栏「不为采集另起架构」）。
-3. 人物关联：**本期不建 person 关联表**。理由：人物只有 2 位（Lookmhee/Sonya），几乎全部内容天然是两人共同内容，独立实体收益为零；用 `draft_items.tags`/`gallery_assets.tag` + `project_id` 表达足够。若未来出现单人特写归档需求再升级。
-
-事件背景承载：继续用 `projects`（杂志期/活动/写真集各为一项目）+ `event_date` + `curator_note`；`chronicle_events` 保持闲置，不强行启用。
-
-## 8. 采集、元数据、审核流程与技术方案
-
-### 8.1 来源盘点（A）
-
-| 来源类型 | 可得信息 | 访问方式 | 稳定性 | 限制/合规 |
-|---|---|---|---|---|
-| Telegram Bot（你或协作粉推送） | 图 + 文案 + 来源链接（转发自带） | 已有 webhook，零开发 | 高（已实测批量 10 张/20 秒） | 人工动作；适合「看到就推」 |
-| `/api/ingest`（脚本直调） | 传入 media_url + source_url + 日期等 | 已有 API + INGEST_API_KEY，已 e2e 验证 | 高 | 调用方需自备页面解析；**Phase 3 主通道** |
-| 杂志/主办方/媒体官网（泰国 VOUGE、GQ 等） | 高清图 + 明确的拍摄主题与日期 | **按源写适配器脚本**（每个源一次解析逻辑，产 ingest 调用） | 中（站点改版会坏） | 公开页面；遵守 robots，限速，不带登录绕付费墙 |
-| 官方 IG / X | 官方图文 | **当前无授权 API，不做自动抓取** | — | 登录墙/ToS 限制，标为「人工经 Telegram 推送」合规通道 |
-| 微博 m.weibo.cn | 粉丝向搬运 | 公共 container API 本轮实测 **HTTP 432 拒绝**（需 cookie，不稳定） | 低 | 不作为 Phase 3 依赖 |
-| RSSHub 公共实例 | 社交源聚合 | `rsshub.app` 被 Cloudflare 拦（代码注释 + 历史实测） | 不可用 | 自建实例可解但运维成本高；**本期不建** |
-| 浏览器扩展 | 任意页面右键采集 | 已弃用（源码丢失，站长裁定暂不重写） | — | 人工 Telegram 通道替代 |
-
-**明确不做：** 不「遍历网站抓所有图」；不抓取登录墙/付费内容；不启用 RSS 死通道。
-
-### 8.2 每张图保留的信息（C）
-
-| 字段 | 来源 | 必填？ | 人工？ |
-|---|---|---|---|
-| `r2_media_url`/`file_hash` | 管道自动 | 必填（自动） | 否 |
-| `source_url` | 采集时传入 | **必填**（无来源的图不进库；Telegram 转发天然自带） | 人工可补 |
-| `source_platform` | 管道 | 必填 | 否 |
-| `source_account`/标题/说明 | 采集页解析 | 尽量 | 审核时校对 |
-| `event_date`（事件日期）+ `raw_event_date`（原文日期串） | 采集页解析 | event_date 可空；**宁空勿猜**（未知日期标 null + `curator_note` 记「日期待核实」） | 是 |
-| `project_id`（事件/项目归组） | 审核时人工选择 | 发布前必填（可先草稿态挂空） | **是** |
-| `tags` | 来源账号/人工 | 可空 | 部分 |
-| `curator_note` | 审核人 | 推测性信息一律写这里，与来源证据分离 | 是 |
-| `batch_id` | 管道 | 必填（自动） | 否 |
-| `created_at`（采集时间） | 管道 | 自动 | 否 |
-
-原则：**文件名、采集时间、网页发布日期都不充当事件日期**；三者分开存（event_date / created_at / raw_event_date 已分离）。
-
-### 8.3 流程（D）
-
-```
-发现来源 → 源适配器提取(图URL+标题+原文日期+原文链接)
-  → /api/ingest 逐张: 下载 → file_hash 去重(唯一索引兜底) → R2 → draft_items(带 batch_id)
-  → 审核台按 batch_id 拉列表: 补 project_id/event_date → 核对来源链接可达 → publish(转正带 source_url)
-```
-
-- 抓取成功 ≠ 合格：缺 `source_url` 或事件背景完全空白的记录**停在草稿态**并标注，不发布。
-- 重复：hash 命中 → 返回 duplicate，不入库（已实测）；同事件多图 → 审核时人工归入同一 `project_id`，项目详情页按 `sequence` 排序（索引已建）。
-- 幂等恢复：批次脚本重跑 = 逐张过 ingest，已入库的命中去重自动跳过，天然可恢复；失败清单按 batch_id 从 draft/ingest 响应汇总。
-- 批次报告：每次跑完输出 `reports/batch-<id>.json`（总数/新增/重复/失败及原因）。
-- 小批量验证：每批 ≤20 张，先草稿态全量人工过目再发。
-
-### 8.4 来源追溯实现（E，核心验收）
-
-- 原始出处：`source_url` 全程保留（需先做 §7 增量 1 的迁移）；前台图集详情/灯箱展示「来源」链接。
-- 来源可达性检查：审核台人工点开核对（本期不做自动死链巡检；登记为后续观察项）。
-- 证据与推测分离：来源链接/原文标题=证据字段；事件描述/人物关联的推测写 `curator_note` 并带「推测」标记。
-- 交叉核实：同一事件多来源时，多张草稿归同一 project，note 中互链；不自动合并。
-- 缺信息标记：`event_date` 为空 + note 标「待核实」，前台显示时不编造日期（当前模板对空日期已渲染为不显示）。
-
-### 8.5 技术方案比较（F）
-
-| 方案 | 兼容性 | 开发量 | 维护 | 恢复能力 | 风险 |
-|---|---|---|---|---|---|
-| ① 复用 `/api/ingest` + 每源适配器脚本（推荐主体） | 完全复用现有管道/去重/R2 | 每源 1 个脚本 + §7 两个小迁移 + to-gallery 保留 source_url | 低（脚本独立可坏可修） | hash 去重天然幂等 | 低 |
-| ② 新增 `/api/ingest/batch`（= 原计划 B4-T2） | 复用管道，20 条/批上限 + 机器密钥鉴权（验收标准已定） | 1 路由 + 单测 | 低 | 同① | 中（改 API 面，需门禁） |
-| ③ 共享 pipeline 模块抽取（= B4-T1） | 三入口复用 | 重构 + 全量单测 | 中 | 依赖测试兜底 | 中（重构主路径） |
-| ④ 后台批次管理 UI | 新 UI | 大 | 高 | — | 违反「不建工作台」护栏，**不做** |
-
-**推荐：** ① 先行（立即可跑），② 作为①稳定后的便捷封装，③ 推迟到重复代码真正造成维护痛时再抽。④ 不做。
-
-### 8.6 小批量试运行设计（G，本轮不执行）
-
-- **首批来源**：1 个杂志官网专题页（具体源待你确认，见 §10 决策 3）；备选：你手动 Telegram 推 10 张转发图（零开发，当天可跑）。
-- **样本量**：≤20 张。
-- **每条样本必须包含**：图文件 + `source_url` + 来源名 + 原文日期（或明确「未知」）+ batch_id。
-- **追溯成功判定**：发布后在前台能从图跳到原文链接；管理员能从图反查草稿批次。
-- **准确性衡量**：事件日期错误数 = 0（空可，错不可）；人物/项目归组错误数 = 0（人工审核保证）。
-- **统计口径**：新增 / 重复 / 失败 / 缺字段四项计数进批次报告；`audit:r2` 孤儿数不得增加。
-- **审核流程有效性**：≥1 张走完草稿→审核→发布→前台可见全链路。
-- **扩批标准**：追溯率 100%、日期错误 0、失败率 <10%、审核单张耗时可接受 → 允许 50 张/批并加第二来源。
-
-## 9. 推荐实施顺序（等你确认后执行）
-
-1. **收尾包**（半天）：推 `8a47a85`；B3-T3 RSS 注释；to-gallery 保留 `source_url`（依赖 §7 增量 1 迁移，需你批准）。
-2. **演练批**（可选但强烈建议）：X1 杂志回填 283 张走 dry-run→你审查→apply——它本身就是一次带映射的批量入库演练，且脚本已就绪。
-3. **管道批**：`/api/ingest/batch`（方案②）+ B3-T1 webhook 持久错误记录；单测+冒烟+真实小图本地验证。
-4. **首采批**：按 §8.6 跑 20 张试运行，出批次报告，你审核后发布。
-5. **线上验收**：网络可达时一次性销项 X2（性能/SEO/端到端/webhook status）。
-
-## 10. 需要你确认的关键决策
-
-| # | 决策 | 建议 |
-|---|---|---|
-| 1 | 是否批准两个小迁移：`gallery_assets` 加 `source_url/source_platform`、`draft_items` 加 `batch_id` | **建议批准**（可空列、纯增量、幂等脚本，是「来源可追溯」的硬前提） |
-| 2 | to-gallery 转正保留 source_url 的行为变更 | **建议批准** |
-| 3 | 首批试运行来源选哪个（具体杂志/专题页 URL） | 待你指定；或先用 Telegram 人工推 10 张零开发跑通 |
-| 4 | X1 杂志回填（283 张）是否作为演练批先做 | **建议做**（D3 此前悬而未决，正好并入本阶段） |
-| 5 | caption_i18n 96% 为空是否需要翻译补全（依赖 OPENROUTER_API_KEY） | 建议后置，不阻塞采集 |
-| 6 | 25 个 R2 孤儿：保留观察 or 生成清单人工确认后清理 | 建议先保留，出清单再定 |
+1. **X1 杂志回填已经执行完毕**（312 张全部落库且按计划挂靠项目）。v1.0 与此前 REMEDIATION_PLAN 中「X1 待 D3 决策、脚本已就绪未跑」的记载**过时**，以本节为准。
+2. **严禁重复执行回填**——脚本虽幂等（skippedAlreadyPresent 机制），重跑无意义且违反站长约束；本报告明确建议不重跑。
+3. 真正剩余的未处理项只有 **2 组 20 张**（AD-20251216、TRV-20251216）：当年因「无项目可挂靠」被跳过。若要处理，需先为这两期**补建项目**再生成增量映射——列为待站长决策，不默认执行。
+4. 「283 张」旧数字与实际不符：准确口径是 **312 张已处理 + 20 张待决策**。
+5. 文档追溯：`PRODUCTION_DATA_CHANGES.md` **不存在**（根目录与 docs/ 均无）；曾有的 `PRODUCTION_CONFIG_CHANGES.md`（配置类，84c820e 添加）已在 3b51cc0 文档整合时归档删除。生产数据变更记录目前只散见于审计报告与 backups/ 产物——**建议第三阶段起每批生成 `reports/batch-<id>.json` 并建立 `docs/PRODUCTION_DATA_CHANGES.md` 台账**（待批改动 6）。
 
 ---
 
-**本轮结束状态自查：** 未启动采集 ✅｜未批量上传 ✅｜未发布草稿 ✅｜未修改生产数据/未执行迁移 ✅｜未重构 ✅｜本轮仅新增本文件（Git diff 见提交）✅。
+## 6. 当前数据模型 → 目标数据模型
+
+| 概念 | 现状 | 目标 | 改动类型 |
+|---|---|---|---|
+| 图片资产 | `gallery_assets`（30 列） | 不变，+`source_url`、`source_platform`、`source_account`（三列均可空） | 迁移 1 |
+| 草稿溯源 | `draft_items.source_url/source_platform/source_post_id` | 不变（已够用） | 无 |
+| 批次追踪 | 无 | `draft_items.batch_id text` 可空（应用生成 `bYYYYMMDD-NN`） | 迁移 2（可后置） |
+| 事件/项目 | `projects` 承载；图必挂 project（to-gallery 强制） | 不变；`chronicle_events` 继续闲置 | 无 |
+| 人物 | 无关联（LMSY 常量模型） | 不建关联表 | 无 |
+| 日期 | event_date（混用）/raw_event_date（同值）/created_at | event_date=事件日期（可空）、raw_event_date=原文日期、created_at=采集 | 管道代码修正（无迁移） |
+| 证据/推测 | curator_note 自由文本 + integrity_status | 同左 + 「来源必有链接」门禁；推测写 note 带前缀 | 流程约定 |
+
+**明确不建：** 人物关联表、编年史启用、批量采集工作台 UI、独立事件表。优先复用现有结构，缺口只剩三列 + 代码行为。
+
+---
+
+## 7. 批量更新最小可行流程（指令 §5）
+
+```
+发现来源 → [脚本] 提取图片+上下文(标题/原文日期/原文链接/账号)
+  → [脚本] 逐张调 /api/ingest（带 batch_id 标记）
+      下载 → file_hash 去重(唯一索引兜底) → R2 → draft_items（source_url 必填才入库）
+  → [人工] 后台按批次审：核对来源链接可达、补 project_id、确认/修正 event_date
+  → [人工] to-gallery 转正（迁移后自动带 source_url）
+  → [自动] 前台展示 + 任意一张图可回查原始出处
+```
+
+**自动 vs 人工分工：**
+
+| 步骤 | 方式 | 说明 |
+|---|---|---|
+| 页面抓取、图片提取、去重、下载、R2、写草稿、批次报告 | **自动** | 每源一个适配器脚本；hash 唯一索引兜底 |
+| 来源链接可达性核对 | **人工**（点开即查） | 自动死链巡检登记为后续观察项，本期不做 |
+| project_id（事件归组）、event_date 确认、人物归组 | **人工** | 审核台操作；无来源或事件背景完全空白的记录停草稿态不发布 |
+| 转正、前台展示 | 自动（审核动作触发） | to-gallery 现有机制 |
+
+**批次追踪与统计：** 每批一个 `batch_id`；脚本跑完输出 `reports/batch-<id>.json`：`{total, ingested, duplicate, failed[], missing_fields[]}`；后台按 `draft_items.batch_id` 过滤即可核对「这批进了多少、状态如何」。**不建新表**（batch_id 列 + 报告文件足够）。
+
+**失败恢复与幂等：**
+- 重跑同一批 = 逐张过完整管道，已入库的命中 file_hash 唯一索引/source_url 去重自动跳过 → **重复执行不产生重复记录**（机制已端到端实测：重灌既有 URL → duplicate，R2 对象数不变）。
+- 单张失败不影响其余（ingest 逐条返回终态）；失败清单进批次报告，修复后单独重跑失败子集。
+- 上传成功但写库失败：补偿删 R2 对象（webhook/ingest 均已实现，代码实证）。
+- 批与批之间可停，人工审核是硬门禁，自动流程永不直接发布。
+
+**小批量验证门禁：** 首批 ≤20 张、单来源；追溯率 100%（每张发布后有 source_url 且可点开）、事件日期错误 0（空可、错不可）、失败率 <10%、`audit:r2` 孤儿不增长 → 达标才扩到 50 张/批并加第二来源。
+
+---
+
+## 8. 需要站长批准的数据库迁移与功能改动清单
+
+| # | 类型 | 内容 | 影响 | 状态 |
+|---|---|---|---|---|
+| 1 | **迁移** | `gallery_assets` 加 `source_url`、`source_platform`、`source_account` 三列（均可空）+ 幂等回填 18 行草稿来源 | 纯增量；旧行 NULL=来源未知；无破坏性 | 待批 |
+| 2 | 代码 | `to-gallery` 转正携带上述来源字段（同批核对 create-project/link-project 路径） | 转正行为增强，向后兼容 | 待批 |
+| 3 | 代码 | Telegram webhook 日期语义修正：`event_date=null`、`raw_event_date=message.date`，caption 明示日期才人工填 | 新草稿 event_date 变空（前台已兼容空值）；**更诚实** | 待批 |
+| 4 | 代码 | 灯箱加「来源」外链行（null 不渲染）；日期空值处理 | 纯展示 | 待批 |
+| 5 | 迁移（可后置） | `draft_items` 加 `batch_id text` 可空 | 纯增量 | 待批（可与 1 同批） |
+| 6 | 文档 | 建立 `docs/PRODUCTION_DATA_CHANGES.md` 生产数据变更台账 + 批次报告约定 | 仅文档 | 待批 |
+| 7 | 决策 | 2 组 20 张（AD/TRV-20251216）补建项目后回填，或维持跳过 | 涉及新建 2 个项目 | 待站长定 |
+| 8 | 决策 | 首批试运行来源（具体站点/专题页 URL），或先用 Telegram 人工推 10 张零开发演练 | — | 待站长定 |
+
+**明确不做：** 不重复执行杂志回填；不删除/覆盖历史图片与归档数据；不启用 chronicle_events；不建采集 UI；不抓登录墙/付费内容；不加自动重试/兜底机制（能用的不乱动）。
+
+---
+
+## 9. 实施顺序（批准后执行，批间可停）
+
+1. **收尾包**：补推 2 个文档提交；B3-T3 注释；§8 批准后出迁移 1 + 改动 2/3/4（单提交，含单测）。
+2. **验证**：迁移执行 → 探针复测（列存在/18 行回填/总行数不变/audit:r2 不变）→ 本地 draft→to-gallery→前台全链路一次。
+3. **管道批**：batch_id 迁移 + ingest 携带 batch_id + 批次报告脚本；B3-T1 顺带。
+4. **首采批**：≤20 张试运行 → 批次报告 → 人工审核 → 发布 → 验收四指标（追溯率/日期/失败率/孤儿数）。
+5. **台账**：建立 PRODUCTION_DATA_CHANGES.md，回填本次核对结论。
+6. **网络可达时**：X2 线上验收销项 + U3 status 核验。
+
+---
+
+## 10. 本轮结束状态自查（v1.1）
+
+- 未启动采集 ✅｜未批量上传 ✅｜未发布草稿 ✅｜未修改生产数据、未执行任何迁移 ✅｜未重复执行历史回填 ✅
+- 本轮变更：仅本文档（v1.0 → v1.1 修订）+ 只读探针脚本（`temp/`，不入库）
+- 待站长：§8 的 8 项批准/决策；§1.6 的用户侧核验（U1/U2/U4）
