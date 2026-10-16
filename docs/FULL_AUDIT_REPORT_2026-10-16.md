@@ -136,6 +136,15 @@
 
 第一批本地门禁：typecheck 0 错、单测 65/65、生产构建 exit 0、安全冒烟 51/51。剩余批次见 `docs/REMEDIATION_PLAN.md`。
 
+**第二批已关闭（2026-10-16 深夜，提交 `c06d009`/`8857e7d`，已推送部署）：**
+
+- **P2-1 已修复** —— `/api/admin/gallery/batch-update` 改用 `requireAdmin`（未登录 401 / 已登录非管理员 403 / 未配置 503），payload 校验 1-200 条 `{id, sequence 整数 0-999999}`。
+- **P1-5 已修复** —— `/api/search` 改查 `gallery_assets` + `projects`（330 张图可搜了）；搜索词经 `lib/search-term.ts` 白名单净化（`.or()` 语法字符与通配符全部剥离、长度截断）后才进过滤器；schedule 死分支删除。真实词（如 caption 里的 "Radar"）可搜到图。
+- **P2-2 已修复** —— ingest 与 Telegram webhook 均改为「下载 → 算 hash 查重 → 命中即返回（**不上传**）→ 通过才上传」；webhook 插入失败补上此前缺失的补偿删除。**端到端实测：重灌既有对象 URL 返回 duplicate，`audit:r2` 未引用数 25 → 25（零新增孤儿）**。
+- **P2-3 已修复（本期收窄范围）** —— 新增 `lib/security/url-guard.ts`：阻断环回/RFC1918/链路本地（含云元数据 169.254.169.254）/CGNAT/保留/组播段、IPv6 环回/ULA/链路本地、IPv4-mapped IPv6、整数与十六进制 IPv4 变体；下载改为手动跟随重定向并**逐跳复检**（关闭 302 跳内网绕过）。实测元数据与环回目标均被 502 拒绝。**已知残留（记录在模块头部）：DNS rebinding 与域名白名单，按方案挂起至 B3-T2（扩展源码）落定。** 12 个新单测。
+
+第二批本地门禁：typecheck 0 错、单测 **83/83**、生产构建 exit 0、安全冒烟 51/51、`audit:r2` 前后一致。
+
 ### P0
 
 | # | 问题 | 证据 | 状态 |
