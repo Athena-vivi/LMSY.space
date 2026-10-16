@@ -5,9 +5,12 @@ import type { Member } from '@/lib/supabase/types';
 import ProfileClient from './profile-client';
 
 interface PageProps {
-  params: {
+  // params is a Promise in Next.js 15+ (see app/projects/[id]/page.tsx for
+  // the same convention) - it must be awaited, or params.id is undefined and
+  // every dynamic profile renders the not-found branch.
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /** Shape of the profiles table (lmsy_archive schema), verified read-only. */
@@ -39,10 +42,11 @@ function toMember(row: ProfileRow): Member {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (!profile) {
@@ -58,10 +62,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProfilePage({ params }: PageProps) {
+  const { id } = await params;
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (error || !profile) {
