@@ -53,6 +53,9 @@ const restHeaders = {
   apikey: SERVICE_KEY,
   Authorization: `Bearer ${SERVICE_KEY}`,
   'Content-Type': 'application/json',
+  // All content tables live in the lmsy_archive schema, not public.
+  'Accept-Profile': 'lmsy_archive',
+  'Content-Profile': 'lmsy_archive',
 };
 
 async function findOrCreateProject() {

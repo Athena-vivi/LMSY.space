@@ -54,7 +54,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from('projects')
     .select('id, title, description')
     .eq('id', id)
-    .or('curation_status.eq.published,curation_status.is.null')
     .maybeSingle();
 
   if (!project) {
@@ -98,18 +97,31 @@ export default async function ProjectPage({ params }: PageProps) {
   };
 
   // Fetch project details
-  // Public detail view: draft (candidate) and archived projects stay hidden.
-  // NULL curation_status is legacy-published, keep it visible.
+  // Public visibility rule (batch 2): published or legacy-NULL is always
+  // visible. A 'draft' candidate is only visible once it carries at least one
+  // gallery asset, so unpublished candidates stay hidden without rewriting
+  // legacy rows (25 of 26 legacy projects are 'draft').
   const { data: project, error: projectError } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('projects')
     .select('*')
     .eq('id', id)
-    .or('curation_status.eq.published,curation_status.is.null')
     .maybeSingle();
 
   if (projectError || !project) {
     notFound();
+  }
+
+  const status = (project as { curation_status?: string | null }).curation_status;
+  if (status && status !== 'published') {
+    const { count } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', id);
+    if (!count || count === 0) {
+      notFound();
+    }
   }
 
   // Fetch gallery images for this project

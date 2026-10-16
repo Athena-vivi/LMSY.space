@@ -56,17 +56,26 @@ export default function ProjectsPage() {
       // Only the fields this list renders. `select('*')` also pulled
       // theme_statement, homepage_excerpt, cover_url and i18n blobs that the
       // timeline never uses.
+      // Visibility rule (batch 2): a project is public when it is published,
+      // has no curation status (legacy NULL), or already carries at least one
+      // gallery asset. Candidate drafts without assets stay hidden, and legacy
+      // rows are untouched (25 of 26 legacy projects are 'draft').
       const { data, error } = await supabase
         .from('projects')
-        .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url')
-        // Candidate (draft) and archived projects must not appear publicly.
-        // Existing rows mostly have NULL, so keep them visible.
-        .or('curation_status.eq.published,curation_status.is.null')
+        .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url, curation_status, gallery_assets(count)')
         .order('release_date', { ascending: false })
         .order('id', { ascending: false });
 
       if (!error && data) {
-        setProjects(data as unknown as Project[]);
+        const visible = (data as any[]).filter((p) => {
+          const status = p.curation_status;
+          if (!status || status === 'published') return true;
+          const assetCount = Array.isArray(p.gallery_assets) && p.gallery_assets[0]
+            ? Number(p.gallery_assets[0].count || 0)
+            : 0;
+          return assetCount > 0;
+        });
+        setProjects(visible as unknown as Project[]);
       }
       setLoading(false);
     }
