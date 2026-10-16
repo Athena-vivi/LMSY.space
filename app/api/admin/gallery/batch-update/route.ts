@@ -1,30 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/security/api-auth';
+import { apiServerError } from '@/lib/security/http';
+
+// Remediation B2-T2 (audit P2-1): this route previously only checked that the
+// caller was logged in - any authenticated user could rewrite gallery ordering.
+// It now requires the admin identity, and validates the payload shape.
+
+const MAX_UPDATES_PER_REQUEST = 200;
+const SEQUENCE_MIN = 0;
+const SEQUENCE_MAX = 999999;
+
+interface SequenceUpdate {
+  id: string;
+  sequence: number;
+}
+
+function parseUpdates(raw: unknown): SequenceUpdate[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  if (raw.length > MAX_UPDATES_PER_REQUEST) return null;
+
+  const updates: SequenceUpdate[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') return null;
+    const { id, sequence } = entry as { id?: unknown; sequence?: unknown };
+    if (typeof id !== 'string' || id.length === 0) return null;
+    if (typeof sequence !== 'number' || !Number.isInteger(sequence)) return null;
+    if (sequence < SEQUENCE_MIN || sequence > SEQUENCE_MAX) return null;
+    updates.push({ id, sequence });
+  }
+  return updates;
+}
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
-    const authResult = await getAuthenticatedUser(request);
-    if (!authResult.user || authResult.error) {
-      return NextResponse.json({ error: 'Unauthorized', details: authResult.error }, { status: 401 });
-    }
-
     const body = await request.json();
-    const { updates } = body;
+    const updates = parseUpdates(body?.updates);
 
-    if (!Array.isArray(updates)) {
-      return NextResponse.json({ error: 'Invalid updates format' }, { status: 400 });
+    if (!updates) {
+      return NextResponse.json(
+        {
+          error: `Invalid updates format: expected 1-${MAX_UPDATES_PER_REQUEST} entries of { id: string, sequence: integer ${SEQUENCE_MIN}-${SEQUENCE_MAX} }`,
+        },
+        { status: 400 }
+      );
     }
-
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
     const results = await Promise.all(
-      updates.map(({ id, sequence }: { id: string; sequence: number }) =>
+      updates.map(({ id, sequence }: SequenceUpdate) =>
         supabaseAdmin
-          .schema('lmsy_archive')
           .from('gallery_assets')
           .update({ sequence })
           .eq('id', id)
@@ -35,10 +62,7 @@ export async function POST(request: NextRequest) {
     const errors = results.filter(r => r.error);
     if (errors.length > 0) {
       console.error('Batch update errors:', errors);
-      return NextResponse.json(
-        { error: 'Some updates failed', count: errors.length },
-        { status: 500 }
-      );
+      return apiServerError('admin/gallery/batch-update', errors[0].error);
     }
 
     return NextResponse.json({
