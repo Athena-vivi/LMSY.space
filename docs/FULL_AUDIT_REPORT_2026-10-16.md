@@ -125,6 +125,17 @@
 > 分类：A=已确认存在的问题；B=已确认但当前影响较小的设计缺陷；C=有证据支持的优化机会；D=需进一步测试才能确定。
 > **当前没有未修复的 P0。** 上一轮唯一的 P0（anon 可读未发布草稿）已修复并于**今天重新实测确认**（见第七节）。
 
+### 整改进度（随批次更新）
+
+**第一批已关闭（2026-10-16 晚，提交 `426ca69`/`53757fe`/`c797ff6`，已推送部署）：**
+
+- **P1-1 已修复** —— 数据源改查 `profiles`，并修复第二个根因：该页未按 Next 15+ 惯例 `await params`（这才是「全 404」的另一半原因）。本地已验证：真实 UUID 渲染出资料；未知 id 渲染 not-found 界面（HTTP 行为与全站动态页一致：editorial/projects 同样渲染 not-found UI 但状态码为 200——此为全站既有行为，记为观察项）。
+- **P1-2 已最小化（选 D2 方案 B）** —— 前台不再展示写死的 2025 假数据（渲染既有空状态）；后台不再查询不存在的表、Add Event 禁用并标注模块未启用。建表启用留待后续决策。
+- **P1-3 已修复（选 D1 方案 A）** —— 按钮改为真实 tag（Magazine/Advertising/STAGE/STILL/未分类，null 用 `.is('tag', null)` 查询；Telegram 3 条为采集来源元数据，不作为筛选按钮，归入 All）。生产实测每个按钮均有非空结果。
+- **P1-4 已修复** —— 新增 `lib/draft-delete-guard.ts`：删除前检查全部引用来源（gallery_assets.image_url、projects.cover_url/homepage_cover_url、site_content_blocks、删除集之外的 draft_items），裸键/URL 两种历史格式归一化比对；被引用对象保留（行仍删，响应显式标注 kept_objects）；R2 删除失败不再被 `allSettled` 吞掉（响应含 r2_delete_failures）；引用加载失败一律 fail-closed 拒绝删除。**生产实测风险敞口：24 条草稿的对象仍被发布内容引用——修复前一次批量删除即可弄坏这 24 处线上图，现已受保护。** 17 个新单测覆盖。
+
+第一批本地门禁：typecheck 0 错、单测 65/65、生产构建 exit 0、安全冒烟 51/51。剩余批次见 `docs/REMEDIATION_PLAN.md`。
+
 ### P0
 
 | # | 问题 | 证据 | 状态 |
