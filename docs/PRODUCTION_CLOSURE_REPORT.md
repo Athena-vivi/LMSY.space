@@ -442,13 +442,32 @@ PITR、每日备份、保留期与最近恢复测试。文档 `docs/BACKUP_AND_R
   | `docs/BACKUP_AND_RESTORE.md` | 记录数据库异地副本与保留策略 |
 
 - **未提交任何密钥、备份或临时文件：** `backups/`、`temp/`、`reports/`、`.env*`
-  均在 `.gitignore` 中，`git status` 确认仅上述源码文件入选。
-- **推送与部署：** 代码提交 `9e75a21`（8 文件，+1282/−6）+ 文档回填 `5b0e8a4`，
-  已推送 `main`（`0b742e9..9e75a21..5b0e8a4`）。Vercel Production 部署状态经 GitHub
-  commit status API 核验：`state = success`，`description = "Deployment has completed"`，
-  **`sha = 9e75a21`**（即线上代码已包含本次改动）。工作区干净，无未提交的用户改动。
-- **注意：**「部署成功」只代表代码已上线，**不代表**生产数据库权限已修复或环境变量
-  已配置——这两项仍需 H 节的人工操作。
+  均在 `.gitignore` 中；提交前对 staged diff 做了令牌正则扫描（`sbp_[a-f0-9]{40}`），
+  **零命中**。两个 `sbp_…` 令牌仅作为进程环境变量传入，从未写入任何文件。
+- **提交记录：**
+
+  | 提交 | 内容 | 状态 |
+  |---|---|---|
+  | `9e75a21` | 迁移执行器、数据库异地备份、迁移测试、收尾报告 | 已推送 |
+  | `5b0e8a4` / `5a79bae` | 报告回填 | 已推送 |
+  | `55837a9` | 新增 Management API Token 执行路线 | 已推送 |
+  | **`40c14be`** | **迁移修复 + 迁移实际执行结果**（4 文件，+203/−67） | 见下 |
+
+- **`40c14be` 内容：** `supabase/migrations/20261015_phase1_rls_hardening.sql`
+  （新增第 2b 步，删除 deny 表上 anon/authenticated 的读策略，保护 service_role）、
+  `tests/migrations.test.ts`（+2 断言）、
+  `scripts/apply-phase1-migrations.mjs`（修 `pg_policies.roles` 数组字面量崩溃）、
+  `docs/PRODUCTION_CLOSURE_REPORT.md`（A/B/D/H 节改为实测结果）。
+- **推送与部署（已确认）：** `git push origin main` → `55837a9..40c14be main -> main`。
+  Vercel Production 部署状态经 GitHub commit status API 核验：
+  **`state = success`，`description = "Deployment has completed"`，`sha = 40c14be`**。
+  工作区干净（`git status` 无输出），`HEAD == origin/main == 40c14be`。
+- **数据库变更的生效时点与代码不同步，这一点需要单独说明：**
+  三个迁移是**直接对生产库执行的**（2026-10-15T23:45Z UTC），**不依赖 Vercel 部署**。
+  也就是说 P0 修复在本次推送之前已经在线上生效；`40c14be` 推送的是「迁移文件本身的
+  修正 + 执行器 + 报告」，用于让版本库与数据库实际状态一致，便于他人在新环境复现。
+- **注意：**「部署成功」只代表代码已上线，**不代表**生产环境变量已配置或 Telegram
+  Webhook 已重注册——这两项仍需 H 节的人工操作。
 
 ---
 
