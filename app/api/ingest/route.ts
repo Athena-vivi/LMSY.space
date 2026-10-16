@@ -132,6 +132,36 @@ export async function POST(request: NextRequest) {
     has_media_url: !!body.media_url,
   });
 
+  // Batch 2: optional project/batch/source-account routing. Trimmed; empty
+  // values are treated as absent so legacy callers behave exactly as before.
+  const batchId = body.batch_id?.trim() || null;
+  const sourceAccount = body.source_account?.trim() || null;
+  const requestedProjectId = body.project_id?.trim() || null;
+
+  // Validate project_id against the database so a bad reference fails with a
+  // clear 400 instead of a foreign-key 500 after the media was uploaded.
+  if (requestedProjectId) {
+    const { data: projectRow, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('id', requestedProjectId)
+      .maybeSingle();
+
+    if (projectError || !projectRow) {
+      return NextResponse.json<IngestApiResponse>(
+        {
+          success: false,
+          draft_item_id: null,
+          status: null,
+          ingestion_stage: null,
+          message: 'Invalid project_id',
+          error: 'project_id does not match an existing project',
+        },
+        { status: 400 }
+      );
+    }
+  }
+
   try {
     // 4. Download media (B2-T4: download -> dedupe -> upload, in that order.
     // The previous order uploaded first and deduped afterwards, so every
@@ -261,6 +291,9 @@ export async function POST(request: NextRequest) {
           size: null,
           format: null,
         },
+        project_id: requestedProjectId,
+        batch_id: batchId,
+        source_account: sourceAccount,
       })
       .select('id')
       .single();

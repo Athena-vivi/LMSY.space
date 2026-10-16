@@ -59,6 +59,9 @@ export default function ProjectsPage() {
       const { data, error } = await supabase
         .from('projects')
         .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url')
+        // Candidate (draft) and archived projects must not appear publicly.
+        // Existing rows mostly have NULL, so keep them visible.
+        .or('curation_status.eq.published,curation_status.is.null')
         .order('release_date', { ascending: false })
         .order('id', { ascending: false });
 

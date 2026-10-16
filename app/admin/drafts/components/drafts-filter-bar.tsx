@@ -28,6 +28,10 @@ interface DraftsFilterBarProps {
   setFilterStatus: (value: FilterStatus) => void;
   filterMediaType: MediaType;
   setFilterMediaType: (value: MediaType) => void;
+  filterBatchId?: string;
+  setFilterBatchId?: (value: string) => void;
+  filterProjectId?: string;
+  setFilterProjectId?: (value: string) => void;
   filteredDrafts: any[];
   selectedIds: Set<string>;
   toggleSelectAll: () => void;
@@ -42,6 +46,10 @@ export function DraftsFilterBar({
   setFilterStatus,
   filterMediaType,
   setFilterMediaType,
+  filterBatchId,
+  setFilterBatchId,
+  filterProjectId,
+  setFilterProjectId,
   filteredDrafts,
   selectedIds,
   toggleSelectAll,
@@ -90,6 +98,26 @@ export function DraftsFilterBar({
         <option value="image">IMAGES</option>
         <option value="video">VIDEOS</option>
       </select>
+
+      {/* Batch filter (batch 2): paste a batch id to review one ingestion run */}
+      <input
+        type="text"
+        value={filterBatchId ?? ''}
+        onChange={(e) => setFilterBatchId?.(e.target.value)}
+        placeholder="BATCH_ID"
+        title="按批次 ID 筛选，例如 b20261016-01"
+        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/20 tracking-wider"
+      />
+
+      {/* Project filter (batch 2): paste a project id to review one project */}
+      <input
+        type="text"
+        value={filterProjectId ?? ''}
+        onChange={(e) => setFilterProjectId?.(e.target.value)}
+        placeholder="PROJECT_ID"
+        title="按项目 ID 筛选（项目审核用）"
+        className="w-36 px-3 py-1.5 bg-transparent text-white/60 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 placeholder:text-white/20 tracking-wider"
+      />
 
       {/* Select All */}
       {filteredDrafts.length > 0 && (

@@ -164,6 +164,54 @@ export function useDraftActions({
     }
   };
 
+  /**
+   * Batch 2: promote every selected draft to a gallery asset by looping the
+   * proven single-item to-gallery endpoint. Reports per-item results so a
+   * single failure never blocks the rest. Drafts without a project are
+   * reported as skipped, not silently dropped.
+   */
+  const handleBatchToGallery = async (ids: string[]) => {
+    let created = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const id of ids) {
+      try {
+        const draft = drafts.find((item) => item.id === id);
+        if (!draft?.project_id) {
+          skipped += 1;
+          continue;
+        }
+
+        const response = await fetch(`/api/admin/drafts/${id}/to-gallery`, {
+          method: 'POST',
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          failed += 1;
+          continue;
+        }
+
+        if (result.created) {
+          created += 1;
+          updateDraftOptimistically(id, { status: 'published' as const });
+        } else {
+          // Idempotent duplicate: asset already exists for this media
+          created += 1;
+        }
+      } catch {
+        failed += 1;
+      }
+    }
+
+    showToast(`TO_GALLERY: ${created} CREATED, ${skipped} SKIPPED, ${failed} FAILED`,
+      failed > 0 ? 'error' : 'success');
+    if (created > 0) {
+      await fetchDrafts();
+    }
+  };
+
   const handleCreateProject = async (id: string) => {
     try {
       const existingDraft = drafts.find((draft) => draft.id === id);
@@ -307,6 +355,7 @@ const executeBatchDelete = async () => {
     handlePublish,
     handleUnpublish,
     handleBatchPublish,
+    handleBatchToGallery,
     handleCreateProject,
     handleLinkExistingProject,
     handleAddToAssets,

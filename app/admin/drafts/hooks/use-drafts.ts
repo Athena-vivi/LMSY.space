@@ -21,6 +21,9 @@ export function useDrafts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filterMediaType, setFilterMediaType] = useState<MediaType>('all');
+  // Batch 2: filter by ingestion batch or linked project for per-project review
+  const [filterBatchId, setFilterBatchId] = useState('');
+  const [filterProjectId, setFilterProjectId] = useState('');
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -41,6 +44,8 @@ export function useDrafts() {
       const params = new URLSearchParams();
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterMediaType !== 'all') params.append('media_type', filterMediaType);
+      if (filterBatchId.trim()) params.append('batch_id', filterBatchId.trim());
+      if (filterProjectId.trim()) params.append('project_id', filterProjectId.trim());
 
       const response = await fetch(`/api/admin/drafts?${params.toString()}`, {
         cache: 'no-store',
@@ -60,7 +65,7 @@ export function useDrafts() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterMediaType]);
+  }, [filterStatus, filterMediaType, filterBatchId, filterProjectId]);
 
   // Initial fetch
   useEffect(() => {
@@ -68,12 +73,20 @@ export function useDrafts() {
   }, [fetchDrafts]);
 
   /**
-   * Filter drafts by search query
+   * Filter drafts by search query and batch/project selectors
    */
   useEffect(() => {
-    const filtered = filterBySearch(drafts, searchQuery);
+    const batch = filterBatchId.trim().toLowerCase();
+    const project = filterProjectId.trim().toLowerCase();
+    let filtered = filterBySearch(drafts, searchQuery);
+    if (batch) {
+      filtered = filtered.filter(d => (d.batch_id || '').toLowerCase() === batch);
+    }
+    if (project) {
+      filtered = filtered.filter(d => (d.project_id || '').toLowerCase() === project);
+    }
     setFilteredDrafts(filtered);
-  }, [drafts, searchQuery]);
+  }, [drafts, searchQuery, filterBatchId, filterProjectId]);
 
   /**
    * Show toast notification
@@ -137,11 +150,15 @@ export function useDrafts() {
     searchQuery,
     filterStatus,
     filterMediaType,
+    filterBatchId,
+    filterProjectId,
 
     // Setters
     setSearchQuery,
     setFilterStatus,
     setFilterMediaType,
+    setFilterBatchId,
+    setFilterProjectId,
     setSelectedIds,
 
     // Actions

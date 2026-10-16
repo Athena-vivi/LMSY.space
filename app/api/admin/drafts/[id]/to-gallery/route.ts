@@ -31,7 +31,7 @@ export async function POST(
 
     const { data: draft, error: draftError } = await supabaseAdmin
       .from('draft_items')
-      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt,chronicle_excerpt_i18n,source_url,source_platform')
+      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt,chronicle_excerpt_i18n,source_url,source_platform,source_account')
       .eq('id', id)
       .single();
 
@@ -111,6 +111,7 @@ export async function POST(
         event_date: draft.event_date,
         source_url: provenance.source_url,
         source_platform: provenance.source_platform,
+        source_account: provenance.source_account,
         integrity_status: 'ok',
         display_role: 'regular',
       })

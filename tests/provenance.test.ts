@@ -10,7 +10,26 @@ test('buildProvenanceFields passes through a complete draft provenance', () => {
   assert.deepEqual(out, {
     source_url: 'https://t.me/lmsy_channel/123',
     source_platform: 'telegram',
+    source_account: null,
   });
+});
+
+test('buildProvenanceFields passes through the source account (batch 2)', () => {
+  const out = buildProvenanceFields({
+    source_url: 'https://x.com/CHANGEARTIST_/status/2108670395272269959',
+    source_platform: 'twitter',
+    source_account: ' CHANGEARTIST_ ',
+  });
+  assert.deepEqual(out, {
+    source_url: 'https://x.com/CHANGEARTIST_/status/2108670395272269959',
+    source_platform: 'twitter',
+    source_account: 'CHANGEARTIST_',
+  });
+  // Missing account still normalizes to null
+  assert.deepEqual(
+    buildProvenanceFields({ source_url: 'https://x.com/a/1', source_platform: 'twitter' }).source_account,
+    null
+  );
 });
 
 test('buildProvenanceFields trims whitespace around values', () => {
@@ -26,17 +45,16 @@ test('buildProvenanceFields maps empty and whitespace-only values to null', () =
   assert.deepEqual(buildProvenanceFields({ source_url: '', source_platform: '   ' }), {
     source_url: null,
     source_platform: null,
+    source_account: null,
   });
 });
 
 test('buildProvenanceFields tolerates null, undefined and missing drafts', () => {
-  assert.deepEqual(buildProvenanceFields(null), { source_url: null, source_platform: null });
-  assert.deepEqual(buildProvenanceFields(undefined), { source_url: null, source_platform: null });
-  assert.deepEqual(buildProvenanceFields({}), { source_url: null, source_platform: null });
-  assert.deepEqual(buildProvenanceFields({ source_url: null, source_platform: null }), {
-    source_url: null,
-    source_platform: null,
-  });
+  const nullOut = { source_url: null, source_platform: null, source_account: null };
+  assert.deepEqual(buildProvenanceFields(null), nullOut);
+  assert.deepEqual(buildProvenanceFields(undefined), nullOut);
+  assert.deepEqual(buildProvenanceFields({}), nullOut);
+  assert.deepEqual(buildProvenanceFields({ source_url: null, source_platform: null }), nullOut);
 });
 
 test('deriveTelegramDraftDates never sets event_date - send time is evidence only', () => {

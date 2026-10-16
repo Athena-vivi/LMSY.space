@@ -26,10 +26,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const mediaType = searchParams.get('media_type');
+    const batchId = searchParams.get('batch_id');
+    const projectId = searchParams.get('project_id');
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    console.log('[DRAFTS_API] Fetching with filters:', { status, mediaType, limit, offset });
+    console.log('[DRAFTS_API] Fetching with filters:', { status, mediaType, batchId, projectId, limit, offset });
 
     let query = supabaseAdmin
       .from('draft_items')
@@ -43,6 +45,12 @@ export async function GET(request: NextRequest) {
     }
     if (mediaType && mediaType !== 'all') {
       query = query.eq('media_type', mediaType);
+    }
+    if (batchId) {
+      query = query.eq('batch_id', batchId);
+    }
+    if (projectId) {
+      query = query.eq('project_id', projectId);
     }
 
     // Exclude archived and rejected by default

@@ -52,6 +52,10 @@ export default function DraftsPage() {
         setFilterStatus={draftsState.setFilterStatus}
         filterMediaType={draftsState.filterMediaType}
         setFilterMediaType={draftsState.setFilterMediaType}
+        filterBatchId={draftsState.filterBatchId}
+        setFilterBatchId={draftsState.setFilterBatchId}
+        filterProjectId={draftsState.filterProjectId}
+        setFilterProjectId={draftsState.setFilterProjectId}
         filteredDrafts={draftsState.filteredDrafts}
         selectedIds={draftsState.selectedIds}
         toggleSelectAll={draftsState.toggleSelectAll}
@@ -83,6 +87,7 @@ export default function DraftsPage() {
       <DraftsActionsBar
         selectedIds={draftsState.selectedIds}
         onBatchPublish={actions.handleBatchPublish}
+        onBatchToGallery={actions.handleBatchToGallery}
         onBatchDelete={() => {
           const result = actions.handleBatchDelete();
           forms.showDeleteConfirm(undefined, undefined, result.count);

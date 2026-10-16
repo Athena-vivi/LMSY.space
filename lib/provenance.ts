@@ -20,6 +20,7 @@
 export interface DraftProvenance {
   source_url: string | null;
   source_platform: string | null;
+  source_account: string | null;
 }
 
 /**
@@ -28,13 +29,19 @@ export interface DraftProvenance {
  * "source unknown" state is represented consistently.
  */
 export function buildProvenanceFields(
-  draft: { source_url?: string | null; source_platform?: string | null } | null | undefined
+  draft: {
+    source_url?: string | null;
+    source_platform?: string | null;
+    source_account?: string | null;
+  } | null | undefined
 ): DraftProvenance {
   const url = draft?.source_url?.trim();
   const platform = draft?.source_platform?.trim();
+  const account = draft?.source_account?.trim();
   return {
     source_url: url ? url : null,
     source_platform: platform ? platform : null,
+    source_account: account ? account : null,
   };
 }
 

@@ -196,6 +196,10 @@ export interface DraftItem {
   published_at: string | null;
 
   project_id: string | null;
+
+  // Batch 2: ingestion batch tracking and source account provenance
+  batch_id: string | null;
+  source_account: string | null;
 }
 
 export interface DraftItemCreateInput {
@@ -289,6 +293,12 @@ export interface IngestApiRequest {
   raw_event_date?: string;
 
   tags?: string[];
+
+  // Batch 2 optional routing/provenance fields. All optional for backward
+  // compatibility - omitting them keeps the legacy behavior.
+  project_id?: string;
+  batch_id?: string;
+  source_account?: string;
 }
 
 export interface IngestApiResponse {

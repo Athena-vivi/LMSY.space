@@ -52,9 +52,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { data: project } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('projects')
-    .select('*')
+    .select('id, title, description')
     .eq('id', id)
-    .single();
+    .or('curation_status.eq.published,curation_status.is.null')
+    .maybeSingle();
 
   if (!project) {
     return {
@@ -97,12 +98,15 @@ export default async function ProjectPage({ params }: PageProps) {
   };
 
   // Fetch project details
+  // Public detail view: draft (candidate) and archived projects stay hidden.
+  // NULL curation_status is legacy-published, keep it visible.
   const { data: project, error: projectError } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('projects')
     .select('*')
     .eq('id', id)
-    .single();
+    .or('curation_status.eq.published,curation_status.is.null')
+    .maybeSingle();
 
   if (projectError || !project) {
     notFound();

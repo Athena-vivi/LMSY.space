@@ -7,11 +7,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Edit2, Trash2, X } from 'lucide-react';
+import { Check, Edit2, Trash2, X, ImagePlus } from 'lucide-react';
 
 interface DraftsActionsBarProps {
   selectedIds: Set<string>;
   onBatchPublish: () => void;
+  onBatchToGallery: (ids: string[]) => void;
   onBatchDelete: () => void;
   onBatchEdit: () => void;
   onClearSelection: () => void;
@@ -20,6 +21,7 @@ interface DraftsActionsBarProps {
 export function DraftsActionsBar({
   selectedIds,
   onBatchPublish,
+  onBatchToGallery,
   onBatchDelete,
   onBatchEdit,
   onClearSelection,
@@ -52,6 +54,16 @@ export function DraftsActionsBar({
             >
               <Check className="h-3.5 w-3.5" strokeWidth={2} />
               <span>PUBLISH_ALL</span>
+            </motion.button>
+            <motion.button
+              onClick={() => onBatchToGallery(Array.from(selectedIds))}
+              title="把选中草稿逐条转正为图库资产（循环调用单条接口，逐条回报）"
+              className="flex items-center gap-2 px-4 py-2 bg-lmsy-yellow/20 border border-lmsy-yellow/40 text-lmsy-yellow/90 text-xs font-mono hover:bg-lmsy-yellow/30 transition-all rounded-full"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
+              <span>TO_GALLERY_ALL</span>
             </motion.button>
             <motion.button
               onClick={onBatchDelete}

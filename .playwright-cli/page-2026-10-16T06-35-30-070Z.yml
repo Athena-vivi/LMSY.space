@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - main [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e10]:
+          - heading "Gallery" [level=1] [ref=e11]
+          - paragraph [ref=e12]: A visual journey through moments captured in time.
+        - generic [ref=e15]:
+          - button "#All" [ref=e16]
+          - button "#Magazine" [ref=e17]
+          - button "#Advertising" [ref=e18]
+          - button "#Stage" [ref=e19]
+          - button "#Still" [ref=e20]
+          - button "#Untagged" [ref=e21]
+    - contentinfo [ref=e30]:
+      - generic [ref=e32]:
+        - navigation [ref=e33]:
+          - link "Chronicle" [ref=e34] [cursor=pointer]:
+            - /url: /chronicle
+          - generic [ref=e35]: •
+          - link "Exhibitions" [ref=e36] [cursor=pointer]:
+            - /url: /exhibitions
+          - generic [ref=e37]: •
+          - link "Editorial" [ref=e38] [cursor=pointer]:
+            - /url: /editorial
+          - generic [ref=e39]: •
+          - link "Duality" [ref=e40] [cursor=pointer]:
+            - /url: /profiles
+          - generic [ref=e41]: •
+          - link "Copyright" [ref=e42] [cursor=pointer]:
+            - /url: /copyright
+        - button "Copyright information" [ref=e44] [cursor=pointer]: © 2025 lmsy.space | Curated by Astra. Made with love for LMSY & Besties.
+  - generic:
+    - generic:
+      - generic:
+        - generic [ref=e45] [cursor=pointer]
+        - generic [ref=e46] [cursor=pointer]
+        - generic: Listen To The Resonance
