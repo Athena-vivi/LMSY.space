@@ -258,7 +258,7 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
               )}
 
               {/* Caption Overlay */}
-              {(localizedCaption || currentImage.tag || currentImage.catalog_id) && (
+              {(localizedCaption || currentImage.tag || currentImage.catalog_id || currentImage.source_url) && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -269,6 +269,20 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                     <div className="font-mono text-[10px] text-white/40 mb-2">
                       {currentImage.catalog_id}
                     </div>
+                  )}
+                  {currentImage.source_url && (
+                    <a
+                      href={currentImage.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-white/60 hover:text-lmsy-yellow transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span>
+                        Source
+                        {currentImage.source_platform ? ` · ${currentImage.source_platform}` : ''}
+                      </span>
+                    </a>
                   )}
                   {currentImage.tag && (
                     <span className="inline-block px-3 py-1 mb-2 text-xs font-medium bg-lmsy-yellow text-black rounded-full">
