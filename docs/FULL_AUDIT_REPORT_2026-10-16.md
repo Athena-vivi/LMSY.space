@@ -145,6 +145,8 @@
 
 第二批本地门禁：typecheck 0 错、单测 **83/83**、生产构建 exit 0、安全冒烟 51/51、`audit:r2` 前后一致。
 
+**P1-6 已裁定（2026-10-16，站长决定）：** 浏览器扩展源码随旧电脑丢失、不可恢复；**暂不重写**。B3-T2 转为「确认弃用」收尾（审计标注 + ingest 调用方清点），B2-T5 挂起的域名白名单因此解除前置。
+
 ### P0
 
 | # | 问题 | 证据 | 状态 |
@@ -349,7 +351,7 @@ P1-4（删除保护，否则批量删除误伤线上图）→ P2-2（去重前�
 
 1. **撤销两个 Supabase 个人访问令牌（安全事项，建议最优先）**：此前为应用数据库迁移，你在对话中提供过两个 `sbp_…` 开头的 Management API 令牌。它们具备 SQL 执行权限，虽未写入任何文件或提交，但已在聊天记录明文出现。请到 Supabase Dashboard → Account → Access Tokens 将这两个令牌 **Revoke**，今后如需再用，临时生成、用完即撤。
 2. **Vercel Production 环境变量核验**：确认 `ADMIN_EMAIL`、`TELEGRAM_WEBHOOK_SECRET`、`CRON_SECRET`、`INGEST_API_KEY`、`TELEGRAM_BOT_TOKEN`、`OPENROUTER_API_KEY` 已配置（注意顺序：**先核验变量，再重注册 webhook**，顺序颠倒会导致 Telegram 采集中断）。
-3. **重注册 Telegram Webhook**：变量核验通过后，在可达网络执行 `npx tsx scripts/setup-telegram-webhook.ts register https://lmsy.space`，再用 `status` 子命令核对注册结果。注意两个前置：① Vercel Production 已配 `TELEGRAM_WEBHOOK_SECRET`/`TELEGRAM_BOT_TOKEN`；② 本地 `.env.local` 的 `TELEGRAM_WEBHOOK_SECRET` 与 Vercel Production 同值（注册脚本读本地值）。脚本是子命令式，直接传 URL 不会执行注册。
+3. **重注册 Telegram Webhook（先验证再决定，大概率不需要）**：实测最新电报草稿到达于 2026-10-15 13:57（晚于全部安全部署），**采集大概率仍然正常**。先执行只读检查 `npx tsx scripts/setup-telegram-webhook.ts status`：若注册的 URL 指向 `https://lmsy.space` 且采集持续有新图，**无需重注册**。只有 status 异常或采集停止时才需 `register` 重注册（前置：Vercel 的 secret 与本地 `.env.local` 同值——脚本是子命令式，直接传 URL 不会执行注册）。
 4. **线上验收**：本机网络无法到达 `lmsy.space` / `api.telegram.org`，以下项目前只能做「本地同代码」替代验证：线上冒烟测试、真实管理员登录端到端、关键业务回归（首页/图库/作品/档案/日程/编年史/灯箱/审核发布/上传）、第二阶段性能与 SEO 的线上复测。
 5. **Supabase PITR / 每日备份 / 保留期核验**：需在 Dashboard 确认并回填状态（免费版可能不包含 PITR，需确认实际保护水平）。
 

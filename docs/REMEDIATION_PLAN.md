@@ -38,7 +38,7 @@
 |---|---|---|---|
 | U1 | Supabase Dashboard → Account → Access Tokens，**撤销**对话中提供过的两个 `sbp_…` 令牌 | 令牌具备 SQL 执行权限，已在聊天记录明文出现；虽未落盘未入库，仍应作废 | 无（安全卫生，建议最先做） |
 | U2 | Vercel → Settings → Environment Variables → **Production**，核验 `ADMIN_EMAIL`/`TELEGRAM_WEBHOOK_SECRET`/`CRON_SECRET`/`INGEST_API_KEY`/`TELEGRAM_BOT_TOKEN`/`OPENROUTER_API_KEY` | 这些变量是否生效目前无证据；`ADMIN_EMAIL` 未生效会导致后台登录异常 | U3、X2、B5-T8 |
-| U3 | U2 通过后执行 `npx tsx scripts/setup-telegram-webhook.ts register https://lmsy.space`，随后执行 `npx tsx scripts/setup-telegram-webhook.ts status` 核对注册结果 | **两个前置条件缺一不可**：① Vercel Production 已配 `TELEGRAM_WEBHOOK_SECRET`/`TELEGRAM_BOT_TOKEN`；② 本地 `.env.local` 的 `TELEGRAM_WEBHOOK_SECRET` 与 Vercel Production **同值**（注册脚本读本地值，两边不一致则 Telegram 用本地 secret 签名、生产校验失败）。secret 未配置时路由返回 **503**、不匹配返回 **401**，均导致采集中断 | Telegram 采集恢复 |
+| U3 | **先验证，再决定是否重注册**：执行 `npx tsx scripts/setup-telegram-webhook.ts status`（只读查询，不改任何东西），看注册的 URL 是否指向 `https://lmsy.space`。**若 Telegram 采集当前正常（最新电报草稿 2026-10-15 13:57 到达，晚于全部安全部署），且 status 显示注册正常 → U3 取消，无需重注册**。只有当 status 显示异常或采集停止时才需 `register` 重注册，且重注册前必须核对：① Vercel Production 已配 `TELEGRAM_WEBHOOK_SECRET`/`TELEGRAM_BOT_TOKEN`；② 本地 `.env.local` 的 secret 与 Vercel Production **同值**（注册脚本读本地值）。secret 未配置时路由返回 **503**、不匹配返回 **401**，均导致采集中断 | 解释清楚：webhook 是 Telegram 的推送登记，不是什么账户；重注册只是当 Telegram 侧登记的 secret/URL 与服务器不一致时的修复动作 | Telegram 采集诊断 |
 | U4 | Supabase Dashboard 核验每日备份 / PITR / 保留期，把结果告诉我回填文档 | 免费版可能不含 PITR，实际保护水平目前未知 | X3、备份策略决策（D5） |
 
 > ⚠️ 脚本是子命令式（`register`/`status`/`delete`/`help`）。直接传 URL 不跟 `register` 会落到「Unknown command」分支正常退出、什么都不注册——这是评审抓出的真实陷阱，README 与审计报告中的旧命令已同步修正。
@@ -80,7 +80,7 @@
 | # | 任务 | 预估改动 | 验收标准 | 回归风险 |
 |---|---|---|---|---|
 | B3-T1 | P1-7：webhook 单条处理失败返回非 200 让 Telegram 重投；错误记录写入**持久位置**（draft_items 或专用表/报告文件，不只写 console——Vercel 日志有保留期会滚掉）；chat_id 白名单（新 env `TELEGRAM_ALLOWED_CHAT_IDS`，**未配置时维持现状**并在 README/.env.example 标注，配置了才启用） | 1 文件 + 单测 + env 说明 | 单测：任一 update 处理失败 → 整批 500；全部成功 → 200；secret **未配置 → 503**；secret **不匹配 → 401**；chat_id 不在白名单 → 跳过且不建 draft；失败记录落在持久位置可查 | 中（影响收件链路，需配合 U3 后真机验证） |
-| B3-T2 | P1-6：浏览器扩展源码找回（**你侧**：旧电脑/邮件/网盘/GitHub gist）。找回→入库并在 README 登记版本；确认弃用→在审计报告标注「已弃用」并检查 ingest 调用方 | 仓库外 | 扩展源码在库中可构建，或明确弃用结论。**B2-T5 的域名白名单决策等本任务结论** | — |
+| B3-T2 | P1-6：**已由站长裁定（2026-10-16）——扩展源码随旧电脑丢失，不可恢复；暂不重写。** 本任务转为「确认弃用」收尾：① 审计报告标注扩展已弃用；② 清点 `/api/ingest` 现存调用方（扩展失联后只剩脚本/Agent 直调与 webhook）；③ **B2-T5 挂起的域名白名单因此解除前置**——调用方已可枚举，若后续要开自动采集可再加白名单（列入待办，不在本批实施） | 仓库外 + 文档 | 审计报告与 ingest 调用方清点完成；README 不再暗示扩展可用 | — |
 | B3-T3 | P1-8：RSS 源维持禁用；在代码注释写清「为什么禁、任何源启用前必须先把 `MAX_ENTRIES_PER_SOURCE`（当前 2）与 30 天窗口两个测试参数产品化」 | 1 文件（注释） | 无误开风险；后人读注释即懂 | 无 |
 
 ## 6. 第四批：批量采集准备度（不实现工作台，只铺管道）
