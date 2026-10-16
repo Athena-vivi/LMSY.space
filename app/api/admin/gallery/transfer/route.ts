@@ -70,10 +70,12 @@ export async function POST(request: NextRequest) {
     console.log('[IRON_CURTAIN] ✅ Project verified:', project.title);
 
     // Update all gallery items
-    console.log('[IRON_CURTAIN] 📝 Updating gallery items...');
+    // NOTE: must target gallery_assets (the live asset table). The legacy
+    // `gallery` table has 0 rows and previously made this call a silent no-op.
+    console.log('[IRON_CURTAIN] 📝 Updating gallery assets...');
     const { data: updatedItems, error: updateError } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .update({ project_id: projectId })
       .in('id', ids)
       .select();
@@ -88,19 +90,17 @@ export async function POST(request: NextRequest) {
 
     console.log('[IRON_CURTAIN] ✅ Transferred', updatedItems?.length || 0, 'items to', project.title);
 
-    // Auto-set project cover if -000 image is in the batch
-    const hasCoverImage = updatedItems?.some(item => item.catalog_id?.endsWith('-000'));
-    if (hasCoverImage) {
-      console.log('[IRON_CURTAIN] 🎯 -000 image detected, updating project cover...');
-      const coverImage = updatedItems?.find(item => item.catalog_id?.endsWith('-000'));
-      if (coverImage) {
-        await supabaseAdmin
-          .schema('lmsy_archive')
-          .from('projects')
-          .update({ cover_url: coverImage.image_url })
-          .eq('id', projectId);
-        console.log('[IRON_CURTAIN] ✅ Project cover updated');
-      }
+    // Auto-set project cover if an explicit cover or -000 image is in the batch
+    const coverImage = updatedItems?.find(item => item.is_cover) ||
+      updatedItems?.find(item => item.catalog_id?.endsWith('-000'));
+    if (coverImage) {
+      console.log('[IRON_CURTAIN] 🎯 Cover image in batch, updating project cover...');
+      await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .update({ cover_url: coverImage.image_url })
+        .eq('id', projectId);
+      console.log('[IRON_CURTAIN] ✅ Project cover updated');
     }
 
     return NextResponse.json({

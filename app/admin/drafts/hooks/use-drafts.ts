@@ -21,9 +21,14 @@ export function useDrafts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filterMediaType, setFilterMediaType] = useState<MediaType>('all');
-  // Batch 2: filter by ingestion batch or linked project for per-project review
-  const [filterBatchId, setFilterBatchId] = useState('');
-  const [filterProjectId, setFilterProjectId] = useState('');
+  // Batch 2: filter by ingestion batch or linked project for per-project review.
+  // Initialize from URL (?batch_id= / ?project_id=) so other pages can deep link.
+  const [filterBatchId, setFilterBatchId] = useState(
+    () => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('batch_id') || '' : '')
+  );
+  const [filterProjectId, setFilterProjectId] = useState(
+    () => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('project_id') || '' : '')
+  );
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

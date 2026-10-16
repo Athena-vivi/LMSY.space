@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Images,
   FolderKanban,
+  Layers,
   LogOut,
   Shield,
   X,
@@ -44,6 +45,7 @@ const navSections: NavSection[] = [
     title: 'CONTENT FLOW',
     items: [
       { icon: Inbox, label: 'Draft Inbox', href: '/admin/drafts', showBadge: true },
+      { icon: Layers, label: 'Batches', href: '/admin/batches' },
       { icon: Images, label: 'Asset Vault', href: '/admin/gallery' },
     ],
   },

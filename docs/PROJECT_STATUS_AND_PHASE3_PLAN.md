@@ -495,3 +495,49 @@ WHERE d.r2_media_url = ga.image_url
 - 授权范围内全部项目通过或已有完整实证；无遗留阻塞项。
 - 唯一非满分项是 Date Unknown 章节"无实数据可触发"，属数据状态而非功能缺陷，不需要操作。
 - 后续（非本批范围，未动）：站长审核 2 条新 Telegram 草稿；batch_id 与批量入口待下一批授权。
+
+---
+
+## 13. 第三批第二批实施记录（2026-10-16，站长批准后执行）
+
+授权范围：圣保罗 EVERAFTER: BLOOM（2026-10-09）为目标事件；迁移、5 处代码改动、官方图片采集（≤20 张）全部获批。
+
+### 13.1 迁移（已执行，有实证）
+
+- `supabase/migrations/20261016_drafts_batch_provenance.sql`：draft_items + `batch_id` + `source_account`（均可空 text）+ `draft_items_batch_id_idx` 索引。
+- 执行前备份：`backups/db/2026-10-16T07-41-17-756/`（434 行全部对账一致）。
+- 执行方式：Management API + `SET search_path TO lmsy_archive`（表在 lmsy_archive schema，默认 public 会报 42P01）。
+- 验证：information_schema 两列到位、索引 `draft_items_batch_id_idx` 存在，0 行数据变化。
+
+### 13.2 代码改动（f8a3128 + 可见性修正提交，已部署）
+
+1. `/api/ingest`：新增可选 `project_id`（先验存在，防 FK 500）、`batch_id`、`source_account`；不传行为不变。
+2. `to-gallery`：透传 `source_account`（防重复转正守卫批 1 已存在，未重复实现）；`lib/provenance.ts` 的 `buildProvenanceFields` 增加 account 归一化。
+3. 公开 projects 列表/详情：可见性规则 = **published 或 NULL 或 已有 gallery_assets**。
+   - **重要事实修正**：批 2 审计文档 §1.3 写"存量项目多为 NULL"是错的——实测 26 个项目中 25 个是 `draft`、仅 1 个 `published`。若按"published/NULL"过滤会把 24 个存量项目从公开页隐藏。故改为"有资产即可见"，既有公开内容零变化；新候选项目（零资产）自动隐藏。
+4. 后台草稿页：按 batch_id / project_id 筛选（GET 参数 + UI 输入框）+ "TO_GALLERY_ALL" 批量转正按钮（循环单条 to-gallery，逐条回报，无 project_id 的跳过并计数）。
+5. 门禁：tsc 0 错误、单测 90/90（provenance 测试补 source_account 断言）、next build 通过。
+
+### 13.3 官方图片采集（多通道实测）
+
+| 通道 | 结果 |
+|---|---|
+| X @CHANGEARTIST_（官方，经 nitter.space + fxtwitter API） | ✅ 3 帖 10 图 + 1 视频（2108670395272269959 四图、2108759978219806939 四图、2108760103839252492 两图、2109384219420151860 视频） |
+| X @change2561（公司号） | 时间线无圣保罗帖（10 月内容为其它节目） |
+| 微博 @LMLOOKMHEE | 官方号确认存在（uid 7917425450），但所有内容接口要求真实登录；访客身份 6 条通道实测全拒（genvisitor+incarnate、m 站 API、weibo.com ajax、profile HTML、热门/评论端点）。按既定登录墙规则跳过 |
+| Instagram | 登录墙，跳过（既定原则） |
+| 混淆项排除 | Mexico City（EVERAFTER: REMEMBER，10-11~14）是**另一场**活动，未混入 |
+
+### 13.4 入库（批次 b20261016-01，只产草稿）
+
+- 候选项目：`9505b4ff-c039-4e1f-81f5-c43b94c6ab08`（title: EVERAFTER: BLOOM in Sao Paulo (Fan Meeting)，curation_status='draft'，portal_visible=false，release/start/end=2026-10-09，封面已指向首张草稿图）。
+- 10 张官方照片全部入库成功（ingestion_stage=ready，0 重复），落库核验 10/10：batch_id=b20261016-01、source_account=CHANGEARTIST_、event_date=2026-10-09、raw_event_date=发帖 UTC 时间、状态 draft。
+- 报告：`reports/batch-b20261016-01/`（manifest.json / ingest-results.json / report.json）。
+- 视频（官方）未入库（本批只收图），清单在 manifest excluded 节，站长定夺。
+
+### 13.5 移交站长
+
+1. 后台 → 草稿箱：筛选框输入 `b20261016-01` 即可按批次审核 10 张；筛选项目 ID `9505b4ff-...` 同效。
+2. 审核时可修正每张的 tags（人物范围按图实际内容改 Duo/Solo，采集时统一标 Unknown 未做视觉断言）。
+3. 确认后可勾选多张点 TO_GALLERY_ALL 批量转正；转正后项目自然公开（published/有资产规则）。
+4. 公开可见性规则变更说明见 13.2-3。

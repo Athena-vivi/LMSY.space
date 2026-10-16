@@ -1,7 +1,20 @@
 'use client';
 
 import { use, useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, ExternalLink, Loader2, GripVertical, RotateCcw, RotateCw, Trash2, Star } from 'lucide-react';
+import {
+  ArrowLeft,
+  ExternalLink,
+  Loader2,
+  GripVertical,
+  RotateCcw,
+  RotateCw,
+  Trash2,
+  Star,
+  Unlink,
+  Edit2,
+  Send,
+  Clock,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -22,7 +35,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getImageUrl } from '@/lib/image-url';
-import { supabase } from '@/lib/supabase';
+import { supabase, type Project } from '@/lib/supabase';
+import EditProjectModal from '../../_components/edit-project-modal';
 
 interface GalleryImage {
   id: string;
@@ -33,16 +47,33 @@ interface GalleryImage {
   created_at?: string;
   is_cover?: boolean | null;
   rotation?: number | null;
+  source_url?: string | null;
+  source_platform?: string | null;
 }
 
-interface Project {
+interface DraftImage {
   id: string;
-  title: string;
-  category: string;
+  r2_media_url: string;
+  title: { en?: string | null; zh?: string | null; th?: string | null } | null;
+  status: string;
+  event_date: string | null;
+  media_type: string | null;
+  source_url: string | null;
+  source_platform: string | null;
+  source_account: string | null;
+  created_at: string;
+}
+
+interface ProjectRow extends Project {
   catalog_id: string;
 }
 
-// Sortable Item Component
+function draftTitle(t: DraftImage['title']): string {
+  if (!t) return 'Untitled draft';
+  return t.en || t.zh || t.th || 'Untitled draft';
+}
+
+// ============================= Sortable published asset =============================
 function SortableImage({
   image,
   index,
@@ -85,7 +116,7 @@ function SortableImage({
         <GripVertical className="h-4 w-4 text-white/60" strokeWidth={1.5} />
       </div>
 
-      {/* Image Container - Smaller Scale */}
+      {/* Image Container */}
       <div className="relative aspect-[3/4] overflow-hidden bg-white/5 transition-all duration-200">
         {imageUrl ? (
           <Image
@@ -116,11 +147,23 @@ function SortableImage({
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
-        {/* Catalog ID */}
+        {/* Catalog ID + actions */}
         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[10px] font-mono text-white/60 tracking-wider">
-              {image.catalog_id || `IMG_${String(index + 1).padStart(3, '0')}`}
+            <p className="text-[10px] font-mono text-white/60 tracking-wider flex items-center gap-2 min-w-0">
+              <span className="truncate">{image.catalog_id || `IMG_${String(index + 1).padStart(3, '0')}`}</span>
+              {image.source_url && (
+                <a
+                  href={image.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-lmsy-blue/70 hover:text-lmsy-blue flex-shrink-0"
+                  title={`Source (${image.source_platform || 'unknown'}): ${image.source_url}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
+                </a>
+              )}
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -167,10 +210,119 @@ function SortableImage({
   );
 }
 
+// ============================= Draft card =============================
+function DraftCard({
+  draft,
+  selected,
+  onToggle,
+  onPromote,
+  onUnlink,
+  busy,
+}: {
+  draft: DraftImage;
+  selected: boolean;
+  onToggle: () => void;
+  onPromote: (draft: DraftImage) => void;
+  onUnlink: (draft: DraftImage) => void;
+  busy: boolean;
+}) {
+  const imageUrl = getImageUrl(draft.r2_media_url);
+  return (
+    <div
+      className={`relative border transition-colors cursor-pointer ${
+        selected ? 'border-lmsy-yellow/60' : 'border-white/10 hover:border-white/25'
+      }`}
+      onClick={onToggle}
+    >
+      <div className="relative aspect-[3/4] overflow-hidden bg-white/5">
+        {imageUrl ? (
+          <Image src={imageUrl} alt={draftTitle(draft.title)} fill className="object-contain bg-black/40 p-2" unoptimized />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono text-white/30">
+            MISSING_MEDIA
+          </div>
+        )}
+
+        {/* Selection checkbox */}
+        <div
+          className={`absolute left-2 top-2 flex h-5 w-5 items-center justify-center border transition-colors ${
+            selected ? 'border-lmsy-yellow bg-lmsy-yellow/20' : 'border-white/30 bg-black/60'
+          }`}
+        >
+          {selected && <span className="text-[10px] font-mono text-lmsy-yellow">✓</span>}
+        </div>
+
+        {/* Status badge */}
+        <div className="absolute right-2 top-2 px-2 py-0.5 bg-black/70 border border-white/20 backdrop-blur-sm">
+          <span className="text-[9px] font-mono tracking-widest text-lmsy-yellow/80 flex items-center gap-1">
+            <Clock className="h-2.5 w-2.5" strokeWidth={2} />
+            PENDING
+          </span>
+        </div>
+      </div>
+
+      {/* Meta */}
+      <div className="px-3 py-2 space-y-1.5">
+        <p className="text-[10px] font-mono text-white/60 truncate">{draftTitle(draft.title)}</p>
+        <div className="flex items-center justify-between gap-2 text-[9px] font-mono text-white/30">
+          <span>
+            {draft.source_platform || 'unknown-source'}
+            {draft.source_account ? ` · @${draft.source_account}` : ''}
+          </span>
+          {draft.source_url && (
+            <a
+              href={draft.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lmsy-blue/70 hover:text-lmsy-blue"
+              title="Open source"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
+            </a>
+          )}
+        </div>
+        <div className="flex items-center gap-1 pt-0.5">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPromote(draft);
+            }}
+            className="flex items-center gap-1 rounded bg-black/60 border border-lmsy-yellow/30 px-2 py-1 text-[9px] font-mono tracking-widest text-lmsy-yellow/80 transition-colors hover:text-lmsy-yellow disabled:opacity-40"
+            title="Promote to gallery assets"
+          >
+            <Send className="h-2.5 w-2.5" strokeWidth={1.8} />
+            PROMOTE
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnlink(draft);
+            }}
+            className="flex items-center gap-1 rounded bg-black/60 border border-white/15 px-2 py-1 text-[9px] font-mono tracking-widest text-white/50 transition-colors hover:text-white/80 disabled:opacity-40"
+            title="Remove from this project (back to ungrouped)"
+          >
+            <Unlink className="h-2.5 w-2.5" strokeWidth={1.8} />
+            UNLINK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CurateProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<ProjectRow | null>(null);
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [drafts, setDrafts] = useState<DraftImage[]>([]);
+  const [selectedDraftIds, setSelectedDraftIds] = useState<Set<string>>(new Set());
+  const [busyDraftAction, setBusyDraftAction] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -244,6 +396,19 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
         setImages(sortedImages);
       } else if (!galleryResponse.ok) {
         setLoadError(galleryJson.error || 'GALLERY_LOAD_FAILED');
+      }
+
+      // Pending drafts assigned to this project
+      const draftsResponse = await fetch(`/api/admin/drafts?project_id=${id}&status=draft&limit=200`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      if (draftsResponse.ok) {
+        const draftsJson = await draftsResponse.json();
+        if (draftsJson.success) {
+          setDrafts(draftsJson.data || []);
+          setSelectedDraftIds(new Set());
+        }
       }
     } catch (error) {
       console.error('[PROJECT_CURATE] Failed to fetch project or gallery:', error);
@@ -423,6 +588,128 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  // ============================ Draft batch actions ============================
+
+  const toggleDraft = (draftId: string) => {
+    setSelectedDraftIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(draftId)) next.delete(draftId);
+      else next.add(draftId);
+      return next;
+    });
+  };
+
+  const promoteDraft = async (draftId: string): Promise<'created' | 'exists' | 'error'> => {
+    try {
+      const response = await fetch(`/api/admin/drafts/${draftId}/to-gallery`, { method: 'POST' });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'PROMOTE_FAILED');
+      }
+      return result.created ? 'created' : 'exists';
+    } catch {
+      return 'error';
+    }
+  };
+
+  const handlePromoteSelected = async () => {
+    if (selectedDraftIds.size === 0) return;
+    if (!confirm(`Promote ${selectedDraftIds.size} draft(s) to gallery assets?\n\nEach becomes a published image in this project. Duplicates are skipped automatically.`)) return;
+
+    setBusyDraftAction(true);
+    setSaveStatus('PROMOTING...');
+    let created = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (const draftId of selectedDraftIds) {
+      const outcome = await promoteDraft(draftId);
+      if (outcome === 'created') created += 1;
+      else if (outcome === 'exists') skipped += 1;
+      else failed += 1;
+    }
+    setBusyDraftAction(false);
+    setSaveStatus(`PROMOTED ${created} · SKIPPED ${skipped}${failed ? ` · FAILED ${failed}` : ''}`);
+    setTimeout(() => setSaveStatus(null), 4000);
+    await fetchProjectAndImages();
+  };
+
+  const handlePromoteOne = async (draft: DraftImage) => {
+    setBusyDraftAction(true);
+    const outcome = await promoteDraft(draft.id);
+    setBusyDraftAction(false);
+    setSaveStatus(outcome === 'created' ? 'PROMOTED' : outcome === 'exists' ? 'ALREADY_IN_ASSETS' : 'PROMOTE_ERROR');
+    setTimeout(() => setSaveStatus(null), 2500);
+    if (outcome === 'created') await fetchProjectAndImages();
+  };
+
+  const handleUnlinkSelected = async () => {
+    if (selectedDraftIds.size === 0) return;
+    if (!confirm(`Remove ${selectedDraftIds.size} draft(s) from this project?\n\nThey go back to the ungrouped pending pool.`)) return;
+
+    setBusyDraftAction(true);
+    setSaveStatus('UNLINKING...');
+    try {
+      const response = await fetch('/api/admin/drafts/batch-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedDraftIds), unlink: true }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'UNLINK_FAILED');
+      setSaveStatus(`UNLINKED ${result.unlinked}`);
+      setTimeout(() => setSaveStatus(null), 2500);
+      await fetchProjectAndImages();
+    } catch (error) {
+      console.error('Failed to unlink drafts:', error);
+      setSaveStatus('UNLINK_ERROR');
+      setBusyDraftAction(false);
+    }
+  };
+
+  const handleUnlinkOne = async (draft: DraftImage) => {
+    setBusyDraftAction(true);
+    try {
+      const response = await fetch('/api/admin/drafts/batch-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [draft.id], unlink: true }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'UNLINK_FAILED');
+      setSaveStatus('UNLINKED');
+      setTimeout(() => setSaveStatus(null), 2000);
+      await fetchProjectAndImages();
+    } catch (error) {
+      console.error('Failed to unlink draft:', error);
+      setSaveStatus('UNLINK_ERROR');
+      setBusyDraftAction(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedDraftIds.size === 0) return;
+    if (!confirm(`PERMANENTLY delete ${selectedDraftIds.size} draft(s) and their stored files?\n\nThis cannot be undone.`)) return;
+
+    setBusyDraftAction(true);
+    setSaveStatus('DELETING...');
+    try {
+      const response = await fetch('/api/admin/drafts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedDraftIds) }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'DELETE_FAILED');
+      setSaveStatus(`DELETED ${result.deleted ?? selectedDraftIds.size}`);
+      setTimeout(() => setSaveStatus(null), 2500);
+      await fetchProjectAndImages();
+    } catch (error) {
+      console.error('Failed to delete drafts:', error);
+      setSaveStatus('DELETE_ERROR');
+      setBusyDraftAction(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -430,6 +717,8 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
       </div>
     );
   }
+
+  const allDraftsSelected = drafts.length > 0 && selectedDraftIds.size === drafts.length;
 
   return (
     <div className="min-h-screen bg-black">
@@ -439,7 +728,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center gap-6">
             {/* Back Button */}
             <Link
-              href="/admin/projects"
+              href="/admin"
               className="p-2 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
@@ -451,13 +740,20 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
                 {project?.title || 'Untitled Project'}
               </h1>
               <p className="text-xs font-mono text-white/30 tracking-wider uppercase mt-1">
-                {project?.catalog_id} · {images.length} ARTIFACTS
+                {project?.catalog_id} · {images.length} PUBLISHED · {drafts.length} PENDING
               </p>
             </div>
           </div>
 
           {/* Save Status */}
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setEditModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-mono text-white/50 transition-colors hover:border-lmsy-yellow/30 hover:bg-lmsy-yellow/5 hover:text-lmsy-yellow/80"
+            >
+              <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+              PROJECT_INFO
+            </button>
             <Link
               href={`/projects/${id}`}
               target="_blank"
@@ -470,7 +766,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
             {saveStatus && (
               <span className={`text-xs font-mono ${
                 saveStatus.includes('✓') ? 'text-green-400/80' :
-                saveStatus.includes('✗') ? 'text-red-400/80' :
+                saveStatus.includes('✗') || saveStatus.includes('ERROR') ? 'text-red-400/80' :
                 'text-lmsy-yellow/80'
               }`}>
                 {saveStatus}
@@ -481,48 +777,120 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
         </div>
       </header>
 
-      {/* Mirrored Masonry Grid */}
-      <main className="p-6 max-w-[1920px] mx-auto">
+      <main className="p-6 max-w-[1920px] mx-auto space-y-10">
         {loadError ? (
           <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-6 py-8 text-center">
             <p className="text-sm font-mono text-red-300/80">{loadError}</p>
           </div>
-        ) : images.length === 0 ? (
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] px-6 py-12 text-center">
-            <p className="text-sm font-mono text-white/60">NO_LINKED_GALLERY_ASSETS</p>
-            <p className="mt-3 text-xs font-mono text-white/30">
-              This page only shows gallery images whose <span className="text-white/50">project_id</span> matches this project.
-            </p>
-            <p className="mt-2 text-xs font-mono text-white/25">
-              If your images are still in Draft Inbox, use <span className="text-white/45">LINK_EXISTING</span> and then <span className="text-white/45">WRITE_TO_ASSETS</span> first.
-            </p>
-          </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={images.map(img => img.id)}
-              strategy={rectSortingStrategy}
-            >
-              <div
-                className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-              >
-                {images.map((image, index) => (
-                  <SortableImage
-                    key={image.id}
-                    image={image}
-                    index={index}
-                    onRotate={handleRotate}
-                    onDelete={handleDeleteImage}
-                    onSetCover={handleSetCover}
-                  />
-                ))}
+          <>
+            {/* ==================== Pending drafts section ==================== */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-mono tracking-widest text-lmsy-yellow/70 uppercase">
+                  Pending drafts ({drafts.length}) — not yet published
+                </h2>
+                {drafts.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        setSelectedDraftIds(allDraftsSelected ? new Set() : new Set(drafts.map((d) => d.id)))
+                      }
+                      className="border border-white/10 px-3 py-1.5 text-[10px] font-mono tracking-widest text-white/50 transition-colors hover:text-white/80"
+                    >
+                      {allDraftsSelected ? 'DESELECT_ALL' : 'SELECT_ALL'}
+                    </button>
+                    <button
+                      onClick={handlePromoteSelected}
+                      disabled={busyDraftAction || selectedDraftIds.size === 0}
+                      className="border border-lmsy-yellow/30 px-3 py-1.5 text-[10px] font-mono tracking-widest text-lmsy-yellow/80 transition-colors hover:text-lmsy-yellow disabled:opacity-30"
+                    >
+                      PROMOTE_SELECTED ({selectedDraftIds.size})
+                    </button>
+                    <button
+                      onClick={handleUnlinkSelected}
+                      disabled={busyDraftAction || selectedDraftIds.size === 0}
+                      className="border border-white/10 px-3 py-1.5 text-[10px] font-mono tracking-widest text-white/50 transition-colors hover:text-white/80 disabled:opacity-30"
+                    >
+                      UNLINK
+                    </button>
+                    <button
+                      onClick={handleDeleteSelected}
+                      disabled={busyDraftAction || selectedDraftIds.size === 0}
+                      className="border border-red-500/20 px-3 py-1.5 text-[10px] font-mono tracking-widest text-red-400/60 transition-colors hover:text-red-300 disabled:opacity-30"
+                    >
+                      DELETE
+                    </button>
+                  </div>
+                )}
               </div>
-            </SortableContext>
-          </DndContext>
+
+              {drafts.length === 0 ? (
+                <div className="rounded-xl border border-white/10 bg-white/[0.02] px-6 py-6 text-center">
+                  <p className="text-xs font-mono text-white/40">
+                    No pending drafts in this project. Ungrouped collected images live in{' '}
+                    <Link href="/admin/drafts" className="text-lmsy-blue/70 hover:text-lmsy-blue">Draft Inbox</Link> —
+                    select them there and link them to this project.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                  {drafts.map((draft) => (
+                    <DraftCard
+                      key={draft.id}
+                      draft={draft}
+                      selected={selectedDraftIds.has(draft.id)}
+                      onToggle={() => toggleDraft(draft.id)}
+                      onPromote={handlePromoteOne}
+                      onUnlink={handleUnlinkOne}
+                      busy={busyDraftAction}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* ==================== Published assets (drag to reorder) ==================== */}
+            <section>
+              <h2 className="text-xs font-mono tracking-widest text-white/40 uppercase mb-4">
+                Published assets ({images.length}) — drag to reorder
+              </h2>
+              {images.length === 0 ? (
+                <div className="rounded-xl border border-white/10 bg-white/[0.02] px-6 py-8 text-center">
+                  <p className="text-sm font-mono text-white/60">NO_PUBLISHED_ASSETS_YET</p>
+                  <p className="mt-3 text-xs font-mono text-white/30">
+                    Promote pending drafts above, or transfer assets from the Asset Vault.
+                  </p>
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={images.map(img => img.id)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div
+                      className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                    >
+                      {images.map((image, index) => (
+                        <SortableImage
+                          key={image.id}
+                          image={image}
+                          index={index}
+                          onRotate={handleRotate}
+                          onDelete={handleDeleteImage}
+                          onSetCover={handleSetCover}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+            </section>
+          </>
         )}
       </main>
 
@@ -530,13 +898,22 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
       <footer className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/5 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <p className="text-xs font-mono text-white/30">
-            <span className="text-lmsy-yellow/60">DRAG</span> to reorder · Auto-saves on drop
+            <span className="text-lmsy-yellow/60">DRAG</span> to reorder · Auto-saves on drop ·{' '}
+            <span className="text-lmsy-yellow/60">CLICK</span> drafts to select
           </p>
           <p className="text-xs font-mono text-white/20">
-            MIRrored Curation v1.0
+            Project Workspace v2.0
           </p>
         </div>
       </footer>
+
+      {/* Edit project info modal (reused from projects list) */}
+      <EditProjectModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        project={project}
+        onUpdate={fetchProjectAndImages}
+      />
     </div>
   );
 }
