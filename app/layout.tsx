@@ -96,11 +96,10 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="lmsy-theme">
             <LanguageProvider defaultLanguage="en">
-              {/* Front-end chrome (header/footer/player/background) - hidden on /admin */}
-              <FrontendChrome />
-              <div className="flex min-h-screen flex-col">
+              {/* Front-end chrome wraps route content: header above, footer below; hidden on /admin */}
+              <FrontendChrome>
                 <main className="flex-1">{children}</main>
-              </div>
+              </FrontendChrome>
             </LanguageProvider>
           </ThemeProvider>
         </AuthProvider>
