@@ -494,7 +494,7 @@ export default function WhispersPage() {
                       <div className="grid md:grid-cols-2 gap-8">
                         <div>
                           <label className="block text-[11px] font-mono text-ink-2 tracking-[0.2em] uppercase mb-4">
-                            Signature
+                            {t(language, 'whispers.authorLabel')}
                           </label>
                           <motion.div
                             animate={shakeFields.author ? { x: [0, -4, 4, -4, 4, -2, 2, 0] } : {}}
@@ -534,7 +534,7 @@ export default function WhispersPage() {
                         </div>
                         <div>
                           <label className="block text-[11px] font-mono text-ink-2 tracking-[0.2em] uppercase mb-4">
-                            Coordinates (Optional)
+                            {t(language, 'whispers.locationLabel')}
                           </label>
                           <input
                             type="text"
@@ -550,7 +550,7 @@ export default function WhispersPage() {
                       {/* Energy Color Selector - With Glow Ring */}
                       <div>
                         <label className="block text-[11px] font-mono text-ink-2 tracking-[0.2em] uppercase mb-4">
-                          Choose Your Energy Color
+                          {t(language, 'whispers.energyLabel')}
                         </label>
                         <div className="flex gap-6">
                           {(['yellow', 'blue'] as const).map((color) => (
