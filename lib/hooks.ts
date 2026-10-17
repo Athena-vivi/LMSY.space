@@ -27,7 +27,10 @@ export function useKeyPress(
       if (event.altKey) keyCombo.push('Alt');
       keyCombo.push(event.key.toLowerCase());
 
-      const pressedKey = keyCombo.join('+');
+      // Lowercase before joining: the combo array carries 'Meta'/'Ctrl' with a
+      // capital letter, and the keys argument is normalized to lowercase, so a
+      // case-sensitive compare never matches Cmd/Ctrl chords.
+      const pressedKey = keyCombo.join('+').toLowerCase();
 
       // Check if pressed key matches any of the specified keys
       const isMatch = keys.some(key => {
