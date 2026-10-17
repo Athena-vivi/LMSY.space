@@ -245,7 +245,7 @@ export function EditorialDetailContent({
       {/* Footer */}
       <footer className="relative border-t border-white/5 py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="font-mono text-[10px] text-ink-2 tracking-[0.3em] uppercase">
+          <p className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
             LMSY.SPACE · MAGAZINE_ARCHIVE · {magazine.catalog_id || 'LMSY-ED'} · {totalArtifacts} ARTIFACTS
           </p>
         </div>

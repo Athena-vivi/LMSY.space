@@ -87,8 +87,8 @@ export default function StorageWidget({ className = '' }: StorageWidgetProps) {
     return (
       <div className={`p-3 border rounded bg-black/40 ${className}`} style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}>
         <div className="flex items-center gap-2">
-          <HardDrive className="w-3 h-3 text-red-400/50" />
-          <span className="text-[10px] font-mono text-red-400/50">STORAGE_UNAVAILABLE</span>
+          <HardDrive className="w-3 h-3 text-red-400/70" />
+          <span className="text-[10px] font-mono text-red-400/70">STORAGE_UNAVAILABLE</span>
         </div>
       </div>
     );

@@ -406,12 +406,63 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {chapters.map((chapter) => (
+              {chapters.map((chapter) => {
+                // Cover plate (catalog -000) leads the chapter full-width, so
+                // projects with few images do not read as an empty right column.
+                const coverIndex = chapter.images.findIndex(img => img.catalog_id?.endsWith('-000'));
+                const coverImage = coverIndex >= 0 ? chapter.images[coverIndex] : null;
+                const restImages = coverImage
+                  ? chapter.images.filter((_, i) => i !== coverIndex)
+                  : chapter.images;
+                const coverUrl = coverImage ? getImageUrl(coverImage.image_url) : null;
+                // Columns follow the actual image count so a 1-2 image chapter
+                // reads as a deliberate plate, not an empty grid.
+                const restColClass =
+                  restImages.length <= 2
+                    ? 'columns-1'
+                    : restImages.length <= 4
+                      ? 'columns-1 md:columns-2'
+                      : 'columns-1 md:columns-2 lg:columns-3';
+
+                return (
                 <div key={chapter.id} className="mb-12">
+                  {/* Cover plate - full width, capped height */}
+                  {coverImage && coverUrl && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="mb-4 md:mb-6"
+                    >
+                      <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        <div className="relative max-h-[70vh] w-full overflow-hidden">
+                          <Image
+                            src={coverUrl}
+                            alt={coverImage.caption || coverImage.catalog_id || ''}
+                            width={1920}
+                            height={1080}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 80vw, 1100px"
+                            className="w-full h-auto max-h-[70vh] object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                            style={{ transform: `rotate(${coverImage.rotation ?? 0}deg)` }}
+                            priority
+                          />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        {/* COVER plate badge */}
+                        {coverImage.catalog_id && (
+                          <div className="absolute top-3 left-3 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                            <span className="px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 rounded-full">
+                              <span className="text-[10px] font-mono font-bold text-lmsy-yellow">COVER</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
                   {/* Chapter Images - Gallery Grade Masonry */}
-                  <div className="columns-1 md:columns-2 lg:columns-3 gap-4 md:gap-6">
-                    {chapter.images.map((image, index) => {
-                      const isCoverImage = image.catalog_id?.endsWith('-000');
+                  <div className={`${restColClass} gap-4 md:gap-6`}>
+                    {restImages.map((image, index) => {
                       const imageUrl = getImageUrl(image.image_url);
                       const dimensions = getImageDimensions(image.image_url, image.rotation ?? 0);
 
@@ -421,7 +472,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.5, delay: Math.min(index, 12) * 0.03 }}
-                          className={`mb-4 md:mb-6 break-inside-avoid ${isCoverImage ? 'md:col-span-2 lg:col-span-1' : ''}`}
+                          className="mb-4 md:mb-6 break-inside-avoid"
                         >
                           <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
                             {/* 🎨 Natural aspect ratio; explicit width/height reserve
@@ -446,24 +497,15 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                             {/* 📖 Catalog ID - Always visible */}
                             {image.catalog_id && (
                               <div className="absolute bottom-3 right-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className={`font-mono text-[10px] ${isCoverImage ? 'text-lmsy-yellow' : 'text-lmsy-yellow/80'} bg-black/40 backdrop-blur-sm px-2 py-1 rounded`}>
+                                <span className="font-mono text-[10px] text-lmsy-yellow/80 bg-black/40 backdrop-blur-sm px-2 py-1 rounded">
                                   {image.catalog_id}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* 👑 Cover Badge - Special privilege for -000 images */}
-                            {isCoverImage && (
-                              <div className="absolute top-3 left-3 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className="px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 rounded-full">
-                                  <span className="text-[10px] font-mono font-bold text-lmsy-yellow">COVER</span>
                                 </span>
                               </div>
                             )}
 
                             {/* 📝 Caption - Slide up on hover */}
                             <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                              {image.catalog_id && !isCoverImage && (
+                              {image.catalog_id && (
                                 <p className="text-[10px] font-mono text-lmsy-yellow/60 mb-1">
                                   {image.catalog_id}
                                 </p>
@@ -476,7 +518,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                             </div>
 
                             {/* Featured Badge */}
-                            {image.is_featured && !isCoverImage && (
+                            {image.is_featured && (
                               <div className="absolute top-4 right-4 px-2 py-1 bg-lmsy-blue/20 border border-lmsy-blue/40 rounded-full">
                                 <span className="text-[10px] font-mono font-bold text-lmsy-blue">FEATURED</span>
                               </div>
@@ -487,7 +529,8 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
                     })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </motion.div>
             </AnimatePresence>
           </section>

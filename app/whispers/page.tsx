@@ -190,7 +190,7 @@ export default function WhispersPage() {
               <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-light text-ink tracking-tight mb-4">
                 WHISPERS
               </h1>
-              <p className="text-[10px] md:text-xs tracking-[0.4em] text-ink-2 font-mono uppercase">
+              <p className="text-[11px] md:text-xs tracking-[0.3em] text-ink-2 font-mono uppercase">
                 {t(language, 'whispers.subtitle')}
               </p>
             </motion.div>
@@ -429,7 +429,7 @@ export default function WhispersPage() {
                     <form onSubmit={handleSubmit} className="space-y-10" noValidate>
                       {/* Message - Transparent with animated gradient bottom border */}
                       <div>
-                        <label className="block text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase mb-4">
+                        <label className="block text-[11px] font-mono text-ink-2 tracking-[0.2em] uppercase mb-4">
                           {t(language, 'whispers.message')}
                         </label>
                         <div className="relative group">
@@ -493,7 +493,7 @@ export default function WhispersPage() {
                       {/* Author & Location */}
                       <div className="grid md:grid-cols-2 gap-8">
                         <div>
-                          <label className="block text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase mb-4">
+                          <label className="block text-[11px] font-mono text-ink-2 tracking-[0.2em] uppercase mb-4">
                             Signature
                           </label>
                           <motion.div
@@ -533,7 +533,7 @@ export default function WhispersPage() {
                           )}
                         </div>
                         <div>
-                          <label className="block text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase mb-4">
+                          <label className="block text-[11px] font-mono text-ink-2 tracking-[0.2em] uppercase mb-4">
                             Coordinates (Optional)
                           </label>
                           <input
@@ -549,7 +549,7 @@ export default function WhispersPage() {
 
                       {/* Energy Color Selector - With Glow Ring */}
                       <div>
-                        <label className="block text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase mb-4">
+                        <label className="block text-[11px] font-mono text-ink-2 tracking-[0.2em] uppercase mb-4">
                           Choose Your Energy Color
                         </label>
                         <div className="flex gap-6">

@@ -276,7 +276,7 @@ export default function EditorialPage() {
       {/* Footer - Archive Metadata */}
       <footer className="relative z-10 border-t border-white/5 py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="font-mono text-[10px] text-ink-2 tracking-[0.3em] uppercase">
+          <p className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
             LMSY.SPACE · EDITORIAL_ARCHIVE_VOL_001 · {`${magazines.length}`} ISSUES CURATED
           </p>
         </div>

@@ -181,7 +181,7 @@ export default function SonyaPage() {
       >
         <Link
           href="/profiles"
-          className="flex items-center gap-2 text-sky-300/40 hover:text-sky-300/70 transition-colors font-mono text-xs tracking-wider"
+          className="flex items-center gap-2 text-sky-300/70 hover:text-sky-300/70 transition-colors font-mono text-xs tracking-wider"
         >
           <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
           <span>RETURN TO DUALITY</span>
@@ -205,7 +205,7 @@ export default function SonyaPage() {
                 transition={{ delay: 0.6 }}
                 className="mb-6"
               >
-                <p className="text-xs font-mono text-sky-300/40 tracking-[0.3em] uppercase mb-2">
+                <p className="text-xs font-mono text-sky-300/70 tracking-[0.3em] uppercase mb-2">
                   The Pulse of Vibrance
                 </p>
               </motion.div>
@@ -241,7 +241,7 @@ export default function SonyaPage() {
                 className="flex items-center gap-6"
               >
                 <Activity className="h-4 w-4 text-sky-400/60" strokeWidth={2} />
-                <p className="text-sky-300/30 font-mono text-xs tracking-wider">
+                <p className="text-sky-300/70 font-mono text-xs tracking-wider">
                   DANCER · CHOREOGRAPHER · MOVER
                 </p>
               </motion.div>
@@ -254,7 +254,7 @@ export default function SonyaPage() {
                 className="mt-12 p-6 rounded-2xl border border-sky-500/10 bg-sky-950/10 backdrop-blur-sm"
               >
                 <WaveformVisualization />
-                <p className="text-center text-sky-300/20 font-mono text-[10px] tracking-wider mt-4">
+                <p className="text-center text-sky-300/70 font-mono text-[10px] tracking-wider mt-4">
                   ENERGY_IN_MOTION
                 </p>
               </motion.div>
@@ -296,7 +296,7 @@ export default function SonyaPage() {
                     <div className="w-40 h-40 rounded-full bg-sky-400/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-6 border-2 border-sky-300/40">
                       <span className="font-serif text-8xl font-bold text-sky-300">S</span>
                     </div>
-                    <p className="text-sky-300/30 font-mono text-xs tracking-widest">
+                    <p className="text-sky-300/70 font-mono text-xs tracking-widest">
                       MOTION_PORTRAIT
                     </p>
                   </div>
@@ -334,7 +334,7 @@ export default function SonyaPage() {
           transition={{ delay: 1.6 }}
           className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
         >
-          <span className="text-sky-300/30 text-xs font-mono tracking-wider">DIVE DEEPER</span>
+          <span className="text-sky-300/70 text-xs font-mono tracking-wider">DIVE DEEPER</span>
           <motion.div
             animate={{ y: [0, 12, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
@@ -363,12 +363,12 @@ export default function SonyaPage() {
                 ease: 'easeInOut',
               }}
             >
-              <Quote className="h-16 w-16 text-sky-400/40 mx-auto mb-8" strokeWidth={1} />
+              <Quote className="h-16 w-16 text-sky-400/70 mx-auto mb-8" strokeWidth={1} />
             </motion.div>
             <blockquote className="font-serif text-4xl md:text-5xl text-sky-50/90 leading-relaxed mb-8">
               &quot;Movement is not just what you do—it&apos;s who you are. Every cell in your body holds a story waiting to be told.&quot;
             </blockquote>
-            <cite className="text-sky-300/50 font-mono text-sm tracking-wider not-italic">
+            <cite className="text-sky-300/70 font-mono text-sm tracking-wider not-italic">
               — On the Art of Expression
             </cite>
           </motion.div>
@@ -385,7 +385,7 @@ export default function SonyaPage() {
             viewport={{ once: true }}
             className="mb-12 flex items-center gap-4"
           >
-            <Music className="h-6 w-6 text-sky-400/50" strokeWidth={1.5} />
+            <Music className="h-6 w-6 text-sky-400/70" strokeWidth={1.5} />
             <h2 className="font-serif text-3xl text-sky-50/80">Core Philosophy</h2>
           </motion.div>
 
@@ -460,7 +460,7 @@ export default function SonyaPage() {
             className="mb-12"
           >
             <h2 className="font-serif text-3xl text-sky-50/80 mb-2">Gallery Moments</h2>
-            <p className="text-sky-300/40 text-sm">Captured in motion</p>
+            <p className="text-sky-300/70 text-sm">Captured in motion</p>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -520,7 +520,7 @@ export default function SonyaPage() {
             viewport={{ once: true }}
             className="mb-12 flex items-center gap-4"
           >
-            <Music className="h-6 w-6 text-sky-400/50" strokeWidth={1.5} />
+            <Music className="h-6 w-6 text-sky-400/70" strokeWidth={1.5} />
             <h2 className="font-serif text-3xl text-sky-50/80">The Stage</h2>
           </motion.div>
 
@@ -563,8 +563,8 @@ export default function SonyaPage() {
                 >
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <Disc className="h-24 w-24 text-sky-400/20 mx-auto mb-4" />
-                      <p className="text-sky-300/30 font-mono text-xs tracking-wider">
+                      <Disc className="h-24 w-24 text-sky-400/70 mx-auto mb-4" />
+                      <p className="text-sky-300/70 font-mono text-xs tracking-wider">
                         ALBUM_ART
                       </p>
                     </div>
@@ -583,7 +583,7 @@ export default function SonyaPage() {
               {/* Track Info & Player */}
               <div className="space-y-6">
                 <div>
-                  <p className="text-xs font-mono text-sky-400/50 tracking-wider uppercase mb-2">
+                  <p className="text-xs font-mono text-sky-400/70 tracking-wider uppercase mb-2">
                     Solo Performance
                   </p>
                   <h3 className="font-serif text-4xl text-sky-50/90 mb-2">
@@ -614,7 +614,7 @@ export default function SonyaPage() {
 
                 <Link
                   href="/resonance"
-                  className="inline-flex items-center gap-2 text-sky-300/50 hover:text-sky-300/80 transition-colors font-mono text-xs tracking-wider group"
+                  className="inline-flex items-center gap-2 text-sky-300/70 hover:text-sky-300/80 transition-colors font-mono text-xs tracking-wider group"
                 >
                   <span>VIEW FULL DISCOGRAPHY</span>
                   <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
@@ -636,7 +636,7 @@ export default function SonyaPage() {
             className="mb-12"
           >
             <h2 className="font-serif text-3xl text-sky-50/80 mb-2">Performances</h2>
-            <p className="text-sky-300/40 text-sm">Featured works</p>
+            <p className="text-sky-300/70 text-sm">Featured works</p>
           </motion.div>
 
           <div className="space-y-6">
@@ -681,9 +681,9 @@ export default function SonyaPage() {
                         {work.type}
                       </span>
                     </div>
-                    <p className="text-sky-100/50 text-sm">{work.description}</p>
+                    <p className="text-sky-100/70 text-sm">{work.description}</p>
                   </div>
-                  <div className="text-sky-400/50 font-mono text-sm tracking-wider">
+                  <div className="text-sky-400/70 font-mono text-sm tracking-wider">
                     {work.year}
                   </div>
                 </div>
@@ -704,13 +704,13 @@ export default function SonyaPage() {
           >
             <Link
               href="/profiles/lookmhee"
-              className="inline-flex items-center gap-3 text-sky-300/40 hover:text-sky-300/70 transition-colors font-mono text-xs tracking-wider group"
+              className="inline-flex items-center gap-3 text-sky-300/70 hover:text-sky-300/70 transition-colors font-mono text-xs tracking-wider group"
             >
               <span>DISCOVER LOOKMHEE</span>
               <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
             </Link>
             <div className="mt-8 pt-8 border-t border-sky-900/20">
-              <p className="text-sky-300/20 font-mono text-[10px] tracking-wider">
+              <p className="text-sky-300/70 font-mono text-[10px] tracking-wider">
                 THE PULSE OF VIBRANCE · WHERE ENERGY MEETS ARTISTRY
               </p>
             </div>

@@ -88,7 +88,7 @@ export default function LookmheePage() {
       >
         <Link
           href="/profiles"
-          className="flex items-center gap-2 text-amber-200/40 hover:text-amber-200/70 transition-colors font-mono text-xs tracking-wider"
+          className="flex items-center gap-2 text-amber-200/70 hover:text-amber-200/70 transition-colors font-mono text-xs tracking-wider"
         >
           <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
           <span>RETURN TO DUALITY</span>
@@ -121,9 +121,9 @@ export default function LookmheePage() {
                         boxShadow: '0 0 20px rgba(56, 189, 248, 0.1), inset 0 0 20px rgba(217, 119, 6, 0.1)',
                       }}
                     >
-                      <span className="font-serif text-8xl font-bold text-amber-200/30">L</span>
+                      <span className="font-serif text-8xl font-bold text-amber-200/70">L</span>
                     </div>
-                    <p className="text-amber-200/20 font-mono text-xs tracking-widest">
+                    <p className="text-amber-200/70 font-mono text-xs tracking-widest">
                       PORTRAIT_PLACEHOLDER
                     </p>
                   </div>
@@ -150,7 +150,7 @@ export default function LookmheePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.8 }}
-                className="text-xs font-mono text-amber-200/40 tracking-[0.3em] uppercase mb-6"
+                className="text-xs font-mono text-amber-200/70 tracking-[0.3em] uppercase mb-6"
               >
                 The Library of Solitude
               </motion.p>
@@ -175,7 +175,7 @@ export default function LookmheePage() {
 
                 <div className="flex items-center justify-center lg:justify-start gap-4 pt-4">
                   <div className="h-px w-12 bg-gradient-to-r from-amber-600/50 via-sky-500/30 to-transparent" />
-                  <p className="text-amber-200/30 font-mono text-xs tracking-wider">
+                  <p className="text-amber-200/70 font-mono text-xs tracking-wider">
                     ACTRESS · READER · THINKER
                   </p>
                 </div>
@@ -191,7 +191,7 @@ export default function LookmheePage() {
           transition={{ delay: 1.4 }}
           className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
         >
-          <span className="text-amber-200/30 text-xs font-mono tracking-wider">DESCEND</span>
+          <span className="text-amber-200/70 text-xs font-mono tracking-wider">DESCEND</span>
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -210,7 +210,7 @@ export default function LookmheePage() {
             viewport={{ once: true }}
             className="relative"
           >
-            <Quote className="h-12 w-12 text-amber-600/30 mx-auto mb-8" strokeWidth={1} />
+            <Quote className="h-12 w-12 text-amber-600/70 mx-auto mb-8" strokeWidth={1} />
             <blockquote className="font-serif text-3xl md:text-4xl leading-relaxed mb-8"
               style={{
                 background: 'linear-gradient(90deg, rgba(254, 243, 199, 0.8) 0%, rgba(186, 230, 253, 0.6) 100%)',
@@ -221,7 +221,7 @@ export default function LookmheePage() {
             >
               &quot;The depth of a performance comes from stillness. In the silence between actions, truth reveals itself.&quot;
             </blockquote>
-            <cite className="text-amber-200/40 font-mono text-sm tracking-wider not-italic">
+            <cite className="text-amber-200/70 font-mono text-sm tracking-wider not-italic">
               — On Craft and Presence
             </cite>
           </motion.div>
@@ -239,10 +239,10 @@ export default function LookmheePage() {
             className="mb-12"
           >
             <div className="flex items-center gap-4 mb-4">
-              <BookOpen className="h-5 w-5 text-amber-600/40" strokeWidth={1} />
+              <BookOpen className="h-5 w-5 text-amber-600/70" strokeWidth={1} />
               <h2 className="font-serif text-2xl text-amber-50/70">The Collection</h2>
             </div>
-            <p className="text-amber-200/40 text-sm">Volumes that shape the craft</p>
+            <p className="text-amber-200/70 text-sm">Volumes that shape the craft</p>
             <div className="h-px w-24 mt-4 bg-gradient-to-r from-amber-600/20 via-sky-500/10 to-transparent" />
           </motion.div>
 
@@ -261,13 +261,13 @@ export default function LookmheePage() {
                 }}
               >
                 <div className="mb-4">
-                  <span className="text-[10px] font-mono tracking-wider uppercase text-sky-600/50">
+                  <span className="text-[10px] font-mono tracking-wider uppercase text-sky-600/70">
                     {book.category}
                   </span>
                 </div>
                 <h3 className="font-serif text-lg text-sky-50/80 mb-1">{book.title}</h3>
-                <p className="text-sky-200/40 text-sm mb-2">{book.author}</p>
-                <p className="font-mono text-xs text-sky-600/30">
+                <p className="text-sky-200/70 text-sm mb-2">{book.author}</p>
+                <p className="font-mono text-xs text-sky-600/70">
                   {book.year}
                 </p>
               </motion.div>
@@ -287,7 +287,7 @@ export default function LookmheePage() {
             className="mb-12"
           >
             <h2 className="font-serif text-2xl text-amber-50/70 mb-2">In Conversation</h2>
-            <p className="text-amber-200/40 text-sm">Excerpts from deep interviews</p>
+            <p className="text-amber-200/70 text-sm">Excerpts from deep interviews</p>
           </motion.div>
 
           <div className="space-y-12">
@@ -306,7 +306,7 @@ export default function LookmheePage() {
                     borderRight: index % 2 === 1 ? '1px solid rgba(56, 189, 248, 0.2)' : 'none',
                   }}
                 >
-                  <p className="font-mono text-xs tracking-wider uppercase mb-4 text-sky-600/50">
+                  <p className="font-mono text-xs tracking-wider uppercase mb-4 text-sky-600/70">
                     {excerpt.question}
                   </p>
                   <p className="text-sky-100/70 leading-relaxed font-light">
@@ -330,10 +330,10 @@ export default function LookmheePage() {
             className="mb-12"
           >
             <div className="flex items-center gap-4 mb-4">
-              <Disc className="h-5 w-5 text-amber-600/40" strokeWidth={1} />
+              <Disc className="h-5 w-5 text-amber-600/70" strokeWidth={1} />
               <h2 className="font-serif text-2xl text-amber-50/70">The Library of Sound</h2>
             </div>
-            <p className="text-amber-200/40 text-sm">Where melody meets memory</p>
+            <p className="text-amber-200/70 text-sm">Where melody meets memory</p>
             <div className="h-px w-24 mt-4 bg-gradient-to-r from-amber-600/20 via-sky-500/10 to-transparent" />
           </motion.div>
 
@@ -376,8 +376,8 @@ export default function LookmheePage() {
                 >
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <Disc className="h-24 w-24 text-amber-600/20 mx-auto mb-4" />
-                      <p className="text-amber-200/30 font-mono text-xs tracking-wider">
+                      <Disc className="h-24 w-24 text-amber-600/70 mx-auto mb-4" />
+                      <p className="text-amber-200/70 font-mono text-xs tracking-wider">
                         ALBUM_ART
                       </p>
                     </div>
@@ -396,7 +396,7 @@ export default function LookmheePage() {
               {/* Track Info & Player */}
               <div className="space-y-6 order-1 lg:order-2">
                 <div>
-                  <p className="text-xs font-mono text-amber-600/50 tracking-wider uppercase mb-2">
+                  <p className="text-xs font-mono text-amber-600/70 tracking-wider uppercase mb-2">
                     Solo Performance
                   </p>
                   <h3 className="font-serif text-4xl text-amber-50/90 mb-2">
@@ -427,7 +427,7 @@ export default function LookmheePage() {
 
                 <Link
                   href="/resonance"
-                  className="inline-flex items-center gap-2 text-amber-200/50 hover:text-amber-200/80 transition-colors font-mono text-xs tracking-wider group"
+                  className="inline-flex items-center gap-2 text-amber-200/70 hover:text-amber-200/80 transition-colors font-mono text-xs tracking-wider group"
                 >
                   <span>VIEW FULL DISCOGRAPHY</span>
                   <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
@@ -449,7 +449,7 @@ export default function LookmheePage() {
             className="mb-12"
           >
             <h2 className="font-serif text-2xl text-amber-50/70 mb-2">Selected Works</h2>
-            <p className="text-amber-200/40 text-sm">A curated selection of performances</p>
+            <p className="text-amber-200/70 text-sm">A curated selection of performances</p>
           </motion.div>
 
           <div className="space-y-6">
@@ -473,9 +473,9 @@ export default function LookmheePage() {
                         {work.role}
                       </span>
                     </div>
-                    <p className="text-sky-200/50 text-sm">{work.description}</p>
+                    <p className="text-sky-200/70 text-sm">{work.description}</p>
                   </div>
-                  <div className="text-sky-600/30 font-mono text-xs tracking-wider">
+                  <div className="text-sky-600/70 font-mono text-xs tracking-wider">
                     {work.year}
                   </div>
                 </div>
@@ -496,7 +496,7 @@ export default function LookmheePage() {
           >
             <Link
               href="/profiles/sonya"
-              className="inline-flex items-center gap-3 text-amber-200/40 hover:text-amber-200/70 transition-colors font-mono text-xs tracking-wider group"
+              className="inline-flex items-center gap-3 text-amber-200/70 hover:text-amber-200/70 transition-colors font-mono text-xs tracking-wider group"
             >
               <span>DISCOVER SONYA</span>
               <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>

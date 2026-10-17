@@ -19,6 +19,8 @@ export function HeroSection() {
   const { language } = useLanguage();
   const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);
   const [heroImageUrl, setHeroImageUrl] = useState(DEFAULT_HERO_SECTION_IMAGE);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     async function fetchHeroContent() {
@@ -38,6 +40,15 @@ export function HeroSection() {
 
     fetchHeroContent();
   }, []);
+
+  // Timeout fallback: onError cannot be trusted here (a single failed srcset
+  // variant fires it even when the main image renders), so the failure state
+  // only kicks in when nothing has decoded after 8s.
+  useEffect(() => {
+    if (imageLoaded) return;
+    const timer = setTimeout(() => setImageFailed(true), 8000);
+    return () => clearTimeout(timer);
+  }, [imageLoaded, heroImageUrl]);
 
   const currentHeroContent = heroContent[language] || heroContent.en;
 
@@ -136,6 +147,35 @@ export function HeroSection() {
                   borderColor: 'rgba(255, 255, 255, 0.05)',
                 }}
               >
+                {/* Loading skeleton - shown until the hero image decodes */}
+                {!imageLoaded && !imageFailed && (
+                  <motion.div
+                    className="absolute inset-0 z-10"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.06) 0%, rgba(56, 189, 248, 0.06) 100%)',
+                    }}
+                    animate={{ opacity: [0.4, 0.8, 0.4] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                )}
+
+                {/* Failure fallback - keeps the card meaningful if the image cannot load */}
+                {imageFailed && (
+                  <div
+                    className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
+                    style={{
+                      background: 'linear-gradient(160deg, rgba(251, 191, 36, 0.10) 0%, rgba(56, 189, 248, 0.10) 100%)',
+                    }}
+                  >
+                    <span className="font-serif text-2xl font-bold bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
+                      LMSY
+                    </span>
+                    <span className="text-[11px] font-mono tracking-[0.25em] uppercase text-ink-2">
+                      {t(language, 'err.label')}
+                    </span>
+                  </div>
+                )}
+
                 <Image
                   src={getImageUrl(heroImageUrl) || heroImageUrl || DEFAULT_HERO_SECTION_IMAGE}
                   alt="Lookmhee & Sonya"
@@ -143,6 +183,7 @@ export function HeroSection() {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="50vw"
                   priority
+                  onLoad={() => setImageLoaded(true)}
                 />
 
                 {/* Gradient Overlay */}
