@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ExternalLink, Play, BookOpen, Camera, FileText, Sparkles, Calendar, Briefcase } from 'lucide-react';
+import { ExternalLink, Play, BookOpen, Camera, FileText, Sparkles, Calendar, Briefcase, Plane } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/components/language-provider';
@@ -22,6 +22,10 @@ const categoryIcons: Record<string, React.ComponentType<{ className?: string }>>
   // Legacy support
   music: BookOpen,
   magazine: Camera,
+  // Daily-life and travel entries exist in the archive data; an unmapped
+  // category must never crash the list (fallback below covers future ones).
+  daily: Calendar,
+  travel: Plane,
 };
 
 const categoryColors: Record<string, string> = {
@@ -33,6 +37,8 @@ const categoryColors: Record<string, string> = {
   // Legacy support
   music: 'from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-950/30',
   magazine: 'from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-950/30',
+  daily: 'from-sky-100 to-sky-200 dark:from-sky-900/30 dark:to-sky-950/30',
+  travel: 'from-teal-100 to-teal-200 dark:from-teal-900/30 dark:to-teal-950/30',
 };
 
 const categoryLabels: Record<string, string> = {
@@ -44,6 +50,8 @@ const categoryLabels: Record<string, string> = {
   // Legacy support
   music: 'MUSIC_VIDEO',
   magazine: 'MAGAZINE',
+  daily: 'DAILY',
+  travel: 'TRAVEL',
 };
 
 export default function ProjectsPage() {
@@ -121,7 +129,7 @@ export default function ProjectsPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-12">
             {projects.map((project, index) => {
-              const Icon = categoryIcons[project.category];
+              const Icon = categoryIcons[project.category] || Sparkles;
               const isEven = index % 2 === 0;
 
               return (
@@ -136,7 +144,7 @@ export default function ProjectsPage() {
                     <CardContent className="p-0">
                       <div className={`grid grid-cols-1 md:grid-cols-2 gap-0 ${isEven ? '' : 'md:grid-flow-dense'}`}>
                         {/* Image/Visual */}
-                        <div className={`relative aspect-[16/10] md:aspect-auto bg-gradient-to-br ${categoryColors[project.category]} ${isEven ? 'md:order-1' : 'md:order-2'}`}>
+                        <div className={`relative aspect-[16/10] md:aspect-auto bg-gradient-to-br ${categoryColors[project.category] || 'from-gray-100 to-gray-200 dark:from-gray-900/30 dark:to-gray-950/30'} ${isEven ? 'md:order-1' : 'md:order-2'}`}>
                           <div className="absolute inset-0 flex items-center justify-center">
                             <Icon className="h-24 w-24 text-primary/20" />
                           </div>
