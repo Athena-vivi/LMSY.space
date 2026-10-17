@@ -25,8 +25,32 @@ const gradients = [
 // `select('*')` also pulled every long text column (excerpt, title, credits,
 // i18n blobs) for all 330 rows.
 const GALLERY_COLUMNS =
-  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform';
+  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform, project_id';
 const PAGE_SIZE = 60;
+
+// Minimal project info for the "view project" back-link. Fetched in one
+// batched query per loaded page; rows the anon client cannot see (hidden
+// admin containers) simply stay absent from the map, which hides the link -
+// the asset itself keeps the exact same visibility as before this change.
+interface ProjectRef {
+  id: string;
+  title: string;
+  title_i18n: Record<string, string | null> | null;
+}
+
+async function fetchProjectRefs(ids: string[]): Promise<Record<string, ProjectRef>> {
+  const unique = Array.from(new Set(ids)).filter(Boolean);
+  if (unique.length === 0) return {};
+  const { data, error } = await supabase
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('id, title, title_i18n')
+    .in('id', unique);
+  if (error || !data) return {}; // fail-safe: hide the entry, never crash
+  const map: Record<string, ProjectRef> = {};
+  for (const row of data) map[(row as ProjectRef).id] = row as ProjectRef;
+  return map;
+}
 
 const GRID_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
@@ -62,7 +86,29 @@ export default function GalleryPage() {
   const [hasMore, setHasMore] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [lightboxImage, setLightboxImage] = useState<GalleryItem | null>(null);
+  const [projectMap, setProjectMap] = useState<Record<string, ProjectRef>>({});
+  // Search results link to /gallery#<asset-id>; remember the anchor so the
+  // grid can auto-load pages until the target image is present, then scroll.
+  const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
   const { language } = useLanguage();
+
+  useEffect(() => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    if (hash && hash.length > 1) {
+      setPendingAnchor(decodeURIComponent(hash.slice(1)));
+    }
+  }, []);
+
+  const mergeProjectRefs = useCallback(async (rows: GalleryItem[]) => {
+    const missing = rows
+      .map((r) => r.project_id)
+      .filter((id): id is string => Boolean(id));
+    if (missing.length === 0) return;
+    const refs = await fetchProjectRefs(missing);
+    if (Object.keys(refs).length > 0) {
+      setProjectMap((prev) => ({ ...prev, ...refs }));
+    }
+  }, []);
 
   // Reload from the first page whenever the filter changes (filtering happens
   // in the database, not on a fully-loaded client array).
@@ -75,6 +121,7 @@ export default function GalleryPage() {
         if (!active) return;
         setImages(rows);
         setHasMore(!failed && rows.length === PAGE_SIZE);
+        mergeProjectRefs(rows);
       } catch {
         if (active) setImages([]);
       } finally {
@@ -84,7 +131,7 @@ export default function GalleryPage() {
     return () => {
       active = false;
     };
-  }, [selectedTag]);
+  }, [selectedTag, mergeProjectRefs]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -93,10 +140,33 @@ export default function GalleryPage() {
       const { rows, failed } = await fetchGalleryPage(images.length, selectedTag);
       setImages((prev) => [...prev, ...rows]);
       setHasMore(!failed && rows.length === PAGE_SIZE);
+      mergeProjectRefs(rows);
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, images.length, selectedTag]);
+  }, [loadingMore, hasMore, images.length, selectedTag, mergeProjectRefs]);
+
+  // Resolve /gallery#<id> anchors (search results deep-link here): scroll to
+  // the target once it is rendered. If it is on a not-yet-loaded page, keep
+  // calling loadMore until it shows up or the grid is exhausted (the anchor
+  // may also point at an asset excluded by the active tag filter - then it is
+  // silently dropped). The effect runs once per images/anchor state change.
+  useEffect(() => {
+    if (!pendingAnchor || loading) return;
+    const el = document.getElementById(pendingAnchor);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPendingAnchor(null);
+      return;
+    }
+    if (!hasMore) {
+      setPendingAnchor(null);
+      return;
+    }
+    if (!loadingMore) {
+      loadMore();
+    }
+  }, [pendingAnchor, loading, hasMore, loadingMore, images, loadMore]);
 
   // Tag buttons must match tag values that actually exist in the database
   // (audit P1-3). Verified distribution: Magazine 237, Advertising 54,
@@ -209,6 +279,7 @@ export default function GalleryPage() {
                   return (
                     <motion.div
                       key={item.id}
+                      id={item.id}
                       layout
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -372,6 +443,7 @@ export default function GalleryPage() {
           <Lightbox
             image={lightboxImage}
             images={filteredImages}
+            project={lightboxImage.project_id ? projectMap[lightboxImage.project_id] ?? null : null}
             onClose={closeLightbox}
           />
         )}

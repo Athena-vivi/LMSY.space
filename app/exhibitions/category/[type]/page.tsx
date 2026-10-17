@@ -13,34 +13,9 @@ interface ExhibitionPageProps {
   }>;
 }
 
-// Type to category/tag mapping
-const typeMapping: Record<string, { category?: string; title: string; description: string }> = {
-  drama: {
-    category: 'series',
-    title: 'DRAMA ARCHIVE',
-    description: 'Television series and dramatic works featuring LMSY',
-  },
-  stage: {
-    category: 'appearance',
-    title: 'STAGE PRESENCE',
-    description: 'Live performances, events, and public appearances',
-  },
-  travel: {
-    category: 'travel',
-    title: 'TRAVEL JOURNALS',
-    description: 'Adventures and journeys across different landscapes',
-  },
-  daily: {
-    category: 'daily',
-    title: 'DAILY MOMENTS',
-    description: 'Everyday moments and behind-the-scenes glimpses',
-  },
-  commercial: {
-    category: 'commercial',
-    title: 'COMMERCIAL',
-    description: 'Brand collaborations, endorsements, and where inspiration meets value',
-  },
-};
+// Type to category/tag mapping - moved to lib/exhibition-categories.ts so the
+// /exhibitions index and this page share one definition (phase-4 batch 1).
+import { EXHIBITION_TYPE_MAPPING as typeMapping } from '@/lib/exhibition-categories';
 
 // Generate static params for all valid types
 export async function generateStaticParams() {

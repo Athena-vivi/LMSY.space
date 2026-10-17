@@ -4,8 +4,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ExternalLink, Play } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions } from '@/lib/image-dimensions';
+import { formatChapterTitle } from '@/lib/chapter-title';
+import { t, type Language } from '@/lib/languages';
 import { NebulaBackground } from '@/components/nebula-background';
 import { BackButton } from '@/components/back-button';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
@@ -66,6 +69,15 @@ interface ProjectDetailClientProps {
   project: Project;
   images: GroupedImages;
   categories: typeof CATEGORIES;
+  // Same-category public projects for the "more like this" section. Empty
+  // array = section is hidden. Covers pre-picked server-side; no mock data.
+  relatedProjects?: Array<{
+    id: string;
+    title: string;
+    title_i18n?: LocalizedText | null;
+    release_date: string | null;
+    cover?: string | null;
+  }>;
 }
 
 // Curator's notes for each category
@@ -89,7 +101,7 @@ const CURATOR_NOTES: Record<CategoryType, { title: string; note: string } | null
  * Group images into chronological chapters based on event_date
  * Chapters represent different phases of a project's lifecycle
  */
-function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
+function groupImagesIntoChapters(images: GalleryImage[], language: Language): Chapter[] {
   if (images.length === 0) return [];
 
   // Filter images with event_date
@@ -125,7 +137,7 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
       if (currentChapter.length > 0) {
         chapters.push({
           id: monthKey,
-          title: getChapterTitle(monthKey),
+          title: getChapterTitle(monthKey, language),
           period: formatPeriod(monthKey),
           images: currentChapter,
           startIndex: globalIndex - currentChapter.length,
@@ -143,7 +155,7 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
   if (currentChapter.length > 0 && currentMonth) {
     chapters.push({
       id: currentMonth,
-      title: getChapterTitle(currentMonth),
+      title: getChapterTitle(currentMonth, language),
       period: formatPeriod(currentMonth),
       images: currentChapter,
       startIndex: globalIndex - currentChapter.length,
@@ -168,26 +180,13 @@ function groupImagesIntoChapters(images: GalleryImage[]): Chapter[] {
 }
 
 /**
- * Generate chapter title based on month patterns
+ * Chapter titles are generic month labels localized by the active language
+ * (e.g. "August 2024" / "2024年8月"). The previous per-month narrative names
+ * ("Chapter I: The Premiere"...) were hard-coded for one project's 2024
+ * timeline and have been removed (phase-4 batch 1, Task 4).
  */
-function getChapterTitle(currentMonth: string): string {
-  const [year, month] = currentMonth.split('-');
-  const monthDate = new Date(parseInt(year), parseInt(month) - 1);
-  const monthName = monthDate.toLocaleDateString('en-US', { month: 'long' });
-
-  // Detect chapter type based on patterns
-  if (currentMonth === '2024-08' || currentMonth === '2024-09') {
-    return `Chapter I: The Premiere`;
-  }
-  if (currentMonth === '2024-10') {
-    return `Chapter II: The Resonance`;
-  }
-  if (currentMonth === '2024-12') {
-    return `Chapter III: The Aftermath`;
-  }
-
-  // Default: use month name
-  return `${monthName} ${year}`;
+function getChapterTitle(currentMonth: string, language: Language): string {
+  return formatChapterTitle(currentMonth, language);
 }
 
 /**
@@ -199,7 +198,7 @@ function formatPeriod(monthKey: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
-export default function ProjectDetailClient({ project, images, categories }: ProjectDetailClientProps) {
+export default function ProjectDetailClient({ project, images, categories, relatedProjects = [] }: ProjectDetailClientProps) {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryType>('all');
   const currentImages = images[activeTab] || [];
@@ -233,7 +232,7 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
   };
 
   // 🎯 CHAPTERS: Group images by event_date for chronological display
-  const chapters = groupImagesIntoChapters(currentImages);
+  const chapters = groupImagesIntoChapters(currentImages, language);
 
   return (
     <>
@@ -426,6 +425,17 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
 
                 return (
                 <div key={chapter.id} className="mb-12">
+                  {/* Chapter heading - generic localized month label
+                      ("October 2026" / "2026年10月"), never per-project
+                      narrative names (phase-4 Task 4). The previous code
+                      computed titles but never rendered them; they are now
+                      shown so users can see where a month section starts. */}
+                  <div className="mb-4 md:mb-6 flex items-baseline gap-3">
+                    <h3 className="font-serif text-xl md:text-2xl font-bold text-ink">
+                      {chapter.title}
+                    </h3>
+                    <span className="font-mono text-xs text-ink-2">{chapter.period}</span>
+                  </div>
                   {/* Cover plate - full width, capped height */}
                   {coverImage && coverUrl && (
                     <motion.div
@@ -547,6 +557,56 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
               <p className="text-ink text-lg">No images in this category yet.</p>
               <p className="text-ink-2 text-sm mt-2">More content will be added soon.</p>
             </motion.div>
+          )}
+
+          {/* More in this category (phase-4 Task 4): same category, different
+              project, public visibility filter applied server-side. Hidden
+              entirely when there is nothing to recommend. */}
+          {relatedProjects.length > 0 && (
+            <section className="mt-20 border-t border-white/10 pt-10">
+              <h2 className="font-serif text-2xl md:text-3xl font-bold text-ink mb-8">
+                {t(language, 'projects.relatedTitle')}
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                {relatedProjects.map((related) => {
+                  const relatedCover = related.cover ? getImageUrl(related.cover) : null;
+                  return (
+                    <Link
+                      key={related.id}
+                      href={`/projects/${related.id}`}
+                      className="group/related block"
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        {relatedCover ? (
+                          <Image
+                            src={relatedCover}
+                            alt={getLocalizedText(related.title_i18n, language, related.title)}
+                            fill
+                            sizes="(max-width: 768px) 50vw, 33vw"
+                            className="object-cover transition-transform duration-500 group-hover/related:scale-105"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20 flex items-center justify-center">
+                            <Calendar className="h-10 w-10 text-ink/30" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-3 text-sm font-medium text-ink group-hover/related:text-lmsy-blue transition-colors line-clamp-1">
+                        {getLocalizedText(related.title_i18n, language, related.title)}
+                      </p>
+                      {related.release_date && (
+                        <p className="text-xs text-ink-2 mt-1">
+                          {new Date(related.release_date).toLocaleDateString(
+                            language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US',
+                            { year: 'numeric', month: 'short' }
+                          )}
+                        </p>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
           )}
         </div>
       </div>

@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { isPublicProject } from '@/lib/project-visibility';
+import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
+import { pickCoversByProject } from '@/lib/project-covers';
+import type { LocalizedText } from '@/lib/localized-content';
 import ProjectDetailClient from './project-detail-client';
 
 interface PageProps {
@@ -137,11 +139,52 @@ export default async function ProjectPage({ params }: PageProps) {
     press_events: sortedGalleryImages.filter(img => img.category_tag === 'press_events'),
   };
 
+  // "More in this category" (phase-4 Task 4): same category, different project,
+  // public visibility rule applied, hidden when empty. Covers follow the same
+  // is_cover / -000-catalog / first-asset rule as the projects list.
+  const { data: relatedRows } = await applyPublicProjectFilter(
+    supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, title, title_i18n, category, release_date')
+  )
+    .neq('id', id)
+    .eq('category', project.category)
+    .order('release_date', { ascending: false })
+    .limit(6);
+
+  let relatedProjects: Array<{
+    id: string;
+    title: string;
+    title_i18n: LocalizedText | null;
+    release_date: string | null;
+    cover?: string | null;
+  }> = [];
+
+  const related = relatedRows || [];
+  if (related.length > 0) {
+    const { data: relatedAssets } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('project_id, image_url, is_cover, catalog_id')
+      .in('project_id', related.map((r) => r.id))
+      .order('created_at', { ascending: true, nullsFirst: false });
+    const covers = pickCoversByProject(relatedAssets || []);
+    relatedProjects = related.map((r) => ({
+      id: r.id,
+      title: r.title,
+      title_i18n: (r.title_i18n ?? null) as LocalizedText | null,
+      release_date: r.release_date,
+      cover: covers[r.id] ?? null,
+    }));
+  }
+
   return (
     <ProjectDetailClient
       project={{ ...project, cover_rotation: coverRotation }}
       images={groupedImages}
       categories={CATEGORIES}
+      relatedProjects={relatedProjects}
     />
   );
 }

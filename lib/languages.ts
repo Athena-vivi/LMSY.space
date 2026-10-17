@@ -87,10 +87,14 @@ export const translations = {
     'gallery.tagStage': 'Stage',
     'gallery.tagStill': 'Still',
     'gallery.tagUntagged': 'Untagged',
+    'gallery.viewProject': 'View Project',
+    'gallery.viewAllProjectImages': 'View all images from this project',
 
     // Projects
     'projects.title': 'Projects',
-    'projects.description': 'Explore the complete filmography and magazine features of Lookmhee and Sonya.',
+    'projects.description': 'Explore the complete works of Lookmhee and Sonya — series, editorials, appearances, journals and commercials.',
+    'projects.relatedTitle': 'More in this category',
+    'projects.filteredEmpty': 'No projects in this category.',
 
     // Schedule
     'schedule.title': 'Schedule',
@@ -292,10 +296,14 @@ export const translations = {
     'gallery.tagStage': '舞台',
     'gallery.tagStill': '剧照',
     'gallery.tagUntagged': '未分类',
+    'gallery.viewProject': '查看所属作品',
+    'gallery.viewAllProjectImages': '查看此作品的全部图片',
 
     // Projects
     'projects.title': '作品',
-    'projects.description': '探索 Lookmhee 和 Sonya 的完整作品集和杂志封面。',
+    'projects.description': '探索 Lookmhee 和 Sonya 的完整作品：剧集、杂志特辑、公开活动、日常与商业合作。',
+    'projects.relatedTitle': '更多同类作品',
+    'projects.filteredEmpty': '该分类下暂无作品。',
 
     // Schedule
     'schedule.title': '日程',
@@ -497,10 +505,14 @@ export const translations = {
     'gallery.tagStage': 'เวที',
     'gallery.tagStill': 'ภาพนิ่ง',
     'gallery.tagUntagged': 'ไม่มีหมวดหมู่',
+    'gallery.viewProject': 'ดูผลงาน',
+    'gallery.viewAllProjectImages': 'ดูรูปภาพทั้งหมดจากผลงานนี้',
 
     // Projects
     'projects.title': 'ผลงาน',
-    'projects.description': 'สำรวจผลงานและปกนิตยสารทั้งหมดของ Lookmhee และ Sonya',
+    'projects.description': 'สำรวจผลงานทั้งหมดของ Lookmhee และ Sonya — ซีรีส์ นิตยสาร กิจกรรม ชีวิตประจำวัน และโฆษณา',
+    'projects.relatedTitle': 'ผลงานประเภทเดียวกันเพิ่มเติม',
+    'projects.filteredEmpty': 'ไม่มีผลงานในหมวดหมู่นี้',
 
     // Schedule
     'schedule.title': 'กำหนดการ',

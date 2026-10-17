@@ -1,22 +1,28 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, BookOpen, ExternalLink } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, BookOpen, ExternalLink, Images } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useCallback, useEffect } from 'react';
 import { type GalleryItem } from '@/lib/supabase';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 import { getLocalizedText } from '@/lib/localized-content';
 import { getImageUrl } from '@/lib/image-url';
 
 interface LightboxProps {
   image: GalleryItem;
   images: GalleryItem[];
+  // Public title/id of the project this asset belongs to. Null/undefined when
+  // the project is missing or not publicly readable - the entry is simply
+  // hidden, the lightbox keeps working (fail-safe per phase-4 Task 2).
+  project?: { id: string; title: string } | null;
   onClose: () => void;
 }
 
-export default function Lightbox({ image, images, onClose }: LightboxProps) {
+export default function Lightbox({ image, images, project, onClose }: LightboxProps) {
   const { language } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -50,6 +56,8 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
   const localizedCaption = currentImage
     ? getLocalizedText(currentImage.caption_i18n, language, currentImage.caption)
     : '';
+  // Project back-link (phase-4 Task 2): /projects/<id>, shown in both modes.
+  const projectLink = project ? `/projects/${project.id}` : null;
 
   if (!currentImage) return null;
 
@@ -133,6 +141,18 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                         {currentImage.source_platform ? ` · ${currentImage.source_platform}` : ''}
                       </span>
                     </a>
+                  )}
+
+                  {/* Project back-link - hidden when the project is not
+                      publicly readable (fail-safe). */}
+                  {projectLink && (
+                    <Link
+                      href={projectLink}
+                      className="inline-flex items-center gap-2 mb-6 text-xs uppercase tracking-widest text-ink-2 hover:text-lmsy-blue transition-colors"
+                    >
+                      <Images className="h-3 w-3" />
+                      <span>{t(language, 'gallery.viewAllProjectImages')}</span>
+                    </Link>
                   )}
 
                   {/* Curator Label */}
@@ -283,6 +303,16 @@ export default function Lightbox({ image, images, onClose }: LightboxProps) {
                         {currentImage.source_platform ? ` · ${currentImage.source_platform}` : ''}
                       </span>
                     </a>
+                  )}
+                  {/* Project back-link (phase-4 Task 2) */}
+                  {projectLink && (
+                    <Link
+                      href={projectLink}
+                      className="inline-flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-ink hover:text-lmsy-blue transition-colors"
+                    >
+                      <Images className="h-3 w-3" />
+                      <span>{t(language, 'gallery.viewProject')}</span>
+                    </Link>
                   )}
                   {currentImage.tag && (
                     <span className="inline-block px-3 py-1 mb-2 text-xs font-medium bg-lmsy-yellow text-black rounded-full">
