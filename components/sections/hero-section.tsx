@@ -13,7 +13,7 @@ import {
   getHeroSectionImageUrl,
   normalizeHeroContent,
 } from '@/app/admin/settings/content-blocks';
-import { getImageUrl } from '@/lib/image-url';
+import { resolveImageUrl } from '@/lib/image-url';
 
 export function HeroSection() {
   const { language } = useLanguage();
@@ -177,7 +177,7 @@ export function HeroSection() {
                 )}
 
                 <Image
-                  src={getImageUrl(heroImageUrl) || heroImageUrl || DEFAULT_HERO_SECTION_IMAGE}
+                  src={resolveImageUrl(heroImageUrl) || DEFAULT_HERO_SECTION_IMAGE}
                   alt="Lookmhee & Sonya"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"

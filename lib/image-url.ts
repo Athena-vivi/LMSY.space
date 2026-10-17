@@ -23,6 +23,37 @@
  * // null input
  * getImageUrl(null) // => null
  */
+/**
+ * Static assets shipped in the app's public/ directory are served by the app
+ * origin itself. The media CDN mirrors only the R2 bucket and 404s on site
+ * static files (even favicon.ico), so these paths must never be rewritten.
+ */
+const LOCAL_PUBLIC_ASSETS = new Set([
+  '/lmsy-001.jpg',
+  '/hero-reveal.jpg',
+]);
+
+/**
+ * Resolve an image source for display: local public/ assets are served as-is,
+ * everything else goes through getImageUrl (CDN rewrite for R2 paths).
+ *
+ * @example
+ * resolveImageUrl('/lmsy-001.jpg')       // => '/lmsy-001.jpg' (local, as-is)
+ * resolveImageUrl('gallery/photo.jpg')   // => 'https://cdn.lmsy.space/gallery/photo.jpg'
+ * resolveImageUrl('https://cdn.../x.jpg')// => unchanged
+ */
+export function resolveImageUrl(imageUrl: string | null | undefined): string | null {
+  if (!imageUrl) {
+    return null;
+  }
+
+  if (LOCAL_PUBLIC_ASSETS.has(imageUrl)) {
+    return imageUrl;
+  }
+
+  return getImageUrl(imageUrl);
+}
+
 export function getImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) {
     // 🔒 NO PLACEHOLDER: Return null, let the caller handle it

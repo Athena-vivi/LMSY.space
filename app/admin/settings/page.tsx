@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Languages, Loader2, Save } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
-import { getImageUrl } from '@/lib/image-url';
+import { getImageUrl, resolveImageUrl } from '@/lib/image-url';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
 import {
@@ -387,7 +387,7 @@ export default function AdminSettingsPage() {
                       </div>
                       <div className="relative aspect-[16/9] overflow-hidden rounded-xl border border-lmsy-yellow/20 bg-black/40">
                         <Image
-                          src={getImageUrl(heroSplashImageUrl) || heroSplashImageUrl || '/hero-reveal.jpg'}
+                          src={resolveImageUrl(heroSplashImageUrl) || '/hero-reveal.jpg'}
                           alt="Selected splash"
                           fill
                           className="object-cover"
@@ -417,7 +417,7 @@ export default function AdminSettingsPage() {
                       </div>
                       <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-lmsy-blue/20 bg-black/40">
                         <Image
-                          src={getImageUrl(heroSectionImageUrl) || heroSectionImageUrl || DEFAULT_HERO_SECTION_IMAGE}
+                          src={resolveImageUrl(heroSectionImageUrl) || DEFAULT_HERO_SECTION_IMAGE}
                           alt="Selected hero section"
                           fill
                           className="object-cover"
