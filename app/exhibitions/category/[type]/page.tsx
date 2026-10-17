@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { ExhibitionContent } from './exhibition-content';
 
 // Force dynamic rendering to prevent caching
@@ -90,27 +91,25 @@ export interface GalleryImage {
 export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
   const { type } = await params;
 
-  // Debug logging
-  console.log('[ROUTE_CHECK] Rendering category:', type);
-  console.log('[ROUTE_CHECK] Available mappings:', Object.keys(typeMapping));
-
   const mapping = typeMapping[type];
 
   if (!mapping) {
-    console.log('[ROUTE_CHECK] No mapping found for type:', type);
     notFound();
   }
 
-  console.log('[ROUTE_CHECK] Mapping found:', mapping);
-
-  // Query projects based on type
+  // Query projects based on type.
+  // Public visibility (see lib/project-visibility.ts): only projects the
+  // admin opted into the portal are shown - back-end containers such as
+  // ingestion batches ("Project 2026-03-15", radar imports) or the
+  // MILESTONES_ARCHIVE collector must never surface as exhibition entries.
   const supabaseAdmin = getSupabaseAdmin();
 
-  let query = supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('*')
-    .order('release_date', { ascending: false });
+  let query = applyPublicProjectFilter(
+    supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('*')
+  ).order('release_date', { ascending: false });
 
   // Apply category filter (direct category query, no tag filtering)
   if (mapping.category) {
@@ -119,17 +118,16 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
 
   const { data: projects } = await query;
 
-  console.log('[ROUTE_CHECK] Projects found:', projects?.length || 0);
-  console.log('[ROUTE_CHECK] Category filter:', mapping.category);
-
   // No tag filtering needed - direct category queries
   const filteredProjects = projects || [];
 
-  // For projects without covers, fetch associated gallery images
+  // For projects without covers, fetch associated gallery images.
+  // gallery_assets is the live asset table (the legacy `gallery` table is
+  // empty and never populated).
   const projectIds = filteredProjects.map((p) => p.id);
   const { data: galleryImages } = await supabaseAdmin
     .schema('lmsy_archive')
-    .from('gallery')
+    .from('gallery_assets')
     .select('project_id, image_url, catalog_id')
     .in('project_id', projectIds.length > 0 ? projectIds : ['__empty__'])
     .limit(1);
@@ -148,10 +146,10 @@ export default async function ExhibitionPage({ params }: ExhibitionPageProps) {
     displayImage: project.cover_url || imageMap.get(project.id) || null,
   }));
 
-  // 🖼️ FETCH ALL GALLERY IMAGES for lightbox
+  // 🖼️ FETCH ALL GALLERY IMAGES for lightbox (live asset table)
   const { data: allGalleryImages } = await supabaseAdmin
     .schema('lmsy_archive')
-    .from('gallery')
+    .from('gallery_assets')
     .select('id, image_url, caption, blur_data, catalog_id, project_id')
     .in('project_id', projectIds.length > 0 ? projectIds : ['__empty__'])
     .order('created_at', { ascending: false });

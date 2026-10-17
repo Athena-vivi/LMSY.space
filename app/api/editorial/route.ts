@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 
 /**
  * Editorial Projects API - SOVEREIGN BOUNDARY ENFORCEMENT
@@ -56,11 +57,14 @@ export async function GET() {
     console.log('[SOVEREIGN_BOUNDARY] 🚨 FILTER: .eq("category", "editorial")');
     console.log('[SOVEREIGN_BOUNDARY] ❌ FORBIDDEN: series, still, appearance, journal, commercial');
 
-    // 🔥 SOVEREIGN: Strict editorial-only filter, NO .or() ALLOWED
-    const { data, error, status, statusText } = await supabaseAdmin
-      .schema('lmsy_archive')  // 🚨 MANDATORY EXPLICIT SCHEMA
-      .from('projects')
-      .select(`
+    // 🔥 SOVEREIGN: Strict editorial-only filter, NO .or() ALLOWED.
+    // Public visibility is applied via the shared rule (see
+    // lib/project-visibility.ts): only admin-approved portal projects.
+    const { data, error, status, statusText } = await applyPublicProjectFilter(
+      supabaseAdmin
+        .schema('lmsy_archive')  // 🚨 MANDATORY EXPLICIT SCHEMA
+        .from('projects')
+        .select(`
         id,
         title,
         title_i18n,
@@ -85,8 +89,8 @@ export async function GET() {
           created_at
         )
       `)
-      .eq('category', 'editorial')  // 🚨 STRICT EQUALITY ONLY - NO SERIES DATA
-      .order('release_date', { ascending: false });
+        .eq('category', 'editorial')  // 🚨 STRICT EQUALITY ONLY - NO SERIES DATA
+    ).order('release_date', { ascending: false });
 
     console.log('[SOVEREIGN_BOUNDARY] ========== QUERY RESULT ==========');
     console.log('[SOVEREIGN_BOUNDARY] 📊 HTTP Status:', status, statusText);

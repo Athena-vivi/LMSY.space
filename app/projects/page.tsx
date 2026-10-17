@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { supabase, type Project } from '@/lib/supabase';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
 import { getLocalizedText } from '@/lib/localized-content';
@@ -64,26 +65,20 @@ export default function ProjectsPage() {
       // Only the fields this list renders. `select('*')` also pulled
       // theme_statement, homepage_excerpt, cover_url and i18n blobs that the
       // timeline never uses.
-      // Visibility rule (batch 2): a project is public when it is published,
-      // has no curation status (legacy NULL), or already carries at least one
-      // gallery asset. Candidate drafts without assets stay hidden, and legacy
-      // rows are untouched (25 of 26 legacy projects are 'draft').
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url, curation_status, gallery_assets(count)')
+      // Public visibility (see lib/project-visibility.ts): a project is
+      // visitor-facing only when the admin opted it in via portal_visible
+      // and it is not archived. Back-end containers (ingestion batches,
+      // milestone archives) are management units, not front-end content.
+      const { data, error } = await applyPublicProjectFilter(
+        supabase
+          .from('projects')
+          .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url, curation_status')
+      )
         .order('release_date', { ascending: false })
         .order('id', { ascending: false });
 
       if (!error && data) {
-        const visible = (data as any[]).filter((p) => {
-          const status = p.curation_status;
-          if (!status || status === 'published') return true;
-          const assetCount = Array.isArray(p.gallery_assets) && p.gallery_assets[0]
-            ? Number(p.gallery_assets[0].count || 0)
-            : 0;
-          return assetCount > 0;
-        });
-        setProjects(visible as unknown as Project[]);
+        setProjects(data as unknown as Project[]);
       }
       setLoading(false);
     }

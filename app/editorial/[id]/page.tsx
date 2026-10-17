@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { BackButton } from '@/components/back-button';
 import { EditorialDetailContent } from './editorial-detail-content';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { notFound } from 'next/navigation';
 import type { LocalizedText } from '@/lib/localized-content';
 
@@ -31,8 +32,11 @@ interface GalleryImage {
 }
 
 /**
- * Fetch magazine data with dual-query strategy (UUID + catalog_id)
- * 🔒 IRON CURTAIN: NO DATE-BASED AUTO-ASSOCIATION
+ * Fetch magazine data with dual-query strategy (UUID + catalog_id).
+ * 🔒 IRON CURTAIN: NO DATE-BASED AUTO-ASSOCIATION.
+ * Both lookups apply the shared public-visibility rule (see
+ * lib/project-visibility.ts), so back-end containers never resolve as
+ * editorial detail pages.
  */
 async function getMagazineData(id: string): Promise<{
   magazine: Magazine | null;
@@ -40,59 +44,44 @@ async function getMagazineData(id: string): Promise<{
 }> {
   const supabaseAdmin = getSupabaseAdmin();
 
-  console.log('[IRON_CURTAIN] ========== STRICT PHYSICAL LINKAGE ==========');
-  console.log('[IRON_CURTAIN] 🔍 Input ID:', id);
-
   // STRATEGY 1: Try UUID lookup first
-  console.log('[IRON_CURTAIN] 📡 Strategy 1: UUID lookup');
-  const { data: projectByUuid, error: uuidError } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('*')
-    .eq('id', id)
-    .eq('category', 'editorial')
-    .maybeSingle();
+  const { data: projectByUuid, error: uuidError } = await applyPublicProjectFilter(
+    supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .eq('category', 'editorial')
+  ).maybeSingle();
 
   let project: Magazine | null = null;
 
   if (!uuidError && projectByUuid) {
-    console.log('[IRON_CURTAIN] ✅ Strategy 1 SUCCESS: Found by UUID');
     project = projectByUuid;
   } else {
     // STRATEGY 2: Try catalog_id lookup
-    console.log('[IRON_CURTAIN] 📡 Strategy 2: catalog_id lookup');
-    const { data: projectByCatalog, error: catalogError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .eq('catalog_id', id)
-      .eq('category', 'editorial')
-      .maybeSingle();
+    const { data: projectByCatalog, error: catalogError } = await applyPublicProjectFilter(
+      supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('*')
+        .eq('catalog_id', id)
+        .eq('category', 'editorial')
+    ).maybeSingle();
 
     if (!catalogError && projectByCatalog) {
-      console.log('[IRON_CURTAIN] ✅ Strategy 2 SUCCESS: Found by catalog_id');
       project = projectByCatalog;
     } else {
-      console.log('[IRON_CURTAIN] ❌ ALL STRATEGIES FAILED: Project not found');
       return { magazine: null, galleryImages: [] };
     }
   }
-
-  console.log('[IRON_CURTAIN] 📊 Project found:', {
-    id: project?.id,
-    title: project?.title,
-    catalog_id: project?.catalog_id,
-    release_date: project?.release_date,
-  });
-
-  // 🔒 CRITICAL: STRICT PHYSICAL LINKAGE ONLY - NO DATE-BASED QUERIES
-  console.log('[IRON_CURTAIN] 🔍 Fetching gallery via project_id ONLY...');
 
   // Type guard: project is guaranteed to be non-null here because we return early if null
   if (!project) {
     return { magazine: null, galleryImages: [] };
   }
 
+  // 🔒 CRITICAL: STRICT PHYSICAL LINKAGE ONLY - NO DATE-BASED QUERIES
   const { data: linkedImages, error: imagesError } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('gallery_assets')
@@ -103,12 +92,8 @@ async function getMagazineData(id: string): Promise<{
   let galleryImages: GalleryImage[] = [];
 
   if (!imagesError && linkedImages && linkedImages.length > 0) {
-    console.log(`[IRON_CURTAIN] ✅ Found ${linkedImages.length} physically linked images`);
-    galleryImages = linkedImages;
-  } else {
-    console.log('[IRON_CURTAIN] ℹ️ No physically linked images found (this is OK)');
     // ❌ NO SELF-HEALING: Do NOT attempt date-based auto-association
-    console.log('[IRON_CURTAIN] ❌ DATE-BASED AUTO-ASSOCIATION DISABLED');
+    galleryImages = linkedImages;
   }
 
   return { magazine: project, galleryImages };
@@ -121,13 +106,11 @@ export default async function EditorialDetailPage({
 }) {
   // 🔒 CRITICAL: Use await params for Next.js 15+
   const { id } = await params;
-  console.log('[IRON_CURTAIN] 🎯 Page loaded with ID:', id);
 
   const { magazine, galleryImages } = await getMagazineData(id);
 
-  // 404 if project not found
+  // 404 if project not found or not visitor-visible
   if (!magazine) {
-    console.log('[IRON_CURTAIN] ❌ 404: Magazine not found');
     notFound();
   }
 

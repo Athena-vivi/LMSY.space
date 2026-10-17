@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 
 /**
  * Sitemap.
@@ -31,12 +32,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Dynamic project detail routes. `projects` has created_at (no updated_at).
+  // Only visitor-facing projects are listed (see lib/project-visibility.ts):
+  // back-end containers (ingestion batches, milestone archives) must not
+  // advertise their URLs to crawlers.
   let projectRoutes: MetadataRoute.Sitemap = [];
   try {
-    const { data } = await getSupabaseAdmin()
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('id, created_at');
+    const { data } = await applyPublicProjectFilter(
+      getSupabaseAdmin()
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('id, created_at')
+    );
     projectRoutes = (data || []).map((project: { id: string; created_at: string | null }) => ({
       url: `${SITE_URL}/projects/${project.id}`,
       lastModified: project.created_at ? new Date(project.created_at) : now,

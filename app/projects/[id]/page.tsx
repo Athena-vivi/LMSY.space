@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { isPublicProject } from '@/lib/project-visibility';
 import ProjectDetailClient from './project-detail-client';
 
 interface PageProps {
@@ -52,11 +53,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { data: project } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('projects')
-    .select('id, title, description')
+    .select('id, title, description, portal_visible, curation_status')
     .eq('id', id)
     .maybeSingle();
 
-  if (!project) {
+  if (!project || !isPublicProject(project)) {
     return {
       title: 'Project Not Found | LMSY',
     };
@@ -96,11 +97,11 @@ export default async function ProjectPage({ params }: PageProps) {
     });
   };
 
-  // Fetch project details
-  // Public visibility rule (batch 2): published or legacy-NULL is always
-  // visible. A 'draft' candidate is only visible once it carries at least one
-  // gallery asset, so unpublished candidates stay hidden without rewriting
-  // legacy rows (25 of 26 legacy projects are 'draft').
+  // Fetch project details.
+  // Public visibility (see lib/project-visibility.ts): visitor-facing only
+  // when the admin opted the project in via portal_visible and it is not
+  // archived; back-end containers (ingestion batches, milestone archives)
+  // are management units and must 404 on the front-end.
   const { data: project, error: projectError } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('projects')
@@ -108,20 +109,8 @@ export default async function ProjectPage({ params }: PageProps) {
     .eq('id', id)
     .maybeSingle();
 
-  if (projectError || !project) {
+  if (projectError || !project || !isPublicProject(project)) {
     notFound();
-  }
-
-  const status = (project as { curation_status?: string | null }).curation_status;
-  if (status && status !== 'published') {
-    const { count } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('id', { count: 'exact', head: true })
-      .eq('project_id', id);
-    if (!count || count === 0) {
-      notFound();
-    }
   }
 
   // Fetch gallery images for this project

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 
 /**
  * GET /api/home/portals
@@ -34,12 +35,13 @@ export async function GET() {
      * Priority 2: is_featured = true (fallback)
      */
     async function fetchPortalImage(category: string, portalName: string) {
-      const { data: prioritizedProject, error: projectError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('id, cover_url')
-        .eq('category', category)
-        .eq('portal_visible', true)
+      const { data: prioritizedProject, error: projectError } = await applyPublicProjectFilter(
+        supabaseAdmin
+          .schema('lmsy_archive')
+          .from('projects')
+          .select('id, cover_url')
+          .eq('category', category)
+      )
         .order('portal_priority', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(1)
@@ -52,11 +54,18 @@ export async function GET() {
       }
 
       if (!selectedProject) {
-        const { data: latestProject } = await supabaseAdmin
-          .schema('lmsy_archive')
-          .from('projects')
-          .select('id, cover_url')
-          .eq('category', category)
+        // Fallback must also respect portal visibility: falling back to the
+        // latest project of the category regardless of visibility exposed
+        // back-end containers (e.g. radar imports under Daily). With no
+        // visitor-facing project in the category, return null and let the
+        // portal card use its static gradient.
+        const { data: latestProject } = await applyPublicProjectFilter(
+          supabaseAdmin
+            .schema('lmsy_archive')
+            .from('projects')
+            .select('id, cover_url')
+            .eq('category', category)
+        )
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();

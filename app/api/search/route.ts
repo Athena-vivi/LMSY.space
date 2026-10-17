@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import {
   sanitizeSearchTerm,
   MIN_SEARCH_TERM_LENGTH,
@@ -34,10 +35,16 @@ export async function GET(request: NextRequest) {
         .or(`caption.ilike.%${searchTerm}%,tag.ilike.%${searchTerm}%`)
         .limit(10),
 
-      supabase
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('*')
+      // Only visitor-facing projects are searchable (see
+      // lib/project-visibility.ts): back-end containers such as ingestion
+      // batches or the MILESTONES_ARCHIVE collector must not leak through
+      // search results.
+      applyPublicProjectFilter(
+        supabase
+          .schema('lmsy_archive')
+          .from('projects')
+          .select('*')
+      )
         .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
         .limit(5),
     ]);
