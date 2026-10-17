@@ -154,6 +154,8 @@ export const translations = {
     'whispers.openForm': '[ TRANSMIT_SIGNAL ]',
     'whispers.failed': 'Failed to submit message',
     'whispers.networkError': 'Network error. Please try again.',
+    'whispers.gates': 'The Whispering Gates',
+    'vinyl.listen': 'Listen To The Resonance',
 
     // 404 not-found
     'nf.title': 'Page Not Found',
@@ -354,6 +356,8 @@ export const translations = {
     'whispers.openForm': '[ 发送信号 ]',
     'whispers.failed': '留言提交失败',
     'whispers.networkError': '网络错误，请重试。',
+    'whispers.gates': '低语之门',
+    'vinyl.listen': '聆听共鸣',
 
     // 404 not-found
     'nf.title': '页面不存在',
@@ -554,6 +558,8 @@ export const translations = {
     'whispers.openForm': '[ ส่งสัญญาณ ]',
     'whispers.failed': 'ส่งข้อความไม่สำเร็จ',
     'whispers.networkError': 'เครือข่ายผิดพลาด กรุณาลองใหม่',
+    'whispers.gates': 'ประตูเสียงกระซิบ',
+    'vinyl.listen': 'ฟังเสียงสะท้อน',
 
     // 404 not-found
     'nf.title': 'ไม่พบหน้าเว็บ',

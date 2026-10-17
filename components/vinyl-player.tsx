@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/lib/image-url';
 import { MusicPlatformLinks } from '@/components/music-platform-links';
@@ -310,7 +311,7 @@ export function VinylPlayer() {
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                 >
                   <span className="text-[10px] text-ink-2" style={{ fontFamily: 'var(--font-serif)' }}>
-                    Listen To The Resonance
+                    {t(language, 'vinyl.listen')}
                   </span>
                 </motion.div>
               </motion.div>

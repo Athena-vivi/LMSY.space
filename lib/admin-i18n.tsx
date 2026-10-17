@@ -319,7 +319,7 @@ const DICT: Record<string, [string, string]> = {
   'login.signingIn': ['登录中…', 'Signing in...'],
   'login.entering': ['正在进入轨道…', 'Entering Orbit...'],
   'login.failed': ['登录失败，请检查凭据。', 'Failed to sign in. Please check your credentials.'],
-  'login.back': ['← 返回网站', '← Back to Website'],
+  'login.back': ['返回网站', 'Back to Website'],
   'login.protected': ['由 Supabase 身份验证保护', 'Protected by Supabase Authentication'],
   'login.langLabel': ['语言', 'Language'],
 };

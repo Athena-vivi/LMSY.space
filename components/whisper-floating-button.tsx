@@ -3,10 +3,13 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useTheme } from "@/components/theme-provider";
+import { useLanguage } from "@/components/language-provider";
+import { t } from "@/lib/languages";
 import { useEffect, useState } from "react";
 
 export const WhisperPortal = () => {
   const { theme } = useTheme();
+  const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -112,7 +115,7 @@ export const WhisperPortal = () => {
             transition={{ duration: 0.4, ease: 'easeOut' }}
           >
             <span className={`text-[10px] ${isDark ? 'text-ink-2' : 'text-black/60'}`} style={{ fontFamily: 'var(--font-serif)' }}>
-              The Whispering Gates
+              {t(language, 'whispers.gates')}
             </span>
           </motion.div>
         </motion.div>
