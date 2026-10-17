@@ -8,7 +8,6 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { supabase, type GalleryItem } from '@/lib/supabase';
 import Lightbox from './lightbox';
-import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
 import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions, FALLBACK_ASPECT_RATIO } from '@/lib/image-dimensions';
@@ -243,13 +242,20 @@ export default function GalleryPage() {
                         {/* 🌌 Nebula Hover Glow */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                        {/* 📖 Catalog Number - Always visible */}
+                        {/* 📖 Catalog Number - Always visible.
+                            ADR-001 D5: show the asset's persistent catalog_id;
+                            assets without one (e.g. promoted before numbering
+                            was wired) simply show nothing — never a generated
+                            stand-in number. */}
                         <div className="absolute bottom-2 right-2 opacity-60 hover:opacity-100 transition-opacity">
-                          <CompactCatalogNumber
-                            id={item.id}
-                            createdAt={item.created_at}
-                            index={index}
-                          />
+                          {item.catalog_id && (
+                            <span
+                              className="text-[10px] font-mono tracking-wide text-white/70"
+                              style={{ fontVariantNumeric: 'tabular-nums' }}
+                            >
+                              {item.catalog_id}
+                            </span>
+                          )}
                         </div>
 
                         {/* 🏷️ Tag Badge - Top Left */}

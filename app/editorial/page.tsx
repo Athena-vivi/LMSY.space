@@ -132,10 +132,8 @@ export default function EditorialPage() {
     fetchMagazines();
   }, []);
 
-  // Generate catalog IDs for display
-  const getCatalogId = (index: number) => {
-    return `LMSY-ED-${String(index + 1).padStart(3, '0')}`;
-  };
+  // ADR-001 D5: no generated display ids. A magazine card shows the real
+  // catalog_id only when one exists; there is no index-based fallback.
 
   // Detect magazine theme based on title/description
   const getMagazineTheme = (magazine: Magazine): NebulaColors => {
@@ -246,7 +244,7 @@ export default function EditorialPage() {
                         magazine={magazine}
                         language={language}
                         index={index}
-                        catalogId={magazine.catalog_id || getCatalogId(index)}
+                        catalogId={magazine.catalog_id || null}
                         onHover={setHoveredMagazine}
                         theme={getMagazineTheme(magazine)}
                         isFirst={index === 0}
@@ -343,7 +341,7 @@ interface MagazineSlotProps {
   magazine: Magazine;
   language: 'en' | 'zh' | 'th';
   index: number;
-  catalogId: string;
+  catalogId?: string | null;
   onHover: (id: string | null) => void;
   theme: NebulaColors;
   isFirst: boolean;
@@ -485,17 +483,19 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
         </div>
 
         {/* Labels */}
-        <motion.div
-          className="absolute -top-3 -left-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-2 py-1"
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: index * 0.08 + 0.3 }}
-        >
-          <span className="font-mono text-[11px] text-lmsy-yellow/80 tracking-wider">
-            #{catalogId}
-          </span>
-        </motion.div>
+        {catalogId && (
+          <motion.div
+            className="absolute -top-3 -left-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-2 py-1"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.08 + 0.3 }}
+          >
+            <span className="font-mono text-[11px] text-lmsy-yellow/80 tracking-wider">
+              #{catalogId}
+            </span>
+          </motion.div>
+        )}
 
         <div className="absolute -bottom-3 -right-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-3 py-1.5">
           <span className="font-mono text-[10px] text-ink-2 tracking-wide uppercase">

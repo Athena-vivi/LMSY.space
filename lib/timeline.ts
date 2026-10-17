@@ -8,6 +8,13 @@ export interface TimelineEvent {
   title: string;
   titleI18n?: LocalizedText;
   type: 'gallery' | 'project' | 'schedule';
+  /**
+   * Display-only entry number (LMSY-D-NNN), generated from the array index
+   * and rendered by components/chronicle-timeline.tsx. ADR-001 D5 wants this
+   * replaced by a persistent number eventually, but Chronicle display
+   * changes are explicitly out of scope for the phase-2 refactor, so the
+   * field stays until the webmaster ratifies a Chronicle data model.
+   */
   archiveNumber: string;
   description?: string;
   descriptionI18n?: LocalizedText;

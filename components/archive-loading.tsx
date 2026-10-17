@@ -10,16 +10,12 @@ export function ArchiveLoading() {
   const [textSpacing, setTextSpacing] = useState(0.8);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Generate random catalog numbers
+  // ADR-001 D5: loading decoration must not fabricate catalog ids
+  // (previously random LMSY-G-YYYY-NNN strings). Render non-ID placeholders
+  // with the same visual rhythm instead.
   useEffect(() => {
-    const generateCatalogId = () => {
-      const year = 2020 + Math.floor(Math.random() * 7); // 2020-2026
-      const sequence = Math.floor(Math.random() * 999).toString().padStart(3, '0');
-      return `LMSY-G-${year}-${sequence}`;
-    };
-
     const interval = setInterval(() => {
-      const newNumbers = Array.from({ length: 8 }, () => generateCatalogId());
+      const newNumbers = Array.from({ length: 8 }, () => 'LMSY-G-••••••••-•••');
       setCatalogNumbers(newNumbers);
     }, 80);
 

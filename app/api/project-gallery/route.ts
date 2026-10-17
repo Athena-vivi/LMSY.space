@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { isPublicProject } from '@/lib/project-visibility';
 
 /**
  * GET - Retrieve gallery images for a project (public endpoint)
@@ -18,6 +19,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'project_id is required' },
         { status: 400 }
+      );
+    }
+
+    // ADR-001 D4: project-type entries share one visibility rule. This
+    // endpoint exposes assets of a single project, so gate it by the same
+    // public-project rule used by the detail page — hidden containers'
+    // assets must not be fetchable via API. (No front-end consumer today;
+    // this changes no legitimate behaviour.)
+    const { data: projectRow } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('portal_visible, curation_status')
+      .eq('id', projectId)
+      .maybeSingle();
+
+    if (!projectRow || !isPublicProject(projectRow)) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
       );
     }
 

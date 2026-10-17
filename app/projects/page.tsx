@@ -10,7 +10,6 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { supabase, type Project } from '@/lib/supabase';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
-import { CompactCatalogNumber } from '@/components/catalog-number';
 import { BackButton } from '@/components/back-button';
 import { getLocalizedText } from '@/lib/localized-content';
 
@@ -148,15 +147,6 @@ export default function ProjectsPage() {
                               <Icon className="h-3 w-3" />
                               {categoryLabels[project.category] || project.category.toUpperCase()}
                             </span>
-                          </div>
-
-                          {/* Catalog Number */}
-                          <div className="absolute bottom-3 right-3">
-                            <CompactCatalogNumber
-                              id={project.id}
-                              createdAt={project.created_at}
-                              index={index}
-                            />
                           </div>
                         </div>
 

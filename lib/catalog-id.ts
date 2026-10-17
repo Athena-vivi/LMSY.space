@@ -304,6 +304,69 @@ export function isLegacyCatalogId(catalogId: string): boolean {
 // instead of a hard failure.
 // ============================================================================
 
+// ============================================================================
+// Shared allocation used by BOTH manual upload and draft promotion
+// (phase 2 content-model refactor, ADR-001 D5)
+// ============================================================================
+// Previously this read-max-then-add-one logic lived inline in
+// app/api/admin/upload/route.ts only, so assets promoted from draft_items
+// never received a catalog_id. The logic below is extracted verbatim from
+// that verified implementation so both write paths share one code path.
+// Uniqueness is ultimately enforced by the database (unique indexes on
+// gallery_assets.catalog_id); callers must treat a 23505 conflict as
+// retryable (see isCatalogIdConflict + CATALOG_ID_MAX_ATTEMPTS).
+
+/**
+ * Project category -> catalog prefix mapping shared by manual upload and
+ * draft promotion. Values are the existing production mapping (AD / STAGE /
+ * STILL / DAILY / TRV prefixes already occur in real data); do not change
+ * them without a data-model decision.
+ */
+export const CATEGORY_TO_CATALOG_PREFIX: Record<string, string> = {
+  series: 'STILL',      // TV/Drama
+  editorial: 'MAG',     // Magazine
+  appearance: 'STAGE',  // Event/Stage
+  daily: 'DAILY',       // Daily (日常)
+  travel: 'TRV',        // Travel (旅途)
+  commercial: 'AD',     // Ad/Brand
+};
+
+/**
+ * Allocate the next catalog_id for a category prefix and date.
+ * Mirrors the manual-upload logic exactly: highest existing sequence + 1,
+ * starting at 001 when no entry exists for that prefix/date.
+ * Not atomic by itself — the unique index on catalog_id is the final
+ * authority; retry on conflict via isCatalogIdConflict.
+ */
+export async function allocateNextCatalogId(
+  supabase: CatalogIdClient,
+  categoryPrefix: string,
+  eventDate: string,
+  tableName: string = 'gallery_assets'
+): Promise<string> {
+  const compactDate = formatDateToCompact(eventDate);
+  const prefix = `LMSY-${categoryPrefix}-${compactDate}`;
+
+  const { data, error } = await supabase
+    .schema('lmsy_archive')
+    .from(tableName)
+    .select('catalog_id')
+    .like('catalog_id', `${prefix}-%`)
+    .order('catalog_id', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let nextSequence = 1;
+  if (!error && data?.catalog_id) {
+    const match = data.catalog_id.match(/-(\d{3})$/);
+    if (match) {
+      nextSequence = parseInt(match[1], 10) + 1;
+    }
+  }
+
+  return `LMSY-${categoryPrefix}-${compactDate}-${String(nextSequence).padStart(3, '0')}`;
+}
+
 /** How many times a caller should re-allocate an id before giving up. */
 export const CATALOG_ID_MAX_ATTEMPTS = 5;
 

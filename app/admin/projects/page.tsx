@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Plus, Play, Calendar, ChevronRight, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw } from 'lucide-react';
+import { Edit2, Trash2, Plus, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { supabase, type Project } from '@/lib/supabase';
@@ -24,7 +24,7 @@ export default function AdminProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | Project['category']>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived' | 'available'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
   const [projectAssets, setProjectAssets] = useState<Record<string, ProjectPreviewAsset[]>>({});
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
     show: false,
@@ -335,10 +335,13 @@ export default function AdminProjectsPage() {
 
       const matchesCategory = categoryFilter === 'all' || project.category === categoryFilter;
 
-      const normalizedStatus = project.curation_status ?? (project.watch_url ? 'published' : 'archived');
-      const matchesStatus = statusFilter === 'all'
-        || normalizedStatus === statusFilter
-        || (statusFilter === 'available' && Boolean(project.watch_url));
+      // ADR-001 D4: status comes only from the formal curation_status field.
+      // The previous fallback inferred 'published'/'archived' from the mere
+      // presence of watch_url, which is a reference link, not a lifecycle
+      // state. Rows without a value are displayed under their default
+      // ('draft') — no new status semantics are introduced here.
+      const normalizedStatus = project.curation_status ?? 'draft';
+      const matchesStatus = statusFilter === 'all' || normalizedStatus === statusFilter;
 
       return matchesQuery && matchesCategory && matchesStatus;
     });
@@ -474,7 +477,7 @@ export default function AdminProjectsPage() {
                 </select>
                 <select
                   value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value as 'all' | 'published' | 'draft' | 'archived' | 'available')}
+                  onChange={(event) => setStatusFilter(event.target.value as 'all' | 'published' | 'draft' | 'archived')}
                   className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                 >
@@ -482,7 +485,6 @@ export default function AdminProjectsPage() {
                   <option value="published">{t('status.published')}</option>
                   <option value="draft">{t('status.candidate')}</option>
                   <option value="archived">{t('status.archived')}</option>
-                  <option value="available">{t('status.available')}</option>
                 </select>
               </div>
               <div className="text-xs font-mono tracking-wider text-ink-2">
@@ -625,21 +627,17 @@ export default function AdminProjectsPage() {
                     )}
                   </div>
 
-                  {/* Status */}
+                  {/* Status — from the formal curation_status field only
+                      (ADR-001 D4). watch_url is a reference link, not a
+                      lifecycle state, and no longer drives this column. */}
                   <div className="col-span-3">
-                    {project.watch_url ? (
-                      <a
-                        href={project.watch_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-xs text-lmsy-blue/60 hover:text-lmsy-blue/80 transition-colors group/link"
-                      >
-                        <span className="font-mono tracking-wider">{t('status.available')}</span>
-                        <ChevronRight className="h-3 w-3 group-hover/link:translate-x-1 transition-transform" strokeWidth={2} />
-                      </a>
-                    ) : (
-                      <span className="text-xs text-ink-2 font-mono">{t('status.archived')}</span>
-                    )}
+                    <span className="text-xs font-mono text-ink-2">
+                      {project.curation_status === 'published'
+                        ? t('status.published')
+                        : project.curation_status === 'archived'
+                          ? t('status.archived')
+                          : t('status.candidate')}
+                    </span>
                   </div>
 
                   {/* Actions */}

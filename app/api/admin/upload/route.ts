@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-client';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
-import { getR2PathForCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS } from '@/lib/catalog-id';
+import { getR2PathForCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS, allocateNextCatalogId as allocateSharedCatalogId, CATEGORY_TO_CATALOG_PREFIX } from '@/lib/catalog-id';
 import { getAdminEmail } from '@/lib/security/api-auth';
 import { validateUploadFile } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
@@ -77,19 +77,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Map project category to catalog prefix
-  const categoryPrefixMap: Record<string, string> = {
-    series: 'STILL',      // TV/Drama
-    editorial: 'MAG',     // Magazine
-    appearance: 'STAGE',  // Event/Stage
-    daily: 'DAILY',       // Daily (日常)
-    travel: 'TRV',        // Travel (旅途)
-    commercial: 'AD',     // Ad/Brand
-  };
-
-  // Determine category prefix (default to 'G' if no project)
-  const categoryPrefix = projectCategory && categoryPrefixMap[projectCategory]
-    ? categoryPrefixMap[projectCategory]
+  // Map project category to catalog prefix (shared with draft promotion,
+  // see lib/catalog-id.ts — ADR-001 D5). Default to 'G' if no project.
+  const categoryPrefix = projectCategory && CATEGORY_TO_CATALOG_PREFIX[projectCategory]
+    ? CATEGORY_TO_CATALOG_PREFIX[projectCategory]
     : 'G';
 
   if (manualCatalogId && manualCatalogId.trim()) {
@@ -116,31 +107,10 @@ export async function POST(request: NextRequest) {
       uploadDate = new Date().toISOString().split('T')[0];
     }
 
-    // Generate catalog ID with dynamic category prefix
-    const compactDate = uploadDate.replace(/-/g, '');
-
-    // Query for highest sequence for this category and date.
-    // NOTE: gallery_assets, not the legacy `gallery` table (see the comment on
-    // the R2 upload section below).
-    const prefix = `LMSY-${categoryPrefix}-${compactDate}`;
-    const { data: lastItem } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('catalog_id')
-      .like('catalog_id', `${prefix}-%`)
-      .order('catalog_id', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let nextSequence = 1;
-    if (lastItem?.catalog_id) {
-      const match = lastItem.catalog_id.match(/-(\d{3})$/);
-      if (match) {
-        nextSequence = parseInt(match[1], 10) + 1;
-      }
-    }
-
-    catalogId = `LMSY-${categoryPrefix}-${compactDate}-${String(nextSequence).padStart(3, '0')}`;
+    // Generate catalog ID with dynamic category prefix via the shared
+    // allocation helper (same logic previously inlined here; now also used
+    // by the draft-promotion path).
+    catalogId = await allocateSharedCatalogId(supabaseAdmin, categoryPrefix, uploadDate);
     console.log('[UPLOAD] Generated catalog ID:', catalogId, 'for category:', categoryPrefix);
   }
 
@@ -179,23 +149,9 @@ export async function POST(request: NextRequest) {
   let insertedItem: any = null;
 
   const allocateNextCatalogId = async (): Promise<string> => {
-    const compact = uploadDate.replace(/-/g, '');
-    const nextPrefix = `LMSY-${categoryPrefix}-${compact}`;
-    const { data: lastItem } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('catalog_id')
-      .like('catalog_id', `${nextPrefix}-%`)
-      .order('catalog_id', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let nextSequence = 1;
-    const sequenceMatch = lastItem?.catalog_id?.match(/-(\d{3})$/);
-    if (sequenceMatch) {
-      nextSequence = parseInt(sequenceMatch[1], 10) + 1;
-    }
-    return `LMSY-${categoryPrefix}-${compact}-${String(nextSequence).padStart(3, '0')}`;
+    // Delegate to the shared allocation helper (single implementation for
+    // both upload and draft promotion, see lib/catalog-id.ts).
+    return allocateSharedCatalogId(supabaseAdmin, categoryPrefix, uploadDate);
   };
 
   const canRetryWithNewId = !(manualCatalogId && manualCatalogId.trim());
