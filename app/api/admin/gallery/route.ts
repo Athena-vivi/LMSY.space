@@ -112,9 +112,55 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
+
+    // Phase 3 (ingestion contract, task B): validate the linked project
+    // explicitly when provided, so a bad reference fails with a clear 404
+    // instead of a foreign-key 500 after the first items were inserted.
+    const firstProjectId = items.find(item => item.project_id)?.project_id;
+    if (firstProjectId) {
+      const { data: projectRow, error: projectError } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('id')
+        .eq('id', firstProjectId)
+        .maybeSingle();
+
+      if (projectError) {
+        return NextResponse.json(
+          { error: 'Failed to verify project', details: projectError.message },
+          { status: 500 }
+        );
+      }
+      if (!projectRow) {
+        return NextResponse.json(
+          { error: 'Project not found', projectId: firstProjectId },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Phase 3 (ingestion contract, task A): image_url is the dedupe key.
+    // Pre-check the whole batch and treat already-existing urls as idempotent
+    // successes (created: false) instead of inserting duplicate rows.
+    const requestedUrls = items.map(item => item.image_url).filter(Boolean);
+    const { data: existingRows } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('id, image_url')
+      .in('image_url', requestedUrls);
+    const existingByUrl = new Map(
+      (existingRows || []).map(row => [row.image_url, row])
+    );
+
     const results = [];
 
     for (const item of items) {
+      const existing = existingByUrl.get(item.image_url);
+      if (existing) {
+        results.push({ ...existing, created: false });
+        continue;
+      }
+
       const { data, error } = await supabaseAdmin
         .schema('lmsy_archive')
         .from('gallery_assets')
@@ -151,7 +197,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      results.push(data);
+      results.push({ ...data, created: true });
     }
 
     console.log('[ADMIN_GALLERY_API] ✅ Inserted', results.length, 'items');

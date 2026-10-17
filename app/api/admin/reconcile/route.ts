@@ -47,10 +47,13 @@ export async function POST(request: NextRequest) {
     const results: ReconcileResult[] = [];
     const errors: string[] = [];
 
-    // Step 1: Get all existing catalog IDs from database
+    // Step 1: Get all existing catalog IDs from database.
+    // Phase 3 fix: this used to read the legacy `gallery` table (0 rows), so
+    // the dedupe set was always empty and everything was treated as missing.
+    // gallery_assets is the live asset table (ADR-001 D2).
     const { data: existingRecords, error: fetchError } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('catalog_id, image_url');
 
     if (fetchError) {
@@ -63,6 +66,9 @@ export async function POST(request: NextRequest) {
 
     const existingCatalogIds = new Set(
       (existingRecords || []).map(r => r.catalog_id)
+    );
+    const existingImageUrls = new Set(
+      (existingRecords || []).map(r => r.image_url)
     );
 
     console.log('[RECONCILE] Found', existingCatalogIds.size, 'existing records in database');
@@ -109,8 +115,10 @@ export async function POST(request: NextRequest) {
         status: 'exists',
       };
 
-      // Skip if already in database
-      if (existingCatalogIds.has(catalogId)) {
+      // Skip if already in database (by catalog id OR by image url — the same
+      // file can exist under a different catalog id, and catalog_id is
+      // nullable, so the url check prevents duplicate assets).
+      if (existingCatalogIds.has(catalogId) || existingImageUrls.has(imageUrl)) {
         console.log('[RECONCILE] ⊙ Already exists:', catalogId);
         results.push(result);
         continue;
@@ -131,11 +139,13 @@ export async function POST(request: NextRequest) {
         blurData = null;
       }
 
-      // Step 5: Insert into database
+      // Step 5: Insert into database. Phase 3 fix: target gallery_assets
+      // (the live asset table), not the legacy 0-row `gallery` table. All
+      // inserted columns exist on gallery_assets.
       try {
         const { data: insertData, error: insertError } = await supabaseAdmin
           .schema('lmsy_archive')
-          .from('gallery')
+          .from('gallery_assets')
           .insert({
             image_url: imageUrl,
             caption: null,
@@ -229,10 +239,12 @@ export async function GET(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Get existing catalog IDs
+    // Get existing catalog IDs. Phase 3 fix: gallery_assets is the live
+    // asset table; the legacy `gallery` table has 0 rows and made every
+    // object look missing in preview.
     const { data: existingRecords } = await supabaseAdmin
       .schema('lmsy_archive')
-      .from('gallery')
+      .from('gallery_assets')
       .select('catalog_id');
 
     const existingCatalogIds = new Set(

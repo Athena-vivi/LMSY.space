@@ -6,6 +6,7 @@ import { convertToWebP, type ProcessedImageResult } from '@/lib/image-processing
 import { getAdminEmail } from '@/lib/security/api-auth';
 import { validateUploadFile } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
+import { buildManualDraftRecord } from '@/lib/manual-draft';
 
 export async function POST(request: NextRequest) {
   const authResult = await getAuthenticatedUser(request);
@@ -83,28 +84,25 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
+    // Phase 3: shared manual-draft payload (lib/manual-draft.ts). The previous
+    // inline insert wrote source_platform='manual' with source_url=null, which
+    // violates the draft_items_source_platform_required CHECK and made every
+    // fallback registration fail; both stay NULL here and 'manual' lives in
+    // tags[0]. Same contract as /api/admin/upload/register.
     const { data, error } = await supabaseAdmin
       .from('draft_items')
-      .insert({
-        source_platform: 'manual',
-        source_url: null,
-        source_post_id: catalogId,
-        r2_media_url: r2Result.url,
-        r2_key: r2Path,
-        media_type: 'image',
-        media_metadata: {},
-        title: { en: caption || '', zh: '', th: '' },
-        description: { en: '', zh: '', th: '' },
-        event_date: eventDate,
-        raw_event_date: eventDate,
-        status: 'draft',
-        ingestion_stage: 'ready',
-        ai_translation_status: 'skipped',
-        curator_note: null,
-        tags: tag ? [tag] : [],
-        is_featured: isFeatured,
-        project_id: projectId && projectId !== '' ? projectId : null,
-      })
+      .insert(
+        buildManualDraftRecord({
+          catalogId,
+          r2Key: r2Path,
+          imageUrl: r2Result.url,
+          eventDate,
+          caption: caption || null,
+          tag: tag || null,
+          projectId: projectId || null,
+          isFeatured,
+        })
+      )
       .select()
       .single();
 

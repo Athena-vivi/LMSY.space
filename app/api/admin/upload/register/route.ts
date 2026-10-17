@@ -5,6 +5,7 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getAdminEmail } from '@/lib/security/api-auth';
 import { validateObjectKey } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
+import { buildManualDraftRecord } from '@/lib/manual-draft';
 
 // Object-key prefixes this route is allowed to register.
 const ALLOWED_R2_PREFIXES = ['draft/', 'magazines/', 'gallery/'];
@@ -134,28 +135,24 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
+    // Phase 3: shared manual-draft payload (lib/manual-draft.ts). The previous
+    // inline insert wrote source_platform='manual' with source_url=null, which
+    // violates the draft_items_source_platform_required CHECK and made every
+    // registration fail; both stay NULL here and 'manual' lives in tags[0].
     const { data, error } = await supabaseAdmin
       .from('draft_items')
-      .insert({
-        source_platform: 'manual',
-        source_url: null,
-        source_post_id: catalogId,
-        r2_media_url: imageUrl,
-        r2_key: r2Key,
-        media_type: 'image',
-        media_metadata: {},
-        title: { en: caption || '', zh: '', th: '' },
-        description: { en: '', zh: '', th: '' },
-        event_date: eventDate,
-        raw_event_date: eventDate,
-        status: 'draft',
-        ingestion_stage: 'ready',
-        ai_translation_status: 'skipped',
-        curator_note: null,
-        tags: tag ? [tag] : [],
-        is_featured: isFeatured || false,
-        project_id: projectId && projectId !== '' ? projectId : null,
-      })
+      .insert(
+        buildManualDraftRecord({
+          catalogId,
+          r2Key,
+          imageUrl,
+          eventDate,
+          caption: caption || null,
+          tag: tag || null,
+          projectId: projectId || null,
+          isFeatured: isFeatured || false,
+        })
+      )
       .select()
       .single();
 
