@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { ServiceWorkerProvider } from "@/components/service-worker-provider";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { AuthProvider } from "@/components/auth-provider";
 import { VinylPlayer } from "@/components/vinyl-player";
 import { WhisperFloatingButton } from "@/components/whisper-floating-button";
@@ -103,6 +104,7 @@ export default function RootLayout({
           <ThemeProvider defaultTheme="dark" storageKey="lmsy-theme">
             <LanguageProvider defaultLanguage="en">
               <div className="flex min-h-screen flex-col">
+                <SiteHeader />
                 <main className="flex-1">{children}</main>
                 <SiteFooter />
               </div>

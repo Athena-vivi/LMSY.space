@@ -12,20 +12,7 @@ import { useLanguage } from '@/components/language-provider';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SearchCommand } from '@/components/search-command';
 import { t } from '@/lib/languages';
-
-const mainNavItems = [
-  { key: 'nav.chronicle', href: '/chronicle' },
-  { key: 'nav.exhibitions', href: '/exhibitions' },
-  { key: 'nav.editorial', href: '/editorial' },
-  { key: 'nav.resonance', href: '/resonance' },
-  { key: 'nav.duality', href: '#', hasDropdown: true },
-];
-
-const dualitySubItems = [
-  { key: 'nav.lmsy', href: '/profiles' },
-  { key: 'nav.lookmhee', href: '/profiles/lookmhee' },
-  { key: 'nav.sonya', href: '/profiles/sonya' },
-];
+import { mainNavItems, dualitySubItems } from '@/lib/nav-items';
 
 export function HomeHeader() {
   const [isOpen, setIsOpen] = useState(false);

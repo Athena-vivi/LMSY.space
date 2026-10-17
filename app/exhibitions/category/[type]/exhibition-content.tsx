@@ -8,7 +8,7 @@ import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions } from '@/lib/image-dimensions';
 import { ProjectWithImage, GalleryImage } from './page';
 import { GalleryCanvas } from '@/components/gallery-canvas';
-import { SpaceHubReturn } from '@/components/space-hub-return';
+import { BackButton } from '@/components/back-button';
 import { useState, useCallback } from 'react';
 
 interface ExhibitionContentProps {
@@ -78,11 +78,14 @@ export function ExhibitionContent({ mapping, projects, allImages }: ExhibitionCo
   return (
     <>
       {/* 🌌 SPACE HUB RETURN - Glowing Bear-Rabbit Logo */}
-      <SpaceHubReturn />
 
       <NebulaBackground />
       <div className="min-h-screen py-24 md:py-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back navigation (P4): real history back, falls back to /exhibitions */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
           {/* Category Header */}
           <div className="mb-16 md:mb-24">
             <motion.h1

@@ -25,8 +25,8 @@ export function LanguageSwitcher() {
     return (
       <div className="flex items-center gap-3">
         <span className="text-xs font-sans tracking-wider text-lmsy-yellow font-bold">EN</span>
-        <span className="text-xs font-sans tracking-wider text-ink-2">中</span>
-        <span className="text-xs font-sans tracking-wider text-ink-2">TH</span>
+        <span className="text-xs font-sans tracking-wider text-ink">中</span>
+        <span className="text-xs font-sans tracking-wider text-ink">TH</span>
       </div>
     );
   }
@@ -41,7 +41,7 @@ export function LanguageSwitcher() {
             relative text-xs font-sans tracking-wider transition-all duration-300
             ${language === lang
               ? 'text-lmsy-yellow font-bold'
-              : 'text-ink-2 hover:text-foreground'
+              : 'text-ink hover:text-foreground'
             }
           `}
           whileHover={{ y: -1 }}

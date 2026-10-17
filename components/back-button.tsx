@@ -1,32 +1,35 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 /**
- * 🌌 UNIFIED IMAGE LOGO - Return to Space Hub
- *
- * Uses the lmsy-logo.png image for all back buttons.
- * Used across: whispers, schedule, gallery, chronicle, resonance, editorial, exhibitions, projects, profiles, etc.
- *
- * Features:
- * - Default opacity 20%, 100% on hover
- * - "Back to Space Hub" text reveals on hover
- * - Warp-to-center animation on click
- * - Always returns to homepage
+ * Back navigation (P4): performs a real history back when available;
+ * otherwise falls back to the parent page or the homepage.
+ * Logo opacity raised so the entry point is actually visible (P1).
  */
 export function BackButton() {
   const router = useRouter();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
+  // Parent route: strip the last path segment (detail -> list); '/' has none.
+  const segments = pathname.split('/').filter(Boolean);
+  const parentHref = segments.length > 1 ? `/${segments.slice(0, -1).join('/')}` : '/';
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push('/');
+    // Prefer real history back when the user navigated within the site.
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(parentHref);
+    }
   };
 
   return (
@@ -49,7 +52,7 @@ export function BackButton() {
             src="/lmsy-logo.png"
             alt="LMSY Logo"
             fill
-            className="object-contain opacity-20 group-hover:opacity-100 transition-opacity duration-500"
+            className="object-contain opacity-70 group-hover:opacity-100 transition-opacity duration-500"
             sizes="40px"
             priority
           />

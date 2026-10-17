@@ -7,8 +7,8 @@ import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions } from '@/lib/image-dimensions';
 import { NebulaBackground } from '@/components/nebula-background';
+import { BackButton } from '@/components/back-button';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
-import { SpaceHubReturn } from '@/components/space-hub-return';
 import { CATEGORIES, CategoryType } from './page';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
@@ -238,10 +238,13 @@ export default function ProjectDetailClient({ project, images, categories }: Pro
   return (
     <>
       {/* 🌌 SPACE HUB RETURN - Glowing Bear-Rabbit Logo */}
-      <SpaceHubReturn />
 
       <NebulaBackground />
       <div className="min-h-screen">
+        {/* Back navigation (P4): real history back, falls back to /projects */}
+        <div className="w-full px-4 pt-4 sm:px-6 lg:px-10 xl:px-14">
+          <BackButton />
+        </div>
         <div className="w-full px-4 pt-14 pb-24 sm:px-6 md:pt-20 md:pb-32 lg:px-10 xl:px-14">
           <div className="relative">
             <aside className="xl:fixed xl:top-28 xl:left-14 xl:w-[220px] xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto xl:pr-3">
