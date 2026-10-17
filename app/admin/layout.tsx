@@ -42,9 +42,9 @@ export default function AdminLayout({
     );
   }
 
-  // Login page renders without sidebar
+  // Login page renders without sidebar (but keeps admin language context)
   if (isLoginPage) {
-    return <>{children}</>;
+    return <AdminLangProvider>{children}</AdminLangProvider>;
   }
 
   // Don't render if not admin (redirect will happen via useEffect)

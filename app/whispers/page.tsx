@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 import { BackButton } from '@/components/back-button';
 
 interface Message {
@@ -17,6 +19,7 @@ interface Message {
 
 export default function WhispersPage() {
   const { theme } = useTheme();
+  const { language } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -111,10 +114,10 @@ export default function WhispersPage() {
           setShowForm(false);
         }, 2000);
       } else {
-        setSubmitError(data.error || 'Failed to submit message');
+        setSubmitError(data.error || t(language, 'whispers.failed'));
       }
     } catch (error) {
-      setSubmitError('Network error. Please try again.');
+      setSubmitError(t(language, 'whispers.networkError'));
     } finally {
       setSubmitting(false);
     }
@@ -162,7 +165,7 @@ export default function WhispersPage() {
         }}
         whileHover={{ boxShadow: isDark ? '0 0 30px rgba(251, 191, 36, 0.2)' : '0 0 30px rgba(251, 191, 36, 0.3)' }}
       >
-        [ TRANSMIT_SIGNAL ]
+        {t(language, 'whispers.openForm')}
       </motion.button>
 
       {/* Content */}
@@ -188,7 +191,7 @@ export default function WhispersPage() {
                 WHISPERS
               </h1>
               <p className="text-[10px] md:text-xs tracking-[0.4em] text-ink-2 font-mono uppercase">
-                Collecting the Resonance of Besties
+                {t(language, 'whispers.subtitle')}
               </p>
             </motion.div>
           </div>
@@ -255,7 +258,7 @@ export default function WhispersPage() {
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 >
-                  Searching for Echoes...
+                  {t(language, 'whispers.empty')}
                 </motion.p>
               </div>
             ) : (
@@ -360,7 +363,7 @@ export default function WhispersPage() {
         <footer className="relative py-12 px-6 border-t border-border/5">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-[10px] tracking-[0.2em] text-ink-2 font-mono uppercase">
-              All signals are reviewed before entering the archive
+              {t(language, 'whispers.notice')}
             </p>
           </div>
         </footer>
@@ -417,17 +420,17 @@ export default function WhispersPage() {
                     transition={{ delay: 0.2 }}
                   >
                     <h2 className="font-serif text-3xl text-ink mb-2">
-                      Transmit Your Signal
+                      {t(language, 'whispers.formTitle')}
                     </h2>
                     <p className="text-xs text-ink-2 font-mono uppercase tracking-wider mb-8">
-                      Your whisper will be reviewed before joining the archive
+                      {t(language, 'whispers.formDesc')}
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-10" noValidate>
                       {/* Message - Transparent with animated gradient bottom border */}
                       <div>
                         <label className="block text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase mb-4">
-                          Your Message
+                          {t(language, 'whispers.message')}
                         </label>
                         <div className="relative group">
                           <motion.div
@@ -444,7 +447,7 @@ export default function WhispersPage() {
                               }}
                               onFocus={() => setIsTextareaFocused(true)}
                               onBlur={() => setIsTextareaFocused(false)}
-                              placeholder="Leave a signal in this space..."
+                              placeholder={t(language, 'whispers.messagePlaceholder')}
                               maxLength={500}
                               rows={5}
                               className="w-full px-0 py-4 bg-transparent text-ink-2 placeholder:text-ink-2 focus:outline-none resize-none font-serif text-xl leading-relaxed transition-all duration-300"
@@ -478,7 +481,7 @@ export default function WhispersPage() {
                               animate={{ opacity: 1, y: 0 }}
                               className="text-[10px] font-serif text-red-500/60 mt-2 italic"
                             >
-                              REQUIRED_SIGNAL_MISSING
+                              {t(language, 'whispers.errContent')}
                             </motion.p>
                           )}
                           <p className="text-[11px] text-ink-2 mt-2 text-right font-mono">
@@ -506,7 +509,7 @@ export default function WhispersPage() {
                                   setValidationErrors({ ...validationErrors, author: false });
                                 }
                               }}
-                              placeholder="Your name"
+                              placeholder={t(language, 'whispers.authorPlaceholder')}
                               maxLength={100}
                               className="w-full px-0 py-3 bg-transparent text-ink-2 placeholder:text-ink-2 focus:outline-none font-mono text-sm border-b transition-all duration-300"
                               style={{
@@ -525,7 +528,7 @@ export default function WhispersPage() {
                               animate={{ opacity: 1, y: 0 }}
                               className="text-[10px] font-serif text-red-500/60 mt-2 italic"
                             >
-                              REQUIRED_IDENTITY_MISSING
+                              {t(language, 'whispers.errAuthor')}
                             </motion.p>
                           )}
                         </div>
@@ -537,7 +540,7 @@ export default function WhispersPage() {
                             type="text"
                             value={formData.location}
                             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                            placeholder="City or Galaxy"
+                            placeholder={t(language, 'whispers.locationPlaceholder')}
                             maxLength={200}
                             className="w-full px-0 py-3 bg-transparent text-ink-2 placeholder:text-ink-2 focus:outline-none font-mono text-sm border-b border-foreground/10 focus:border-lmsy-blue/50 transition-colors"
                           />
@@ -590,7 +593,7 @@ export default function WhispersPage() {
                                   }}
                                 />
                                 <span className="text-sm font-mono text-ink-2">
-                                  {color === 'yellow' ? 'Solar' : 'Lunar'}
+                                  {color === 'yellow' ? t(language, 'whispers.solar') : t(language, 'whispers.lunar')}
                                 </span>
                               </div>
                             </motion.button>
@@ -612,7 +615,7 @@ export default function WhispersPage() {
                             }}
                           >
                             <p className="text-sm font-mono text-lmsy-blue">
-                              ✓ Signal transmitted. Awaiting resonance approval...
+                              {t(language, 'whispers.success')}
                             </p>
                           </motion.div>
                         )}
@@ -645,10 +648,10 @@ export default function WhispersPage() {
                         {submitting ? (
                           <span className="flex items-center justify-center gap-3">
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Transmitting...
+                            {t(language, 'whispers.submitting')}
                           </span>
                         ) : (
-                          '[ EMIT_SIGNAL ]'
+                          <span>{t(language, 'whispers.submit')}</span>
                         )}
                       </motion.button>
                     </form>

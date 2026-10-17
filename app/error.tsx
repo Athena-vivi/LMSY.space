@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 /**
  * Route-level error boundary.
@@ -15,6 +17,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { language } = useLanguage();
+
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') {
       console.error('[route-error]', error);
@@ -25,19 +29,19 @@ export default function Error({
     <div className="min-h-screen flex items-center justify-center bg-background px-6">
       <div className="max-w-md text-center">
         <p className="font-mono text-xs tracking-[0.3em] uppercase text-lmsy-yellow/70 mb-4">
-          Transmission interrupted
+          {t(language, 'err.label')}
         </p>
         <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
-          Something went wrong
+          {t(language, 'err.title')}
         </h1>
         <p className="text-ink-2 mb-8">
-          This part of the archive could not be loaded. Please try again.
+          {t(language, 'err.desc')}
         </p>
         <button
           onClick={reset}
           className="px-6 py-2.5 rounded-full text-sm font-medium bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-foreground hover:opacity-90 transition-opacity"
         >
-          Try again
+          {t(language, 'err.retry')}
         </button>
       </div>
     </div>

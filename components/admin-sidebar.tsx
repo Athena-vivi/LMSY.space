@@ -312,13 +312,23 @@ export function AdminSidebar({ isCollapsed, onToggle }: AdminSidebarProps) {
             LMSY.OS
           </span>
         </div>
-        <Link
-          href="/"
-          className="p-2 rounded-lg hover:bg-white/5 transition-colors text-ink-2"
-          aria-label="Exit admin"
-        >
-          <X className="h-4 w-4" strokeWidth={1.5} />
-        </Link>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+            className="rounded-md border border-white/15 px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:text-ink hover:border-white/30 transition-colors"
+            title={lang === 'zh' ? 'Switch to English' : '切换到中文'}
+          >
+            {t('nav.langSwitch')}
+          </button>
+          <Link
+            href="/"
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors text-ink-2"
+            aria-label="Exit admin"
+          >
+            <X className="h-4 w-4" strokeWidth={1.5} />
+          </Link>
+        </div>
       </div>
     </>
   );

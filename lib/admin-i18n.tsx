@@ -309,6 +309,19 @@ const DICT: Record<string, [string, string]> = {
   't.TRANSLATION_SUCCESS': ['翻译完成', 'Translation done'],
   't.TRANSLATION_FAILED': ['翻译失败', 'Translation failed'],
   't.NO_ENG_CONTENT': ['暂无英文内容', 'No English content'],
+
+  // --- Admin login page ---
+  'login.title': ['后台入口', 'Admin Portal'],
+  'login.subtitle': ['输入凭据进入策展工作台', 'Enter your credentials to access the curator dashboard'],
+  'login.email': ['邮箱地址', 'Email Address'],
+  'login.password': ['密码', 'Password'],
+  'login.submit': ['进入后台', 'Sign In to Admin Portal'],
+  'login.signingIn': ['登录中…', 'Signing in...'],
+  'login.entering': ['正在进入轨道…', 'Entering Orbit...'],
+  'login.failed': ['登录失败，请检查凭据。', 'Failed to sign in. Please check your credentials.'],
+  'login.back': ['← 返回网站', '← Back to Website'],
+  'login.protected': ['由 Supabase 身份验证保护', 'Protected by Supabase Authentication'],
+  'login.langLabel': ['语言', 'Language'],
 };
 
 interface AdminLangContextValue {

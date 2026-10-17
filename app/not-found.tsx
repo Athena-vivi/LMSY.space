@@ -4,8 +4,12 @@ import Link from 'next/link';
 import { Home, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 export default function NotFound() {
+  const { language } = useLanguage();
+
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center px-4">
@@ -18,21 +22,21 @@ export default function NotFound() {
             404
           </h1>
           <h2 className="font-serif text-3xl md:text-4xl mb-4 -mt-8">
-            Page Not Found
+            {t(language, 'nf.title')}
           </h2>
           <p className="text-ink-2 max-w-md mx-auto mb-8">
-            The page you are looking for does not exist or has been moved.
+            {t(language, 'nf.desc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/">
               <Button className="gap-2">
                 <Home className="h-4 w-4" />
-                Go Home
+                {t(language, 'nf.home')}
               </Button>
             </Link>
             <Button variant="outline" className="gap-2" onClick={() => window.history.back()}>
               <ArrowLeft className="h-4 w-4" />
-              Go Back
+              {t(language, 'nf.back')}
             </Button>
           </div>
         </motion.div>

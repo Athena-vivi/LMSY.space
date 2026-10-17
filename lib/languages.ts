@@ -125,6 +125,47 @@ export const translations = {
 
     // Micro-Chronicle
     'chronicle.title': 'Milestones',
+    'chronicle.badge': 'Archive Timeline',
+    'chronicle.desc': 'A visual journey through time, gathering milestones, shoots, and quiet archive moments into one continuous record.',
+    'chronicle.hint': 'The right column holds the image-led sequence. Each entry can be opened for a closer look.',
+    'chronicle.entries': 'Entries',
+    'chronicle.type': 'Type',
+    'chronicle.published': 'Published',
+    'chronicle.view': 'View',
+    'chronicle.imageFirst': 'Image First',
+
+    // Whispers (community message wall)
+    'whispers.subtitle': 'Collecting the Resonance of Besties',
+    'whispers.empty': 'Searching for Echoes...',
+    'whispers.notice': 'All signals are reviewed before entering the archive',
+    'whispers.formTitle': 'Transmit Your Signal',
+    'whispers.formDesc': 'Your whisper will be reviewed before joining the archive',
+    'whispers.message': 'Your Message',
+    'whispers.messagePlaceholder': 'Leave a signal in this space...',
+    'whispers.authorPlaceholder': 'Your name',
+    'whispers.locationPlaceholder': 'City or Galaxy',
+    'whispers.errContent': 'REQUIRED_SIGNAL_MISSING',
+    'whispers.errAuthor': 'REQUIRED_IDENTITY_MISSING',
+    'whispers.solar': 'Solar',
+    'whispers.lunar': 'Lunar',
+    'whispers.success': 'Signal transmitted. Awaiting resonance approval...',
+    'whispers.submitting': 'Transmitting...',
+    'whispers.submit': '[ EMIT_SIGNAL ]',
+    'whispers.openForm': '[ TRANSMIT_SIGNAL ]',
+    'whispers.failed': 'Failed to submit message',
+    'whispers.networkError': 'Network error. Please try again.',
+
+    // 404 not-found
+    'nf.title': 'Page Not Found',
+    'nf.desc': 'The page you are looking for does not exist or has been moved.',
+    'nf.home': 'Go Home',
+    'nf.back': 'Go Back',
+
+    // Route error boundary
+    'err.label': 'Transmission interrupted',
+    'err.title': 'Something went wrong',
+    'err.desc': 'This part of the archive could not be loaded. Please try again.',
+    'err.retry': 'Try again',
 
     // Editorial
     'editorial.title': 'Editorial',
@@ -284,6 +325,47 @@ export const translations = {
 
     // Micro-Chronicle
     'chronicle.title': '里程碑',
+    'chronicle.badge': '档案时间线',
+    'chronicle.desc': '一场穿越时间的视觉旅程，将里程碑、拍摄与安静的档案时刻汇聚为连续的记录。',
+    'chronicle.hint': '右栏是以图片为主的序列，每个条目都可以打开细看。',
+    'chronicle.entries': '条目',
+    'chronicle.type': '类型',
+    'chronicle.published': '已发布',
+    'chronicle.view': '视图',
+    'chronicle.imageFirst': '图片优先',
+
+    // Whispers (community message wall)
+    'whispers.subtitle': '收集挚友们的共鸣',
+    'whispers.empty': '正在寻找回声…',
+    'whispers.notice': '所有信号在进入档案前都会经过审核',
+    'whispers.formTitle': '发送你的信号',
+    'whispers.formDesc': '你的低语在加入档案前会经过审核',
+    'whispers.message': '你的留言',
+    'whispers.messagePlaceholder': '在这片空间留下一束信号…',
+    'whispers.authorPlaceholder': '你的名字',
+    'whispers.locationPlaceholder': '城市或星系',
+    'whispers.errContent': '缺少必要的信号内容',
+    'whispers.errAuthor': '缺少必要的身份信息',
+    'whispers.solar': '日辉',
+    'whispers.lunar': '月映',
+    'whispers.success': '✓ 信号已发送，等待共鸣审核…',
+    'whispers.submitting': '发送中…',
+    'whispers.submit': '[ 发射信号 ]',
+    'whispers.openForm': '[ 发送信号 ]',
+    'whispers.failed': '留言提交失败',
+    'whispers.networkError': '网络错误，请重试。',
+
+    // 404 not-found
+    'nf.title': '页面不存在',
+    'nf.desc': '你要找的页面不存在或已被移动。',
+    'nf.home': '回到首页',
+    'nf.back': '返回上一页',
+
+    // Route error boundary
+    'err.label': '信号传输中断',
+    'err.title': '出了点问题',
+    'err.desc': '档案的这一部分暂时无法加载，请重试。',
+    'err.retry': '重试',
 
     // Editorial
     'editorial.title': '杂志特辑',
@@ -443,6 +525,47 @@ export const translations = {
 
     // Micro-Chronicle
     'chronicle.title': 'ช่วงเวลาสำคัญ',
+    'chronicle.badge': 'เส้นเวลาคลัง',
+    'chronicle.desc': 'การเดินทางผ่านเวลา เซ็ตกระสุนของไมล์สโตน การถ่ายภาพ และช่วงเวลาอันเงียบงัน รวมเป็นบันทึกต่อเนื่องหนึ่งเดียว',
+    'chronicle.hint': 'คอลัมน์ขวาเป็นลำดับที่นำด้วยภาพ แต่ละรายการสามารถเปิดดูแบบใกล้ชิดได้',
+    'chronicle.entries': 'รายการ',
+    'chronicle.type': 'ประเภท',
+    'chronicle.published': 'เผยแพร่แล้ว',
+    'chronicle.view': 'มุมมอง',
+    'chronicle.imageFirst': 'ภาพเป็นหลัก',
+
+    // Whispers (community message wall)
+    'whispers.subtitle': 'สะสมเสียงสะท้อนของเบสตี้',
+    'whispers.empty': 'กำลังค้นหาเสียงสะท้อน…',
+    'whispers.notice': 'ทุกสัญญาณต้องผ่านการตรวจสอบก่อนเข้าคลัง',
+    'whispers.formTitle': 'ส่งสัญญาณของคุณ',
+    'whispers.formDesc': 'เสียงกระซิบของคุณต้องผ่านการตรวจสอบก่อนเข้าร่วมคลัง',
+    'whispers.message': 'ข้อความของคุณ',
+    'whispers.messagePlaceholder': 'ทิ้งสัญญาณไว้ในพื้นที่นี้…',
+    'whispers.authorPlaceholder': 'ชื่อของคุณ',
+    'whispers.locationPlaceholder': 'เมืองหรือดวงจันทร์',
+    'whispers.errContent': 'ขาดเนื้อสัญญาณที่จำเป็น',
+    'whispers.errAuthor': 'ขาดข้อมูลประจำตัวที่จำเป็น',
+    'whispers.solar': 'สุริยคราส',
+    'whispers.lunar': 'จันทรคราส',
+    'whispers.success': '✓ ส่งสัญญาณแล้ว รอการอนุมัติเสียงสะท้อน…',
+    'whispers.submitting': 'กำลังส่ง…',
+    'whispers.submit': '[ ปล่อยสัญญาณ ]',
+    'whispers.openForm': '[ ส่งสัญญาณ ]',
+    'whispers.failed': 'ส่งข้อความไม่สำเร็จ',
+    'whispers.networkError': 'เครือข่ายผิดพลาด กรุณาลองใหม่',
+
+    // 404 not-found
+    'nf.title': 'ไม่พบหน้าเว็บ',
+    'nf.desc': 'หน้าที่คุณค้นหาไม่มีอยู่หรือถูกย้ายไปแล้ว',
+    'nf.home': 'กลับหน้าแรก',
+    'nf.back': 'ย้อนกลับ',
+
+    // Route error boundary
+    'err.label': 'การส่งสัญญาณถูกขัดจังหวะ',
+    'err.title': 'เกิดข้อผิดพลาด',
+    'err.desc': 'ส่วนนี้ของคลังโหลดไม่ได้ กรุณาลองอีกครั้ง',
+    'err.retry': 'ลองอีกครั้ง',
 
     // Editorial
     'editorial.title': 'นิตยสาร',

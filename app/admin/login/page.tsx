@@ -5,9 +5,11 @@ import { motion } from 'framer-motion';
 import { Lock, Mail, AlertCircle, Shield, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth-provider';
+import { useAdminLang } from '@/lib/admin-i18n';
 
 export default function AdminLoginPage() {
   const { signIn, loading } = useAuth();
+  const { lang, setLang, t } = useAdminLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +32,7 @@ export default function AdminLoginPage() {
         window.location.href = '/admin';
       }, 500);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please check your credentials.');
+      setError(err.message || t('login.failed'));
       setIsSubmitting(false);
     }
   };
@@ -69,13 +71,13 @@ export default function AdminLoginPage() {
               {/* Title */}
               <h1 className="font-serif text-3xl font-bold mb-3">
                 <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                  Admin Portal
+                  {t('login.title')}
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-sm text-ink-2">
-                Enter your credentials to access the curator dashboard
+                {t('login.subtitle')}
               </p>
             </div>
           </div>
@@ -98,7 +100,7 @@ export default function AdminLoginPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Mail className="w-4 h-4 text-ink-2" />
-                  Email Address
+                  {t('login.email')}
                 </label>
                 <div className="relative">
                   <input
@@ -118,7 +120,7 @@ export default function AdminLoginPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Lock className="w-4 h-4 text-ink-2" />
-                  Password
+                  {t('login.password')}
                 </label>
                 <div className="relative">
                   <input
@@ -153,16 +155,28 @@ export default function AdminLoginPage() {
                 {isSubmitting || loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-foreground/30 border-t-transparent rounded-full animate-spin" />
-                    {isSubmitting && !error ? 'Entering Orbit...' : 'Signing in...'}
+                    {isSubmitting && !error ? t('login.entering') : t('login.signingIn')}
                   </>
                 ) : (
                   <>
                     <Shield className="w-5 h-5" />
-                    Sign In to Admin Portal
+                    {t('login.submit')}
                   </>
                 )}
               </motion.button>
             </form>
+
+            {/* Language Switcher */}
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <span className="text-xs text-ink-2">{t('login.langLabel')}</span>
+              <button
+                type="button"
+                onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+                className="rounded-md border border-white/15 px-2.5 py-1 text-[12px] font-medium text-ink-2 hover:text-ink hover:border-white/30 transition-colors"
+              >
+                {lang === 'zh' ? 'EN' : '中文'}
+              </button>
+            </div>
 
             {/* Back to Home */}
             <div className="mt-8 text-center">
@@ -171,7 +185,7 @@ export default function AdminLoginPage() {
                 className="text-sm text-ink-2 hover:text-foreground transition-colors inline-flex items-center gap-2"
               >
                 <span>←</span>
-                Back to Website
+                {t('login.back')}
               </Link>
             </div>
           </div>
@@ -180,7 +194,7 @@ export default function AdminLoginPage() {
           <div className="px-8 py-4 bg-muted/30 border-t border-border/50">
             <div className="flex items-center justify-center gap-2 text-xs text-ink-2">
               <Shield className="w-4 h-4" />
-              <span>Protected by Supabase Authentication</span>
+              <span>{t('login.protected')}</span>
             </div>
           </div>
         </div>
