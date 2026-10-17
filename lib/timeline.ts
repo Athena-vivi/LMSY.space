@@ -1,105 +1,156 @@
-import type { LocalizedText } from '@/lib/localized-content';
-import { normalizeLocalizedText } from '@/lib/localized-content';
+/**
+ * Chronicle timeline data source (phase-4 batch 2, Task 2).
+ *
+ * Chronicle is now a derived view over the site's real content objects:
+ *   - project events, dated by projects.release_date
+ *   - image-group events, dated by gallery_assets.event_date, grouped per
+ *     (project, event_date) so hundreds of assets collapse into a handful of
+ *     thumbnail sets
+ *
+ * The previous source (published rows from the ingestion pipeline) is retired
+ * on purpose; the six legacy published drafts stay untouched in the database
+ * and remain an admin-side pending decision.
+ *
+ * Visibility: both queries go through applyPublicProjectFilter (the same
+ * rule as every other public surface) - switching data sources must not
+ * bypass portal_visible / the archived rule.
+ *
+ * No synthetic entry numbers (the old array-index ids are gone):
+ * React keys are the database uuid or the verifiable stable combination
+ * `assets-{project_id}-{event_date}`.
+ */
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { normalizeLocalizedText, type LocalizedText } from '@/lib/localized-content';
 
-export interface TimelineEvent {
+// Pure helpers live in an alias-free module so they are directly testable.
+export { formatChronicleDate, extractYears } from '@/lib/chronicle-dates';
+
+export interface TimelineImageRef {
   id: string;
-  date: string;
-  eventDate: string;
-  title: string;
-  titleI18n?: LocalizedText;
-  type: 'gallery' | 'project' | 'schedule';
-  /**
-   * Display-only entry number (LMSY-D-NNN), generated from the array index
-   * and rendered by components/chronicle-timeline.tsx. ADR-001 D5 wants this
-   * replaced by a persistent number eventually, but Chronicle display
-   * changes are explicitly out of scope for the phase-2 refactor, so the
-   * field stays until the webmaster ratifies a Chronicle data model.
-   */
-  archiveNumber: string;
-  description?: string;
-  descriptionI18n?: LocalizedText;
-  href: string;
-  thumbnail?: string;
-  imageUrl?: string;
-  mediaType?: 'image' | 'video';
+  image_url: string;
+  caption: string | null;
+  caption_i18n: LocalizedText | null;
+  catalog_id: string | null;
 }
 
-export async function getAllTimelineEvents(): Promise<TimelineEvent[]> {
+export type ChronicleEvent =
+  | {
+      kind: 'project';
+      id: string;
+      /** Raw ISO date (YYYY-MM-DD) from projects.release_date. */
+      date: string;
+      title: string;
+      titleI18n: LocalizedText;
+      category: string;
+      href: string;
+    }
+  | {
+      kind: 'images';
+      id: string;
+      /** Raw ISO date (YYYY-MM-DD) from gallery_assets.event_date. */
+      date: string;
+      projectId: string;
+      projectTitle: string;
+      projectTitleI18n: LocalizedText;
+      href: string;
+      images: TimelineImageRef[];
+    };
+
+function projectHref(category: string, id: string): string {
+  // Canonical detail entry (phase-4 batch 2, Task 3): editorial works are
+  // read through the Editorial surface, everything else through Projects.
+  return category === 'editorial' ? `/editorial/${id}` : `/projects/${id}`;
+}
+
+export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
   const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
   const supabase = getSupabaseAdmin();
 
-  const { data: draftItems, error } = await supabase
-    .from('draft_items')
-    .select('*')
-    .eq('status', 'published')
-    .eq('chronicle_visible', true)
-    .order('event_date', { ascending: false, nullsFirst: false });
+  // 1. Public projects (the same filter as list/detail/search/sitemap).
+  const { data: projects, error: projectsError } = await applyPublicProjectFilter(
+    supabase
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, title, title_i18n, category, release_date')
+  );
 
-  if (error) {
-    console.error('[TIMELINE] Failed to fetch draft items:', error);
+  if (projectsError) {
+    console.error('[CHRONICLE] Failed to fetch public projects:', projectsError);
     return [];
   }
 
-  if (!draftItems || draftItems.length === 0) {
-    return [];
-  }
+  const rows = projects || [];
+  const events: ChronicleEvent[] = [];
 
-  const events: TimelineEvent[] = draftItems.map((item, index) => {
-    const date = item.event_date || item.created_at;
-    const dateObj = new Date(date);
-    const eventDate = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${String(dateObj.getDate()).padStart(2, '0')}`;
-    const archiveNumber = `LMSY-D-${String(index + 1).padStart(3, '0')}`;
-
-    const titleI18n = normalizeLocalizedText(
-      item.chronicle_title_i18n || item.title,
-      item.chronicle_title || item.title?.en || item.title?.zh || item.title?.th || 'Untitled'
-    );
-    const descriptionI18n = normalizeLocalizedText(
-      item.chronicle_excerpt_i18n || item.description,
-      item.chronicle_excerpt || item.description?.en || item.description?.zh || item.description?.th || ''
-    );
-
-    return {
-      id: item.id,
+  for (const p of rows) {
+    const date = (p.release_date as string | null) || '';
+    if (!date) continue; // projects without a release date have no timeline slot
+    events.push({
+      kind: 'project',
+      id: `project-${p.id}`,
       date,
-      eventDate,
-      title: titleI18n.en || titleI18n.zh || titleI18n.th || 'Untitled',
-      titleI18n,
-      type: 'gallery',
-      archiveNumber,
-      description: descriptionI18n.en || descriptionI18n.zh || descriptionI18n.th || undefined,
-      descriptionI18n,
-      href: '/chronicle',
-      imageUrl: item.r2_media_url || undefined,
-      mediaType: item.media_type === 'video' ? 'video' : 'image',
-    };
+      title: p.title as string,
+      titleI18n: normalizeLocalizedText(p.title_i18n as LocalizedText | null, p.title as string),
+      category: p.category as string,
+      href: projectHref(p.category as string, p.id as string),
+    });
+  }
+
+  // 2. Image groups for those projects (assets are always project-linked:
+  //    verified 0 rows with NULL project_id).
+  if (rows.length > 0) {
+    const { data: assets, error: assetsError } = await supabase
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('id, image_url, event_date, caption, caption_i18n, catalog_id, project_id')
+      .in(
+        'project_id',
+        rows.map((r) => r.id)
+      )
+      .not('event_date', 'is', null);
+
+    if (assetsError) {
+      console.error('[CHRONICLE] Failed to fetch public assets:', assetsError);
+      return [];
+    }
+
+    const projectById = new Map(rows.map((r) => [r.id, r]));
+    const groups = new Map<string, TimelineImageRef[]>();
+
+    for (const a of assets || []) {
+      const key = `${a.project_id}|${a.event_date}`;
+      const bucket = groups.get(key) || [];
+      bucket.push({
+        id: a.id,
+        image_url: a.image_url,
+        caption: (a.caption as string | null) ?? null,
+        caption_i18n: normalizeLocalizedText(a.caption_i18n as LocalizedText | null, (a.caption as string | null) ?? ''),
+        catalog_id: (a.catalog_id as string | null) ?? null,
+      });
+      groups.set(key, bucket);
+    }
+
+    for (const [key, images] of groups) {
+      const [projectId, date] = key.split('|');
+      const project = projectById.get(projectId);
+      if (!project) continue;
+      events.push({
+        kind: 'images',
+        id: `assets-${projectId}-${date}`,
+        date,
+        projectId,
+        projectTitle: project.title as string,
+        projectTitleI18n: normalizeLocalizedText(project.title_i18n as LocalizedText | null, project.title as string),
+        href: projectHref(project.category as string, projectId),
+        images,
+      });
+    }
+  }
+
+  // Newest first; on the same date a project entry leads its image set.
+  return events.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    if (a.kind !== b.kind) return a.kind === 'project' ? -1 : 1;
+    return a.id.localeCompare(b.id);
   });
-
-  return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
-
-export function getTypeColor(type: TimelineEvent['type']): string {
-  switch (type) {
-    case 'gallery':
-      return 'text-lmsy-yellow';
-    case 'project':
-      return 'text-lmsy-blue';
-    case 'schedule':
-      return 'text-foreground';
-    default:
-      return 'text-muted-foreground';
-  }
-}
-
-export function getTypeIcon(type: TimelineEvent['type']): string {
-  switch (type) {
-    case 'gallery':
-      return 'Image';
-    case 'project':
-      return 'Film';
-    case 'schedule':
-      return 'Calendar';
-    default:
-      return 'Circle';
-  }
 }

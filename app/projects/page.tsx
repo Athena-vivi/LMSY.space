@@ -256,7 +256,12 @@ export default function ProjectsPage() {
                               size="lg"
                               className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-foreground hover:opacity-90"
                             >
-                              <Link href={`/projects/${project.id}`}>
+                              {/* Canonical detail entry (phase-4 batch 2):
+                                  editorial works open in the Editorial
+                                  surface, everything else in Projects. */}
+                              <Link
+                                href={project.category === 'editorial' ? `/editorial/${project.id}` : `/projects/${project.id}`}
+                              >
                                 View Details
                               </Link>
                             </Button>

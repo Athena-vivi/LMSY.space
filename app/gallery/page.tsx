@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { supabase, type GalleryItem } from '@/lib/supabase';
+import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import Lightbox from './lightbox';
 import { BackButton } from '@/components/back-button';
 import { getImageUrl } from '@/lib/image-url';
@@ -30,12 +31,28 @@ const PAGE_SIZE = 60;
 
 // Minimal project info for the "view project" back-link. Fetched in one
 // batched query per loaded page; rows the anon client cannot see (hidden
-// admin containers) simply stay absent from the map, which hides the link -
-// the asset itself keeps the exact same visibility as before this change.
+// admin containers) simply stay absent from the map, which hides the link.
 interface ProjectRef {
   id: string;
   title: string;
   title_i18n: Record<string, string | null> | null;
+}
+
+// Phase-4 batch 2, Task 1: the gallery now shares the site-wide public
+// visibility rule. The visible-project id set is fetched once with the same
+// applyPublicProjectFilter helper every other public page uses; asset queries
+// are then constrained with .in('project_id', ids). Every gallery_assets row
+// carries a project_id (verified: 0 NULL), so this hides exactly the 9 assets
+// that belong to portal_visible=false / archived projects, in the database
+// result set itself - not by hiding cards client-side. On lookup failure the
+// id set stays empty, which fail-closes the gallery (empty grid) instead of
+// leaking hidden assets.
+async function fetchPublicProjectIds(): Promise<string[]> {
+  const { data, error } = await applyPublicProjectFilter(
+    supabase.schema('lmsy_archive').from('projects').select('id')
+  );
+  if (error || !data) return [];
+  return data.map((row) => (row as { id: string }).id);
 }
 
 async function fetchProjectRefs(ids: string[]): Promise<Record<string, ProjectRef>> {
@@ -58,11 +75,18 @@ const GRID_SIZES = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 // matched with .eq(), they need .is('tag', null).
 const UNTAGGED = '__untagged__';
 
-async function fetchGalleryPage(from: number, tag: string) {
+async function fetchGalleryPage(from: number, tag: string, projectIds: string[]) {
+  if (projectIds.length === 0) {
+    // Fail-closed: no visible projects resolved (or lookup failed) -> the
+    // result set is empty, never "everything".
+    return { rows: [] as GalleryItem[], failed: false };
+  }
+
   let query = supabase
     .schema('lmsy_archive')
     .from('gallery_assets')
-    .select(GALLERY_COLUMNS);
+    .select(GALLERY_COLUMNS)
+    .in('project_id', projectIds);
 
   if (tag === UNTAGGED) {
     query = query.is('tag', null);
@@ -87,16 +111,26 @@ export default function GalleryPage() {
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [lightboxImage, setLightboxImage] = useState<GalleryItem | null>(null);
   const [projectMap, setProjectMap] = useState<Record<string, ProjectRef>>({});
+  // Public-visibility gate (phase-4 batch 2): null = not resolved yet, so the
+  // first asset query waits for the visible-project id set.
+  const [projectIds, setProjectIds] = useState<string[] | null>(null);
   // Search results link to /gallery#<asset-id>; remember the anchor so the
   // grid can auto-load pages until the target image is present, then scroll.
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
   const { language } = useLanguage();
 
   useEffect(() => {
+    let active = true;
+    fetchPublicProjectIds().then((ids) => {
+      if (active) setProjectIds(ids);
+    });
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     if (hash && hash.length > 1) {
       setPendingAnchor(decodeURIComponent(hash.slice(1)));
     }
+    return () => {
+      active = false;
+    };
   }, []);
 
   const mergeProjectRefs = useCallback(async (rows: GalleryItem[]) => {
@@ -111,13 +145,15 @@ export default function GalleryPage() {
   }, []);
 
   // Reload from the first page whenever the filter changes (filtering happens
-  // in the database, not on a fully-loaded client array).
+  // in the database, not on a fully-loaded client array). Waits for the
+  // visibility id set so the first paint can never include hidden assets.
   useEffect(() => {
+    if (projectIds === null) return;
     let active = true;
     setLoading(true);
     (async () => {
       try {
-        const { rows, failed } = await fetchGalleryPage(0, selectedTag);
+        const { rows, failed } = await fetchGalleryPage(0, selectedTag, projectIds);
         if (!active) return;
         setImages(rows);
         setHasMore(!failed && rows.length === PAGE_SIZE);
@@ -131,20 +167,20 @@ export default function GalleryPage() {
     return () => {
       active = false;
     };
-  }, [selectedTag, mergeProjectRefs]);
+  }, [selectedTag, projectIds, mergeProjectRefs]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || projectIds === null) return;
     setLoadingMore(true);
     try {
-      const { rows, failed } = await fetchGalleryPage(images.length, selectedTag);
+      const { rows, failed } = await fetchGalleryPage(images.length, selectedTag, projectIds);
       setImages((prev) => [...prev, ...rows]);
       setHasMore(!failed && rows.length === PAGE_SIZE);
       mergeProjectRefs(rows);
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, images.length, selectedTag, mergeProjectRefs]);
+  }, [loadingMore, hasMore, images.length, selectedTag, projectIds, mergeProjectRefs]);
 
   // Resolve /gallery#<id> anchors (search results deep-link here): scroll to
   // the target once it is rendered. If it is on a not-yet-loaded page, keep
@@ -169,10 +205,12 @@ export default function GalleryPage() {
   }, [pendingAnchor, loading, hasMore, loadingMore, images, loadMore]);
 
   // Tag buttons must match tag values that actually exist in the database
-  // (audit P1-3). Verified distribution: Magazine 237, Advertising 54,
-  // STAGE 12, STILL 9, Telegram 3, untagged 15. "Telegram" is ingest-source
-  // metadata rather than a content category, so it is not offered as a
-  // user-facing filter (those rows remain visible under All).
+  // (audit P1-3). Distribution across publicly visible projects: Magazine 237,
+  // Advertising 54, STAGE 12, STILL 9, Telegram 3, untagged 15. "Telegram" is
+  // ingest-source metadata rather than a content category, so it is not
+  // offered as a user-facing filter. Since the visibility gate (phase-4 batch
+  // 2) the counts are computed over visible projects only - the few hidden
+  // Telegram/untagged rows no longer enter any result set.
   const tags = [
     { key: 'gallery.tagAll', value: 'All' },
     { key: 'gallery.tagMagazine', value: 'Magazine' },

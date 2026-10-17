@@ -33,13 +33,11 @@ interface GalleryImage {
 interface EditorialDetailContentProps {
   magazine: Magazine;
   galleryImages: GalleryImage[];
-  selfHealed: boolean;
 }
 
 export function EditorialDetailContent({
   magazine,
   galleryImages,
-  selfHealed,
 }: EditorialDetailContentProps) {
   const { language } = useLanguage();
   const localizedTitle = getLocalizedText(magazine.title_i18n, language, magazine.title);
@@ -63,21 +61,6 @@ export function EditorialDetailContent({
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Self-Healing Notification */}
-      {selfHealed && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-lmsy-yellow/10 border-b border-lmsy-yellow/30 py-3 px-6"
-        >
-          <div className="max-w-7xl mx-auto text-center">
-            <p className="font-mono text-xs text-lmsy-yellow/80 tracking-wider">
-              🤖 AUTO-SALVAGE: {galleryImages.length} orphaned image(s) recovered from archive
-            </p>
-          </div>
-        </motion.div>
-      )}
-
       {/* Header */}
       <header className="relative z-10 px-6 py-8 md:px-12 md:py-12 border-b border-white/5">
         <div className="flex items-start justify-between max-w-7xl mx-auto">
@@ -93,7 +76,8 @@ export function EditorialDetailContent({
               {localizedTitle}
             </h1>
             <p className="font-mono text-xs text-ink-2 tracking-[0.3em]">
-              {magazine.catalog_id || 'LMSY-ED'}
+              {/* ADR-001 D5: real persistent catalog_id only - no generated stand-in */}
+              {magazine.catalog_id}
             </p>
           </motion.div>
         </div>
@@ -155,37 +139,29 @@ export function EditorialDetailContent({
           )}
 
           {/* Magazine Cover - Ratio Sovereignty Layout */}
-          {magazine.cover_url && (() => {
-            const coverUrl = getImageUrl(magazine.cover_url);
-            console.log('[PATH_SYNC] Detail Cover:', {
-              title: localizedTitle,
-              finalSrc: coverUrl,
-              inputUrl: magazine.cover_url,
-            });
-            return (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                className="mb-16"
-              >
-                {/* 🔒 RATIO SOVEREIGNTY: No aspect-ratio, no fill mode */}
-                <div className="w-full max-w-5xl mx-auto">
-                  <Image
-                    src={coverUrl || ''}
-                    alt={localizedTitle}
-                    width={1200}
-                    height={1600}
-                    className="w-full h-auto rounded-xl"
-                    placeholder="empty"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 1200px"
-                    priority
-                    unoptimized
-                  />
-                </div>
-              </motion.div>
-            );
-          })()}
+          {magazine.cover_url && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="mb-16"
+            >
+              {/* 🔒 RATIO SOVEREIGNTY: No aspect-ratio, no fill mode */}
+              <div className="w-full max-w-5xl mx-auto">
+                <Image
+                  src={getImageUrl(magazine.cover_url) || ''}
+                  alt={localizedTitle}
+                  width={1200}
+                  height={1600}
+                  className="w-full h-auto rounded-xl"
+                  placeholder="empty"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 1200px"
+                  priority
+                  unoptimized
+                />
+              </div>
+            </motion.div>
+          )}
         </div>
       </section>
 
@@ -246,7 +222,7 @@ export function EditorialDetailContent({
       <footer className="relative border-t border-white/5 py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <p className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
-            LMSY.SPACE · MAGAZINE_ARCHIVE · {magazine.catalog_id || 'LMSY-ED'} · {totalArtifacts} ARTIFACTS
+            LMSY.SPACE · MAGAZINE_ARCHIVE{magazine.catalog_id ? ` · ${magazine.catalog_id}` : ''} · {totalArtifacts} ARTIFACTS
           </p>
         </div>
       </footer>

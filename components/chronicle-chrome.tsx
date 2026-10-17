@@ -1,15 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import { BackButton } from '@/components/back-button';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 
+interface ChronicleChromeProps {
+  eventCount: number;
+  imageCount: number;
+  availableYears: string[];
+  activeYear: string | null;
+}
+
 /**
- * Client-side chrome for the chronicle page sidebar (badge, title, description,
- * meta rows). Extracted from the server page so UI strings can follow the
- * visitor's language.
+ * Client-side chrome for the chronicle page sidebar (badge, title, year
+ * filter, meta rows). The year filter drives the ?year=YYYY param that the
+ * homepage milestone cards link to.
  */
-export function ChronicleChrome({ eventCount }: { eventCount: number }) {
+export function ChronicleChrome({ eventCount, imageCount, availableYears, activeYear }: ChronicleChromeProps) {
   const { language } = useLanguage();
 
   return (
@@ -38,11 +46,36 @@ export function ChronicleChrome({ eventCount }: { eventCount: number }) {
         </p>
       </div>
 
-      <div className="mb-6 max-w-[220px] border-l border-lmsy-blue/25 pl-4">
-        <p className="text-sm leading-relaxed text-ink-2">
-          {t(language, 'chronicle.hint')}
-        </p>
-      </div>
+      {/* Year filter: only years that actually contain events are offered.
+          The active year links back to the unfiltered view. */}
+      {availableYears.length > 0 && (
+        <div className="mb-6 max-w-[220px]">
+          <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.22em] text-ink-2">
+            {t(language, 'chronicle.yearFilter')}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {availableYears.map((year) =>
+              year === activeYear ? (
+                <Link
+                  key={year}
+                  href="/chronicle"
+                  className="rounded-full border border-transparent bg-gradient-to-r from-lmsy-yellow to-lmsy-blue px-3 py-1 text-xs font-medium text-ink"
+                >
+                  {year} ✕
+                </Link>
+              ) : (
+                <Link
+                  key={year}
+                  href={`/chronicle?year=${year}`}
+                  className="rounded-full border border-border bg-muted px-3 py-1 text-xs text-ink-2 transition-colors hover:border-lmsy-blue hover:text-lmsy-blue"
+                >
+                  {year}
+                </Link>
+              )
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-[220px] space-y-3 border-t border-white/10 pt-5">
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-ink-2">
@@ -51,11 +84,11 @@ export function ChronicleChrome({ eventCount }: { eventCount: number }) {
         </div>
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-ink-2">
           <span>{t(language, 'chronicle.type')}</span>
-          <span className="text-ink-2">{t(language, 'chronicle.published')}</span>
+          <span className="text-ink-2">{t(language, 'chronicle.sourceLabel')}</span>
         </div>
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.22em] text-ink-2">
           <span>{t(language, 'chronicle.view')}</span>
-          <span className="text-ink-2">{t(language, 'chronicle.imageFirst')}</span>
+          <span className="text-ink-2">{imageCount}</span>
         </div>
       </div>
     </aside>

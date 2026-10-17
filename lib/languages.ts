@@ -128,15 +128,31 @@ export const translations = {
     // Longform
 
     // Micro-Chronicle
-    'chronicle.title': 'Milestones',
+    'chronicle.title': 'Chronicle',
     'chronicle.badge': 'Archive Timeline',
-    'chronicle.desc': 'A visual journey through time, gathering milestones, shoots, and quiet archive moments into one continuous record.',
-    'chronicle.hint': 'The right column holds the image-led sequence. Each entry can be opened for a closer look.',
+    'chronicle.desc': 'A chronological view of the works and images on this site - every release, shoot and moment in one continuous record.',
+    'chronicle.hint': 'Project cards open the work; image cards open a lightbox with a link to the project.',
     'chronicle.entries': 'Entries',
-    'chronicle.type': 'Type',
-    'chronicle.published': 'Published',
-    'chronicle.view': 'View',
-    'chronicle.imageFirst': 'Image First',
+    'chronicle.type': 'Source',
+    'chronicle.sourceLabel': 'Works & Images',
+    'chronicle.view': 'Images',
+    'chronicle.yearFilter': 'Year',
+    'chronicle.clearYear': 'View all years',
+    'chronicle.emptyAll': 'No events recorded yet.',
+    'chronicle.emptyYear': 'No events in {year}.',
+    'chronicle.eventProject': 'Project',
+    'chronicle.eventImages': 'Images',
+    'chronicle.viewProject': 'View Project',
+    'chronicle.imageOne': 'image',
+    'chronicle.imageMany': 'images',
+
+    // Resonance (music section - not launched yet)
+    'resonance.comingSoon': 'Coming Soon',
+    'resonance.comingSoonDesc': 'The music section is being prepared. Nothing has been announced yet - this page will light up when there is something real to play.',
+
+    // Editorial empty state
+    'editorial.emptyTitle': 'No editorials available yet',
+    'editorial.emptyDesc': 'Curated magazine features will appear here once published.',
 
     // Whispers (community message wall)
     'whispers.subtitle': 'Collecting the Resonance of Besties',
@@ -337,15 +353,31 @@ export const translations = {
     // Longform
 
     // Micro-Chronicle
-    'chronicle.title': '里程碑',
+    'chronicle.title': '编年史',
     'chronicle.badge': '档案时间线',
-    'chronicle.desc': '一场穿越时间的视觉旅程，将里程碑、拍摄与安静的档案时刻汇聚为连续的记录。',
-    'chronicle.hint': '右栏是以图片为主的序列，每个条目都可以打开细看。',
+    'chronicle.desc': '按时间探索站内的作品与图片——每一次发布、拍摄与重要时刻，汇成一条连续的记录。',
+    'chronicle.hint': '作品卡直达作品页；图片卡打开灯箱，并可前往所属作品。',
     'chronicle.entries': '条目',
-    'chronicle.type': '类型',
-    'chronicle.published': '已发布',
-    'chronicle.view': '视图',
-    'chronicle.imageFirst': '图片优先',
+    'chronicle.type': '来源',
+    'chronicle.sourceLabel': '作品与图片',
+    'chronicle.view': '图片',
+    'chronicle.yearFilter': '年份',
+    'chronicle.clearYear': '查看全部年份',
+    'chronicle.emptyAll': '暂无时间线记录。',
+    'chronicle.emptyYear': '{year} 年暂无记录。',
+    'chronicle.eventProject': '作品',
+    'chronicle.eventImages': '图片',
+    'chronicle.viewProject': '查看所属作品',
+    'chronicle.imageOne': '张',
+    'chronicle.imageMany': '张',
+
+    // Resonance (music section - not launched yet)
+    'resonance.comingSoon': '即将上线',
+    'resonance.comingSoonDesc': '音乐板块正在筹备中，目前尚未有任何正式发布——有真实内容时这里会第一时间点亮。',
+
+    // Editorial empty state
+    'editorial.emptyTitle': '暂无可展示的杂志特辑',
+    'editorial.emptyDesc': '正式发布的杂志特辑会在这里出现。',
 
     // Whispers (community message wall)
     'whispers.subtitle': '收集挚友们的共鸣',
@@ -546,15 +578,31 @@ export const translations = {
     // Longform
 
     // Micro-Chronicle
-    'chronicle.title': 'ช่วงเวลาสำคัญ',
+    'chronicle.title': 'ลำดับเวลา',
     'chronicle.badge': 'เส้นเวลาคลัง',
-    'chronicle.desc': 'การเดินทางผ่านเวลา เซ็ตกระสุนของไมล์สโตน การถ่ายภาพ และช่วงเวลาอันเงียบงัน รวมเป็นบันทึกต่อเนื่องหนึ่งเดียว',
-    'chronicle.hint': 'คอลัมน์ขวาเป็นลำดับที่นำด้วยภาพ แต่ละรายการสามารถเปิดดูแบบใกล้ชิดได้',
+    'chronicle.desc': 'สำรวจผลงานและภาพถ่ายในเว็บไซต์ตามลำดับเวลา ทุกการเปิดตัว การถ่ายภาพ และช่วงเวลาสำคัญ รวมเป็นบันทึกต่อเนื่องหนึ่งเดียว',
+    'chronicle.hint': 'การ์ดผลงานเปิดเข้าสู่หน้าผลงาน การ์ดภาพเปิดไลต์บ็อกซ์พร้อมลิงก์ไปยังผลงาน',
     'chronicle.entries': 'รายการ',
-    'chronicle.type': 'ประเภท',
-    'chronicle.published': 'เผยแพร่แล้ว',
-    'chronicle.view': 'มุมมอง',
-    'chronicle.imageFirst': 'ภาพเป็นหลัก',
+    'chronicle.type': 'แหล่งข้อมูล',
+    'chronicle.sourceLabel': 'ผลงานและภาพ',
+    'chronicle.view': 'ภาพ',
+    'chronicle.yearFilter': 'ปี',
+    'chronicle.clearYear': 'ดูทุกปี',
+    'chronicle.emptyAll': 'ยังไม่มีรายการในเส้นเวลา',
+    'chronicle.emptyYear': 'ไม่มีรายการในปี {year}',
+    'chronicle.eventProject': 'ผลงาน',
+    'chronicle.eventImages': 'ภาพถ่าย',
+    'chronicle.viewProject': 'ดูผลงานนี้',
+    'chronicle.imageOne': 'ภาพ',
+    'chronicle.imageMany': 'ภาพ',
+
+    // Resonance (music section - not launched yet)
+    'resonance.comingSoon': 'เร็วๆ นี้',
+    'resonance.comingSoonDesc': 'ส่วนเพลงกำลังเตรียมอยู่ ยังไม่มีผลงานที่ประกาศอย่างเป็นทางการ - หน้านี้จะเปิดให้ชมทันทีที่มีเนื้อหาจริง',
+
+    // Editorial empty state
+    'editorial.emptyTitle': 'ยังไม่มีนิตยสารพิเศษที่แสดงได้',
+    'editorial.emptyDesc': 'นิตยสารพิเศษจะปรากฏที่นี่เมื่อเผยแพร่อย่างเป็นทางการ',
 
     // Whispers (community message wall)
     'whispers.subtitle': 'สะสมเสียงสะท้อนของเบสตี้',

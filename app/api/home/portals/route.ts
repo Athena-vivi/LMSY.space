@@ -158,13 +158,50 @@ export async function GET() {
       fetchPortalImage('commercial', 'Commercial'),
     ]);
 
-    // Format response
+    // Phase-4 batch 2, Task 5: tell the homepage which categories actually
+    // hold visitor-facing projects, so cards for empty rooms (e.g. travel
+    // and daily today) can be hidden instead of leading nowhere. This uses
+    // the same public-visibility rule as every other surface.
+    async function hasVisibleProjects(category: string): Promise<boolean> {
+      const { count, error } = await applyPublicProjectFilter(
+        supabaseAdmin
+          .schema('lmsy_archive')
+          .from('projects')
+          .select('id', { count: 'exact', head: true })
+          .eq('category', category)
+      );
+      if (error) {
+        // Fail-open: a transient lookup error must not empty the homepage.
+        return true;
+      }
+      return (count ?? 0) > 0;
+    }
+
+    const [hasSeries, hasAppearance, hasTravel, hasDaily, hasCommercial] = await Promise.all([
+      hasVisibleProjects('series'),
+      hasVisibleProjects('appearance'),
+      hasVisibleProjects('travel'),
+      hasVisibleProjects('daily'),
+      hasVisibleProjects('commercial'),
+    ]);
+
+    // Format response. `hasWork` is kept separate from the image object: a
+    // category with visible projects but no images must still show its card
+    // (gradient fallback), while a category with zero visible projects gets
+    // hasWork=false so the homepage can hide the card entirely.
     const portals = {
       series,
       appearance,
       travel,
       daily,
       commercial,
+      hasWork: {
+        series: hasSeries,
+        appearance: hasAppearance,
+        travel: hasTravel,
+        daily: hasDaily,
+        commercial: hasCommercial,
+      },
     };
 
     return NextResponse.json(portals);

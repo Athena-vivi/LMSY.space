@@ -118,7 +118,6 @@ export default async function EditorialDetailPage({
     <EditorialDetailContent
       magazine={magazine}
       galleryImages={galleryImages}
-      selfHealed={false}  // ❌ Always false - no self-healing
     />
   );
 }

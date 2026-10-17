@@ -77,6 +77,7 @@ interface ProjectDetailClientProps {
     title_i18n?: LocalizedText | null;
     release_date: string | null;
     cover?: string | null;
+    category?: string;
   }>;
 }
 
@@ -573,7 +574,9 @@ export default function ProjectDetailClient({ project, images, categories, relat
                   return (
                     <Link
                       key={related.id}
-                      href={`/projects/${related.id}`}
+                      // Canonical detail entry (phase-4 batch 2): editorial
+                      // works are read through /editorial/[id], not here.
+                      href={related.category === 'editorial' ? `/editorial/${related.id}` : `/projects/${related.id}`}
                       className="group/related block"
                     >
                       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-white/5">

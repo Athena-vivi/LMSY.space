@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
@@ -115,6 +115,15 @@ export default async function ProjectPage({ params }: PageProps) {
     notFound();
   }
 
+  // Canonical detail entry (phase-4 batch 2, Task 3): editorial-category
+  // works are read through /editorial/[id], so opening their /projects/[id]
+  // URL forwards there instead of showing a competing detail surface. The
+  // forward target only renders public editorial projects and looks up by
+  // UUID - no redirect loop is possible for a non-editorial id.
+  if (project.category === 'editorial') {
+    redirect(`/editorial/${project.id}`);
+  }
+
   // Fetch gallery images for this project
   const { data: galleryImages } = await supabaseAdmin
     .schema('lmsy_archive')
@@ -159,6 +168,7 @@ export default async function ProjectPage({ params }: PageProps) {
     title_i18n: LocalizedText | null;
     release_date: string | null;
     cover?: string | null;
+    category: string;
   }> = [];
 
   const related = relatedRows || [];
@@ -176,6 +186,7 @@ export default async function ProjectPage({ params }: PageProps) {
       title_i18n: (r.title_i18n ?? null) as LocalizedText | null,
       release_date: r.release_date,
       cover: covers[r.id] ?? null,
+      category: r.category as string,
     }));
   }
 

@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { BackButton } from '@/components/back-button';
 import { getImageUrl } from '@/lib/image-url';
 import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 
 // This is a client-rendered shell; the list is fetched client-side, so the
@@ -69,61 +70,29 @@ export default function EditorialPage() {
   const [magazines, setMagazines] = useState<Magazine[]>([]);
   const [hoveredMagazine, setHoveredMagazine] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchMagazines() {
       try {
-        console.log('[EDITORIAL_PAGE] 📡 Fetching magazines...');
         const response = await fetch('/api/editorial', {
           cache: 'no-store',
         });
 
         if (!response.ok) {
-          console.error('[EDITORIAL_PAGE] ❌ API error:', response.status);
           setMagazines([]);
-          setDebugInfo(`API_ERROR: HTTP ${response.status}`);
           setLoading(false);
           return;
         }
 
         const data = await response.json();
 
-        console.log('[FRONTEND_DATA] ========== DATA RECEIVED FROM API ==========');
-        console.log('[FRONTEND_DATA] 📊 Success:', data.success);
-        console.log('[FRONTEND_DATA] 📊 Count:', data.count || 0);
-        console.log('[FRONTEND_DATA] 📊 Projects Array Length:', data.projects?.length || 0);
-
-        if (data.success && data.projects && data.projects.length > 0) {
-          console.log('[FRONTEND_DATA] ✅ SUCCESS - Real projects received:', data.projects.map((p: Magazine) => ({
-            id: p.id,
-            title: p.title,
-            category: p.category,
-            cover_url: p.cover_url,
-            artifact_count: p.artifact_count
-          })));
+        if (data.success && data.projects) {
+          setMagazines(data.projects);
         } else {
-          console.log('[FRONTEND_DATA] ❌ NO DATA - Count:', data.count, 'Debug:', data.debug);
-        }
-
-        if (!data.success || !data.projects) {
           setMagazines([]);
-          // 🔴 RED DEBUG MESSAGE for database mismatch
-          if (data.debug?.message) {
-            setDebugInfo(data.debug.message);
-          } else if (data.count === 0) {
-            setDebugInfo('[ DATABASE_MISMATCH: FOUND 0 PROJECTS IN lmsy_archive ]');
-          }
-          setLoading(false);
-          return;
         }
-
-        setMagazines(data.projects);
-        setDebugInfo(null);
-      } catch (err) {
-        console.error('[EDITORIAL_PAGE] ❌ Exception:', err);
+      } catch {
         setMagazines([]);
-        setDebugInfo(`FETCH_ERROR: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
@@ -196,22 +165,6 @@ export default function EditorialPage() {
       {/* Magazine Grid */}
       <main className="relative z-10 px-6 pb-20 md:px-12">
         <div className="max-w-7xl mx-auto">
-          {/* 🔴 DEBUG MESSAGE - Database Mismatch */}
-          {!loading && debugInfo && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8 p-8 bg-red-950 border-4 border-red-500 rounded-lg"
-            >
-              <p className="text-red-500 font-mono text-2xl font-bold tracking-wider text-center">
-                {debugInfo}
-              </p>
-              <p className="text-red-400/80 font-mono text-sm text-center mt-4">
-                Check browser console for detailed API logs
-              </p>
-            </motion.div>
-          )}
-
           {/* Asymmetric Vertical Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             <AnimatePresence mode="wait">
@@ -223,18 +176,18 @@ export default function EditorialPage() {
                   exit={{ opacity: 0 }}
                   className="contents"
                 >
-                  {magazines.length === 0 && !debugInfo ? (
+                  {magazines.length === 0 ? (
                     <motion.div
                       key="empty"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="col-span-full py-32 text-center"
                     >
-                      <p className="text-red-500 font-mono text-xl font-bold tracking-wider">
-                        [ ARCHIVE_ERROR: DATABASE_SYNC_FAILED_FOR_LMSY_ARCHIVE ]
+                      <p className="font-serif text-xl text-ink-2">
+                        {t(language, 'editorial.emptyTitle')}
                       </p>
-                      <p className="text-red-400/60 font-mono text-xs mt-4">
-                        Check browser console for API response details
+                      <p className="mt-3 text-sm text-ink-2/70">
+                        {t(language, 'editorial.emptyDesc')}
                       </p>
                     </motion.div>
                   ) : (
@@ -275,7 +228,7 @@ export default function EditorialPage() {
       <footer className="relative z-10 border-t border-white/5 py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <p className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
-            LMSY.SPACE · EDITORIAL_ARCHIVE_VOL_001 · {`${magazines.length}`} ISSUES CURATED
+            LMSY.SPACE · {`${magazines.length}`} ISSUES CURATED
           </p>
         </div>
       </footer>
@@ -356,14 +309,6 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
   // 🔒 CRITICAL: Use getImageUrl helper for full compatibility (old absolute + new relative)
   // 🚨 STRICTLY FORBIDDEN: Do NOT manually construct URLs here
   const coverUrl = getImageUrl(magazine.cover_url);
-
-  // 📊 PATH_SYNC DEBUG: Log final URL for馆长's inspection
-  console.log('[PATH_SYNC]', {
-    title: localizedTitle,
-    finalSrc: coverUrl,
-    inputUrl: magazine.cover_url,
-    catalogId: magazine.catalog_id,
-  });
 
   const handleImageError = () => {
     setIsLoading(false);

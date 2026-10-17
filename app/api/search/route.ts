@@ -66,7 +66,9 @@ export async function GET(request: NextRequest) {
         title: item.title,
         description: item.description,
         subtitle: `${item.category} • ${item.release_date ? new Date(item.release_date).getFullYear() : 'TBD'}`,
-        url: `/projects/${item.id}`,
+        // Canonical detail entry (phase-4 batch 2): editorial works land on
+        // /editorial/[id]; every other category stays on /projects/[id].
+        url: item.category === 'editorial' ? `/editorial/${item.id}` : `/projects/${item.id}`,
       })),
     ];
 

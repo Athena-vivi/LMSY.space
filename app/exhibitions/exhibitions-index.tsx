@@ -18,6 +18,13 @@ import { EXHIBITION_CATEGORIES } from '@/lib/exhibition-categories';
 export default function ExhibitionsIndex({ counts }: { counts: Record<string, number> }) {
   const { language } = useLanguage();
 
+  // Phase-4 batch 2, Task 5: categories with zero visible works are hidden
+  // from the index so visitors never enter an empty room. The category
+  // routes themselves stay live (/exhibitions/category/[type] is untouched).
+  const visibleCategories = EXHIBITION_CATEGORIES.filter(
+    (category) => (counts[category.type] ?? 0) > 0
+  );
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -80,7 +87,16 @@ export default function ExhibitionsIndex({ counts }: { counts: Record<string, nu
       <section className="py-16 md:py-24 bg-muted/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {EXHIBITION_CATEGORIES.map((category, index) => {
+            {visibleCategories.length === 0 ? (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full py-24 text-center text-ink-2"
+              >
+                {t(language, 'exhibitions.subtitle')}
+              </motion.p>
+            ) : (
+              visibleCategories.map((category, index) => {
               const count = counts[category.type] ?? 0;
               const label =
                 language === 'zh'
@@ -176,7 +192,8 @@ export default function ExhibitionsIndex({ counts }: { counts: Record<string, nu
                   </Link>
                 </motion.div>
               );
-            })}
+            })
+            )}
           </div>
         </div>
       </section>

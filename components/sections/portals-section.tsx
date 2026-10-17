@@ -134,6 +134,10 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
 export function PortalsSection() {
   const { language } = useLanguage();
   const [portalImages, setPortalImages] = useState<Record<string, PortalImage | null>>({});
+  // Phase-4 batch 2, Task 5: categories with zero visitor-facing projects are
+  // removed from the homepage (their routes stay live). Unknown state (fetch
+  // failure) fail-opens to keep the homepage intact.
+  const [hasWork, setHasWork] = useState<Record<string, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 🔥 FETCH FEATURED IMAGES: Load latest featured images for each portal
@@ -144,6 +148,7 @@ export function PortalsSection() {
         if (response.ok) {
           const data = await response.json();
           setPortalImages(data);
+          if (data.hasWork) setHasWork(data.hasWork);
         }
       } catch (error) {
         console.error('[PORTALS] Failed to fetch portal images:', error);
@@ -155,8 +160,9 @@ export function PortalsSection() {
     fetchPortalImages();
   }, []);
 
-  const portals = [
+  const allPortals = [
     {
+      key: 'series',
       titleKey: 'portal.drama',
       descKey: 'portal.dramaDesc',
       image: portalImages.series || null,
@@ -164,6 +170,7 @@ export function PortalsSection() {
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
+      key: 'appearance',
       titleKey: 'portal.live',
       descKey: 'portal.liveDesc',
       image: portalImages.appearance || null,
@@ -171,6 +178,7 @@ export function PortalsSection() {
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
     {
+      key: 'travel',
       titleKey: 'portal.journey',
       descKey: 'portal.journeyDesc',
       image: portalImages.travel || null,
@@ -178,6 +186,7 @@ export function PortalsSection() {
       gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
     },
     {
+      key: 'daily',
       titleKey: 'portal.daily',
       descKey: 'portal.dailyDesc',
       image: portalImages.daily || null,
@@ -185,6 +194,7 @@ export function PortalsSection() {
       gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
     },
     {
+      key: 'commercial',
       titleKey: 'portal.commercial',
       descKey: 'portal.commercialDesc',
       image: portalImages.commercial || null,
@@ -193,6 +203,24 @@ export function PortalsSection() {
       isFeatured: true, // Commercial gets special treatment
     },
   ];
+
+  // Hide cards whose category has no visible works (only when the API
+  // explicitly reported so).
+  const portals = allPortals.filter(
+    (portal) => hasWork === null || hasWork[portal.key] !== false
+  );
+
+  // The original layout is an asymmetric 12-col grid tuned for five cards.
+  // Reassign spans per visible-card count so the grid never collapses.
+  const SPAN_PLANS: Record<number, string[]> = {
+    5: ['lg:col-span-7', 'lg:col-span-5', 'lg:col-span-4', 'lg:col-span-3', 'lg:col-span-5'],
+    4: ['lg:col-span-7', 'lg:col-span-5', 'lg:col-span-4', 'lg:col-span-8'],
+    3: ['lg:col-span-7', 'lg:col-span-5', 'lg:col-span-12'],
+    2: ['lg:col-span-7', 'lg:col-span-5'],
+    1: ['lg:col-span-12'],
+    0: [],
+  };
+  const spans = SPAN_PLANS[portals.length] || SPAN_PLANS[5];
 
   return (
     <section className="relative py-24 md:py-32 overflow-hidden">
@@ -215,26 +243,13 @@ export function PortalsSection() {
           </p>
         </motion.div>
 
-        {/* 🔥 ASYMMETRIC LAYOUT: Non-traditional grid with visual tension */}
+        {/* 🔥 ASYMMETRIC LAYOUT: spans adapt to how many portals are visible */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 md:gap-8">
-          {/* First row: Drama (large) + Live (medium) */}
-          <div className="lg:col-span-7">
-            <PortalCard {...portals[0]} index={0} />
-          </div>
-          <div className="lg:col-span-5">
-            <PortalCard {...portals[1]} index={1} />
-          </div>
-
-          {/* Second row: Journey (medium) + Daily (medium) + Commercial (featured, wide) */}
-          <div className="lg:col-span-4">
-            <PortalCard {...portals[2]} index={2} />
-          </div>
-          <div className="lg:col-span-3">
-            <PortalCard {...portals[3]} index={3} />
-          </div>
-          <div className="lg:col-span-5">
-            <PortalCard {...portals[4]} index={4} />
-          </div>
+          {portals.map((portal, index) => (
+            <div key={portal.key} className={spans[index] || 'lg:col-span-12'}>
+              <PortalCard {...portal} index={index} />
+            </div>
+          ))}
         </div>
       </div>
     </section>
