@@ -9,13 +9,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/components/language-provider";
 import { ServiceWorkerProvider } from "@/components/service-worker-provider";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { FrontendChrome } from "@/components/frontend-chrome";
 import { AuthProvider } from "@/components/auth-provider";
-import { VinylPlayer } from "@/components/vinyl-player";
-import { WhisperFloatingButton } from "@/components/whisper-floating-button";
-import { ScrollProgress } from "@/components/scroll-progress";
-import { NebulaBackground } from "@/components/nebula-background";
 
 const mono = GeistMono;
 
@@ -97,23 +92,15 @@ export default function RootLayout({
         style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
         <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INIT_SCRIPT }} />
-        <NebulaBackground />
-        <ScrollProgress />
         <ServiceWorkerProvider />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="lmsy-theme">
             <LanguageProvider defaultLanguage="en">
+              {/* Front-end chrome (header/footer/player/background) - hidden on /admin */}
+              <FrontendChrome />
               <div className="flex min-h-screen flex-col">
-                <SiteHeader />
                 <main className="flex-1">{children}</main>
-                <SiteFooter />
               </div>
-              {/* Global Vinyl Player */}
-              <div key="vinyl-player">
-                <VinylPlayer />
-              </div>
-              {/* Whispers Floating Button */}
-              <WhisperFloatingButton />
             </LanguageProvider>
           </ThemeProvider>
         </AuthProvider>
