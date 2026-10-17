@@ -5,6 +5,7 @@
 - 基准文档：`reports/20261017-长期架构改造-阶段1-内容模型与字段语义确认.md`（下称「阶段1报告」）、`reports/20261017-长期架构审计-站长侧一手证据.md`
 - 本记录性质：后续实施人员以本文为准，不得自行重新解释核心概念。阶段1报告与本文冲突处，**以本文校验结论为准**（见 §二三处修正）。
 - 本轮校验新增实证：3 次只读 SQL（隐藏容器资产分布、CHECK 约束原文）+ 代码核查（gallery/exhibitions 查询、curation_status 全部读写点、ingest duplicate 路径）。未修改任何代码/数据。
+- 关联文档（2026-10-17 阶段 4）：`docs/architecture/20261017-frontend-information-architecture.md`（前台 IA 方案，Proposed，含 D5/D8 的前台维度展开与 8 项决策边界）；`docs/architecture/20261017-ingestion-data-contract.md`（阶段 3 入库数据契约，已实施）。本文各项的「待确定」子项在 IA 方案 §七展开为决策边界，批准前本文各决策状态不变。
 
 ---
 
