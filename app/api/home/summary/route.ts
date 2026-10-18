@@ -149,9 +149,9 @@ export async function GET() {
 
     // A picture per year. Two sources, both real:
     //   1. `milestone_priority` - the per-year representative photo curated in
-    //      the admin (1 = 2022 ... 4 = 2025). These rows hang off the
-    //      collection container, not off a public project, which is why they
-    //      are read separately.
+    //      the admin (1 = 2022 ... 4 = 2025, 5 = the current year). These rows
+    //      hang off the collection container, not off a public project, which
+    //      is why they are read separately.
     //   2. the most recent public project of that year that has any image.
     const { data: milestoneRows } = await supabaseAdmin
       .schema('lmsy_archive')
@@ -160,7 +160,18 @@ export async function GET() {
       .not('milestone_priority', 'is', null)
       .order('milestone_priority', { ascending: true });
 
-    const MILESTONE_YEAR: Record<number, number> = { 1: 2022, 2: 2023, 3: 2024, 4: 2025 };
+    // The admin grid offers 2022-2025 plus one "ongoing" slot, displayed as ∞
+    // and stored as priority 5. That slot belongs to whatever year is current,
+    // so the newest column shows the photo the curator picked for it instead
+    // of an unrelated project cover.
+    const currentYear = new Date().getFullYear();
+    const MILESTONE_YEAR: Record<number, number> = {
+      1: 2022,
+      2: 2023,
+      3: 2024,
+      4: 2025,
+      5: currentYear,
+    };
     const milestoneCover: Record<number, string> = {};
     for (const row of milestoneRows ?? []) {
       const typed = row as { milestone_priority: number; image_url: string | null };
@@ -181,7 +192,6 @@ export async function GET() {
       if (cover) coverByYear[year] = cover;
     }
 
-    const currentYear = new Date().getFullYear();
     const years: Array<{ year: number; count: number; cover: string | null }> = [];
     for (let year = currentYear; year >= ARCHIVE_START_YEAR; year--) {
       years.push({

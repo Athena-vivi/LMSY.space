@@ -107,6 +107,15 @@ describe('homepage blocks are picture doors', () => {
     assert.ok(!route.includes('linkedByProfile'), 'no portrait is guessed from credited projects');
   });
 
+  // The admin grid has 2022-2025 plus one "ongoing" slot (∞, priority 5).
+  // Leaving priority 5 out meant the newest year silently fell back to some
+  // project cover, so a photo the curator had picked never appeared.
+  test('the ongoing milestone slot feeds the current year', () => {
+    const route = src('app/api/home/summary/route.ts');
+    assert.ok(route.includes('5: currentYear'), 'priority 5 is mapped to the current year');
+    assert.ok(route.includes('const currentYear = new Date().getFullYear()'), 'current year is computed, not hardcoded');
+  });
+
   test('portraits are picked by hand and have their own tab', () => {
     const api = src('app/api/admin/people/portrait/route.ts');
     assert.ok(api.includes("from('profiles')"), 'writes the profiles table');
