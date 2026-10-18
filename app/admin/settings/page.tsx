@@ -84,7 +84,7 @@ export default function AdminSettingsPage() {
   const [longformContent, setLongformContent] = useState<LongformContent>(DEFAULT_LONGFORM_CONTENT);
   const [milestonesContent, setMilestonesContent] = useState<MilestonesContent>(DEFAULT_MILESTONES_CONTENT);
   const [heroContent, setHeroContent] = useState<HeroContent>(DEFAULT_HERO_CONTENT);
-  const [heroSplashImageUrl, setHeroSplashImageUrl] = useState('/hero-reveal.jpg');
+  const [heroSplashImageUrl, setHeroSplashImageUrl] = useState('');
   const [heroSectionImageUrl, setHeroSectionImageUrl] = useState(DEFAULT_HERO_SECTION_IMAGE);
   const [heroSplashOptions, setHeroSplashOptions] = useState<GalleryAssetOption[]>([]);
   const [isHeroPickerOpen, setIsHeroPickerOpen] = useState(false);
@@ -267,6 +267,11 @@ export default function AdminSettingsPage() {
     }
   };
 
+  // Empty when nothing has been picked yet - the pickers then show "Not set"
+  // instead of a bundled placeholder that the front end would never use.
+  const splashPreviewSrc = resolveImageUrl(heroSplashImageUrl);
+  const heroPreviewSrc = resolveImageUrl(heroSectionImageUrl);
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -286,7 +291,7 @@ export default function AdminSettingsPage() {
         };
 
         if (blockKey === 'homepage_hero') {
-          requestBody.image_url = heroSplashImageUrl.trim() || '/hero-reveal.jpg';
+          requestBody.image_url = heroSplashImageUrl.trim();
         }
 
         const response = await fetch('/api/admin/site-content', {
@@ -386,13 +391,19 @@ export default function AdminSettingsPage() {
                         </span>
                       </div>
                       <div className="relative aspect-[16/9] overflow-hidden rounded-xl border border-lmsy-yellow/20 bg-black/40">
-                        <Image
-                          src={resolveImageUrl(heroSplashImageUrl) || '/hero-reveal.jpg'}
-                          alt="Selected splash"
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
+                        {splashPreviewSrc ? (
+                          <Image
+                            src={splashPreviewSrc}
+                            alt="Selected splash"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono uppercase tracking-[0.2em] text-ink-2">
+                            Not set
+                          </div>
+                        )}
                       </div>
                       <p className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-ink-2">
                         {heroSplashImageUrl}
@@ -416,13 +427,19 @@ export default function AdminSettingsPage() {
                         </span>
                       </div>
                       <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-lmsy-blue/20 bg-black/40">
-                        <Image
-                          src={resolveImageUrl(heroSectionImageUrl) || DEFAULT_HERO_SECTION_IMAGE}
-                          alt="Selected hero section"
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
+                        {heroPreviewSrc ? (
+                          <Image
+                            src={heroPreviewSrc}
+                            alt="Selected hero section"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono uppercase tracking-[0.2em] text-ink-2">
+                            Not set
+                          </div>
+                        )}
                       </div>
                       <p className="truncate text-[10px] font-mono uppercase tracking-[0.18em] text-ink-2">
                         {heroSectionImageUrl}
@@ -621,9 +638,9 @@ export default function AdminSettingsPage() {
                     type="button"
                     onClick={() => {
                       if (heroPickerTarget === 'splash') {
-                        setHeroSplashImageUrl(asset.image_url || '/hero-reveal.jpg');
+                        setHeroSplashImageUrl(asset.image_url || '');
                       } else {
-                        setHeroSectionImageUrl(asset.image_url || DEFAULT_HERO_SECTION_IMAGE);
+                        setHeroSectionImageUrl(asset.image_url || '');
                       }
                       setIsHeroPickerOpen(false);
                     }}

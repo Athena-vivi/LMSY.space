@@ -8,10 +8,11 @@ interface ImmersiveLoadingProps {
   loading: boolean;
 }
 
-const DEFAULT_SPLASH_IMAGE = '/hero-reveal.jpg';
-
 export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadingProps) {
-  const [splashImageUrl, setSplashImageUrl] = useState(DEFAULT_SPLASH_IMAGE);
+  // Nothing local: the splash is painted with whatever photo the curator set
+  // for the hero block. Starting from /hero-reveal.jpg and swapping to the
+  // real photo mid-animation is what made two different images appear.
+  const [splashImageUrl, setSplashImageUrl] = useState('');
 
   useEffect(() => {
     if (!loading) {
@@ -33,9 +34,7 @@ export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadi
 
         const data = await response.json();
         const imageUrl =
-          typeof data?.block?.image_url === 'string' && data.block.image_url.trim()
-            ? data.block.image_url
-            : DEFAULT_SPLASH_IMAGE;
+          typeof data?.block?.image_url === 'string' ? data.block.image_url.trim() : '';
 
         if (active) {
           setSplashImageUrl(imageUrl);
@@ -72,7 +71,9 @@ export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadi
           className="relative font-sans font-[800] select-none pointer-events-none leading-none tracking-[-0.08em]"
           style={{
             fontSize: 'clamp(8rem, 22vw, 24rem)',
-            backgroundImage: `url(${splashImageUrl})`,
+            backgroundImage: splashImageUrl
+              ? `url(${splashImageUrl})`
+              : 'linear-gradient(135deg, #FBBF24 0%, #38BDF8 100%)',
             backgroundSize: 'cover',
             backgroundPosition: 'center 30%',
             WebkitBackgroundClip: 'text',

@@ -49,7 +49,9 @@ export const EMPTY_HERO_FIELDS: HeroFields = {
   universeSubtitle: '',
 };
 
-export const DEFAULT_HERO_SECTION_IMAGE = '/lmsy-001.jpg';
+// No bundled placeholder. Both hero surfaces read the curator's photo and
+// nothing else - a local file here is what made the page flash two images.
+export const DEFAULT_HERO_SECTION_IMAGE = '';
 
 export const DEFAULT_PREFACE_CONTENT: PrefaceContent = {
   en: { ...EMPTY_PREFACE_FIELDS },
@@ -342,7 +344,7 @@ export function toHeroPayload(content: HeroContent, heroImageUrl = DEFAULT_HERO_
     zh: buildLang(content.zh),
     th: buildLang(content.th),
     assets: {
-      heroImageUrl: heroImageUrl || DEFAULT_HERO_SECTION_IMAGE,
+      heroImageUrl: heroImageUrl || '',
     },
   };
 }

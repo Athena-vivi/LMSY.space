@@ -9,7 +9,6 @@ import { ArrowDown, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   DEFAULT_HERO_CONTENT,
-  DEFAULT_HERO_SECTION_IMAGE,
   getHeroSectionImageUrl,
   normalizeHeroContent,
 } from '@/app/admin/settings/content-blocks';
@@ -18,7 +17,10 @@ import { resolveImageUrl } from '@/lib/image-url';
 export function HeroSection() {
   const { language } = useLanguage();
   const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);
-  const [heroImageUrl, setHeroImageUrl] = useState(DEFAULT_HERO_SECTION_IMAGE);
+  // No local placeholder: the hero photo comes from the curator's settings and
+  // nowhere else. Rendering /lmsy-001.jpg first and swapping it a moment later
+  // is what made the page show two different photos in a row.
+  const [heroImageUrl, setHeroImageUrl] = useState('');
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -51,6 +53,7 @@ export function HeroSection() {
   }, [imageLoaded, heroImageUrl]);
 
   const currentHeroContent = heroContent[language] || heroContent.en;
+  const heroSrc = heroImageUrl ? resolveImageUrl(heroImageUrl) : '';
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -182,15 +185,17 @@ export function HeroSection() {
                   </div>
                 )}
 
-                <Image
-                  src={resolveImageUrl(heroImageUrl) || DEFAULT_HERO_SECTION_IMAGE}
-                  alt="Lookmhee & Sonya"
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                  onLoad={() => setImageLoaded(true)}
-                />
+                {heroSrc && (
+                  <Image
+                    src={heroSrc}
+                    alt="Lookmhee & Sonya"
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    priority
+                    onLoad={() => setImageLoaded(true)}
+                  />
+                )}
 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-radial from-lmsy-blue/10 via-transparent to-transparent" />
