@@ -93,7 +93,7 @@ export const translations = {
 
     // Projects
     'projects.title': 'Projects',
-    'projects.description': 'Series, editorials, public appearances and brand collaborations, gathered here to revisit year by year.',
+    'projects.description': 'The works are all here. Time has already put them in order.',
     'projects.relatedTitle': 'More in this category',
     'projects.filteredEmpty': 'No projects in this category.',
 
@@ -116,19 +116,19 @@ export const translations = {
 
     // Portals
     'portal.drama': 'Drama & Works',
-    'portal.dramaDesc': 'From the characters they portray to the works they leave behind.',
+    'portal.dramaDesc': 'This is where they were first seen.',
     'portal.live': 'Live Events',
-    'portal.liveDesc': 'The moments shared, the cheers, and the memories that stay.',
+    'portal.liveDesc': 'The moments spent together.',
     'portal.journey': 'Journey',
     'portal.journeyDesc': 'Paths walked together',
     'portal.daily': 'Daily',
     'portal.dailyDesc': 'Beautiful ordinary days',
     'portal.commercial': 'Commercial',
-    'portal.commercialDesc': 'The works they create together with different brands.',
+    'portal.commercialDesc': 'More sides of resonance with the world.',
     'portal.editorial': 'Editorial',
-    'portal.editorialDesc': 'Covers, pages, and the many sides of them captured around the lens.',
+    'portal.editorialDesc': 'Before and behind the lens.',
     'portal.appearance': 'Public Appearances',
-    'portal.appearanceDesc': 'Airports, red carpets, and every appearance in the public eye.',
+    'portal.appearanceDesc': 'Every time they step into view.',
 
     // Longform
 
@@ -281,9 +281,9 @@ export const translations = {
     'nav.people': 'People',
 
     // Homepage sections
-    'home.collecting': 'Still Being Gathered',
+    'home.collecting': 'Collecting',
     'home.featuredTitle': 'The Years Along the Way',
-    'home.featuredSubtitle': "From screen works and editorials to live events and brand collaborations, the moments we've kept trace the path along the way.",
+    'home.featuredSubtitle': "The moments we've kept trace the path along the way.",
     'home.timelineTitle': 'Finding Them Again Through Time',
     'home.timelineSubtitle': 'Some frames belong to the past. Some memories are worth returning to.',
     'home.peopleTitle': 'The Two, and This Archive',
@@ -352,7 +352,7 @@ export const translations = {
     'chronicle.tryAnotherYear': 'Try another year:',
 
     // Homepage CTAs
-    'home.explore': 'Step Inside',
+    'home.explore': 'Explore',
     'home.enterArchive': 'Enter archive',
     'home.storyContinues': 'Story continues',
 
@@ -457,7 +457,7 @@ export const translations = {
 
     // Projects
     'projects.title': '作品',
-    'projects.description': '剧集、杂志特辑、公开活动与品牌合作，都在这里慢慢汇集，沿着年份，一页页翻看。',
+    'projects.description': '作品都在这里慢慢汇集，时间替它们排好了顺序。',
     'projects.relatedTitle': '更多同类作品',
     'projects.filteredEmpty': '该分类下暂无作品。',
 
@@ -480,19 +480,19 @@ export const translations = {
 
     // Portals
     'portal.drama': '戏剧与作品',
-    'portal.dramaDesc': '从剧中的角色，到她们留下的作品。',
+    'portal.dramaDesc': '她们从这里被看见。',
     'portal.live': '现场演出',
-    'portal.liveDesc': '那些一起度过的时刻，让热闹与欢呼都有迹可循。',
+    'portal.liveDesc': '一起度过的那些时刻。',
     'portal.journey': '旅途',
     'portal.journeyDesc': '同行相伴的足迹',
     'portal.daily': '日常',
     'portal.dailyDesc': '美好的平凡岁月',
     'portal.commercial': '品牌合作',
-    'portal.commercialDesc': '她们与不同品牌携手留下的作品。',
+    'portal.commercialDesc': '与世界更多面的共鸣',
     'portal.editorial': '杂志特辑',
-    'portal.editorialDesc': '封面、内页，以及镜头前后留下的不同模样。',
+    'portal.editorialDesc': '镜头前后。',
     'portal.appearance': '公开亮相',
-    'portal.appearanceDesc': '机场、红毯，以及每一次走进公众视野的身影。',
+    'portal.appearanceDesc': '每一次走进公众视野的身影。',
 
     // Longform
 
@@ -645,9 +645,9 @@ export const translations = {
     'nav.people': '人物',
 
     // Homepage sections
-    'home.collecting': '还在整理',
+    'home.collecting': '收录中',
     'home.featuredTitle': '她们走过的这几年',
-    'home.featuredSubtitle': '从作品、杂志到现场与品牌合作，那些留下来的画面，慢慢连成了她们一路走来的轨迹。',
+    'home.featuredSubtitle': '那些留下来的画面，慢慢连成了她们一路走来的轨迹。',
     'home.timelineTitle': '沿着时间，重新遇见',
     'home.timelineSubtitle': '有些画面已经留在过去，有些记忆，值得再回来看一眼。',
     'home.peopleTitle': '她们，与这座档案',
@@ -713,7 +713,7 @@ export const translations = {
     'chronicle.tryAnotherYear': '查看其他年份：',
 
     // Homepage CTAs
-    'home.explore': '走进去',
+    'home.explore': '探索',
     'home.enterArchive': '进入档案',
     'home.storyContinues': '故事仍在继续',
 
@@ -818,7 +818,7 @@ export const translations = {
 
     // Projects
     'projects.title': 'ผลงาน',
-    'projects.description': 'ซีรีส์ นิตยสาร การปรากฏตัวต่อสาธารณะ และงานแบรนด์ ค่อย ๆ รวบรวมไว้ที่นี่ให้ย้อนกลับไปชมได้ตามปี',
+    'projects.description': 'ผลงานทั้งหมดค่อย ๆ รวมอยู่ที่นี่ และเวลาได้จัดลำดับให้แล้ว',
     'projects.relatedTitle': 'ผลงานประเภทเดียวกันเพิ่มเติม',
     'projects.filteredEmpty': 'ไม่มีผลงานในหมวดหมู่นี้',
 
@@ -841,19 +841,19 @@ export const translations = {
 
     // Portals
     'portal.drama': 'ละครและผลงาน',
-    'portal.dramaDesc': 'จากตัวละครที่พวกเธอถ่ายทอด สู่ผลงานที่พวกเธอฝากไว้',
+    'portal.dramaDesc': 'ที่นี่คือที่ที่พวกเธอถูกมองเห็น',
     'portal.live': 'อีเวนต์สด',
-    'portal.liveDesc': 'ช่วงเวลาที่ได้อยู่ร่วมกัน เสียงเชียร์ และความทรงจำที่ยังคงอยู่',
+    'portal.liveDesc': 'ช่วงเวลาที่ได้อยู่ร่วมกัน',
     'portal.journey': 'การเดินทาง',
     'portal.journeyDesc': 'เส้นทางที่เดินตามร่วมกัน',
     'portal.daily': 'ชีวิตประจำวัน',
     'portal.dailyDesc': 'วันธรรมดาที่งดงาม',
     'portal.commercial': 'งานแบรนด์',
-    'portal.commercialDesc': 'ผลงานที่พวกเธอร่วมสร้างสรรค์กับแบรนด์ต่าง ๆ',
+    'portal.commercialDesc': 'ความสอดคล้องกับโลกในอีกหลายมุม',
     'portal.editorial': 'นิตยสาร',
-    'portal.editorialDesc': 'ปก หน้าด้านใน และหลากหลายมุมของพวกเธอที่ถูกบันทึกไว้ผ่านเลนส์',
+    'portal.editorialDesc': 'ทั้งหน้ากล้องและหลังกล้อง',
     'portal.appearance': 'การปรากฏตัวต่อสาธารณะ',
-    'portal.appearanceDesc': 'สนามบิน พรมแดง และทุกครั้งที่พวกเธอปรากฏตัวต่อสายตาผู้คน',
+    'portal.appearanceDesc': 'ทุกครั้งที่พวกเธอก้าวเข้าสู่สายตาผู้คน',
 
     // Longform
 
@@ -1008,7 +1008,7 @@ export const translations = {
     // Homepage sections
     'home.collecting': 'กำลังรวบรวม',
     'home.featuredTitle': 'หลายปีบนเส้นทางของพวกเธอ',
-    'home.featuredSubtitle': 'จากผลงาน นิตยสาร ไปจนถึงอีเวนต์และงานแบรนด์ ภาพที่ถูกเก็บไว้ค่อย ๆ เชื่อมต่อกันเป็นเส้นทางที่พวกเธอเดินผ่านมา',
+    'home.featuredSubtitle': 'ภาพที่ถูกเก็บไว้ค่อย ๆ เชื่อมต่อกันเป็นเส้นทางที่พวกเธอเดินผ่านมา',
     'home.timelineTitle': 'กลับไปพบพวกเธออีกครั้งผ่านกาลเวลา',
     'home.timelineSubtitle': 'บางภาพกลายเป็นส่วนหนึ่งของอดีต บางความทรงจำก็ยังควรค่าแก่การกลับไปมองอีกครั้ง',
     'home.peopleTitle': 'พวกเธอ กับคลังแห่งนี้',
@@ -1077,7 +1077,7 @@ export const translations = {
     'chronicle.tryAnotherYear': 'ลองดูปีอื่น:',
 
     // Homepage CTAs
-    'home.explore': 'ก้าวเข้าไป',
+    'home.explore': 'สำรวจ',
     'home.enterArchive': 'เข้าสู่คลัง',
     'home.storyContinues': 'เรื่องราวยังดำเนินต่อ',
 
