@@ -6,13 +6,19 @@ import { useEffect, useState } from 'react';
 interface ImmersiveLoadingProps {
   onComplete: () => void;
   loading: boolean;
+  /** Server-provided splash photo. Empty means the curator has not set one. */
+  initialImageUrl?: string;
 }
 
-export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadingProps) {
+export default function ImmersiveLoading({
+  onComplete,
+  loading,
+  initialImageUrl = '',
+}: ImmersiveLoadingProps) {
   // Nothing local: the splash is painted with whatever photo the curator set
   // for the hero block. Starting from /hero-reveal.jpg and swapping to the
   // real photo mid-animation is what made two different images appear.
-  const [splashImageUrl, setSplashImageUrl] = useState('');
+  const [splashImageUrl, setSplashImageUrl] = useState(initialImageUrl);
 
   useEffect(() => {
     if (!loading) {
@@ -25,6 +31,10 @@ export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadi
   }, [loading, onComplete]);
 
   useEffect(() => {
+    // The server already handed us the photo; asking again would only risk
+    // repainting the letterforms with a second image.
+    if (initialImageUrl) return;
+
     let active = true;
 
     async function fetchSplashImage() {
@@ -49,7 +59,7 @@ export default function ImmersiveLoading({ onComplete, loading }: ImmersiveLoadi
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialImageUrl]);
 
   return (
     <motion.div

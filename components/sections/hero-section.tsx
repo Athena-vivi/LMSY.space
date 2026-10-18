@@ -14,13 +14,13 @@ import {
 } from '@/app/admin/settings/content-blocks';
 import { resolveImageUrl } from '@/lib/image-url';
 
-export function HeroSection() {
+export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string }) {
   const { language } = useLanguage();
   const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);
-  // No local placeholder: the hero photo comes from the curator's settings and
-  // nowhere else. Rendering /lmsy-001.jpg first and swapping it a moment later
-  // is what made the page show two different photos in a row.
-  const [heroImageUrl, setHeroImageUrl] = useState('');
+  // The photo arrives from the server already resolved, so the first paint is
+  // the real one. There is no bundled placeholder and nothing to swap in
+  // afterwards; when the curator has not set a photo the card stays a skeleton.
+  const [heroImageUrl, setHeroImageUrl] = useState(initialImageUrl);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -34,7 +34,11 @@ export function HeroSection() {
         if (!data.success || !data.block?.content_i18n) return;
 
         setHeroContent(normalizeHeroContent(data.block.content_i18n));
-        setHeroImageUrl(getHeroSectionImageUrl(data.block.content_i18n));
+        // The copy always comes from the API. The photo only needs replacing
+        // when the server did not already provide one.
+        if (!initialImageUrl) {
+          setHeroImageUrl(getHeroSectionImageUrl(data.block.content_i18n));
+        }
       } catch (error) {
         console.error('[SITE_CONTENT] Failed to fetch homepage_hero:', error);
       }

@@ -8,6 +8,12 @@ interface LoadingWrapperProps {
   children: ReactNode;
   fallback?: ReactNode;
   /**
+   * The splash photo, read on the server. Passing it down means the letterforms
+   * are painted with the curator's photo on the first frame instead of opening
+   * on a placeholder and swapping.
+   */
+  splashImageUrl?: string;
+  /**
    * How long the intro splash stays on screen (ms). This is a deliberate brand
    * moment, so keep it short — it directly delays the first meaningful paint.
    * It used to be 1500ms + max(minDuration, elapsed) + 1200ms, i.e. the home
@@ -18,7 +24,11 @@ interface LoadingWrapperProps {
 
 const MAX_SPLASH_MS = 1200;
 
-export function LoadingWrapper({ children, minDuration = 500 }: LoadingWrapperProps) {
+export function LoadingWrapper({
+  children,
+  minDuration = 500,
+  splashImageUrl = '',
+}: LoadingWrapperProps) {
   const [loading, setLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
@@ -36,7 +46,11 @@ export function LoadingWrapper({ children, minDuration = 500 }: LoadingWrapperPr
       {/* Immersive Loading Screen */}
       <AnimatePresence>
         {!showContent && (
-          <ImmersiveLoading loading={loading} onComplete={() => {}} />
+          <ImmersiveLoading
+            loading={loading}
+            initialImageUrl={splashImageUrl}
+            onComplete={() => {}}
+          />
         )}
       </AnimatePresence>
 
