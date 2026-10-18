@@ -352,3 +352,13 @@
 ### 8.5 全部 `search_aliases` 为空
 
 搜索目前只能命中标题与已有中文名。要提升召回，给重点项目的 `search_aliases` 补中英泰别名（例如 `affair` 补 `爱情诡计`、`affair the series`）。字段已就位，API 已读，纯数据工作。
+
+### 8.6 `lmsy_archive.messages` 表（2026-10-18 新建）
+
+`/api/whispers` 与 `/admin/messages` 一直在读写 `lmsy_archive.messages`，但该表从未创建，phase 7 因此把右下角留言入口下线（点开必 500）。现在补上：
+
+- 列：`id uuid pk default gen_random_uuid()`、`content text not null`、`author text not null`、`location text`、`color_pref text default 'yellow'`、`is_approved boolean default false`、`created_at timestamptz default now()`
+- RLS：`messages_public_read`（select，`is_approved = true`）、`messages_public_insert`（insert，`with check (is_approved = false)`）、`messages_service_role`（all）
+- 授权：`anon, authenticated` 仅 `select, insert`；`service_role` 全量
+- 索引：`messages_created_at_idx (created_at desc)`
+- 迁移脚本：`temp/m_messages.sql`（`temp/` 不进仓库）

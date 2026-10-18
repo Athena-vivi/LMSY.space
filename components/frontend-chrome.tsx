@@ -5,22 +5,22 @@ import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { ScrollProgress } from '@/components/scroll-progress';
 import { NebulaBackground } from '@/components/nebula-background';
-import { WhisperPortal } from '@/components/whisper-floating-button';
+import { WhisperDoor } from '@/components/whisper-door';
 
 /**
  * Front-end-only chrome: immersive background, global header/footer and the
- * Whispers door in the bottom-right corner. Admin routes (/admin/*) render
- * their own shell (admin layout) and must not load any of these - fixes P6
- * where the admin login page and workspace leaked front-end decorations.
+ * door to /whispers pinned to the bottom-LEFT corner. Admin routes (/admin/*)
+ * render their own shell (admin layout) and must not load any of these -
+ * fixes P6 where the admin login page and workspace leaked front-end
+ * decorations.
  *
- * The vinyl player used to sit here. It played three placeholder tracks that
- * never existed on the CDN, so the block was decoration with a broken player
- * inside. The corner now carries the door to /whispers, where a visitor
- * leaves a message for the curator.
+ * The bottom-left corner is the slot the curator pointed at. It held the
+ * vinyl player; it now holds the same two rings, wired to the whispers inbox
+ * instead of a playlist. The bottom-right corner stays empty on purpose.
  *
- * The door is hidden on /whispers itself: that page already has its own
- * "write" button pinned to the same corner, and two floating controls on top
- * of each other is a bug, not a feature.
+ * The door is hidden on /whispers itself: that page already carries its own
+ * "write" button, and two floating controls on top of each other is a bug,
+ * not a feature.
  *
  * Route content (children) is rendered between the header and the footer
  * inside the shared flex column, so the footer stays at the bottom of the
@@ -46,7 +46,7 @@ export function FrontendChrome({ children }: { children: React.ReactNode }) {
         {children}
         <SiteFooter />
       </div>
-      {pathname !== '/whispers' && <WhisperPortal />}
+      {pathname !== '/whispers' && <WhisperDoor />}
     </>
   );
 }
