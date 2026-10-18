@@ -390,3 +390,19 @@
 .admin-root {
   --muted-foreground: #d1d5db;
 }
+
+/* Hover emphasis uses the archive's own gradient.
+   The site has exactly one accent ramp - yellow into blue - and a hover state
+   that collapsed to one end of it read like a different design. Applied by
+   wrapping the element in a `group`, so the whole card drives the highlight. */
+.hover-gradient-text {
+  transition: color 200ms ease;
+}
+
+.group:hover .hover-gradient-text,
+.hover-gradient-text:hover {
+  background-image: var(--color-lmsy-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

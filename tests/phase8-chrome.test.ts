@@ -80,16 +80,50 @@ describe('homepage blocks are picture doors', () => {
 
   test('people cards are portrait frames with the name over the photo', () => {
     const code = src('components/sections/people-section.tsx');
-    assert.ok(code.includes('resolveImageUrl(person.image ?? person.avatar_url)'), 'photo fallback');
+    assert.ok(code.includes('resolveImageUrl(person.image ?? person.avatar_url)'), 'uses the stored portrait');
     assert.ok(code.includes('aspect-[4/5]'), 'tall frame');
     assert.ok(!code.includes('rounded-full border border-border bg-muted'), 'no empty avatar circle');
   });
 
-  test('summary api supplies a cover per year and an image per person', () => {
+  test('summary api supplies a cover per year and never invents a portrait', () => {
     const route = src('app/api/home/summary/route.ts');
     assert.ok(route.includes('milestone_priority'), 'per-year photo source');
     assert.ok(route.includes('cover: milestoneCover[year]'), 'year response carries a cover');
-    assert.ok(route.includes('image: row.avatar_url ?? fallback'), 'person response carries an image');
-    assert.ok(route.includes('linkedByProfile'), 'person photo comes from credited projects');
+    assert.ok(route.includes('image: row.avatar_url ?? null'), 'portrait is the stored value only');
+    assert.ok(!route.includes('linkedByProfile'), 'no portrait is guessed from credited projects');
+  });
+
+  test('portraits are picked by hand, next to the year photos', () => {
+    const api = src('app/api/admin/people/portrait/route.ts');
+    assert.ok(api.includes("from('profiles')"), 'writes the profiles table');
+    assert.ok(api.includes('avatar_url'), 'stores the portrait on avatar_url');
+    assert.ok(api.includes('requireAdmin'), 'admin only');
+
+    const view = src('app/admin/gallery/components/views/milestones-view.tsx');
+    assert.ok(view.includes('HOMEPAGE_PORTRAITS'), 'portrait grid sits beside the milestones');
+    assert.ok(view.includes('/api/admin/people/portrait'), 'calls the portrait api');
+  });
+});
+
+describe('hover emphasis uses the site gradient', () => {
+  test('the gradient utility exists and is not a single accent', () => {
+    const css = src('app/globals.css');
+    assert.ok(css.includes('.hover-gradient-text'), 'utility is defined');
+    assert.ok(css.includes('var(--color-lmsy-gradient)'), 'uses the main ramp');
+  });
+
+  test('the three homepage blocks use it instead of one end of the ramp', () => {
+    for (const file of [
+      'components/sections/timeline-preview-section.tsx',
+      'components/sections/featured-projects-section.tsx',
+      'components/sections/people-section.tsx',
+    ]) {
+      const code = src(file);
+      assert.ok(code.includes('hover-gradient-text'), `${file} uses the gradient`);
+      assert.ok(
+        !code.includes('group-hover:text-lmsy-yellow') && !code.includes('group-hover:text-lmsy-blue'),
+        `${file} has no single-colour hover left`
+      );
+    }
   });
 });

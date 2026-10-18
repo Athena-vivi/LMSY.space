@@ -18,7 +18,7 @@ interface Person {
   birthday: string | null;
   role_label: string | null;
   project_count: number;
-  /** API-resolved photo: avatar_url when set, otherwise a photo of theirs. */
+  /** Portrait set by the curator in the admin; null until one is chosen. */
   image?: string | null;
 }
 
@@ -27,9 +27,10 @@ interface Person {
  *
  * The two cards are picture doors, not text rows with a thumbnail: a portrait
  * frame with the name laid over it, the same way the year row works. The
- * portrait is `profiles.avatar_url` when it is set and otherwise a photo from
- * a project the person is credited in, resolved server-side - this archive is
- * a photo exhibition, so a slot with nothing in it is the wrong default.
+ * portrait is `profiles.avatar_url`, set from the admin (gallery ->
+ * milestones -> portraits). It is deliberately not derived from project
+ * stills: a photo from a credited project was never the picture the card
+ * wanted. Until one is picked the frame shows the person's initial.
  */
 export function PeopleSection() {
   const { language } = useLanguage();
@@ -117,7 +118,7 @@ export function PeopleSection() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
 
                     <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
-                      <h3 className="font-serif text-3xl font-bold leading-tight text-white/95 transition-colors group-hover:text-lmsy-blue md:text-4xl">
+                      <h3 className="hover-gradient-text font-serif text-3xl font-bold leading-tight text-white/95 md:text-4xl">
                         {displayName}
                       </h3>
                       <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55">

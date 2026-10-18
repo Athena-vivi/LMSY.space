@@ -1,20 +1,29 @@
 /**
  * Milestones View Component
  *
- * Homepage timeline image management
+ * Homepage image management: one photo per year plus the two portraits.
  */
 
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Calendar, X } from 'lucide-react';
+import { Star, Calendar, X, UserRound } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getCdnUrl, milestoneYearToApi } from '../../utils';
 import { YEARS } from '../../constants';
 import type { MilestoneImage } from '../../hooks/use-vault-data';
 import type { GalleryItem } from '@/lib/supabase';
+
+interface PortraitRow {
+  id: string;
+  name: string;
+  nickname: string | null;
+  slug: string | null;
+  avatar_url: string | null;
+  role_label: string | null;
+}
 
 interface MilestonesViewProps {
   data: {
@@ -28,33 +37,67 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
   const { milestones, gallery } = data;
   const [showModal, setShowModal] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [portraits, setPortraits] = useState<PortraitRow[]>([]);
+  const [portraitTarget, setPortraitTarget] = useState<PortraitRow | null>(null);
   const [settingMilestone, setSettingMilestone] = useState(false);
 
+  const authHeaders = useCallback(async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+    return headers;
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPortraits() {
+      try {
+        const response = await fetch('/api/admin/people/portrait', {
+          headers: await authHeaders(),
+          credentials: 'include',
+        });
+        if (!response.ok) return;
+        const json = await response.json();
+        if (!cancelled) setPortraits(json.data ?? []);
+      } catch (error) {
+        console.error('[PORTRAITS] failed to load:', error);
+      }
+    }
+
+    loadPortraits();
+    return () => {
+      cancelled = true;
+    };
+  }, [authHeaders]);
+
   const openModal = (year: string) => {
+    setPortraitTarget(null);
     setSelectedYear(year);
+    setShowModal(true);
+  };
+
+  const openPortraitPicker = (person: PortraitRow) => {
+    setSelectedYear(null);
+    setPortraitTarget(person);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedYear(null);
+    setPortraitTarget(null);
   };
 
   const setMilestone = async (imageId: string, year: string) => {
     setSettingMilestone(true);
     try {
       const apiYear = milestoneYearToApi(year);
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`;
-      }
-
       const response = await fetch('/api/admin/gallery/milestone', {
         method: 'PATCH',
-        headers,
+        headers: await authHeaders(),
         credentials: 'include',
         body: JSON.stringify({ imageId, year: apiYear }),
       });
@@ -77,17 +120,9 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
   const clearMilestone = async (imageId: string) => {
     setSettingMilestone(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`;
-      }
-
       const response = await fetch('/api/admin/gallery/milestone', {
         method: 'PATCH',
-        headers,
+        headers: await authHeaders(),
         credentials: 'include',
         body: JSON.stringify({ imageId, year: null }),
       });
@@ -104,6 +139,38 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
     } finally {
       setSettingMilestone(false);
     }
+  };
+
+  const setPortrait = async (person: PortraitRow, imageUrl: string | null) => {
+    setSettingMilestone(true);
+    try {
+      const response = await fetch('/api/admin/people/portrait', {
+        method: 'PATCH',
+        headers: await authHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ profileId: person.id, imageUrl }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to set portrait');
+      }
+
+      window.location.reload();
+    } catch (err) {
+      console.error('[SET_PORTRAIT] Error:', err);
+      alert('Failed to save portrait');
+    } finally {
+      setSettingMilestone(false);
+    }
+  };
+
+  const pickImage = (item: GalleryItem) => {
+    if (portraitTarget) {
+      setPortrait(portraitTarget, getCdnUrl(item.image_url));
+      return;
+    }
+    if (selectedYear) setMilestone(item.id, selectedYear);
   };
 
   if (loading) {
@@ -198,9 +265,94 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
         </div>
       </motion.div>
 
-      {/* Milestone Selector Modal */}
+      {/*
+        Portraits sit next to the year photos because they are the same kind of
+        decision: a fixed slot on the homepage that the curator fills by hand.
+        Nothing here guesses a picture - an empty slot stays empty until one is
+        chosen.
+      */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mt-4 border border-lmsy-blue/20 rounded-lg p-4 bg-lmsy-blue/5"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <UserRound className="h-4 w-4 text-lmsy-blue" strokeWidth={1.5} />
+          <h3 className="text-sm font-mono text-lmsy-blue/90 tracking-wider">
+            HOMEPAGE_PORTRAITS
+          </h3>
+          <span className="text-xs font-mono text-ink-2 ml-auto">
+            SELECT_A_PORTRAIT_FOR_EACH_PERSON
+          </span>
+        </div>
+
+        {portraits.length === 0 ? (
+          <p className="text-xs font-mono text-ink-2 py-6 text-center">NO_PROFILES_FOUND</p>
+        ) : (
+          <div className="grid grid-cols-4 gap-3">
+            {portraits.map((person) => {
+              const imageUrl = getCdnUrl(person.avatar_url);
+              const displayName = person.nickname || person.name;
+
+              return (
+                <motion.div
+                  key={person.id}
+                  className="relative aspect-[3/4] rounded border border-white/10 bg-black/50 overflow-hidden cursor-pointer group"
+                  whileHover={{ scale: 1.02, borderColor: 'rgba(56, 189, 248, 0.3)' }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => openPortraitPicker(person)}
+                >
+                  {imageUrl ? (
+                    <Image
+                      src={imageUrl}
+                      alt={displayName}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 25vw, 150px"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center space-y-2">
+                        <UserRound className="h-6 w-6 text-ink-2 mx-auto" strokeWidth={1.5} />
+                        <span className="text-xs font-mono text-ink-2">{displayName}</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 pb-2 pt-6">
+                    <span className="block truncate text-xs font-mono text-white/90">
+                      {displayName}
+                    </span>
+                    <span className="block text-[10px] font-mono text-ink-2 tracking-wider opacity-0 transition-opacity group-hover:opacity-100">
+                      {imageUrl ? 'CHANGE_PORTRAIT' : 'SET_PORTRAIT'}
+                    </span>
+                  </div>
+                  {imageUrl && (
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPortrait(person, null);
+                      }}
+                      disabled={settingMilestone}
+                      className="absolute top-2 right-2 px-2 py-1 bg-black/70 border border-red-400/30 text-red-300/80 text-[10px] font-mono tracking-wider hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <X className="h-3 w-3" strokeWidth={2} />
+                        CLEAR
+                      </span>
+                    </button>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Shared image picker: year photos and portraits both come from the vault. */}
       <AnimatePresence>
-        {showModal && selectedYear && (
+        {showModal && (selectedYear || portraitTarget) && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -219,7 +371,9 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="font-serif text-xl text-lmsy-yellow/90 mb-1">
-                      SET_MILESTONE_FOR_{selectedYear}
+                      {portraitTarget
+                        ? `SET_PORTRAIT_FOR_${portraitTarget.nickname || portraitTarget.name}`
+                        : `SET_MILESTONE_FOR_${selectedYear}`}
                     </h2>
                     <p className="text-xs font-mono text-ink-2">
                       SELECT_AN_IMAGE_FROM_THE_VAULT_BELOW
@@ -231,11 +385,15 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                   {gallery.map((item) => {
                     const imageUrl = getCdnUrl(item.image_url);
                     if (!imageUrl) return null;
-                    const isCurrent = milestones[selectedYear]?.id === item.id;
+                    const isCurrent = portraitTarget
+                      ? imageUrl === portraitTarget.avatar_url
+                      : selectedYear
+                        ? milestones[selectedYear]?.id === item.id
+                        : false;
                     return (
                       <motion.button
                         key={item.id}
-                        onClick={() => setMilestone(item.id, selectedYear)}
+                        onClick={() => pickImage(item)}
                         disabled={settingMilestone}
                         className={`relative aspect-[3/4] rounded overflow-hidden border-2 ${
                           isCurrent

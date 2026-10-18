@@ -107,7 +107,7 @@ export function TimelinePreviewSection() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
                     <div className="absolute inset-x-0 bottom-0 p-4">
-                      <span className="block font-serif text-3xl font-bold leading-none text-white/95 transition-colors group-hover:text-lmsy-yellow md:text-4xl">
+                      <span className="hover-gradient-text block font-serif text-3xl font-bold leading-none text-white/95 md:text-4xl">
                         {entry.year}
                       </span>
                       <span className="mt-2 block font-mono text-[9px] uppercase tracking-[0.18em] text-white/55">

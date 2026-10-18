@@ -68,9 +68,8 @@ export async function GET() {
     const projects = (projectRows ?? []) as unknown as FeaturedRow[];
     const ids = projects.map((project) => project.id);
 
-    // One asset query for both the cover fallback and the image-presence test.
+    // One asset query for the per-project cover fallback.
     const coverByProject: Record<string, string> = {};
-    const imagesByProject: Record<string, string[]> = {};
     if (ids.length > 0) {
       const { data: assets } = await supabaseAdmin
         .schema('lmsy_archive')
@@ -86,8 +85,6 @@ export async function GET() {
         const url = (asset as { image_url: string | null }).image_url;
         if (!url) continue;
         if (!coverByProject[pid]) coverByProject[pid] = url;
-        const bucket = (imagesByProject[pid] ??= []);
-        if (bucket.length < 8) bucket.push(url);
       }
     }
 
@@ -215,42 +212,26 @@ export async function GET() {
 
     const publicIds = new Set(ids);
     const projectCountByProfile: Record<string, number> = {};
-    const dateByProject: Record<string, string> = {};
-    for (const project of projects) dateByProject[project.id] = project.event_date ?? '';
-
-    // Which public projects each person appears in, newest first. The link
-    // table is the only source for this: no project is guessed from a name.
-    const linkedByProfile: Record<string, Array<{ projectId: string; date: string }>> = {};
     for (const link of links ?? []) {
       const row = link as { profile_id: string; project_id: string };
       if (!publicIds.has(row.project_id)) continue;
       projectCountByProfile[row.profile_id] = (projectCountByProfile[row.profile_id] ?? 0) + 1;
-      (linkedByProfile[row.profile_id] ??= []).push({
-        projectId: row.project_id,
-        date: dateByProject[row.project_id] ?? '',
-      });
-    }
-    for (const key of Object.keys(linkedByProfile)) {
-      linkedByProfile[key].sort((a, b) => b.date.localeCompare(a.date));
     }
 
     /**
-     * `profiles.avatar_url` is empty for both people, so a card built only on
-     * it renders an empty circle. The fallback is a real photo from a project
-     * they are credited in; the index offset keeps two people who appear in
-     * the same sets from showing the same picture twice.
+     * The portrait is `profiles.avatar_url` and nothing else. Picking a still
+     * from one of the person's projects produced a photo that was technically
+     * theirs but had nothing to do with the card, so the curator sets it in
+     * the admin (gallery -> milestones -> portraits) and an unset portrait
+     * stays unset.
      */
-    const people = (profileRows ?? []).map((profile, index) => {
+    const people = (profileRows ?? []).map((profile) => {
       const id = (profile as { id: string }).id;
       const row = profile as { avatar_url: string | null };
-      const candidates = (linkedByProfile[id] ?? []).flatMap(
-        (entry) => imagesByProject[entry.projectId] ?? []
-      );
-      const fallback = candidates.length ? candidates[index % candidates.length] : null;
       return {
         ...(profile as Record<string, unknown>),
         project_count: projectCountByProfile[id] ?? 0,
-        image: row.avatar_url ?? fallback,
+        image: row.avatar_url ?? null,
       };
     });
 

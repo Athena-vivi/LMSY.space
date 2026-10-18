@@ -112,7 +112,7 @@ export function FeaturedProjectsSection() {
                     </span>
                   </div>
                   <div className="mt-3">
-                    <h3 className="font-serif text-lg font-semibold leading-snug text-foreground transition-colors group-hover:text-lmsy-yellow">
+                    <h3 className="hover-gradient-text font-serif text-lg font-semibold leading-snug text-foreground">
                       {title}
                     </h3>
                     {project.event_date && (
