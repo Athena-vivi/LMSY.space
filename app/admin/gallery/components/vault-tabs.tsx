@@ -31,7 +31,11 @@ export function VaultTabs({ activeTab, onChange, data }: VaultTabsProps) {
       case 'editorial':
         return data.projects.filter(p => p.category === 'editorial' || p.category === 'drama_work').length;
       case 'portals':
-        return data.gallery.filter((item: { portal_slot?: string | null }) => item.portal_slot).length;
+        // Five entries plus the two soul-resonance doors.
+        return data.gallery.filter(
+          (item: { portal_slot?: string | null; interview_slot?: string | null }) =>
+            item.portal_slot || item.interview_slot
+        ).length;
       case 'milestones':
         return Object.keys(data.milestones).length;
       default:

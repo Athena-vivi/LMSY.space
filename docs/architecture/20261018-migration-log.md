@@ -374,3 +374,14 @@
 - 后台：Asset Vault 新增 `PORTALS` 标签页（`app/admin/gallery/components/views/portals-view.tsx`），五个卡位，复用 `VaultImagePicker`，可 SET / CHANGE / CLEAR。
 - 写入接口：`PATCH /api/admin/gallery/portal`，`{ imageId, category | null }`；设置前先释放该 `category` 的原持有者，避免撞唯一索引。
 - 迁移脚本：`temp/m_portal_slots.sql`（`temp/` 不进仓库）。
+
+### 8.8 `gallery_assets.interview_slot`（2026-10-18 新增）
+
+灵魂共振区块的两个横门（图片采访 / 视频采访）封面同样不可选：`/api/home/summary` 从写了 `interview_md` 的项目里取第一个有封面的，取不到就是空。现在与 §8.7 同一套机制：
+
+- 列：`interview_slot text`，值为 `photo` | `video`，NULL 表示该门走派生封面。
+- 唯一索引：`gallery_assets_interview_slot_unique`，`where interview_slot is not null`。
+- 读取优先级：`/api/home/summary` 里 pinned 封面优先，**即使 `interview_md` 一条都没有也显示**（人工指定优先于内容计数）；未命中才走原派生逻辑。
+- 后台：与五个入口共用 `PORTALS` 标签页，下半部分 `SOUL_RESONANCE` 两个 16:9 卡位。
+- 写入接口：仍为 `PATCH /api/admin/gallery/portal`，`{ imageId, interview: 'photo' | 'video' | null }`。`category` 与 `interview` 必须**恰好给一个**，否则 400。
+- 迁移脚本：`temp/m_interview_slots.sql`（`temp/` 不进仓库）。

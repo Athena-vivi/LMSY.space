@@ -46,7 +46,7 @@ export const VAULT_HEADER_TITLES: Record<VaultTabId, { title: string; subtitle: 
   },
   portals: {
     title: 'PORTAL_MANAGER',
-    subtitle: 'HOMEPAGE_ENTRY_IMAGES',
+    subtitle: 'HOMEPAGE_DOOR_IMAGES',
   },
   milestones: {
     title: 'MILESTONE_MANAGER',

@@ -104,6 +104,11 @@ export interface GalleryItem {
    * At most one row carries a given value.
    */
   portal_slot?: string | null;
+  /**
+   * Soul-resonance door this image was pinned to: 'photo' or 'video'.
+   * NULL means the door uses its derived cover. At most one row per value.
+   */
+  interview_slot?: string | null;
   display_role?: 'regular' | 'cover' | 'milestone' | 'editorial' | 'portal' | null;
   integrity_status?: 'unchecked' | 'ok' | 'broken' | 'missing' | 'hidden' | null;
   is_cover?: boolean | null;

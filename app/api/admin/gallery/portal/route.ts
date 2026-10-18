@@ -5,97 +5,135 @@ import { apiServerError } from '@/lib/security/http';
 import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
 
 /**
- * Homepage portal covers.
+ * Homepage door covers.
  *
- * The homepage shows five fixed doors, one per HOME_CATEGORIES entry. Until
- * now the photo behind each door was whatever the first public project in
- * that hall happened to carry, which the curator could not choose. This route
- * lets them pick the image themselves, out of the vault, exactly like the
- * year photos and the portraits.
+ * Two families of fixed door read their photo from this table:
+ *   - the five entries under /api/home/portals, one per HOME_CATEGORIES value
+ *     (`gallery_assets.portal_slot`)
+ *   - the two interview doors in the soul-resonance block, photo and video
+ *     (`gallery_assets.interview_slot`)
  *
- * PATCH { imageId: string, category: ProjectCategory | null }
- *   category = null clears the slot and the door falls back to the automatic
- *   cover it used before.
+ * Until this route existed both families derived their photo from project
+ * covers, which the curator could not choose. Now each door can be pinned to
+ * an image from the vault, exactly like the year photos and the portraits.
  *
- * One row per slot: the previous holder is cleared before the new one is set,
- * so the partial unique index on portal_slot never sees two rows.
+ * PATCH { imageId, category: ProjectCategory | null }   -> portal_slot
+ * PATCH { imageId, interview: 'photo' | 'video' | null } -> interview_slot
+ *
+ * Exactly one of `category` / `interview` must be present. A null value clears
+ * the door and it falls back to the derived cover it used before.
+ *
+ * One row per door: the previous holder is released before the new one is set,
+ * so the partial unique index on either column never sees two rows.
  */
+
+const INTERVIEW_SLOTS = ['photo', 'video'] as const;
+type InterviewSlot = (typeof INTERVIEW_SLOTS)[number];
+
+interface SlotTarget {
+  column: 'portal_slot' | 'interview_slot';
+  /** null clears the door */
+  value: string | null;
+}
+
+function resolveTarget(body: Record<string, unknown>): SlotTarget | { error: string } {
+  const hasCategory = Object.prototype.hasOwnProperty.call(body, 'category');
+  const hasInterview = Object.prototype.hasOwnProperty.call(body, 'interview');
+
+  if (hasCategory === hasInterview) {
+    return { error: 'Exactly one of `category` or `interview` is required' };
+  }
+
+  if (hasCategory) {
+    const raw = body.category;
+    if (raw === null) return { column: 'portal_slot', value: null };
+
+    const validValues = HOME_CATEGORIES.map((definition) => definition.value);
+    if (typeof raw !== 'string' || !validValues.includes(raw as ProjectCategory)) {
+      return { error: `Invalid category. Must be one of ${validValues.join(', ')}, or null` };
+    }
+    return { column: 'portal_slot', value: raw };
+  }
+
+  const raw = body.interview;
+  if (raw === null) return { column: 'interview_slot', value: null };
+  if (typeof raw !== 'string' || !INTERVIEW_SLOTS.includes(raw as InterviewSlot)) {
+    return { error: `Invalid interview door. Must be one of ${INTERVIEW_SLOTS.join(', ')}, or null` };
+  }
+  return { column: 'interview_slot', value: raw };
+}
+
 export async function PATCH(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
   try {
-    const body = await request.json();
-    const { imageId, category } = body as {
-      imageId?: string;
-      category?: string | null;
-    };
+    const body = (await request.json()) as Record<string, unknown>;
+    const imageId = typeof body.imageId === 'string' ? body.imageId : '';
 
     if (!imageId) {
       return NextResponse.json({ error: 'imageId is required' }, { status: 400 });
     }
 
-    const validValues = HOME_CATEGORIES.map((definition) => definition.value);
-    const slot =
-      category === null || category === undefined
-        ? null
-        : validValues.includes(category as ProjectCategory)
-          ? (category as ProjectCategory)
-          : undefined;
-
-    if (slot === undefined) {
-      return NextResponse.json(
-        { error: `Invalid category. Must be one of ${validValues.join(', ')}, or null` },
-        { status: 400 }
-      );
+    const target = resolveTarget(body);
+    if ('error' in target) {
+      return NextResponse.json({ error: target.error }, { status: 400 });
     }
 
     const supabaseAdmin = getSupabaseAdmin();
     const table = () => supabaseAdmin.schema('lmsy_archive').from('gallery_assets');
 
-    if (slot !== null) {
-      // Release the slot from whoever held it, otherwise the unique index
+    if (target.value !== null) {
+      // Release the door from whoever held it, otherwise the unique index
       // rejects the write.
       const { error: clearError } = await table()
-        .update({ portal_slot: null })
-        .eq('portal_slot', slot);
+        .update({ [target.column]: null })
+        .eq(target.column, target.value);
 
       if (clearError) {
-        console.error('[PORTAL_SLOT_API] Failed to release previous holder:', clearError);
+        console.error('[HOME_DOOR_API] Failed to release previous holder:', clearError);
         return apiServerError('admin/gallery/portal PATCH', clearError);
       }
     }
 
     const { data, error } = await table()
-      .update({ portal_slot: slot })
+      .update({ [target.column]: target.value })
       .eq('id', imageId)
-      .select('id, image_url, blur_data, portal_slot')
+      .select(`id, image_url, blur_data, ${target.column}`)
       .single();
 
     if (error) {
-      console.error('[PORTAL_SLOT_API] Failed to set slot:', error);
+      console.error('[HOME_DOOR_API] Failed to set slot:', error);
       return apiServerError('admin/gallery/portal PATCH', error);
     }
 
-    console.log('[PORTAL_SLOT_API] Set portal slot:', { imageId, slot });
+    const saved = data as unknown as Record<string, unknown>;
+    const savedValue = saved[target.column] as string | null;
+
+    console.log('[HOME_DOOR_API] Set door:', {
+      imageId,
+      column: target.column,
+      value: savedValue,
+    });
 
     return NextResponse.json({
       success: true,
       data: {
-        imageId: data.id,
-        imageUrl: data.image_url,
-        blurData: data.blur_data ?? null,
-        category: data.portal_slot,
+        imageId: saved.id,
+        imageUrl: saved.image_url,
+        blurData: saved.blur_data ?? null,
+        column: target.column,
+        value: savedValue,
       },
     });
   } catch (error) {
-    console.error('[PORTAL_SLOT_API] Error:', error);
+    console.error('[HOME_DOOR_API] Error:', error);
     return apiServerError('admin/gallery/portal', error);
   }
 }
 
 /**
- * GET - current cover per homepage entry
+ * GET - current cover per door, both families
  */
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -103,30 +141,53 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
+    const table = () => supabaseAdmin.schema('lmsy_archive').from('gallery_assets');
 
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('id, image_url, blur_data, portal_slot')
-      .not('portal_slot', 'is', null);
+    // Two queries instead of one OR filter: `not.is.null` inside `.or()` is
+    // easy to get wrong, and this runs on an admin page, not a hot path.
+    const [portalResult, interviewResult] = await Promise.all([
+      table().select('id, image_url, blur_data, portal_slot').not('portal_slot', 'is', null),
+      table().select('id, image_url, blur_data, interview_slot').not('interview_slot', 'is', null),
+    ]);
 
+    const error = portalResult.error ?? interviewResult.error;
     if (error) {
-      console.error('[PORTAL_SLOT_API] Failed to fetch slots:', error);
+      console.error('[HOME_DOOR_API] Failed to fetch slots:', error);
       return apiServerError('admin/gallery/portal GET', error);
     }
 
+    const portalRows = (portalResult.data ?? []) as unknown as Array<{
+      id: string;
+      image_url: string;
+      blur_data: string | null;
+      portal_slot: string | null;
+    }>;
+    const interviewRows = (interviewResult.data ?? []) as unknown as Array<{
+      id: string;
+      image_url: string;
+      blur_data: string | null;
+      interview_slot: string | null;
+    }>;
+
     return NextResponse.json({
       success: true,
-      data:
-        data?.map((item) => ({
-          id: item.id,
-          imageUrl: item.image_url,
-          blurData: item.blur_data ?? null,
-          category: item.portal_slot,
-        })) ?? [],
+      data: {
+        portals: portalRows.map((row) => ({
+          id: row.id,
+          imageUrl: row.image_url,
+          blurData: row.blur_data ?? null,
+          category: row.portal_slot,
+        })),
+        interviews: interviewRows.map((row) => ({
+          id: row.id,
+          imageUrl: row.image_url,
+          blurData: row.blur_data ?? null,
+          door: row.interview_slot,
+        })),
+      },
     });
   } catch (error) {
-    console.error('[PORTAL_SLOT_API] Error:', error);
+    console.error('[HOME_DOOR_API] Error:', error);
     return apiServerError('admin/gallery/portal', error);
   }
 }

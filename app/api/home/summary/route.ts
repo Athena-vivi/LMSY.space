@@ -158,14 +158,32 @@ export async function GET() {
     };
     const photoInterviews = interviewRows.filter((row) => !row.interview_video_url);
     const videoInterviews = interviewRows.filter((row) => !!row.interview_video_url);
+
+    // A door can be pinned to an image from the vault (Asset Vault -> PORTALS).
+    // That choice wins over whatever the interview projects happen to carry,
+    // and it stands even when no interview has been written yet.
+    const { data: pinnedDoors } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('image_url, interview_slot')
+      .not('interview_slot', 'is', null);
+
+    const pinnedCover: Record<string, string | null> = {};
+    for (const row of (pinnedDoors ?? []) as unknown as Array<{
+      image_url: string;
+      interview_slot: string;
+    }>) {
+      pinnedCover[row.interview_slot] = row.image_url;
+    }
+
     const interviews = {
       photo: {
         count: photoInterviews.length,
-        cover: interviewCover(photoInterviews),
+        cover: pinnedCover.photo ?? interviewCover(photoInterviews),
       },
       video: {
         count: videoInterviews.length,
-        cover: interviewCover(videoInterviews),
+        cover: pinnedCover.video ?? interviewCover(videoInterviews),
       },
     };
 
