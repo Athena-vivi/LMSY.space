@@ -289,14 +289,6 @@ export interface IngestApiRequest {
   description?: Partial<MultilingualContent>;
   original_text?: string;
 
-  // Date semantics (phase 6 batch 4). These are TWO different things:
-  //   event_date     = when the depicted event happened (a curation claim).
-  //                    Only write it when the source actually states that date.
-  //   raw_event_date = the timestamp the source gave us (post time, message
-  //                    time, article publish time) - evidence, not an event.
-  // A collector that sends only "today" must send it as raw_event_date. If it
-  // arrives as event_date without a raw_event_date, the API stores it in
-  // raw_event_date and leaves event_date NULL (see deriveIngestDraftDates).
   event_date?: string;
   raw_event_date?: string;
 
@@ -317,8 +309,6 @@ export interface IngestApiResponse {
   message: string;
   error?: string;
   is_duplicate?: boolean;
-  /** True when the draft still needs a curator to set the real event date. */
-  date_needs_curation?: boolean;
   existing_item?: {
     id: string;
     title?: MultilingualContent;
