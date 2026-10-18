@@ -10,6 +10,7 @@ import { AllAssetsView } from './components/views/all-assets-view';
 import { ChronicleView } from './components/views/chronicle-view';
 import { EditorialView } from './components/views/editorial-view';
 import { MilestonesView } from './components/views/milestones-view';
+import { PortalsView } from './components/views/portals-view';
 import { PortraitsView } from './components/views/portraits-view';
 import { useVaultData, type ChronicleEvent, type VaultData } from './hooks/use-vault-data';
 import { useVaultFilters } from './hooks/use-vault-filters';
@@ -22,6 +23,7 @@ import { VAULT_TABS, type VaultTabId } from './constants';
  * - All Assets: Gallery images and editorial projects
  * - Chronicle: Timeline events
  * - Editorial: Magazine projects
+ * - Portals: Homepage entry images
  * - Milestones: Homepage timeline images
  * - Portraits: Homepage people images
  *
@@ -63,6 +65,7 @@ export default function AssetVaultPage() {
   const chronicleData = filteredData as { events: ChronicleEvent[]; gallery: VaultData['gallery'] };
   const editorialData = filteredData as { projects: VaultData['projects'] };
   const milestoneData = filteredData as { milestones: VaultData['milestones']; gallery: VaultData['gallery'] };
+  const portalData = filteredData as { gallery: VaultData['gallery'] };
   const portraitData = filteredData as { gallery: VaultData['gallery'] };
 
   return (
@@ -127,6 +130,9 @@ export default function AssetVaultPage() {
         )}
         {activeTab === 'editorial' && (
           <EditorialView key="editorial" data={editorialData} loading={loading} />
+        )}
+        {activeTab === 'portals' && (
+          <PortalsView key="portals" data={portalData} loading={loading} />
         )}
         {activeTab === 'milestones' && (
           <MilestonesView key="milestones" data={milestoneData} loading={loading} />

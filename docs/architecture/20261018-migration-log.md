@@ -362,3 +362,15 @@
 - 授权：`anon, authenticated` 仅 `select, insert`；`service_role` 全量
 - 索引：`messages_created_at_idx (created_at desc)`
 - 迁移脚本：`temp/m_messages.sql`（`temp/` 不进仓库）
+
+### 8.7 `gallery_assets.portal_slot`（2026-10-18 新增）
+
+首页五个固定入口（`HOME_CATEGORIES`）的封面此前不可选：`/api/home/portals` 按 `portal_priority / event_date` 取该分类第一个公开项目，再取它的 `cover_url` 或图库资产。策展人无法决定门外那张图。现在改为可指定：
+
+- 列：`portal_slot text`，值为分类稳定值（`lib/category-registry.ts`），NULL 表示该门走自动封面。
+- 唯一索引：`gallery_assets_portal_slot_unique`，`where portal_slot is not null`。一个门只允许一张图，否则首页结果取决于行序。
+- **不加 CHECK 约束**：分类清单只在 `category-registry.ts` 一处维护，数据库里写死一份会在下次改分类时变成阻塞。
+- 读取优先级：`/api/home/portals` 先读 `portal_slot` 命中的资产，命中即用（即使该门没有公开项目也显示，因为这是人工决定）；未命中才走原自动逻辑，行为与改动前一致。
+- 后台：Asset Vault 新增 `PORTALS` 标签页（`app/admin/gallery/components/views/portals-view.tsx`），五个卡位，复用 `VaultImagePicker`，可 SET / CHANGE / CLEAR。
+- 写入接口：`PATCH /api/admin/gallery/portal`，`{ imageId, category | null }`；设置前先释放该 `category` 的原持有者，避免撞唯一索引。
+- 迁移脚本：`temp/m_portal_slots.sql`（`temp/` 不进仓库）。

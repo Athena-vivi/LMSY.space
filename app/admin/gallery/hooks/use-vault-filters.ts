@@ -17,7 +17,7 @@ export interface VaultFilters {
 
 export function useVaultFilters(
   data: VaultData,
-  activeTab: 'all' | 'chronicle' | 'editorial' | 'milestones' | 'portraits',
+  activeTab: 'all' | 'chronicle' | 'editorial' | 'portals' | 'milestones' | 'portraits',
   filters: VaultFilters
 ) {
   const { searchQuery, filterTag } = filters;
@@ -33,6 +33,11 @@ export function useVaultFilters(
 
       case 'editorial':
         return filterEditorial(data, searchQuery);
+
+      // Portal doors also pick from the whole vault: the page-level filter
+      // would only hide choices the picker can search itself.
+      case 'portals':
+        return { gallery: data.gallery };
 
       case 'milestones':
         return { milestones: data.milestones, gallery: data.gallery };

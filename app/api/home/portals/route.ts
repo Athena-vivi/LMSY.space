@@ -14,7 +14,10 @@ import { HOME_CATEGORIES } from '@/lib/category-registry';
  * as 0 and the card renders its "collecting" placeholder. Empty halls are a
  * state of the archive, not a reason to remove the door.
  *
- * Cover priority inside the chosen project:
+ * Cover priority:
+ *   0. the vault image the curator pinned to this door (gallery_assets
+ *      .portal_slot), set in Asset Vault -> PORTALS. This wins outright.
+ * Then, inside the first public project by priority:
  *   1. project.cover_url (curated by hand)
  *   2. the asset whose catalog_id ends in -000
  *   3. a featured asset
@@ -48,7 +51,30 @@ export async function GET() {
         .order('event_date', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
-      if (error || !projects || projects.length === 0) {
+      if (error) {
+        return { cover: null, count: 0 };
+      }
+
+      const count = projects?.length ?? 0;
+
+      // A pinned cover is the curator's decision, not a fallback: use it even
+      // when the hall has no public project yet, so an empty door can still
+      // carry the photo they chose for it.
+      const { data: pinned } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery_assets')
+        .select('image_url, blur_data')
+        .eq('portal_slot', category)
+        .maybeSingle();
+
+      if (pinned?.image_url) {
+        return {
+          cover: { imageUrl: pinned.image_url, blurData: pinned.blur_data ?? null },
+          count,
+        };
+      }
+
+      if (!projects || projects.length === 0) {
         return { cover: null, count: 0 };
       }
 

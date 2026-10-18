@@ -30,6 +30,8 @@ export function VaultTabs({ activeTab, onChange, data }: VaultTabsProps) {
         return data.events.length;
       case 'editorial':
         return data.projects.filter(p => p.category === 'editorial' || p.category === 'drama_work').length;
+      case 'portals':
+        return data.gallery.filter((item: { portal_slot?: string | null }) => item.portal_slot).length;
       case 'milestones':
         return Object.keys(data.milestones).length;
       default:

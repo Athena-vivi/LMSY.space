@@ -98,6 +98,12 @@ export interface GalleryItem {
   category_tag: GalleryCategoryTag;
   project_id: string | null;
   milestone_priority: MilestonePriority;
+  /**
+   * Homepage door this image was pinned to, as a category value
+   * (lib/category-registry.ts). NULL means the door uses its automatic cover.
+   * At most one row carries a given value.
+   */
+  portal_slot?: string | null;
   display_role?: 'regular' | 'cover' | 'milestone' | 'editorial' | 'portal' | null;
   integrity_status?: 'unchecked' | 'ok' | 'broken' | 'missing' | 'hidden' | null;
   is_cover?: boolean | null;
