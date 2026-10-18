@@ -4,10 +4,10 @@
  * Tab configurations and filter options
  */
 
-import { Images, Calendar, FileText, Star } from 'lucide-react';
+import { Images, Calendar, FileText, Star, UserRound } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export type VaultTabId = 'all' | 'chronicle' | 'editorial' | 'milestones';
+export type VaultTabId = 'all' | 'chronicle' | 'editorial' | 'milestones' | 'portraits';
 
 export interface VaultTab {
   id: VaultTabId;
@@ -20,6 +20,7 @@ export const VAULT_TABS: VaultTab[] = [
   { id: 'chronicle', label: 'CHRONICLE', icon: Calendar },
   { id: 'editorial', label: 'EDITORIAL', icon: FileText },
   { id: 'milestones', label: 'MILESTONES', icon: Star },
+  { id: 'portraits', label: 'PORTRAITS', icon: UserRound },
 ];
 
 export const VAULT_HEADER_TITLES: Record<VaultTabId, { title: string; subtitle: string }> = {
@@ -38,6 +39,10 @@ export const VAULT_HEADER_TITLES: Record<VaultTabId, { title: string; subtitle: 
   milestones: {
     title: 'MILESTONE_MANAGER',
     subtitle: 'HOMEPAGE_TIMELINE_IMAGES',
+  },
+  portraits: {
+    title: 'PORTRAIT_MANAGER',
+    subtitle: 'HOMEPAGE_PEOPLE_IMAGES',
   },
 };
 

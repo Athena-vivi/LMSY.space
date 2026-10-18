@@ -1,29 +1,23 @@
 /**
- * Milestones View Component
+ * Milestones View
  *
- * Homepage image management: one photo per year plus the two portraits.
+ * Homepage year photos: one image per year, chosen by hand from the vault.
+ * Portraits live in their own tab (portraits-view.tsx) because they are a
+ * different slot type and should not push this grid down the page.
  */
 
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Calendar, X, UserRound } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Star, Calendar, X } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { getCdnUrl, milestoneYearToApi } from '../../utils';
 import { YEARS } from '../../constants';
+import { VaultImagePicker } from '../vault-image-picker';
+import { useAdminHeaders } from '../../hooks/use-admin-headers';
 import type { MilestoneImage } from '../../hooks/use-vault-data';
 import type { GalleryItem } from '@/lib/supabase';
-
-interface PortraitRow {
-  id: string;
-  name: string;
-  nickname: string | null;
-  slug: string | null;
-  avatar_url: string | null;
-  role_label: string | null;
-}
 
 interface MilestonesViewProps {
   data: {
@@ -35,90 +29,75 @@ interface MilestonesViewProps {
 
 export function MilestonesView({ data, loading }: MilestonesViewProps) {
   const { milestones, gallery } = data;
-  const [showModal, setShowModal] = useState(false);
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
-  const [portraits, setPortraits] = useState<PortraitRow[]>([]);
-  const [portraitTarget, setPortraitTarget] = useState<PortraitRow | null>(null);
-  const [settingMilestone, setSettingMilestone] = useState(false);
+  const authHeaders = useAdminHeaders();
+  const [pickerYear, setPickerYear] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const authHeaders = useCallback(async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-    return headers;
-  }, []);
+  // Reflect a save immediately instead of reloading the page: a reload
+  // re-runs the admin guard and can bounce back to the homepage before the
+  // curator can see the result.
+  const [overrides, setOverrides] = useState<Record<string, MilestoneImage | null>>({});
+
+  const milestoneFor = useCallback(
+    (year: string): MilestoneImage | null => {
+      if (year in overrides) return overrides[year];
+      return milestones[year] ?? null;
+    },
+    [milestones, overrides]
+  );
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadPortraits() {
-      try {
-        const response = await fetch('/api/admin/people/portrait', {
-          headers: await authHeaders(),
-          credentials: 'include',
-        });
-        if (!response.ok) return;
-        const json = await response.json();
-        if (!cancelled) setPortraits(json.data ?? []);
-      } catch (error) {
-        console.error('[PORTRAITS] failed to load:', error);
-      }
-    }
-
-    loadPortraits();
     return () => {
-      cancelled = true;
+      if (noteTimer.current) clearTimeout(noteTimer.current);
     };
-  }, [authHeaders]);
+  }, []);
 
-  const openModal = (year: string) => {
-    setPortraitTarget(null);
-    setSelectedYear(year);
-    setShowModal(true);
+  const flash = (message: string) => {
+    setNote(message);
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(() => setNote(null), 3200);
   };
 
-  const openPortraitPicker = (person: PortraitRow) => {
-    setSelectedYear(null);
-    setPortraitTarget(person);
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedYear(null);
-    setPortraitTarget(null);
-  };
-
-  const setMilestone = async (imageId: string, year: string) => {
-    setSettingMilestone(true);
+  const setMilestone = async (item: GalleryItem, year: string) => {
+    setBusy(true);
     try {
       const apiYear = milestoneYearToApi(year);
       const response = await fetch('/api/admin/gallery/milestone', {
         method: 'PATCH',
         headers: await authHeaders(),
         credentials: 'include',
-        body: JSON.stringify({ imageId, year: apiYear }),
+        body: JSON.stringify({ imageId: item.id, year: apiYear }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to set milestone');
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || 'Failed to set milestone');
       }
 
-      // Refresh data by calling the parent's refetch
-      window.location.reload();
+      setOverrides((prev) => ({
+        ...prev,
+        [year]: {
+          id: item.id,
+          image_url: item.image_url,
+          year: apiYear,
+          caption: item.caption ?? null,
+          tag: item.tag ?? null,
+        },
+      }));
+      flash(`${year} 已保存 / SAVED`);
+      setPickerYear(null);
     } catch (err) {
       console.error('[SET_MILESTONE] Error:', err);
       alert('Failed to set milestone');
     } finally {
-      setSettingMilestone(false);
+      setBusy(false);
     }
   };
 
-  const clearMilestone = async (imageId: string) => {
-    setSettingMilestone(true);
+  const clearMilestone = async (year: string, imageId: string) => {
+    setBusy(true);
     try {
       const response = await fetch('/api/admin/gallery/milestone', {
         method: 'PATCH',
@@ -128,49 +107,19 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to clear milestone');
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || 'Failed to clear milestone');
       }
 
-      window.location.reload();
+      setOverrides((prev) => ({ ...prev, [year]: null }));
+      flash(`${year} 已清空 / CLEARED`);
+      setPickerYear(null);
     } catch (err) {
       console.error('[CLEAR_MILESTONE] Error:', err);
       alert('Failed to clear milestone');
     } finally {
-      setSettingMilestone(false);
+      setBusy(false);
     }
-  };
-
-  const setPortrait = async (person: PortraitRow, imageUrl: string | null) => {
-    setSettingMilestone(true);
-    try {
-      const response = await fetch('/api/admin/people/portrait', {
-        method: 'PATCH',
-        headers: await authHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({ profileId: person.id, imageUrl }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to set portrait');
-      }
-
-      window.location.reload();
-    } catch (err) {
-      console.error('[SET_PORTRAIT] Error:', err);
-      alert('Failed to save portrait');
-    } finally {
-      setSettingMilestone(false);
-    }
-  };
-
-  const pickImage = (item: GalleryItem) => {
-    if (portraitTarget) {
-      setPortrait(portraitTarget, getCdnUrl(item.image_url));
-      return;
-    }
-    if (selectedYear) setMilestone(item.id, selectedYear);
   };
 
   if (loading) {
@@ -185,6 +134,8 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
     );
   }
 
+  const current = pickerYear ? milestoneFor(pickerYear) : null;
+
   return (
     <>
       <motion.div
@@ -198,13 +149,16 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
           <h3 className="text-sm font-mono text-lmsy-yellow/90 tracking-wider">
             HOMEPAGE_MILESTONES
           </h3>
+          {note && (
+            <span className="text-xs font-mono text-emerald-300/90">{note}</span>
+          )}
           <span className="text-xs font-mono text-ink-2 ml-auto">
             SELECT_IMAGES_FOR_EACH_YEAR
           </span>
         </div>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3 md:grid-cols-5">
           {YEARS.map((year) => {
-            const milestone = milestones[year];
+            const milestone = milestoneFor(year);
             const imageUrl = milestone ? getCdnUrl(milestone.image_url) : null;
 
             return (
@@ -213,7 +167,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                 className="relative aspect-[3/4] rounded border border-white/10 bg-black/50 overflow-hidden cursor-pointer group"
                 whileHover={{ scale: 1.02, borderColor: 'rgba(251, 191, 36, 0.3)' }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => openModal(year)}
+                onClick={() => setPickerYear(year)}
               >
                 {imageUrl ? (
                   <Image
@@ -221,7 +175,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                     alt={`${year} milestone`}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 25vw, 150px"
+                    sizes="(max-width: 768px) 30vw, 150px"
                     unoptimized
                   />
                 ) : (
@@ -247,9 +201,9 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
                     <button
                       onClick={(event) => {
                         event.stopPropagation();
-                        clearMilestone(milestone.id);
+                        clearMilestone(year, milestone.id);
                       }}
-                      disabled={settingMilestone}
+                      disabled={busy}
                       className="px-2 py-1 bg-black/70 border border-red-400/30 text-red-300/80 text-[10px] font-mono tracking-wider hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <span className="inline-flex items-center gap-1">
@@ -265,166 +219,22 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
         </div>
       </motion.div>
 
-      {/*
-        Portraits sit next to the year photos because they are the same kind of
-        decision: a fixed slot on the homepage that the curator fills by hand.
-        Nothing here guesses a picture - an empty slot stays empty until one is
-        chosen.
-      */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mt-4 border border-lmsy-blue/20 rounded-lg p-4 bg-lmsy-blue/5"
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <UserRound className="h-4 w-4 text-lmsy-blue" strokeWidth={1.5} />
-          <h3 className="text-sm font-mono text-lmsy-blue/90 tracking-wider">
-            HOMEPAGE_PORTRAITS
-          </h3>
-          <span className="text-xs font-mono text-ink-2 ml-auto">
-            SELECT_A_PORTRAIT_FOR_EACH_PERSON
-          </span>
-        </div>
-
-        {portraits.length === 0 ? (
-          <p className="text-xs font-mono text-ink-2 py-6 text-center">NO_PROFILES_FOUND</p>
-        ) : (
-          <div className="grid grid-cols-4 gap-3">
-            {portraits.map((person) => {
-              const imageUrl = getCdnUrl(person.avatar_url);
-              const displayName = person.nickname || person.name;
-
-              return (
-                <motion.div
-                  key={person.id}
-                  className="relative aspect-[3/4] rounded border border-white/10 bg-black/50 overflow-hidden cursor-pointer group"
-                  whileHover={{ scale: 1.02, borderColor: 'rgba(56, 189, 248, 0.3)' }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => openPortraitPicker(person)}
-                >
-                  {imageUrl ? (
-                    <Image
-                      src={imageUrl}
-                      alt={displayName}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 25vw, 150px"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center space-y-2">
-                        <UserRound className="h-6 w-6 text-ink-2 mx-auto" strokeWidth={1.5} />
-                        <span className="text-xs font-mono text-ink-2">{displayName}</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 pb-2 pt-6">
-                    <span className="block truncate text-xs font-mono text-white/90">
-                      {displayName}
-                    </span>
-                    <span className="block text-[10px] font-mono text-ink-2 tracking-wider opacity-0 transition-opacity group-hover:opacity-100">
-                      {imageUrl ? 'CHANGE_PORTRAIT' : 'SET_PORTRAIT'}
-                    </span>
-                  </div>
-                  {imageUrl && (
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setPortrait(person, null);
-                      }}
-                      disabled={settingMilestone}
-                      className="absolute top-2 right-2 px-2 py-1 bg-black/70 border border-red-400/30 text-red-300/80 text-[10px] font-mono tracking-wider hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        <X className="h-3 w-3" strokeWidth={2} />
-                        CLEAR
-                      </span>
-                    </button>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </motion.div>
-
-      {/* Shared image picker: year photos and portraits both come from the vault. */}
-      <AnimatePresence>
-        {showModal && (selectedYear || portraitTarget) && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
-              onClick={closeModal}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              <div className="bg-black border border-lmsy-yellow/30 rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="font-serif text-xl text-lmsy-yellow/90 mb-1">
-                      {portraitTarget
-                        ? `SET_PORTRAIT_FOR_${portraitTarget.nickname || portraitTarget.name}`
-                        : `SET_MILESTONE_FOR_${selectedYear}`}
-                    </h2>
-                    <p className="text-xs font-mono text-ink-2">
-                      SELECT_AN_IMAGE_FROM_THE_VAULT_BELOW
-                    </p>
-                  </div>
-                </div>
-
-                <div className="custom-scrollbar flex-1 overflow-y-auto grid grid-cols-4 gap-3 p-2">
-                  {gallery.map((item) => {
-                    const imageUrl = getCdnUrl(item.image_url);
-                    if (!imageUrl) return null;
-                    const isCurrent = portraitTarget
-                      ? imageUrl === portraitTarget.avatar_url
-                      : selectedYear
-                        ? milestones[selectedYear]?.id === item.id
-                        : false;
-                    return (
-                      <motion.button
-                        key={item.id}
-                        onClick={() => pickImage(item)}
-                        disabled={settingMilestone}
-                        className={`relative aspect-[3/4] rounded overflow-hidden border-2 ${
-                          isCurrent
-                            ? 'border-lmsy-yellow shadow-lg shadow-lmsy-yellow/20'
-                            : 'border-white/10 hover:border-white/30'
-                        } transition-all`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Image
-                          src={imageUrl}
-                          alt={item.caption || 'Gallery image'}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 25vw, 200px"
-                          unoptimized
-                        />
-                        {isCurrent && (
-                          <div className="absolute top-2 left-2">
-                            <Star className="h-5 w-5 text-lmsy-yellow fill-lmsy-yellow" strokeWidth={2} />
-                          </div>
-                        )}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <VaultImagePicker
+        key={pickerYear ?? 'no-year'}
+        open={pickerYear !== null}
+        title={`SET_MILESTONE_FOR_${pickerYear ?? ''}`}
+        subtitle="SELECT_AN_IMAGE_FROM_THE_VAULT"
+        images={gallery}
+        currentImageId={current?.id ?? null}
+        busy={busy}
+        onPick={(item) => pickerYear && setMilestone(item, pickerYear)}
+        onClose={() => setPickerYear(null)}
+        onClear={
+          current && pickerYear
+            ? () => clearMilestone(pickerYear, current.id)
+            : undefined
+        }
+      />
     </>
   );
 }

@@ -21,6 +21,8 @@ const DICT: Record<string, [string, string]> = {
   'nav.editorial': ['杂志专栏', 'Editorial'],
   'nav.milestones': ['里程碑', 'Milestones'],
   'nav.contentFlow': ['内容流水线', 'Content Flow'],
+  'nav.community': ['社区留言', 'Community'],
+  'nav.messages': ['留言管理', 'Messages'],
   'nav.admin': ['后台管理', 'Admin Console'],
   'nav.logout': ['退出登录', 'Log Out'],
   'nav.collapse': ['收起侧栏', 'Collapse sidebar'],

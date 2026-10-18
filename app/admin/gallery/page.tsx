@@ -10,6 +10,7 @@ import { AllAssetsView } from './components/views/all-assets-view';
 import { ChronicleView } from './components/views/chronicle-view';
 import { EditorialView } from './components/views/editorial-view';
 import { MilestonesView } from './components/views/milestones-view';
+import { PortraitsView } from './components/views/portraits-view';
 import { useVaultData, type ChronicleEvent, type VaultData } from './hooks/use-vault-data';
 import { useVaultFilters } from './hooks/use-vault-filters';
 import { VAULT_TABS, type VaultTabId } from './constants';
@@ -22,6 +23,7 @@ import { VAULT_TABS, type VaultTabId } from './constants';
  * - Chronicle: Timeline events
  * - Editorial: Magazine projects
  * - Milestones: Homepage timeline images
+ * - Portraits: Homepage people images
  *
  * Supports ?tab= URL parameter for direct tab linking.
  */
@@ -61,6 +63,7 @@ export default function AssetVaultPage() {
   const chronicleData = filteredData as { events: ChronicleEvent[]; gallery: VaultData['gallery'] };
   const editorialData = filteredData as { projects: VaultData['projects'] };
   const milestoneData = filteredData as { milestones: VaultData['milestones']; gallery: VaultData['gallery'] };
+  const portraitData = filteredData as { gallery: VaultData['gallery'] };
 
   return (
     <div className="space-y-6">
@@ -127,6 +130,9 @@ export default function AssetVaultPage() {
         )}
         {activeTab === 'milestones' && (
           <MilestonesView key="milestones" data={milestoneData} loading={loading} />
+        )}
+        {activeTab === 'portraits' && (
+          <PortraitsView key="portraits" data={portraitData} loading={loading} />
         )}
       </AnimatePresence>
     </div>

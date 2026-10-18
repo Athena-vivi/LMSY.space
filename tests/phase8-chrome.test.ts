@@ -107,15 +107,57 @@ describe('homepage blocks are picture doors', () => {
     assert.ok(!route.includes('linkedByProfile'), 'no portrait is guessed from credited projects');
   });
 
-  test('portraits are picked by hand, next to the year photos', () => {
+  test('portraits are picked by hand and have their own tab', () => {
     const api = src('app/api/admin/people/portrait/route.ts');
     assert.ok(api.includes("from('profiles')"), 'writes the profiles table');
     assert.ok(api.includes('avatar_url'), 'stores the portrait on avatar_url');
     assert.ok(api.includes('requireAdmin'), 'admin only');
 
-    const view = src('app/admin/gallery/components/views/milestones-view.tsx');
-    assert.ok(view.includes('HOMEPAGE_PORTRAITS'), 'portrait grid sits beside the milestones');
+    const view = src('app/admin/gallery/components/views/portraits-view.tsx');
+    assert.ok(view.includes('HOMEPAGE_PORTRAITS'), 'portrait grid has its own view');
     assert.ok(view.includes('/api/admin/people/portrait'), 'calls the portrait api');
+    assert.ok(view.includes('VaultImagePicker'), 'reuses the shared vault picker');
+
+    const milestones = src('app/admin/gallery/components/views/milestones-view.tsx');
+    assert.ok(!milestones.includes('HOMEPAGE_PORTRAITS'), 'portraits are not stacked under the year grid');
+
+    const constants = src('app/admin/gallery/constants.ts');
+    assert.ok(constants.includes("id: 'portraits'"), 'portraits is a vault tab');
+    assert.ok(constants.includes("label: 'PORTRAITS'"), 'tab is labelled PORTRAITS');
+
+    const page = src('app/admin/gallery/page.tsx');
+    assert.ok(page.includes("activeTab === 'portraits'"), 'the tab renders its view');
+  });
+
+  test('the vault picker can be closed and its thumbnails cannot collapse', () => {
+    const picker = src('app/admin/gallery/components/vault-image-picker.tsx');
+    assert.ok(picker.includes("event.key === 'Escape'"), 'Escape closes the dialog');
+    assert.ok(picker.includes('aria-label="Close picker"'), 'visible close button');
+    assert.ok(picker.includes('h-40 w-full'), 'thumbnails have a definite height');
+    assert.ok(!picker.includes('aspect-[3/4]'), 'no aspect-ratio thumbnail that can collapse to zero height');
+  });
+
+  test('saving a slot updates in place instead of reloading the page', () => {
+    for (const file of [
+      'app/admin/gallery/components/views/milestones-view.tsx',
+      'app/admin/gallery/components/views/portraits-view.tsx',
+    ]) {
+      assert.ok(
+        !src(file).includes('window.location.reload'),
+        `${file} does not reload the admin page after a save`
+      );
+    }
+  });
+
+  test('every admin nav label has a dictionary entry', () => {
+    const dict = src('lib/admin-i18n.tsx');
+    for (const file of ['components/admin-sidebar.tsx', 'components/admin-mobile-nav.tsx']) {
+      const keys = [...src(file).matchAll(/'(nav\.[A-Za-z]+)'/g)].map((m) => m[1]);
+      assert.ok(keys.length > 0, `${file} uses nav keys`);
+      for (const key of new Set(keys)) {
+        assert.ok(dict.includes(`'${key}':`), `${key} is translated`);
+      }
+    }
   });
 });
 

@@ -7,8 +7,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { VaultData, ChronicleEvent } from './use-vault-data';
-import { groupEventsByYear } from '../utils';
+import type { VaultData } from './use-vault-data';
 
 export interface VaultFilters {
   searchQuery: string;
@@ -18,7 +17,7 @@ export interface VaultFilters {
 
 export function useVaultFilters(
   data: VaultData,
-  activeTab: 'all' | 'chronicle' | 'editorial' | 'milestones',
+  activeTab: 'all' | 'chronicle' | 'editorial' | 'milestones' | 'portraits',
   filters: VaultFilters
 ) {
   const { searchQuery, filterTag } = filters;
@@ -37,6 +36,11 @@ export function useVaultFilters(
 
       case 'milestones':
         return { milestones: data.milestones, gallery: data.gallery };
+
+      // The portrait tab feeds its picker from the full vault; the picker has
+      // its own search so the page-level filter would only hide choices.
+      case 'portraits':
+        return { gallery: data.gallery };
 
       default:
         return data.gallery;
