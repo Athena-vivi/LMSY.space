@@ -82,7 +82,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 插入留言（使用公共客户端，受 RLS 策略保护）
-    const { data, error } = await supabase
+    // No `.select()` on the insert: the public SELECT policy only exposes
+    // approved rows, so asking for the inserted row back returns zero rows
+    // (the whisper is pending) and PostgREST turns that into a 500. The
+    // visitor only needs to know the whisper landed.
+    const { error } = await supabase
       .schema('lmsy_archive')
       .from('messages')
       .insert([
@@ -93,9 +97,7 @@ export async function POST(request: NextRequest) {
           color_pref,
           is_approved: false, // 默认未批准，需要管理员审核
         },
-      ])
-      .select()
-      .single();
+      ]);
 
     if (error) {
       console.error('Error inserting message:', error);
@@ -106,14 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      {
-        message: 'Message submitted successfully',
-        data: {
-          id: data.id,
-          // 不返回完整数据，只返回确认信息
-          content: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
-        },
-      },
+      { message: 'Message submitted successfully' },
       { status: 201 }
     );
   } catch (error) {
