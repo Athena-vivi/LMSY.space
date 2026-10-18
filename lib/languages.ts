@@ -80,7 +80,7 @@ export const translations = {
 
     // Gallery
     'gallery.title': 'Gallery',
-    'gallery.description': 'A visual journey through moments captured in time.',
+    'gallery.description': "Frame by frame, the images preserve the time they've passed through.",
     'gallery.noImages': 'No images found for this tag.',
     'gallery.tagAll': 'All',
     'gallery.tagMagazine': 'Magazine',
@@ -93,7 +93,7 @@ export const translations = {
 
     // Projects
     'projects.title': 'Projects',
-    'projects.description': 'Explore the complete works of Lookmhee and Sonya — series, editorials, appearances, journals and commercials.',
+    'projects.description': 'Series, editorials, public appearances and brand collaborations, gathered here to revisit year by year.',
     'projects.relatedTitle': 'More in this category',
     'projects.filteredEmpty': 'No projects in this category.',
 
@@ -112,23 +112,23 @@ export const translations = {
     // Hero Section
     'hero.curator': 'Curated by Astra',
     'hero.portalsTitle': 'Portals',
-    'hero.portalsSubtitle': 'Enter different dimensions of their story',
+    'hero.portalsSubtitle': 'Step into the different dimensions of their story.',
 
     // Portals
-    'portal.drama': 'Drama',
-    'portal.dramaDesc': 'Characters that became reality',
+    'portal.drama': 'Drama & Works',
+    'portal.dramaDesc': 'From the characters they portray to the works they leave behind.',
     'portal.live': 'Live Events',
-    'portal.liveDesc': 'Moments shared in time',
+    'portal.liveDesc': 'The moments shared, the cheers, and the memories that stay.',
     'portal.journey': 'Journey',
     'portal.journeyDesc': 'Paths walked together',
     'portal.daily': 'Daily',
     'portal.dailyDesc': 'Beautiful ordinary days',
     'portal.commercial': 'Commercial',
-    'portal.commercialDesc': 'Where inspiration meets value',
+    'portal.commercialDesc': 'The works they create together with different brands.',
     'portal.editorial': 'Editorial',
-    'portal.editorialDesc': 'Covers, spreads and photobooks',
+    'portal.editorialDesc': 'Covers, pages, and the many sides of them captured around the lens.',
     'portal.appearance': 'Public Appearances',
-    'portal.appearanceDesc': 'Airports, red carpets, official outings',
+    'portal.appearanceDesc': 'Airports, red carpets, and every appearance in the public eye.',
 
     // Longform
 
@@ -144,7 +144,7 @@ export const translations = {
     'chronicle.yearFilter': 'Year',
     'chronicle.clearYear': 'View all years',
     'chronicle.emptyAll': 'No events recorded yet.',
-    'chronicle.emptyYear': 'No events in {year}.',
+    'chronicle.emptyYear': "This year's story has yet to unfold here. New discoveries will be added in time.",
     'chronicle.eventProject': 'Project',
     'chronicle.eventImages': 'Images',
     'chronicle.viewProject': 'View Project',
@@ -281,26 +281,26 @@ export const translations = {
     'nav.people': 'People',
 
     // Homepage sections
-    'home.collecting': 'Collecting',
-    'home.featuredTitle': 'Featured Projects',
-    'home.featuredSubtitle': 'A selection worth opening first.',
-    'home.timelineTitle': 'Timeline',
-    'home.timelineSubtitle': 'Pick a year and walk the archive in order.',
-    'home.peopleTitle': 'People & Archive Story',
-    'home.peopleSubtitle': 'The two people, and how this archive is kept.',
+    'home.collecting': 'Still Being Gathered',
+    'home.featuredTitle': 'The Years Along the Way',
+    'home.featuredSubtitle': "From screen works and editorials to live events and brand collaborations, the moments we've kept trace the path along the way.",
+    'home.timelineTitle': 'Finding Them Again Through Time',
+    'home.timelineSubtitle': 'Some frames belong to the past. Some memories are worth returning to.',
+    'home.peopleTitle': 'The Two, and This Archive',
+    'home.peopleSubtitle': 'It began with loving their work. It continues because the memories are worth keeping.',
 
     // Timeline
     'timeline.title': 'Timeline',
-    'timeline.description': 'Every dated record in the archive, ordered by when it happened.',
-    'timeline.emptyYear': 'No records for this year yet.',
+    'timeline.description': 'From one day to another worth remembering, follow the years back through time.',
+    'timeline.emptyYear': "This year's story has yet to unfold here. New discoveries will be added in time.",
     'timeline.records': '{count} records',
     'timeline.unknownDate': 'Undated',
 
     // People
     'people.title': 'People',
-    'people.description': 'The two people this archive is built around.',
-    'people.relatedProjects': 'Related projects',
-    'people.noProjects': 'No linked projects yet.',
+    'people.description': 'This archive began with them, and they remain the reason to keep gathering.',
+    'people.relatedProjects': '{count} entries',
+    'people.noProjects': 'Works connected to this person are still being gathered.',
     'people.birthday': 'Birthday',
 
     // Project detail
@@ -326,12 +326,12 @@ export const translations = {
       'The public journey: red carpets, press events and the excitement shared with fans and media.',
 
     // Gallery states
-    'gallery.emptyAll': 'No images in the archive yet.',
+    'gallery.emptyAll': 'There are no images here just yet. Astra will keep gathering them with care.',
     'gallery.emptyFiltered': 'No images match this filter.',
     'gallery.resetFilter': 'View all images',
 
     // Projects list states
-    'projects.emptyAll': 'No projects to show yet.',
+    'projects.emptyAll': 'This page is still taking shape. More works will find their way here.',
     'projects.photoCount': '{count} images',
     'projects.noImages': 'No archive images yet',
 
@@ -352,7 +352,7 @@ export const translations = {
     'chronicle.tryAnotherYear': 'Try another year:',
 
     // Homepage CTAs
-    'home.explore': 'Explore',
+    'home.explore': 'Step Inside',
     'home.enterArchive': 'Enter archive',
     'home.storyContinues': 'Story continues',
 
@@ -444,7 +444,7 @@ export const translations = {
 
     // Gallery
     'gallery.title': '相册',
-    'gallery.description': '一场视觉之旅，记录那些被时光捕捉的瞬间。',
+    'gallery.description': '一张张留下来的画面，记录着她们走过的时光。',
     'gallery.noImages': '此标签下暂无图片。',
     'gallery.tagAll': '全部',
     'gallery.tagMagazine': '杂志',
@@ -457,7 +457,7 @@ export const translations = {
 
     // Projects
     'projects.title': '作品',
-    'projects.description': '探索 Lookmhee 和 Sonya 的完整作品：剧集、杂志特辑、公开活动、日常与商业合作。',
+    'projects.description': '剧集、杂志特辑、公开活动与品牌合作，都在这里慢慢汇集，沿着年份，一页页翻看。',
     'projects.relatedTitle': '更多同类作品',
     'projects.filteredEmpty': '该分类下暂无作品。',
 
@@ -479,20 +479,20 @@ export const translations = {
     'hero.portalsSubtitle': '走进她们故事的不同维度',
 
     // Portals
-    'portal.drama': '戏剧',
-    'portal.dramaDesc': '角色照进现实',
-    'portal.live': '现场',
-    'portal.liveDesc': '时光共享的瞬间',
+    'portal.drama': '戏剧与作品',
+    'portal.dramaDesc': '从剧中的角色，到她们留下的作品。',
+    'portal.live': '现场演出',
+    'portal.liveDesc': '那些一起度过的时刻，让热闹与欢呼都有迹可循。',
     'portal.journey': '旅途',
     'portal.journeyDesc': '同行相伴的足迹',
     'portal.daily': '日常',
     'portal.dailyDesc': '美好的平凡岁月',
-    'portal.commercial': '商务',
-    'portal.commercialDesc': '品牌灵感的碰撞',
+    'portal.commercial': '品牌合作',
+    'portal.commercialDesc': '她们与不同品牌携手留下的作品。',
     'portal.editorial': '杂志特辑',
-    'portal.editorialDesc': '封面、内页与写真书',
+    'portal.editorialDesc': '封面、内页，以及镜头前后留下的不同模样。',
     'portal.appearance': '公开亮相',
-    'portal.appearanceDesc': '机场、红毯与公开行程',
+    'portal.appearanceDesc': '机场、红毯，以及每一次走进公众视野的身影。',
 
     // Longform
 
@@ -508,7 +508,7 @@ export const translations = {
     'chronicle.yearFilter': '年份',
     'chronicle.clearYear': '查看全部年份',
     'chronicle.emptyAll': '暂无时间线记录。',
-    'chronicle.emptyYear': '{year} 年暂无记录。',
+    'chronicle.emptyYear': '这一年的故事还没有在这里展开，等有新的发现，再慢慢补上。',
     'chronicle.eventProject': '作品',
     'chronicle.eventImages': '图片',
     'chronicle.viewProject': '查看所属作品',
@@ -645,26 +645,26 @@ export const translations = {
     'nav.people': '人物',
 
     // Homepage sections
-    'home.collecting': '收录中',
-    'home.featuredTitle': '精选项目',
-    'home.featuredSubtitle': '值得先打开的那些。',
-    'home.timelineTitle': '时间线',
-    'home.timelineSubtitle': '选一个年份，按顺序走一遍档案。',
-    'home.peopleTitle': '人物与档案说明',
-    'home.peopleSubtitle': '两个人，以及这份档案是怎么被保存的。',
+    'home.collecting': '还在整理',
+    'home.featuredTitle': '她们走过的这几年',
+    'home.featuredSubtitle': '从作品、杂志到现场与品牌合作，那些留下来的画面，慢慢连成了她们一路走来的轨迹。',
+    'home.timelineTitle': '沿着时间，重新遇见',
+    'home.timelineSubtitle': '有些画面已经留在过去，有些记忆，值得再回来看一眼。',
+    'home.peopleTitle': '她们，与这座档案',
+    'home.peopleSubtitle': '因为喜欢她们，所以开始收藏；因为珍惜这些记忆，所以一直没有停下。',
 
     // Timeline
     'timeline.title': '时间线',
-    'timeline.description': '按实际发生时间排列的全部有日期记录。',
-    'timeline.emptyYear': '这一年还没有记录。',
+    'timeline.description': '从一年的某一天，到另一个值得记住的日子。沿着时间，慢慢翻回去。',
+    'timeline.emptyYear': '这一年的故事还没有在这里展开，等有新的发现，再慢慢补上。',
     'timeline.records': '{count} 条记录',
     'timeline.unknownDate': '日期未定',
 
     // People
     'people.title': '人物',
-    'people.description': '这份档案围绕的两个人。',
-    'people.relatedProjects': '相关项目',
-    'people.noProjects': '暂无已关联的项目。',
+    'people.description': '这座档案馆从她们开始，也因她们而有了继续收集下去的意义。',
+    'people.relatedProjects': '{count} 个条目',
+    'people.noProjects': '与这位人物有关的作品，还在慢慢收集之中。',
     'people.birthday': '生日',
 
     // Project detail
@@ -687,12 +687,12 @@ export const translations = {
     'project.notePress': '公开行程的记录：红毯、发布会，以及和粉丝、媒体共同分享的期待。',
 
     // Gallery states
-    'gallery.emptyAll': '档案中暂无图片。',
+    'gallery.emptyAll': '这里暂时还没有新的画面，Astra 会继续细心采集。',
     'gallery.emptyFiltered': '该筛选下暂无图片。',
     'gallery.resetFilter': '查看全部图片',
 
     // Projects list states
-    'projects.emptyAll': '暂无可展示的作品。',
+    'projects.emptyAll': '这一页还在慢慢填满，新的作品会陆续来到这里。',
     'projects.photoCount': '{count} 张图片',
     'projects.noImages': '暂无归档图片',
 
@@ -713,7 +713,7 @@ export const translations = {
     'chronicle.tryAnotherYear': '查看其他年份：',
 
     // Homepage CTAs
-    'home.explore': '探索',
+    'home.explore': '走进去',
     'home.enterArchive': '进入档案',
     'home.storyContinues': '故事仍在继续',
 
@@ -805,7 +805,7 @@ export const translations = {
 
     // Gallery
     'gallery.title': 'แกลเลอรี่',
-    'gallery.description': 'การเดินทางทางสายตาผ่านช่วงเวลาที่ถูกบันทึกไว้',
+    'gallery.description': 'ภาพแต่ละภาพที่ถูกเก็บไว้ บันทึกช่วงเวลาที่พวกเธอได้เดินผ่านมา',
     'gallery.noImages': 'ไม่พบรูปภาพสำหรับแท็กนี้',
     'gallery.tagAll': 'ทั้งหมด',
     'gallery.tagMagazine': 'นิตยสาร',
@@ -818,7 +818,7 @@ export const translations = {
 
     // Projects
     'projects.title': 'ผลงาน',
-    'projects.description': 'สำรวจผลงานทั้งหมดของ Lookmhee และ Sonya — ซีรีส์ นิตยสาร กิจกรรม ชีวิตประจำวัน และโฆษณา',
+    'projects.description': 'ซีรีส์ นิตยสาร การปรากฏตัวต่อสาธารณะ และงานแบรนด์ ค่อย ๆ รวบรวมไว้ที่นี่ให้ย้อนกลับไปชมได้ตามปี',
     'projects.relatedTitle': 'ผลงานประเภทเดียวกันเพิ่มเติม',
     'projects.filteredEmpty': 'ไม่มีผลงานในหมวดหมู่นี้',
 
@@ -836,24 +836,24 @@ export const translations = {
 
     // Hero Section
     'hero.curator': 'จัดทำโดย Astra',
-    'hero.portalsTitle': 'ประตูมิติ',
-    'hero.portalsSubtitle': 'เดินทางเข้าสู่มิติต่างๆ ของเรื่องราวพวกเธอ',
+    'hero.portalsTitle': 'ประตูหลายมิติ',
+    'hero.portalsSubtitle': 'ก้าวเข้าสู่มิติต่าง ๆ ในเรื่องราวของพวกเธอ',
 
     // Portals
-    'portal.drama': 'ละคร',
-    'portal.dramaDesc': 'ตัวละครที่กลายเป็นความจริง',
-    'portal.live': 'อีเวนต์',
-    'portal.liveDesc': 'ช่วงเวลาที่แบ่งปันด้วยกัน',
+    'portal.drama': 'ละครและผลงาน',
+    'portal.dramaDesc': 'จากตัวละครที่พวกเธอถ่ายทอด สู่ผลงานที่พวกเธอฝากไว้',
+    'portal.live': 'อีเวนต์สด',
+    'portal.liveDesc': 'ช่วงเวลาที่ได้อยู่ร่วมกัน เสียงเชียร์ และความทรงจำที่ยังคงอยู่',
     'portal.journey': 'การเดินทาง',
     'portal.journeyDesc': 'เส้นทางที่เดินตามร่วมกัน',
     'portal.daily': 'ชีวิตประจำวัน',
     'portal.dailyDesc': 'วันธรรมดาที่งดงาม',
-    'portal.commercial': 'ธุรกิจ',
-    'portal.commercialDesc': 'จุดบรรจบของแรงบันดาลความคุณค่า',
+    'portal.commercial': 'งานแบรนด์',
+    'portal.commercialDesc': 'ผลงานที่พวกเธอร่วมสร้างสรรค์กับแบรนด์ต่าง ๆ',
     'portal.editorial': 'นิตยสาร',
-    'portal.editorialDesc': 'ปก หน้าภายใน และหนังสือภาพ',
-    'portal.appearance': 'การปรากฏตัว',
-    'portal.appearanceDesc': 'สนามบิน พรมแดง และงานออกงาน',
+    'portal.editorialDesc': 'ปก หน้าด้านใน และหลากหลายมุมของพวกเธอที่ถูกบันทึกไว้ผ่านเลนส์',
+    'portal.appearance': 'การปรากฏตัวต่อสาธารณะ',
+    'portal.appearanceDesc': 'สนามบิน พรมแดง และทุกครั้งที่พวกเธอปรากฏตัวต่อสายตาผู้คน',
 
     // Longform
 
@@ -869,7 +869,7 @@ export const translations = {
     'chronicle.yearFilter': 'ปี',
     'chronicle.clearYear': 'ดูทุกปี',
     'chronicle.emptyAll': 'ยังไม่มีรายการในเส้นเวลา',
-    'chronicle.emptyYear': 'ไม่มีรายการในปี {year}',
+    'chronicle.emptyYear': 'เรื่องราวของปีนี้ยังไม่ได้ปรากฏที่นี่ เมื่อมีสิ่งใหม่ ๆ ค้นพบ เราจะค่อย ๆ เติมเข้ามา',
     'chronicle.eventProject': 'ผลงาน',
     'chronicle.eventImages': 'ภาพถ่าย',
     'chronicle.viewProject': 'ดูผลงานนี้',
@@ -1007,25 +1007,25 @@ export const translations = {
 
     // Homepage sections
     'home.collecting': 'กำลังรวบรวม',
-    'home.featuredTitle': 'ผลงานคัดสรร',
-    'home.featuredSubtitle': 'สิ่งที่ควรเปิดดูก่อน',
-    'home.timelineTitle': 'ไทม์ไลน์',
-    'home.timelineSubtitle': 'เลือกปีแล้วไล่ดูคลังภาพตามลำดับ',
-    'home.peopleTitle': 'บุคคลและเรื่องราวของคลังภาพ',
-    'home.peopleSubtitle': 'สองคน และวิธีที่คลังภาพนี้ถูกเก็บรักษา',
+    'home.featuredTitle': 'หลายปีบนเส้นทางของพวกเธอ',
+    'home.featuredSubtitle': 'จากผลงาน นิตยสาร ไปจนถึงอีเวนต์และงานแบรนด์ ภาพที่ถูกเก็บไว้ค่อย ๆ เชื่อมต่อกันเป็นเส้นทางที่พวกเธอเดินผ่านมา',
+    'home.timelineTitle': 'กลับไปพบพวกเธออีกครั้งผ่านกาลเวลา',
+    'home.timelineSubtitle': 'บางภาพกลายเป็นส่วนหนึ่งของอดีต บางความทรงจำก็ยังควรค่าแก่การกลับไปมองอีกครั้ง',
+    'home.peopleTitle': 'พวกเธอ กับคลังแห่งนี้',
+    'home.peopleSubtitle': 'ทุกอย่างเริ่มต้นจากความชื่นชอบในตัวพวกเธอ และดำเนินต่อไปเพราะความทรงจำเหล่านี้มีคุณค่าที่ควรเก็บรักษาไว้',
 
     // Timeline
     'timeline.title': 'ไทม์ไลน์',
-    'timeline.description': 'ทุกบันทึกที่มีวันที่ เรียงตามเวลาที่เกิดขึ้นจริง',
-    'timeline.emptyYear': 'ปียังไม่มีบันทึก',
+    'timeline.description': 'จากวันหนึ่งในปี สู่วันสำคัญอีกวัน ค่อย ๆ ย้อนกลับไปตามเส้นทางของเวลา',
+    'timeline.emptyYear': 'เรื่องราวของปีนี้ยังไม่ได้ปรากฏที่นี่ เมื่อมีสิ่งใหม่ ๆ ค้นพบ เราจะค่อย ๆ เติมเข้ามา',
     'timeline.records': '{count} รายการ',
     'timeline.unknownDate': 'ไม่ทราบวันที่',
 
     // People
     'people.title': 'บุคคล',
-    'people.description': 'สองคนที่คลังภาพนี้สร้างขึ้นมาเพื่อพวกเธอ',
-    'people.relatedProjects': 'ผลงานที่เกี่ยวข้อง',
-    'people.noProjects': 'ยังไม่มีผลงานที่เชื่อมโยง',
+    'people.description': 'คลังแห่งนี้เริ่มต้นจากพวกเธอ และพวกเธอยังคงเป็นเหตุผลที่ทำให้เราเก็บรวบรวมเรื่องราวต่อไป',
+    'people.relatedProjects': '{count} รายการ',
+    'people.noProjects': 'ผลงานที่เกี่ยวข้องกับบุคคลนี้กำลังอยู่ระหว่างการรวบรวม',
     'people.birthday': 'วันเกิด',
 
     // Project detail
@@ -1051,12 +1051,12 @@ export const translations = {
       'เส้นทางการพบปะสาธารณะ: พรมแดง งานแถลงข่าว และความตื่นเต้นที่แบ่งปันกับแฟน ๆ และสื่อ',
 
     // Gallery states
-    'gallery.emptyAll': 'ยังไม่มีรูปภาพในคลัง',
+    'gallery.emptyAll': 'ที่นี่ยังไม่มีภาพในตอนนี้ Astra จะค่อย ๆ รวบรวมภาพเหล่านั้นต่อไปด้วยความใส่ใจ',
     'gallery.emptyFiltered': 'ไม่พบรูปภาพที่ตรงกับตัวกรองนี้',
     'gallery.resetFilter': 'ดูรูปภาพทั้งหมด',
 
     // Projects list states
-    'projects.emptyAll': 'ยังไม่มีผลงานที่แสดงได้',
+    'projects.emptyAll': 'หน้านี้กำลังค่อย ๆ เติมเต็ม ผลงานใหม่ ๆ จะทยอยมาที่นี่',
     'projects.photoCount': '{count} รูปภาพ',
     'projects.noImages': 'ยังไม่มีรูปภาพในคลัง',
 
@@ -1077,7 +1077,7 @@ export const translations = {
     'chronicle.tryAnotherYear': 'ลองดูปีอื่น:',
 
     // Homepage CTAs
-    'home.explore': 'สำรวจ',
+    'home.explore': 'ก้าวเข้าไป',
     'home.enterArchive': 'เข้าสู่คลัง',
     'home.storyContinues': 'เรื่องราวยังดำเนินต่อ',
 

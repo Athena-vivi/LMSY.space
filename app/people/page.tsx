@@ -99,8 +99,8 @@ export default async function PeoplePage() {
                   <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">
                     {person.role_label || person.name}
                   </p>
-                  <p className="mt-3 text-sm text-ink-2">
-                    {t(language, 'people.relatedProjects')}: {count}
+                  <p className="mt-3 font-mono text-[10px] tracking-[0.16em] text-ink-2">
+                    {t(language, 'people.relatedProjects', { count })}
                   </p>
                 </div>
               </Link>

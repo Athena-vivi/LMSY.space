@@ -124,9 +124,9 @@ export function PeopleSection() {
                       <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55">
                         {person.role_label || person.name}
                       </p>
-                      <p className="mt-3 inline-flex items-center gap-2 text-sm text-white/70">
-                        {t(language, 'people.relatedProjects')}: {person.project_count}
-                        <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100" />
+                      <p className="mt-3 inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] text-white/45">
+                        {t(language, 'people.relatedProjects', { count: person.project_count })}
+                        <ArrowRight className="h-3 w-3 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100" />
                       </p>
                     </div>
                   </div>

@@ -112,7 +112,7 @@ export default function PersonClient({
 
         <section>
           <h2 className="font-serif text-2xl md:text-3xl font-bold mb-8 text-foreground">
-            {t(language, 'people.relatedProjects')}
+            {t(language, 'people.relatedProjects', { count: projects.length })}
           </h2>
 
           {projects.length === 0 ? (
