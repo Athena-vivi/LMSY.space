@@ -22,22 +22,17 @@ interface PortalCardProps {
   href: string;
   index: number;
   gradient: string;
-  isFeatured?: boolean;
 }
 
-function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeatured }: PortalCardProps) {
+function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalCardProps) {
   const { language } = useLanguage();
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // 🔥 AMBER GOLD theme for commercial cards
-  const isCommercial = isFeatured || gradient.includes('amber');
-  const titleGradient = isCommercial
-    ? 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(217, 119, 6) 50%, rgb(180, 83, 9) 100%)'
-    : 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 100%)';
-
-  const glowGradient = isCommercial
-    ? 'radial-gradient(circle at center, rgba(251, 191, 36, 0.15) 0%, rgba(217, 119, 6, 0.1) 50%, rgba(180, 83, 9, 0.05) 100%)'
-    : 'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%)';
+  // One shared treatment for every portal card. Size carries the hierarchy,
+  // so no category gets its own accent colour.
+  const titleGradient = 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 100%)';
+  const glowGradient =
+    'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%)';
 
   // 🔥 GET IMAGE URL: Process through getImageUrl for CDN path
   const imageUrl = image?.imageUrl ? getImageUrl(image.imageUrl) : null;
@@ -192,7 +187,6 @@ export function PortalsSection() {
       image: portalImages.commercial || null,
       href: '/exhibitions/category/commercial',
       gradient: 'from-amber-400/30 via-yellow-500/20 to-amber-600/30',
-      isFeatured: true, // Commercial gets special treatment
     },
   ];
 
