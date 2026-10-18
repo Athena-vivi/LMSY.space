@@ -57,6 +57,33 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 2592000, // 30 days
   },
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
+  /**
+   * Legacy URL compatibility (phase 7).
+   *
+   * The seven retired entry points stay reachable, but as real 308s from the
+   * edge rather than as prerendered pages that ship a meta-refresh body. The
+   * page-level `redirect()` calls are kept as a fallback; these rules are the
+   * ones visitors and crawlers actually hit.
+   *
+   * `/exhibitions/category/:type` forwards the raw old type (`series`,
+   * `magazine`, ...) and lets lib/category-registry.ts normalise it, so one
+   * rule covers every historical spelling and unknown values fall back to the
+   * unfiltered index instead of 404ing.
+   *
+   * Query strings are preserved by Next when the destination has no query of
+   * its own, which is what keeps `/chronicle?year=2024` working.
+   */
+  async redirects() {
+    return [
+      { source: '/exhibitions/category/:type', destination: '/projects?category=:type', permanent: true },
+      { source: '/exhibitions', destination: '/projects', permanent: true },
+      { source: '/chronicle', destination: '/timeline', permanent: true },
+      { source: '/editorial/:id', destination: '/projects/:id', permanent: true },
+      { source: '/profiles', destination: '/people', permanent: true },
+      { source: '/profiles/:id', destination: '/people/:id', permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {
