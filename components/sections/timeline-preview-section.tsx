@@ -3,21 +3,27 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
+import { resolveImageUrl } from '@/lib/image-url';
 
 interface YearEntry {
   year: number;
   count: number;
+  cover: string | null;
 }
 
 /**
- * Timeline preview. The years are the real distribution of `event_date`
- * across public projects. The archive starts in 2022, and the API trims the
- * empty leading-edge years (keeping at least three tiles) so this block only
- * spends space on periods that actually hold records. A year kept in the row
- * but still empty is labelled as such; it is never invented.
+ * Timeline preview as a row of picture doors.
+ *
+ * Each tile is the year's representative photo - the picture *is* the entry
+ * point, which is the whole point of a picture archive. The photo comes from
+ * `gallery_assets.milestone_priority` (the per-year photo picked in the
+ * admin) or, for years without one, the newest public project of that year.
+ * A year with no photo keeps the same tile geometry with its year set large,
+ * so the row never collapses into empty boxes of a different size.
  */
 export function TimelinePreviewSection() {
   const { language } = useLanguage();
@@ -39,15 +45,11 @@ export function TimelinePreviewSection() {
 
   if (years.length === 0) return null;
 
-  // Up to five years, most recent first. Empty years stay in the row so the
-  // visitor sees the shape of the archive rather than a false density.
-  const visible = years.slice(0, 5);
-
   return (
     <section className="relative py-20 md:py-28 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          className="mb-12 md:mb-16 flex flex-wrap items-end justify-between gap-6"
+          className="mb-10 md:mb-14 flex flex-wrap items-end justify-between gap-6"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -72,30 +74,57 @@ export function TimelinePreviewSection() {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-          {visible.map((entry, index) => (
-            <motion.div
-              key={entry.year}
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, delay: index * 0.07 }}
-            >
-              <Link
-                href={`/timeline/${entry.year}`}
-                className="group relative flex flex-col items-center justify-center rounded-xl border border-border bg-card/30 px-4 py-10 transition-colors hover:border-lmsy-yellow/40 hover:bg-card/60"
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-5">
+          {years.slice(0, 5).map((entry, index) => {
+            const cover = resolveImageUrl(entry.cover);
+            return (
+              <motion.div
+                key={entry.year}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.5, delay: index * 0.07 }}
               >
-                <span className="font-serif text-4xl md:text-5xl font-bold text-foreground/90 transition-colors group-hover:text-lmsy-yellow">
-                  {entry.year}
-                </span>
-                <span className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2">
-                  {entry.count > 0
-                    ? t(language, 'timeline.records', { count: entry.count })
-                    : t(language, 'timeline.emptyYear')}
-                </span>
-              </Link>
-            </motion.div>
-          ))}
+                <Link href={`/timeline/${entry.year}`} className="group block">
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-white/10 bg-card/40">
+                    {cover ? (
+                      <Image
+                        src={cover}
+                        alt={String(entry.year)}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                        className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/10 to-lmsy-blue/10">
+                        <span className="font-serif text-6xl font-bold text-ink-2/30">
+                          {String(entry.year).slice(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+
+                    <div className="absolute inset-x-0 bottom-0 p-4">
+                      <span className="block font-serif text-3xl font-bold leading-none text-white/95 transition-colors group-hover:text-lmsy-yellow md:text-4xl">
+                        {entry.year}
+                      </span>
+                      <span className="mt-2 block font-mono text-[9px] uppercase tracking-[0.18em] text-white/55">
+                        {entry.count > 0
+                          ? t(language, 'timeline.records', { count: entry.count })
+                          : t(language, 'home.collecting')}
+                      </span>
+                    </div>
+
+                    <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
+                      <ArrowRight className="h-3.5 w-3.5 text-white/90" />
+                    </span>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

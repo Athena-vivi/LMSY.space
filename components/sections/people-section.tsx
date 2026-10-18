@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { getImageUrl } from '@/lib/image-url';
+import { resolveImageUrl } from '@/lib/image-url';
 
 interface Person {
   id: string;
@@ -18,13 +18,18 @@ interface Person {
   birthday: string | null;
   role_label: string | null;
   project_count: number;
+  /** API-resolved photo: avatar_url when set, otherwise a photo of theirs. */
+  image?: string | null;
 }
 
 /**
- * People & Archive Story. The two cards read the same `profiles` rows that
- * /people and /people/[slug] read - one data source, three surfaces. The
- * archive story itself is the homepage_preface content block rendered by
- * MuseumPreface, so it is not duplicated here.
+ * People & Archive Story.
+ *
+ * The two cards are picture doors, not text rows with a thumbnail: a portrait
+ * frame with the name laid over it, the same way the year row works. The
+ * portrait is `profiles.avatar_url` when it is set and otherwise a photo from
+ * a project the person is credited in, resolved server-side - this archive is
+ * a photo exhibition, so a slot with nothing in it is the wrong default.
  */
 export function PeopleSection() {
   const { language } = useLanguage();
@@ -50,7 +55,7 @@ export function PeopleSection() {
     <section className="relative py-20 md:py-28">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          className="mb-12 md:mb-16 flex flex-wrap items-end justify-between gap-6"
+          className="mb-10 md:mb-14 flex flex-wrap items-end justify-between gap-6"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -75,9 +80,10 @@ export function PeopleSection() {
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
           {people.map((person, index) => {
-            const avatar = person.avatar_url ? getImageUrl(person.avatar_url) : null;
+            const image = resolveImageUrl(person.image ?? person.avatar_url);
+            const displayName = person.nickname || person.name;
             return (
               <motion.div
                 key={person.id}
@@ -88,30 +94,40 @@ export function PeopleSection() {
               >
                 <Link
                   href={`/people/${person.slug || person.id}`}
-                  className="group flex items-center gap-5 rounded-xl border border-border bg-card/30 p-5 transition-colors hover:border-lmsy-blue/40 hover:bg-card/60"
+                  className="group block overflow-hidden rounded-xl border border-white/10"
                 >
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-                    {avatar && (
+                  <div className="relative aspect-[4/5] sm:aspect-[3/4]">
+                    {image ? (
                       <Image
-                        src={avatar}
-                        alt={person.nickname || person.name}
+                        src={image}
+                        alt={displayName}
                         fill
-                        sizes="80px"
-                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 50vw"
+                        className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                         unoptimized
                       />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/15 via-transparent to-lmsy-blue/15">
+                        <span className="font-serif text-7xl font-bold text-white/15">
+                          {displayName.slice(0, 1)}
+                        </span>
+                      </div>
                     )}
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-serif text-2xl font-bold text-foreground transition-colors group-hover:text-lmsy-blue">
-                      {person.nickname || person.name}
-                    </h3>
-                    <p className="mt-1 truncate font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
-                      {person.role_label || person.name}
-                    </p>
-                    <p className="mt-2 text-sm text-ink-2">
-                      {t(language, 'people.relatedProjects')}: {person.project_count}
-                    </p>
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+
+                    <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
+                      <h3 className="font-serif text-3xl font-bold leading-tight text-white/95 transition-colors group-hover:text-lmsy-blue md:text-4xl">
+                        {displayName}
+                      </h3>
+                      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55">
+                        {person.role_label || person.name}
+                      </p>
+                      <p className="mt-3 inline-flex items-center gap-2 text-sm text-white/70">
+                        {t(language, 'people.relatedProjects')}: {person.project_count}
+                        <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100" />
+                      </p>
+                    </div>
                   </div>
                 </Link>
               </motion.div>

@@ -16,10 +16,9 @@ import { mainNavItems } from '@/lib/nav-items';
 
 /**
  * Homepage header. Same four entries as every inner page, but with the softer
- * glass treatment the hero sits behind. Search keeps the centre seat.
+ * glass treatment the hero sits behind. Layout matches the inner header:
+ * logo + search on the left, the four entries together on the right.
  */
-const LEFT_ITEMS = mainNavItems.slice(0, 2);
-const RIGHT_ITEMS = mainNavItems.slice(2);
 
 export function HomeHeader() {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +46,7 @@ export function HomeHeader() {
       style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-4">
+        <div className="flex h-16 items-center gap-3 md:gap-4 lg:gap-5">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity shrink-0">
             <div className="relative h-8 w-8 md:h-9 md:w-9">
@@ -75,23 +74,24 @@ export function HomeHeader() {
             </span>
           </Link>
 
-          {/* Desktop Navigation - search in the middle */}
-          <nav className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-6 lg:gap-8">
-            {LEFT_ITEMS.map(renderLink)}
-            <div className="flex-1 max-w-[280px] min-w-[180px]">
-              <SearchCommand variant="bar" />
-            </div>
-            {RIGHT_ITEMS.map(renderLink)}
+          {/* Search sits next to the logo, out of the entry row */}
+          <div className="hidden w-[190px] shrink-0 md:block lg:w-[300px]">
+            <SearchCommand variant="bar" />
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Desktop Navigation - all four entries on the right */}
+          <nav className="hidden md:flex md:items-center md:gap-3 lg:gap-8">
+            {mainNavItems.map(renderLink)}
           </nav>
 
           {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="md:hidden">
               <SearchCommand variant="icon" />
             </div>
-            <div className="hidden md:flex items-center gap-6">
-              <LanguageSwitcher />
-            </div>
+            <LanguageSwitcher />
 
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="md:hidden">
@@ -120,12 +120,6 @@ export function HomeHeader() {
                     </motion.div>
                   ))}
                 </nav>
-                <div className="mt-8 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <LanguageSwitcher />
-                    <span className="text-sm text-ink-2">Language</span>
-                  </div>
-                </div>
               </SheetContent>
             </Sheet>
           </div>

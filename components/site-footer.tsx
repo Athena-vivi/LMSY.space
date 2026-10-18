@@ -49,53 +49,25 @@ export function SiteFooter() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-6 md:py-8">
-          {/* Quick Links - First Row */}
-          <nav className="flex flex-wrap justify-center gap-6 mb-4">
-            <Link
-              href="/chronicle"
-              className="text-xs font-light text-ink-2 hover:text-ink transition-colors tracking-wider uppercase"
-            >
-              {t(language, 'nav.chronicle')}
-            </Link>
-            <span className="text-[10px] text-ink-2">•</span>
-            <Link
-              href="/exhibitions"
-              className="text-xs font-light text-ink-2 hover:text-ink transition-colors tracking-wider uppercase"
-            >
-              {t(language, 'nav.exhibitions')}
-            </Link>
-            <span className="text-[10px] text-ink-2">•</span>
-            <Link
-              href="/editorial"
-              className="text-xs font-light text-ink-2 hover:text-ink transition-colors tracking-wider uppercase"
-            >
-              {t(language, 'nav.editorial')}
-            </Link>
-            <span className="text-[10px] text-ink-2">•</span>
-            <Link
-              href="/profiles"
-              className="text-xs font-light text-ink-2 hover:text-ink transition-colors tracking-wider uppercase"
-            >
-              {t(language, 'nav.duality')}
-            </Link>
-            <span className="text-[10px] text-ink-2">•</span>
-            <Link
-              href="/copyright"
-              className="text-xs font-light text-ink-2 hover:text-ink transition-colors tracking-wider uppercase"
-            >
-              {t(language, 'nav.copyright')}
-            </Link>
-          </nav>
-
-          {/* Copyright - Single Line */}
-          <div className="text-center">
+          {/* Copyright - single line. The old quick-link row duplicated the
+              header navigation with retired URLs, so only the copyright
+              notice and its policy page remain, side by side. */}
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
             <button
               onClick={handleCopyrightClick}
               className="text-[10px] text-ink-2 hover:text-ink transition-colors cursor-pointer font-light tracking-wide"
               aria-label="Copyright information"
             >
-              © 2025 lmsy.space | <span className="text-ink-2">Curated by Astra. Made with love for LMSY & Besties.</span>
+              © {new Date().getFullYear()} lmsy.space |{' '}
+              <span className="text-ink-2">Curated by Astra. Made with love for LMSY & Besties.</span>
             </button>
+            <span className="text-[10px] text-ink-2/50">·</span>
+            <Link
+              href="/copyright"
+              className="text-[10px] font-light uppercase tracking-wider text-ink-2 transition-colors hover:text-ink"
+            >
+              {t(language, 'nav.copyright')}
+            </Link>
           </div>
         </div>
       </div>

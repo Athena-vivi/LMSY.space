@@ -70,6 +70,7 @@ export async function GET() {
 
     // One asset query for both the cover fallback and the image-presence test.
     const coverByProject: Record<string, string> = {};
+    const imagesByProject: Record<string, string[]> = {};
     if (ids.length > 0) {
       const { data: assets } = await supabaseAdmin
         .schema('lmsy_archive')
@@ -81,9 +82,12 @@ export async function GET() {
 
       for (const asset of assets ?? []) {
         const pid = (asset as { project_id: string | null }).project_id;
-        if (!pid || coverByProject[pid]) continue;
+        if (!pid) continue;
         const url = (asset as { image_url: string | null }).image_url;
-        if (url) coverByProject[pid] = url;
+        if (!url) continue;
+        if (!coverByProject[pid]) coverByProject[pid] = url;
+        const bucket = (imagesByProject[pid] ??= []);
+        if (bucket.length < 8) bucket.push(url);
       }
     }
 
@@ -145,18 +149,56 @@ export async function GET() {
       if (!Number.isFinite(year)) continue;
       countsByYear[year] = (countsByYear[year] ?? 0) + 1;
     }
-    const currentYear = new Date().getFullYear();
-    const years: Array<{ year: number; count: number }> = [];
-    for (let year = currentYear; year >= ARCHIVE_START_YEAR; year--) {
-      years.push({ year, count: countsByYear[year] ?? 0 });
+
+    // A picture per year. Two sources, both real:
+    //   1. `milestone_priority` - the per-year representative photo curated in
+    //      the admin (1 = 2022 ... 4 = 2025). These rows hang off the
+    //      collection container, not off a public project, which is why they
+    //      are read separately.
+    //   2. the most recent public project of that year that has any image.
+    const { data: milestoneRows } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('milestone_priority, image_url')
+      .not('milestone_priority', 'is', null)
+      .order('milestone_priority', { ascending: true });
+
+    const MILESTONE_YEAR: Record<number, number> = { 1: 2022, 2: 2023, 3: 2024, 4: 2025 };
+    const milestoneCover: Record<number, string> = {};
+    for (const row of milestoneRows ?? []) {
+      const typed = row as { milestone_priority: number; image_url: string | null };
+      const year = MILESTONE_YEAR[typed.milestone_priority];
+      if (!year || !typed.image_url) continue;
+      milestoneCover[year] = typed.image_url;
     }
 
-    // Trail off the empty leading-edge years: the preview is a window into
-    // the archive, not a calendar. Three tiles are always kept so the block
-    // never collapses to a single year, and the full range (down to 2022)
-    // stays available on /timeline.
-    while (years.length > 3 && years[years.length - 1].count === 0) {
-      years.pop();
+    const coverByYear: Record<number, string> = {};
+    const byDateDesc = [...projects].sort((a, b) =>
+      (b.event_date ?? '').localeCompare(a.event_date ?? '')
+    );
+    for (const project of byDateDesc) {
+      if (!project.event_date) continue;
+      const year = Number(project.event_date.slice(0, 4));
+      if (!Number.isFinite(year) || coverByYear[year]) continue;
+      const cover = coverByProject[project.id] ?? project.cover_url;
+      if (cover) coverByYear[year] = cover;
+    }
+
+    const currentYear = new Date().getFullYear();
+    const years: Array<{ year: number; count: number; cover: string | null }> = [];
+    for (let year = currentYear; year >= ARCHIVE_START_YEAR; year--) {
+      years.push({
+        year,
+        count: countsByYear[year] ?? 0,
+        cover: milestoneCover[year] ?? coverByYear[year] ?? null,
+      });
+    }
+
+    // A year that has just rolled over carries neither records nor a photo;
+    // drop those from the recent end so the row never opens with an empty
+    // tile. Years inside the range are all kept.
+    while (years.length > 1 && years[0].count === 0 && !years[0].cover) {
+      years.shift();
     }
 
     // ---- people ---------------------------------------------------------
@@ -173,16 +215,44 @@ export async function GET() {
 
     const publicIds = new Set(ids);
     const projectCountByProfile: Record<string, number> = {};
+    const dateByProject: Record<string, string> = {};
+    for (const project of projects) dateByProject[project.id] = project.event_date ?? '';
+
+    // Which public projects each person appears in, newest first. The link
+    // table is the only source for this: no project is guessed from a name.
+    const linkedByProfile: Record<string, Array<{ projectId: string; date: string }>> = {};
     for (const link of links ?? []) {
       const row = link as { profile_id: string; project_id: string };
       if (!publicIds.has(row.project_id)) continue;
       projectCountByProfile[row.profile_id] = (projectCountByProfile[row.profile_id] ?? 0) + 1;
+      (linkedByProfile[row.profile_id] ??= []).push({
+        projectId: row.project_id,
+        date: dateByProject[row.project_id] ?? '',
+      });
+    }
+    for (const key of Object.keys(linkedByProfile)) {
+      linkedByProfile[key].sort((a, b) => b.date.localeCompare(a.date));
     }
 
-    const people = (profileRows ?? []).map((profile) => ({
-      ...(profile as Record<string, unknown>),
-      project_count: projectCountByProfile[(profile as { id: string }).id] ?? 0,
-    }));
+    /**
+     * `profiles.avatar_url` is empty for both people, so a card built only on
+     * it renders an empty circle. The fallback is a real photo from a project
+     * they are credited in; the index offset keeps two people who appear in
+     * the same sets from showing the same picture twice.
+     */
+    const people = (profileRows ?? []).map((profile, index) => {
+      const id = (profile as { id: string }).id;
+      const row = profile as { avatar_url: string | null };
+      const candidates = (linkedByProfile[id] ?? []).flatMap(
+        (entry) => imagesByProject[entry.projectId] ?? []
+      );
+      const fallback = candidates.length ? candidates[index % candidates.length] : null;
+      return {
+        ...(profile as Record<string, unknown>),
+        project_count: projectCountByProfile[id] ?? 0,
+        image: row.avatar_url ?? fallback,
+      };
+    });
 
     return NextResponse.json({ featured, years, people });
   } catch (error) {
