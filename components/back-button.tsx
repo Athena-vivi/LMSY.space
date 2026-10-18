@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 /**
  * Back navigation (P4): performs a real history back when available;
@@ -13,6 +15,7 @@ import { useEffect, useState } from 'react';
 export function BackButton() {
   const router = useRouter();
   const pathname = usePathname();
+  const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -71,7 +74,7 @@ export function BackButton() {
               fontFamily: 'Playfair Display, serif',
             }}
           >
-            Back to Space Hub
+            {t(language, 'common.backToHub')}
           </span>
         </motion.div>
 

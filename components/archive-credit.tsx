@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 /**
  * 🔒 ARCHIVE CREDIT
@@ -21,6 +23,8 @@ export function ArchiveCredit({
   category: string;
   variant?: 'default' | 'compact' | 'minimal';
 }) {
+  const { language } = useLanguage();
+
   // Determine content type
   const isOfficialContent = ['editorial', 'series'].includes(category);
   const isFanContent = ['appearance', 'journal', 'commercial'].includes(category);
@@ -51,7 +55,7 @@ export function ArchiveCredit({
         <>
           <motion.div
             className="relative flex items-center"
-            title="Official Content"
+            title={t(language, 'credit.officialTitle')}
           >
             <motion.div
               className="w-1 h-1 rounded-full bg-lmsy-blue"
@@ -70,7 +74,7 @@ export function ArchiveCredit({
           <p
             className={`font-serif italic ${officialColor} font-light tracking-wide`}
           >
-            All media assets belong to the original publishers. Preserved for appreciation.
+            {t(language, 'credit.official')}
           </p>
 
           {/* Decorative Separator (only for default variant) */}
@@ -90,7 +94,7 @@ export function ArchiveCredit({
         <>
           <motion.div
             className="relative flex items-center"
-            title="Fan-Captured Content"
+            title={t(language, 'credit.fanTitle')}
           >
             <motion.div
               className="w-1 h-1 rounded-full bg-lmsy-yellow"
@@ -109,7 +113,7 @@ export function ArchiveCredit({
           <p
             className={`font-serif italic ${fanColor} font-light tracking-wide`}
           >
-            Special thanks to the Besties who captured these fleeting moments.
+            {t(language, 'credit.fan')}
           </p>
 
           {/* Decorative Separator (only for default variant) */}

@@ -39,10 +39,6 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
     ? 'radial-gradient(circle at center, rgba(251, 191, 36, 0.15) 0%, rgba(217, 119, 6, 0.1) 50%, rgba(180, 83, 9, 0.05) 100%)'
     : 'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%)';
 
-  const borderColor = isCommercial
-    ? 'from-amber-400/40 via-yellow-500/30 to-amber-600/40'
-    : 'from-lmsy-yellow/30 via-lmsy-blue/30 to-lmsy-yellow/30';
-
   // 🔥 GET IMAGE URL: Process through getImageUrl for CDN path
   const imageUrl = image?.imageUrl ? getImageUrl(image.imageUrl) : null;
   const blurDataUrl = image?.blurData || undefined;
@@ -56,13 +52,7 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
       className="group relative"
     >
       <Link href={href} className="block">
-        <div
-          className="relative aspect-[4/5] overflow-hidden rounded-2xl border"
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.02)',
-            borderColor: 'rgba(255, 255, 255, 0.05)',
-          }}
-        >
+        <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-card/40">
           {/* 🔥 REAL IMAGE with Blur Placeholder */}
           {imageUrl ? (
             <Image
@@ -109,12 +99,14 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient, isFeature
 
             {/* Arrow Indicator */}
             <motion.div
-              className="flex items-center gap-2 text-ink group-hover:text-ink transition-colors"
+              className="flex items-center gap-2 text-ink transition-colors"
               initial={{ x: 0 }}
               whileHover={{ x: 5 }}
             >
-              <span className="text-sm tracking-wider">EXPLORE</span>
-              <ArrowRight className="w-4 h-4" />
+              <span className="text-xs tracking-[0.2em] uppercase md:text-sm">
+                {t(language, 'home.explore')}
+              </span>
+              <ArrowRight className="h-4 w-4" />
             </motion.div>
           </div>
 

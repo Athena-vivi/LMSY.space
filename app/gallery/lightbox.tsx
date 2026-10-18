@@ -11,6 +11,7 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { getLocalizedText } from '@/lib/localized-content';
 import { getImageUrl } from '@/lib/image-url';
+import { assetTagLabelKey } from '@/lib/category-meta';
 
 interface LightboxProps {
   image: GalleryItem;
@@ -24,13 +25,14 @@ interface LightboxProps {
 
 export default function Lightbox({ image, images, project, onClose }: LightboxProps) {
   const { language } = useLanguage();
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Find current image index
-  useEffect(() => {
-    const index = images.findIndex(img => img.id === image.id);
-    setCurrentIndex(index);
-  }, [image, images]);
+  // Start on the image that was clicked. The parent remounts this component
+  // per asset (key={image.id}), so no state-syncing effect is needed - the
+  // previous useEffect + setState pair triggered a cascading render on every
+  // open and could briefly paint the wrong frame.
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const index = images.findIndex((img) => img.id === image.id);
+    return index >= 0 ? index : 0;
+  });
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
@@ -50,6 +52,16 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // Lock background scrolling while the lightbox is open (the grid behind it
+  // otherwise keeps scrolling on wheel/touch, which reads as a broken modal).
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
 
   const currentImage = images[currentIndex];
   const isEditorial = currentImage?.is_editorial;
@@ -85,7 +97,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
             <button
               onClick={onClose}
               className="absolute top-6 right-6 z-10 text-ink-2 hover:text-ink transition-colors"
-              aria-label="Close"
+              aria-label={t(language, 'common.close')}
             >
               <X className="h-8 w-8" />
             </button>
@@ -105,7 +117,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
                     />
                   ) : (
                     <div className="w-full h-96 bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20 rounded-lg flex items-center justify-center">
-                      <p className="text-ink-2 text-lg">Image not available</p>
+                      <p className="text-ink-2 text-lg">{t(language, 'common.noImage')}</p>
                     </div>
                   )}
                 </div>
@@ -137,7 +149,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
                     >
                       <ExternalLink className="h-3 w-3" />
                       <span>
-                        Source
+                        {t(language, 'common.source')}
                         {currentImage.source_platform ? ` · ${currentImage.source_platform}` : ''}
                       </span>
                     </a>
@@ -159,7 +171,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
                   <div className="flex items-center gap-2 mb-4">
                     <BookOpen className="h-4 w-4 text-lmsy-yellow" />
                     <span className="text-xs uppercase tracking-widest text-ink-2">
-                      Curator's Note
+                      {t(language, 'common.curatorNote')}
                     </span>
                   </div>
 
@@ -209,7 +221,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
                         ? 'bg-lmsy-yellow scale-125'
                         : 'bg-foreground/20 hover:bg-foreground/40'
                     }`}
-                    aria-label={`View ${index + 1}`}
+                    aria-label={`${index + 1} / ${images.length}`}
                   />
                 ))}
               </div>
@@ -243,7 +255,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
           <button
             onClick={onClose}
             className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full p-2 transition-colors"
-            aria-label="Close lightbox"
+            aria-label={t(language, 'common.close')}
           >
             <X className="h-6 w-6 text-ink" />
           </button>
@@ -253,7 +265,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
             <button
               onClick={goToPrevious}
               className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full p-3 transition-colors"
-              aria-label="Previous image"
+              aria-label={t(language, 'common.previous')}
             >
               <ChevronLeft className="h-6 w-6 text-ink" />
             </button>
@@ -273,7 +285,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-lmsy-yellow/20 to-lmsy-blue/20 rounded-lg flex items-center justify-center">
-                  <p className="text-ink text-lg">Image not available</p>
+                  <p className="text-ink text-lg">{t(language, 'common.noImage')}</p>
                 </div>
               )}
 
@@ -283,47 +295,50 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
-                  className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+                  className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/85 via-black/45 to-transparent"
                 >
-                  {currentImage.catalog_id && !isEditorial && (
-                    <div className="font-mono text-[10px] text-ink mb-2">
-                      {currentImage.catalog_id}
-                    </div>
-                  )}
-                  {currentImage.source_url && (
-                    <a
-                      href={currentImage.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-ink-2 hover:text-lmsy-yellow transition-colors"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      <span>
-                        Source
-                        {currentImage.source_platform ? ` · ${currentImage.source_platform}` : ''}
-                      </span>
-                    </a>
-                  )}
-                  {/* Project back-link (phase-4 Task 2) */}
-                  {projectLink && (
-                    <Link
-                      href={projectLink}
-                      className="inline-flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-ink hover:text-lmsy-blue transition-colors"
-                    >
-                      <Images className="h-3 w-3" />
-                      <span>{t(language, 'gallery.viewProject')}</span>
-                    </Link>
-                  )}
-                  {currentImage.tag && (
-                    <span className="inline-block px-3 py-1 mb-2 text-xs font-medium bg-lmsy-yellow text-black rounded-full">
-                      #{currentImage.tag}
-                    </span>
-                  )}
+                  {/* Caption first (content), then one compact meta row. The
+                      previous stack of four full-width lines pushed the image
+                      up and read as a list of labels. */}
                   {localizedCaption && (
-                    <p className="text-ink font-serif text-xl md:text-2xl">
+                    <p className="mb-3 font-serif text-xl text-ink md:text-2xl">
                       {localizedCaption}
                     </p>
                   )}
+
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] uppercase tracking-[0.18em] text-ink-2">
+                    {currentImage.catalog_id && (
+                      <span className="font-mono text-ink-2">{currentImage.catalog_id}</span>
+                    )}
+                    {currentImage.tag && (
+                      <span className="rounded-full bg-lmsy-yellow px-3 py-1 font-medium tracking-normal text-black">
+                        #{assetTagLabelKey(currentImage.tag) ? t(language, assetTagLabelKey(currentImage.tag)!) : currentImage.tag}
+                      </span>
+                    )}
+                    {projectLink && (
+                      <Link
+                        href={projectLink}
+                        className="inline-flex items-center gap-2 text-ink transition-colors hover:text-lmsy-blue"
+                      >
+                        <Images className="h-3 w-3" />
+                        <span>{t(language, 'gallery.viewProject')}</span>
+                      </Link>
+                    )}
+                    {currentImage.source_url && (
+                      <a
+                        href={currentImage.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 transition-colors hover:text-lmsy-yellow"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span>
+                          {t(language, 'common.source')}
+                          {currentImage.source_platform ? ` · ${currentImage.source_platform}` : ''}
+                        </span>
+                      </a>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </div>
@@ -334,7 +349,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
             <button
               onClick={goToNext}
               className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full p-3 transition-colors"
-              aria-label="Next image"
+              aria-label={t(language, 'common.next')}
             >
               <ChevronRight className="h-6 w-6 text-ink" />
             </button>

@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 /**
  * 🌌 SPACE HUB RETURN - Image Logo Anchor
@@ -13,10 +15,11 @@ import { useEffect, useState } from 'react';
  *
  * Features:
  * - Default opacity 20%, 100% on hover
- * - "Back to Space Hub" text reveals on hover
+ * - Localized "back to hub" text (common.backToHub) reveals on hover
  * - Warp-to-center animation on click
  */
 export function SpaceHubReturn() {
+  const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -60,7 +63,7 @@ export function SpaceHubReturn() {
               fontFamily: 'Playfair Display, serif',
             }}
           >
-            Back to Space Hub
+            {t(language, 'common.backToHub')}
           </span>
         </motion.div>
 

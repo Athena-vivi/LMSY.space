@@ -13,7 +13,9 @@ import { supabase, type Project } from '@/lib/supabase';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { getImageUrl } from '@/lib/image-url';
-import { BackButton } from '@/components/back-button';
+import { PageIntro } from '@/components/page-intro';
+import { categoryMeta } from '@/lib/category-meta';
+import { formatDisplayDate } from '@/lib/display-date';
 import { getLocalizedText } from '@/lib/localized-content';
 
 const PROJECT_LIST_IMAGE_SIZES =
@@ -47,31 +49,25 @@ const categoryColors: Record<string, string> = {
   travel: 'from-teal-100 to-teal-200 dark:from-teal-900/30 dark:to-teal-950/30',
 };
 
-const categoryLabels: Record<string, string> = {
-  series: 'TV_SERIES',
-  editorial: 'EDITORIAL',
-  appearance: 'APPEARANCE',
-  journal: 'JOURNAL',
-  commercial: 'COMMERCIAL',
-  // Legacy support
-  music: 'MUSIC_VIDEO',
-  magazine: 'MAGAZINE',
-  daily: 'DAILY',
-  travel: 'TRAVEL',
-};
+// Asset counts per project, used for the "N images" line on each card. The
+// count comes from the same single query that picks the covers, so it costs no
+// extra round-trip and is never derived from anything but real rows.
+type ProjectCounts = Record<string, number>;
 
 export default function ProjectsPage() {
   const { language } = useLanguage();
   const [projects, setProjects] = useState<Project[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
+  const [counts, setCounts] = useState<ProjectCounts>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProjects() {
       // Only the fields this list renders. `select('*')` also pulled
-      // theme_statement, homepage_excerpt, cover_url and i18n blobs that the
-      // timeline never uses.
+      // theme_statement, homepage_excerpt and i18n blobs that the list never
+      // uses; cover_url IS needed since phase 6 (it is the real database
+      // cover for the 18 projects that have one).
       // Public visibility (see lib/project-visibility.ts): a project is
       // visitor-facing only when the admin opted it in via portal_visible
       // and it is not archived. Back-end containers (ingestion batches,
@@ -79,7 +75,7 @@ export default function ProjectsPage() {
       const { data, error } = await applyPublicProjectFilter(
         supabase
           .from('projects')
-          .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url, curation_status')
+          .select('id, title, title_i18n, description, description_i18n, category, release_date, created_at, watch_url, curation_status, cover_url')
       )
         .order('release_date', { ascending: false })
         .order('id', { ascending: false });
@@ -90,8 +86,10 @@ export default function ProjectsPage() {
 
         // Real covers: one batched query over the visible projects' assets,
         // picked with the shared is_cover / -000-catalog / first-asset rule.
-        // A project without assets simply keeps the gradient+icon empty
-        // state - no placeholder image is ever generated.
+        // The same rows give the per-project image count. A project without
+        // asset rows falls back to its own database cover_url (real, admin
+        // curated) and only then to the gradient+icon empty state - no
+        // placeholder image is ever generated.
         const ids = rows.map((p) => p.id);
         if (ids.length > 0) {
           const { data: assets } = await supabase
@@ -101,6 +99,13 @@ export default function ProjectsPage() {
             .order('created_at', { ascending: true, nullsFirst: false });
           if (assets) {
             setCovers(pickCoversByProject(assets));
+            const nextCounts: ProjectCounts = {};
+            for (const row of assets) {
+              const pid = (row as { project_id: string | null }).project_id;
+              if (!pid) continue;
+              nextCounts[pid] = (nextCounts[pid] ?? 0) + 1;
+            }
+            setCounts(nextCounts);
           }
         }
       }
@@ -112,7 +117,9 @@ export default function ProjectsPage() {
 
   // Category chips derive from the categories that actually exist among the
   // visible projects - legacy music/magazine enum entries only appear if real
-  // rows still use them (audit Task 3.4).
+  // rows still use them (audit Task 3.4). Labels come from the shared
+  // category-meta module so the list, the detail badge and the Chronicle all
+  // read the same way.
   const categories = useMemo(
     () => Array.from(new Set(projects.map((p) => p.category))),
     [projects]
@@ -136,28 +143,10 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <section className="pt-24 pb-16 md:pt-32 md:pb-24">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back Button */}
-          <div className="mb-8">
-            <BackButton />
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6">
-              {t(language, 'projects.title')}
-            </h1>
-            <p className="text-lg text-ink-2 max-w-2xl">
-              {t(language, 'projects.description')}
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageIntro
+        title={t(language, 'projects.title')}
+        description={t(language, 'projects.description')}
+      />
 
       {/* Category Filter Chips */}
       {!loading && categories.length > 1 && (
@@ -170,13 +159,13 @@ export default function ProjectsPage() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-5 py-2 text-sm font-medium transition-all duration-300 rounded-full border ${
                     selectedCategory === cat
-                      ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-ink border-transparent shadow-lg shadow-lmsy-yellow/20'
+                      ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-black border-transparent shadow-lg shadow-lmsy-yellow/20'
                       : 'bg-muted text-ink-2 border-border hover:border-lmsy-blue hover:text-lmsy-blue'
                   }`}
                 >
                   {cat === 'All'
                     ? t(language, 'gallery.tagAll')
-                    : categoryLabels[cat] || cat.toUpperCase()}
+                    : t(language, categoryMeta(cat).labelKey)}
                 </button>
               ))}
             </div>
@@ -191,7 +180,18 @@ export default function ProjectsPage() {
             {visibleProjects.map((project, index) => {
               const Icon = categoryIcons[project.category] || Sparkles;
               const isEven = index % 2 === 0;
-              const coverUrl = covers[project.id] ? getImageUrl(covers[project.id]) : null;
+              const meta = categoryMeta(project.category);
+              const categoryLabel = t(language, meta.labelKey as any);
+              // Cover priority: real gallery asset > the project's own
+              // database cover_url > gradient + icon. Two public projects have
+              // zero assets; one of them does have a curated cover_url, which
+              // this list used to ignore.
+              const coverSource = covers[project.id] || project.cover_url || null;
+              const coverUrl = coverSource ? getImageUrl(coverSource) : null;
+              const localizedTitle = getLocalizedText(project.title_i18n, language, project.title);
+              const localizedDescription = getLocalizedText(project.description_i18n, language, project.description);
+              const dateLabel = formatDisplayDate(project.release_date, language);
+              const imageCount = counts[project.id] ?? 0;
 
               return (
                 <motion.div
@@ -205,56 +205,61 @@ export default function ProjectsPage() {
                     <CardContent className="p-0">
                       <div className={`grid grid-cols-1 md:grid-cols-2 gap-0 ${isEven ? '' : 'md:grid-flow-dense'}`}>
                         {/* Image/Visual - real cover when the project has
-                            assets, gradient+icon empty state otherwise */}
+                            assets (or a curated cover_url), gradient+icon
+                            empty state otherwise. The badge keeps a dark
+                            scrim so it stays legible over any photo. */}
                         <div className={`relative aspect-[16/10] md:aspect-auto md:min-h-[320px] overflow-hidden bg-gradient-to-br ${categoryColors[project.category] || 'from-gray-100 to-gray-200 dark:from-gray-900/30 dark:to-gray-950/30'} ${isEven ? 'md:order-1' : 'md:order-2'}`}>
                           {coverUrl ? (
                             <Image
                               src={coverUrl}
-                              alt={getLocalizedText(project.title_i18n, language, project.title)}
+                              alt={localizedTitle}
                               fill
                               sizes={PROJECT_LIST_IMAGE_SIZES}
                               className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                             />
                           ) : (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <Icon className="h-24 w-24 text-primary/20" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                              <Icon className="h-20 w-20 text-primary/25" />
+                              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
+                                {t(language, 'projects.noImages')}
+                              </span>
                             </div>
                           )}
                           <div className="absolute top-4 left-4">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-black/50 backdrop-blur text-xs font-medium">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 py-1 text-xs font-medium text-ink backdrop-blur">
                               <Icon className="h-3 w-3" />
-                              {categoryLabels[project.category] || project.category.toUpperCase()}
+                              {categoryLabel}
                             </span>
                           </div>
                         </div>
 
                         {/* Content */}
                         <div className={`p-6 md:p-10 flex flex-col justify-center ${isEven ? 'md:order-2' : 'md:order-1'}`}>
-                          {project.release_date && (
-                            <time className="text-sm text-ink-2 mb-2">
-                              {new Date(project.release_date).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })}
-                            </time>
+                          {(dateLabel || imageCount > 0) && (
+                            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.15em] text-ink-2">
+                              {dateLabel && <time dateTime={project.release_date ?? undefined}>{dateLabel}</time>}
+                              {dateLabel && imageCount > 0 && <span aria-hidden>·</span>}
+                              {imageCount > 0 && (
+                                <span>{t(language, 'projects.photoCount', { count: imageCount })}</span>
+                              )}
+                            </div>
                           )}
 
                           <h3 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
-                            {getLocalizedText(project.title_i18n, language, project.title)}
+                            {localizedTitle}
                           </h3>
 
-                          {getLocalizedText(project.description_i18n, language, project.description) && (
-                            <p className="text-ink-2 text-base md:text-lg leading-relaxed mb-6">
-                              {getLocalizedText(project.description_i18n, language, project.description)}
+                          {localizedDescription && (
+                            <p className="text-ink-2 text-base md:text-lg leading-relaxed mb-6 line-clamp-4">
+                              {localizedDescription}
                             </p>
                           )}
 
-                          <div className="flex gap-3">
+                          <div className="flex flex-wrap gap-3">
                             <Button
                               asChild
                               size="lg"
-                              className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-foreground hover:opacity-90"
+                              className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-black hover:opacity-90"
                             >
                               {/* Canonical detail entry (phase-4 batch 2):
                                   editorial works open in the Editorial
@@ -262,7 +267,7 @@ export default function ProjectsPage() {
                               <Link
                                 href={project.category === 'editorial' ? `/editorial/${project.id}` : `/projects/${project.id}`}
                               >
-                                View Details
+                                {t(language, 'common.viewDetails')}
                               </Link>
                             </Button>
 
@@ -271,11 +276,11 @@ export default function ProjectsPage() {
                                 asChild
                                 size="lg"
                                 variant="outline"
-                                className="border-lmsy-blue text-lmsy-blue hover:bg-lmsy-blue hover:text-foreground"
+                                className="border-lmsy-blue text-lmsy-blue hover:bg-lmsy-blue hover:text-background"
                               >
                                 <a href={project.watch_url} target="_blank" rel="noopener noreferrer">
                                   <ExternalLink className="mr-2 h-4 w-4" />
-                                  Watch
+                                  {t(language, 'common.watch')}
                                 </a>
                               </Button>
                             )}
@@ -297,7 +302,7 @@ export default function ProjectsPage() {
             >
               <p className="text-ink-2 text-lg">
                 {selectedCategory === 'All'
-                  ? 'No projects found'
+                  ? t(language, 'projects.emptyAll')
                   : t(language, 'projects.filteredEmpty')}
               </p>
             </motion.div>

@@ -194,7 +194,6 @@ export default async function ProjectPage({ params }: PageProps) {
     <ProjectDetailClient
       project={{ ...project, cover_rotation: coverRotation }}
       images={groupedImages}
-      categories={CATEGORIES}
       relatedProjects={relatedProjects}
     />
   );

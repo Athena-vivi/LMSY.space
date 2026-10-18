@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 import { DEFAULT_MILESTONES_CONTENT, normalizeMilestonesContent } from '@/app/admin/settings/content-blocks';
 
 interface MilestoneContent {
@@ -21,30 +22,14 @@ interface MilestoneProps {
   year: string;
   title: string;
   index: number;
+  /** Milestone photo for this year, resolved once by the parent. */
+  image: string | null;
   onHover: (isHovering: boolean, year: string) => void;
 }
 
-function Milestone({ year, title, index, onHover }: MilestoneProps) {
-  const [featuredImage, setFeaturedImage] = useState<string | null>(null);
+function Milestone({ year, title, index, image, onHover }: MilestoneProps) {
+  const { language } = useLanguage();
   const isInfinity = year === '∞';
-
-  useEffect(() => {
-    async function fetchMilestoneImage() {
-      try {
-        const response = await fetch('/api/milestones');
-        if (!response.ok) return;
-
-        const result = await response.json();
-        if (result.success && result.data) {
-          setFeaturedImage(result.data[year] || null);
-        }
-      } catch (error) {
-        console.error(`[MILESTONE_${year}] Failed to fetch:`, error);
-      }
-    }
-
-    fetchMilestoneImage();
-  }, [year]);
 
   const content = (
     <motion.div
@@ -82,19 +67,23 @@ function Milestone({ year, title, index, onHover }: MilestoneProps) {
         whileHover={{ borderColor: isInfinity ? 'rgba(251, 191, 36, 0.5)' : 'rgba(255, 255, 255, 0.2)' }}
         transition={{ duration: 0.3 }}
       >
-        {featuredImage ? (
+        {image ? (
           <>
             <Image
-              src={featuredImage}
+              src={image}
               alt={`${year} featured`}
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-110"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
             />
-            <motion.div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="absolute bottom-4 left-4 right-4 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <span className={`font-mono text-xs tracking-widest uppercase ${isInfinity ? 'text-lmsy-yellow/90' : 'text-ink'}`}>
-                {isInfinity ? 'Story Continues →' : 'Enter Archive →'}
+            {/* The CTA is always visible on touch devices (they never fire
+                hover) and fades in on pointer devices. */}
+            <motion.div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-100 transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100" />
+            <div className="absolute bottom-4 left-4 right-4 text-center opacity-100 transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+              <span className={`font-mono text-[10px] tracking-widest uppercase md:text-xs ${isInfinity ? 'text-lmsy-yellow/90' : 'text-ink'}`}>
+                {isInfinity
+                  ? `${t(language, 'home.storyContinues')} →`
+                  : `${t(language, 'home.enterArchive')} →`}
               </span>
             </div>
           </>
@@ -168,6 +157,30 @@ export function ChronicleSection() {
   const { language } = useLanguage();
   const [hoveredYear, setHoveredYear] = useState<string | null>(null);
   const [content, setContent] = useState(DEFAULT_MILESTONES_CONTENT);
+  // Milestone photos are fetched ONCE for the whole section. Each of the five
+  // cards used to call /api/milestones on mount - five identical requests per
+  // homepage visit for one shared payload.
+  const [milestoneImages, setMilestoneImages] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    let active = true;
+    async function fetchMilestoneImages() {
+      try {
+        const response = await fetch('/api/milestones');
+        if (!response.ok) return;
+        const result = await response.json();
+        if (active && result.success && result.data) {
+          setMilestoneImages(result.data);
+        }
+      } catch (error) {
+        console.error('[MILESTONES] Failed to fetch:', error);
+      }
+    }
+    fetchMilestoneImages();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     async function fetchMilestonesContent() {
@@ -254,6 +267,7 @@ export function ChronicleSection() {
                 year={milestone.year}
                 title={milestone.title}
                 index={index}
+                image={milestoneImages[milestone.year] ?? null}
                 onHover={(isHovering) => setHoveredYear(isHovering ? milestone.year : null)}
               />
             ))}
@@ -266,6 +280,7 @@ export function ChronicleSection() {
                 year={milestone.year}
                 title={milestone.title}
                 index={index}
+                image={milestoneImages[milestone.year] ?? null}
                 onHover={(isHovering) => setHoveredYear(isHovering ? milestone.year : null)}
               />
             ))}

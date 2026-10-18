@@ -8,13 +8,16 @@ import Link from 'next/link';
 import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions } from '@/lib/image-dimensions';
 import { formatChapterTitle } from '@/lib/chapter-title';
-import { t, type Language } from '@/lib/languages';
+import { t, type Language, type TranslationKey } from '@/lib/languages';
 import { NebulaBackground } from '@/components/nebula-background';
 import { BackButton } from '@/components/back-button';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
-import { CATEGORIES, CategoryType } from './page';
+import type { CategoryType } from './page';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
+import { categoryMeta } from '@/lib/category-meta';
+import { formatDisplayDate } from '@/lib/display-date';
+import { visibleProjectTabs } from '@/lib/project-tabs';
 
 // Masonry is 1/2/3 columns; tell the image optimizer the real render width.
 const DETAIL_IMAGE_SIZES = '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw';
@@ -68,7 +71,6 @@ interface Project {
 interface ProjectDetailClientProps {
   project: Project;
   images: GroupedImages;
-  categories: typeof CATEGORIES;
   // Same-category public projects for the "more like this" section. Empty
   // array = section is hidden. Covers pre-picked server-side; no mock data.
   relatedProjects?: Array<{
@@ -81,20 +83,21 @@ interface ProjectDetailClientProps {
   }>;
 }
 
-// Curator's notes for each category
-const CURATOR_NOTES: Record<CategoryType, { title: string; note: string } | null> = {
+// Curator's notes per tab. These are generic UI copy (not per-project data),
+// so they are i18n keys rather than three hard-coded English paragraphs.
+const CURATOR_NOTES: Record<CategoryType, { titleKey: TranslationKey; noteKey: TranslationKey } | null> = {
   all: null,
   official_stills: {
-    title: 'Curator\'s Note',
-    note: 'These carefully selected stills capture the essence of the production, showcasing the visual language and artistic direction that define this project.',
+    titleKey: 'project.noteStillsTitle',
+    noteKey: 'project.noteStills',
   },
   bts: {
-    title: 'Behind the Scenes',
-    note: 'Exclusive glimpses into the creative process—the moments between takes, the laughter, and the dedicated craft that brings stories to life.',
+    titleKey: 'project.noteBtsTitle',
+    noteKey: 'project.noteBts',
   },
   press_events: {
-    title: 'Press & Events',
-    note: 'Documenting the public journey—red carpet moments, press conferences, and the shared excitement with fans and media.',
+    titleKey: 'project.notePressTitle',
+    noteKey: 'project.notePress',
   },
 };
 
@@ -110,8 +113,8 @@ function groupImagesIntoChapters(images: GalleryImage[], language: Language): Ch
   if (datedImages.length === 0) {
     return [{
       id: 'single-chapter',
-      title: 'The Collection',
-      period: 'All Works',
+      title: t(language, 'project.unsorted'),
+      period: '',
       images,
       startIndex: 0,
     }];
@@ -139,7 +142,7 @@ function groupImagesIntoChapters(images: GalleryImage[], language: Language): Ch
         chapters.push({
           id: monthKey,
           title: getChapterTitle(monthKey, language),
-          period: formatPeriod(monthKey),
+          period: '',
           images: currentChapter,
           startIndex: globalIndex - currentChapter.length,
         });
@@ -157,7 +160,7 @@ function groupImagesIntoChapters(images: GalleryImage[], language: Language): Ch
     chapters.push({
       id: currentMonth,
       title: getChapterTitle(currentMonth, language),
-      period: formatPeriod(currentMonth),
+      period: '',
       images: currentChapter,
       startIndex: globalIndex - currentChapter.length,
     });
@@ -170,8 +173,8 @@ function groupImagesIntoChapters(images: GalleryImage[], language: Language): Ch
   if (undatedImages.length > 0) {
     chapters.push({
       id: 'undated',
-      title: 'Unsorted',
-      period: 'Date Unknown',
+      title: t(language, 'project.unsorted'),
+      period: t(language, 'project.dateUnknown'),
       images: undatedImages,
       startIndex: sorted.length,
     });
@@ -190,16 +193,7 @@ function getChapterTitle(currentMonth: string, language: Language): string {
   return formatChapterTitle(currentMonth, language);
 }
 
-/**
- * Format period string like "Aug 2024 - Sep 2024" or "Aug 2024"
- */
-function formatPeriod(monthKey: string): string {
-  const [year, month] = monthKey.split('-');
-  const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-}
-
-export default function ProjectDetailClient({ project, images, categories, relatedProjects = [] }: ProjectDetailClientProps) {
+export default function ProjectDetailClient({ project, images, relatedProjects = [] }: ProjectDetailClientProps) {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryType>('all');
   const currentImages = images[activeTab] || [];
@@ -208,28 +202,28 @@ export default function ProjectDetailClient({ project, images, categories, relat
   const localizedDescription = getLocalizedText(project.description_i18n, language, project.description);
   const localizedThemeStatement = getLocalizedText(project.theme_statement_i18n, language, project.theme_statement);
 
-  // Category config for badges
-  const categoryConfig: Record<string, { label: string; className: string }> = {
-    series: {
-      label: 'TV Series',
-      className: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5 backdrop-blur-sm',
-    },
-    editorial: {
-      label: 'Editorial',
-      className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
-    },
-    appearance: {
-      label: 'Appearance',
-      className: 'text-ink border-white/20 bg-white/5 backdrop-blur-sm',
-    },
-    journal: {
-      label: 'Journal',
-      className: 'text-ink border-white/10 bg-transparent backdrop-blur-sm',
-    },
-    commercial: {
-      label: 'Commercial',
-      className: 'text-amber-200/70 border-amber-500/20 bg-amber-500/5 backdrop-blur-sm',
-    },
+  // Category badge comes from the shared category-meta module: the label is
+  // localized and the accent matches the Projects list badge.
+  const category = categoryMeta(project.category);
+  const categoryLabel = t(language, category.labelKey);
+  const releaseDateLabel = formatDisplayDate(project.release_date, language);
+
+  // Facets are offered only when they actually hold images (see
+  // lib/project-tabs.ts). With the live data - every asset has
+  // category_tag = NULL - BTS and Press are empty and "stills" equals "all",
+  // so the tab bar would otherwise advertise three dead facets.
+  const tabCounts = {
+    all: images.all.length,
+    official_stills: images.official_stills.length,
+    bts: images.bts.length,
+    press_events: images.press_events.length,
+  };
+  const tabs = visibleProjectTabs(tabCounts);
+  const tabLabel: Record<CategoryType, string> = {
+    all: t(language, 'project.tabAll'),
+    official_stills: t(language, 'project.tabStills'),
+    bts: t(language, 'project.tabBts'),
+    press_events: t(language, 'project.tabPress'),
   };
 
   // 🎯 CHAPTERS: Group images by event_date for chronological display
@@ -256,19 +250,15 @@ export default function ProjectDetailClient({ project, images, categories, relat
             className="mb-6 max-w-[220px]"
           >
             <div className="mb-4 flex flex-col items-start gap-3">
-              <span className={`px-3 py-1 text-[10px] font-mono tracking-[0.1em] uppercase border ${categoryConfig[project.category]?.className || categoryConfig.series.className}`}>
-                {categoryConfig[project.category]?.label || 'Uncategorized'}
+              <span className={`px-3 py-1 text-[10px] font-mono tracking-[0.1em] uppercase border backdrop-blur-sm ${category.accent}`}>
+                {categoryLabel}
               </span>
-              {project.release_date && (
+              {releaseDateLabel && (
                 <div className="flex items-center gap-2 text-ink-2">
                   <Calendar className="h-4 w-4" />
-                  <span className="text-sm">
-                    {new Date(project.release_date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </span>
+                  <time className="text-sm" dateTime={project.release_date ?? undefined}>
+                    {releaseDateLabel}
+                  </time>
                 </div>
               )}
             </div>
@@ -327,35 +317,32 @@ export default function ProjectDetailClient({ project, images, categories, relat
                 className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-black rounded-lg font-medium hover:opacity-90 transition-all duration-300"
               >
                 <Play className="w-5 h-5" />
-                Watch Now
+                {t(language, 'project.watchNow')}
                 <ExternalLink className="w-4 h-4" />
               </a>
             </motion.div>
           )}
 
-          {/* Tab Navigation */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-8 max-w-[220px]"
-          >
-            <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
-              {categories.map((cat) => {
-                const count = images[cat.value as CategoryType]?.length || 0;
-                return (
+          {/* Tab Navigation - only facets that contain images */}
+          {tabs.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mb-8 max-w-[220px]"
+            >
+              <div className="flex flex-wrap gap-2 border-b border-border pb-4">
+                {tabs.map((value) => (
                   <button
-                    key={cat.value}
-                    onClick={() => setActiveTab(cat.value as CategoryType)}
+                    key={value}
+                    onClick={() => setActiveTab(value)}
                     className={`relative px-4 py-2 text-xs font-mono tracking-wider uppercase transition-all duration-300 ${
-                      activeTab === cat.value
-                        ? 'text-ink'
-                        : 'text-ink hover:text-ink-2'
+                      activeTab === value ? 'text-ink' : 'text-ink-2 hover:text-ink'
                     }`}
                   >
-                    {cat.label}
-                    <span className="ml-2 text-ink-2">({count})</span>
-                    {activeTab === cat.value && (
+                    {tabLabel[value]}
+                    <span className="ml-2 text-ink-2">({tabCounts[value]})</span>
+                    {activeTab === value && (
                       <motion.div
                         layoutId="activeTab"
                         className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue"
@@ -364,10 +351,10 @@ export default function ProjectDetailClient({ project, images, categories, relat
                       />
                     )}
                   </button>
-                );
-              })}
-            </div>
-          </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Curator's Note */}
           <AnimatePresence mode="wait">
@@ -383,10 +370,10 @@ export default function ProjectDetailClient({ project, images, categories, relat
                 <div className="relative p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm">
                   <div>
                     <h4 className="text-xs font-mono text-lmsy-yellow/60 tracking-wider uppercase mb-2">
-                      {curatorNote.title}
+                      {t(language, curatorNote.titleKey)}
                     </h4>
                     <p className="text-ink-2 text-sm leading-relaxed italic">
-                      {curatorNote.note}
+                      {t(language, curatorNote.noteKey)}
                     </p>
                   </div>
                 </div>
@@ -431,11 +418,21 @@ export default function ProjectDetailClient({ project, images, categories, relat
                       narrative names (phase-4 Task 4). The previous code
                       computed titles but never rendered them; they are now
                       shown so users can see where a month section starts. */}
-                  <div className="mb-4 md:mb-6 flex items-baseline gap-3">
+                  <div className="mb-4 flex items-baseline justify-between gap-3 md:mb-6">
                     <h3 className="font-serif text-xl md:text-2xl font-bold text-ink">
                       {chapter.title}
                     </h3>
-                    <span className="font-mono text-xs text-ink-2">{chapter.period}</span>
+                    {/* The month label already carries the date, so the
+                        secondary slot shows how many images the chapter holds
+                        instead of repeating "Aug 2024" next to "August 2024". */}
+                    <span className="font-mono text-xs text-ink-2">
+                      {chapter.period ||
+                        `${chapter.images.length} ${
+                          chapter.images.length === 1
+                            ? t(language, 'common.imagesOne')
+                            : t(language, 'common.imagesMany')
+                        }`}
+                    </span>
                   </div>
                   {/* Cover plate - full width, capped height */}
                   {coverImage && coverUrl && (
@@ -463,7 +460,9 @@ export default function ProjectDetailClient({ project, images, categories, relat
                         {coverImage.catalog_id && (
                           <div className="absolute top-3 left-3 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
                             <span className="px-2 py-1 bg-lmsy-yellow/20 border border-lmsy-yellow/40 rounded-full">
-                              <span className="text-[10px] font-mono font-bold text-lmsy-yellow">COVER</span>
+                              <span className="text-[10px] font-mono font-bold text-lmsy-yellow">
+                                {t(language, 'project.cover')}
+                              </span>
                             </span>
                           </div>
                         )}
@@ -531,7 +530,9 @@ export default function ProjectDetailClient({ project, images, categories, relat
                             {/* Featured Badge */}
                             {image.is_featured && (
                               <div className="absolute top-4 right-4 px-2 py-1 bg-lmsy-blue/20 border border-lmsy-blue/40 rounded-full">
-                                <span className="text-[10px] font-mono font-bold text-lmsy-blue">FEATURED</span>
+                                <span className="text-[10px] font-mono font-bold text-lmsy-blue">
+                                  {t(language, 'project.featured')}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -555,8 +556,8 @@ export default function ProjectDetailClient({ project, images, categories, relat
               animate={{ opacity: 1 }}
               className="text-center py-24"
             >
-              <p className="text-ink text-lg">No images in this category yet.</p>
-              <p className="text-ink-2 text-sm mt-2">More content will be added soon.</p>
+              <p className="text-ink text-lg">{t(language, 'project.emptyTitle')}</p>
+              <p className="text-ink-2 text-sm mt-2">{t(language, 'project.emptyDesc')}</p>
             </motion.div>
           )}
 
@@ -597,12 +598,15 @@ export default function ProjectDetailClient({ project, images, categories, relat
                       <p className="mt-3 text-sm font-medium text-ink group-hover/related:text-lmsy-blue transition-colors line-clamp-1">
                         {getLocalizedText(related.title_i18n, language, related.title)}
                       </p>
-                      {related.release_date && (
+                      {formatDisplayDate(related.release_date, language, {
+                        month: 'short',
+                        day: false,
+                      }) && (
                         <p className="text-xs text-ink-2 mt-1">
-                          {new Date(related.release_date).toLocaleDateString(
-                            language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US',
-                            { year: 'numeric', month: 'short' }
-                          )}
+                          {formatDisplayDate(related.release_date, language, {
+                            month: 'short',
+                            day: false,
+                          })}
                         </p>
                       )}
                     </Link>

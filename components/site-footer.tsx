@@ -83,7 +83,7 @@ export function SiteFooter() {
               href="/copyright"
               className="text-xs font-light text-ink-2 hover:text-ink transition-colors tracking-wider uppercase"
             >
-              Copyright
+              {t(language, 'nav.copyright')}
             </Link>
           </nav>
 

@@ -4,7 +4,8 @@ import type { Language } from '@/lib/languages';
 // Task 4). Replaces the three hard-coded narrative titles ("Chapter I: The
 // Premiere" etc.) that were written for one specific project's 2024 timeline.
 // Pure + exported so it can be unit-tested without mounting the client
-// component.
+// component (the test imports this file directly with node --test, which is
+// why it keeps its own locale map instead of importing lib/display-date.ts).
 
 const LOCALES: Record<Language, string> = {
   en: 'en-US',

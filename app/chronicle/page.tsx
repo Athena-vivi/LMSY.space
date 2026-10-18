@@ -46,7 +46,11 @@ export default async function ChroniclePage({
           />
 
           <section className="xl:pl-[260px]">
-            <ChronicleTimeline events={events} activeYear={activeYear} />
+            <ChronicleTimeline
+              events={events}
+              activeYear={activeYear}
+              availableYears={availableYears}
+            />
           </section>
         </div>
       </div>

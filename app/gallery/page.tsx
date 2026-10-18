@@ -9,10 +9,11 @@ import { t } from '@/lib/languages';
 import { supabase, type GalleryItem } from '@/lib/supabase';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import Lightbox from './lightbox';
-import { BackButton } from '@/components/back-button';
+import { PageIntro } from '@/components/page-intro';
 import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions, FALLBACK_ASPECT_RATIO } from '@/lib/image-dimensions';
 import { getLocalizedText } from '@/lib/localized-content';
+import { assetTagLabelKey } from '@/lib/category-meta';
 
 const gradients = [
   'from-lmsy-yellow/20 to-lmsy-yellow/5',
@@ -255,28 +256,10 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <section className="pt-24 pb-8 md:pt-32 md:pb-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back Button */}
-          <div className="mb-8">
-            <BackButton />
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl mb-6 font-bold text-ink tracking-tight">
-              {t(language, 'gallery.title')}
-            </h1>
-            <p className="text-lg text-ink-2 max-w-2xl">
-              {t(language, 'gallery.description')}
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageIntro
+        title={t(language, 'gallery.title')}
+        description={t(language, 'gallery.description')}
+      />
 
       {/* Tag Filter */}
       <section className="pb-12">
@@ -293,7 +276,7 @@ export default function GalleryPage() {
                 onClick={() => setSelectedTag(tag.value)}
                 className={`px-6 py-2.5 text-sm font-medium transition-all duration-300 rounded-full border ${
                   selectedTag === tag.value
-                    ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-ink border-transparent shadow-lg shadow-lmsy-yellow/20'
+                    ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-black border-transparent shadow-lg shadow-lmsy-yellow/20'
                     : 'bg-muted text-ink-2 border-border hover:border-lmsy-blue hover:text-lmsy-blue'
                 }`}
               >
@@ -390,11 +373,12 @@ export default function GalleryPage() {
                           )}
                         </div>
 
-                        {/* 🏷️ Tag Badge - Top Left */}
+                        {/* 🏷️ Tag Badge - Top Left. Same i18n keys as the filter
+                            chips above, so the badge never contradicts them. */}
                         {item.tag && (
                           <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <span className="px-3 py-1 text-xs font-medium bg-black/50 backdrop-blur-sm rounded-full text-ink border border-white/10">
-                              #{item.tag}
+                              #{assetTagLabelKey(item.tag) ? t(language, assetTagLabelKey(item.tag)!) : item.tag}
                             </span>
                           </div>
                         )}
@@ -430,67 +414,43 @@ export default function GalleryPage() {
                   className="px-8 py-3 rounded-full text-sm font-medium border border-border bg-muted text-ink-2 hover:border-lmsy-blue hover:text-lmsy-blue transition-colors disabled:opacity-60"
                 >
                   {loadingMore
-                    ? language === 'zh'
-                      ? '加载中…'
-                      : language === 'th'
-                        ? 'กำลังโหลด…'
-                        : 'Loading…'
-                    : language === 'zh'
-                      ? '加载更多'
-                      : language === 'th'
-                        ? 'โหลดเพิ่มเติม'
-                        : 'Load more'}
+                    ? t(language, 'common.loading')
+                    : t(language, 'common.loadMore')}
                 </button>
               </div>
             )}
 
-            {/* Empty State / Under Construction */}
+            {/* Empty state: two different truths, stated plainly. The previous
+                copy claimed the gallery was still being built even when the
+                only reason for an empty grid was the active tag filter. */}
             {filteredImages.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center py-20"
+                className="text-center py-24"
               >
                 <div className="max-w-md mx-auto">
-                  {/* Animated Sparkle Icon */}
-                  <motion.div
-                    className="mx-auto w-16 h-16 mb-6"
-                    animate={{
-                      rotate: [0, 5, -5, 0],
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
-                  >
-                    <div className="relative w-full h-full">
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-lmsy-yellow to-lmsy-blue blur-md opacity-50 animate-pulse" />
-                      <div className="relative w-full h-full rounded-full bg-gradient-to-br from-lmsy-yellow to-lmsy-blue flex items-center justify-center">
-                        <span className="text-3xl">✨</span>
-                      </div>
+                  <div className="relative mx-auto mb-6 h-16 w-16">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-lmsy-yellow/30 to-lmsy-blue/30 blur-md" />
+                    <div className="relative flex h-full w-full items-center justify-center rounded-full border border-border bg-card">
+                      <ZoomIn className="h-6 w-6 text-ink-2" strokeWidth={1.5} />
                     </div>
-                  </motion.div>
-
-                  {/* Message */}
-                  <h3 className="font-serif text-2xl font-bold text-ink mb-4">
-                    {language === 'zh' ? '画廊建设中' : language === 'th' ? 'หอศิลป์กำลังสร้าง' : 'Gallery Under Construction'}
-                  </h3>
-                  <p className="text-ink-2 text-lg mb-6">
-                    {language === 'zh'
-                      ? '我们正在精心策划每一张照片，敬请期待...'
-                      : language === 'th'
-                      ? 'เรากำลังคัดสรรภาพถ่ายทุกภาพอย่างพิถีพิถัน อดใจรอสักครู่...'
-                      : 'We are carefully curating every photo. Stay tuned...'}
-                  </p>
-
-                  {/* Decorative Line */}
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="h-px w-16 bg-gradient-to-r from-transparent to-lmsy-yellow" />
-                    <div className="w-2 h-2 rounded-full bg-lmsy-yellow animate-pulse" />
-                    <div className="h-px w-16 bg-gradient-to-l from-transparent to-lmsy-blue" />
                   </div>
+
+                  <h3 className="mb-3 font-serif text-2xl font-bold text-ink">
+                    {selectedTag === 'All'
+                      ? t(language, 'gallery.emptyAll')
+                      : t(language, 'gallery.emptyFiltered')}
+                  </h3>
+
+                  {selectedTag !== 'All' && (
+                    <button
+                      onClick={() => setSelectedTag('All')}
+                      className="mt-2 rounded-full border border-border bg-muted px-5 py-2 text-xs uppercase tracking-[0.2em] text-ink-2 transition-colors hover:border-lmsy-blue hover:text-lmsy-blue"
+                    >
+                      {t(language, 'gallery.resetFilter')}
+                    </button>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -502,6 +462,7 @@ export default function GalleryPage() {
       <AnimatePresence>
         {lightboxImage && (
           <Lightbox
+            key={lightboxImage.id}
             image={lightboxImage}
             images={filteredImages}
             project={lightboxImage.project_id ? projectMap[lightboxImage.project_id] ?? null : null}

@@ -7,6 +7,9 @@ import { GalleryImageWithLightbox } from './gallery-image';
 import { getImageUrl } from '@/lib/image-url';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
 import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
+import { formatDisplayDate } from '@/lib/display-date';
+import { countIssueArtifacts } from '@/lib/editorial-meta';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 
 interface Magazine {
@@ -47,22 +50,19 @@ export function EditorialDetailContent({
     magazine.description
   );
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'TBD';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  // Locale-aware date (was hard-coded to en-US, so zh/th readers saw English
+  // dates). Missing dates say "to be confirmed" rather than a bare 'TBD'.
+  const dateLabel =
+    formatDisplayDate(magazine.release_date, language) ?? t(language, 'editorial.dateTbd');
 
-  const totalArtifacts = galleryImages.length + 1; // +1 for cover
+  // Distinct artifacts. The cover counts once: 7 of the 11 public editorial
+  // works store a cover_url that is already one of their gallery pages.
+  const totalArtifacts = countIssueArtifacts(galleryImages, magazine.cover_url);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="relative z-10 px-6 py-8 md:px-12 md:py-12 border-b border-white/5">
+      <header className="relative z-10 px-6 py-8 md:px-12 md:py-12 border-b border-border">
         <div className="flex items-start justify-between max-w-7xl mx-auto">
           <BackButton />
 
@@ -75,10 +75,12 @@ export function EditorialDetailContent({
             <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-ink">
               {localizedTitle}
             </h1>
-            <p className="font-mono text-xs text-ink-2 tracking-[0.3em]">
-              {/* ADR-001 D5: real persistent catalog_id only - no generated stand-in */}
-              {magazine.catalog_id}
-            </p>
+            {magazine.catalog_id && (
+              <p className="font-mono text-xs text-ink-2 tracking-[0.3em]">
+                {/* ADR-001 D5: real persistent catalog_id only - no generated stand-in */}
+                {magazine.catalog_id}
+              </p>
+            )}
           </motion.div>
         </div>
       </header>
@@ -95,10 +97,10 @@ export function EditorialDetailContent({
           >
             <div>
               <p className="font-mono text-4xl md:text-6xl font-bold text-ink mb-2">
-                {formatDate(magazine.release_date)}
+                {dateLabel}
               </p>
               <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
-                Release Date
+                {t(language, 'editorial.releaseDate')}
               </p>
             </div>
             <div className="text-right">
@@ -106,7 +108,7 @@ export function EditorialDetailContent({
                 {totalArtifacts}
               </p>
               <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
-                Artifacts Preserved
+                {t(language, 'editorial.artifacts')}
               </p>
             </div>
           </motion.div>
@@ -130,7 +132,7 @@ export function EditorialDetailContent({
               className="mb-12"
             >
               <p className="font-mono text-[10px] text-lmsy-yellow/60 tracking-[0.2em] uppercase mb-3">
-                Curator's Note
+                {t(language, 'editorial.curatorNote')}
               </p>
               <p className="font-serif text-lg md:text-xl text-ink-2 leading-relaxed">
                 {localizedDescription}
@@ -172,14 +174,13 @@ export function EditorialDetailContent({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20"
+              className="mx-auto max-w-xl border-t border-border pt-16 text-center"
             >
-              <p className="font-mono text-lg text-lmsy-yellow/60 tracking-[0.2em] mb-4">
-                [ ARCHIVE_EMPTY: WAITING_FOR_CURATION ]
+              <p className="mb-3 font-serif text-xl text-ink">
+                {t(language, 'editorial.pagesEmpty')}
               </p>
-              <p className="font-serif text-ink-2">
-                This magazine&lsquo;s pages have not yet been digitized.<br />
-                Check back soon for updates.
+              <p className="text-sm text-ink-2">
+                {t(language, 'editorial.pagesEmptyHint')}
               </p>
             </motion.div>
           </div>
@@ -197,10 +198,10 @@ export function EditorialDetailContent({
               className="mb-8"
             >
               <h2 className="font-serif text-2xl md:text-3xl text-ink-2 mb-2">
-                Inside This Issue
+                {t(language, 'editorial.insideIssue')}
               </h2>
               <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
-                {galleryImages.length} Pages Preserved
+                {t(language, 'editorial.pagesPreserved', { count: galleryImages.length })}
               </p>
             </motion.div>
 
@@ -219,10 +220,13 @@ export function EditorialDetailContent({
       )}
 
       {/* Footer */}
-      <footer className="relative border-t border-white/5 py-12 px-6">
+      <footer className="relative border-t border-border py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <p className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
-            LMSY.SPACE · MAGAZINE_ARCHIVE{magazine.catalog_id ? ` · ${magazine.catalog_id}` : ''} · {totalArtifacts} ARTIFACTS
+            LMSY.SPACE
+            {magazine.catalog_id ? ` · ${magazine.catalog_id}` : ''}
+            {' · '}
+            {totalArtifacts} {t(language, 'editorial.artifacts')}
           </p>
         </div>
       </footer>

@@ -22,6 +22,7 @@ export const translations = {
     'nav.profiles': 'Profiles',
     'nav.gallery': 'Gallery',
     'nav.projects': 'Projects',
+    'nav.copyright': 'Copyright',
     'nav.schedule': 'Schedule',
     'nav.toggleTheme': 'Toggle theme',
     'nav.toggleMenu': 'Toggle menu',
@@ -232,6 +233,92 @@ export const translations = {
     'footer.twitter': 'Twitter',
     'footer.disclaimer': 'Copyright Disclaimer: lmsy.space is a non-profit fan project. All media belongs to their respective owners.',
 
+    // Shared presentation (phase 6 batch 1)
+    'common.viewDetails': 'View Details',
+    'common.watch': 'Watch',
+    'common.loadMore': 'Load more',
+    'common.loading': 'Loading…',
+    'common.imagesOne': 'image',
+    'common.imagesMany': 'images',
+    'common.close': 'Close',
+    'common.previous': 'Previous',
+    'common.next': 'Next',
+    'common.source': 'Source',
+    'common.noImage': 'Image not available',
+    'common.curatorNote': 'Curator\u2019s Note',
+    'common.backToHub': 'Back to Space Hub',
+
+    // Archive credit lines (editorial + project detail)
+    'credit.officialTitle': 'Official Content',
+    'credit.official': 'All media assets belong to the original publishers. Preserved for appreciation.',
+    'credit.fanTitle': 'Fan-Captured Content',
+    'credit.fan': 'Special thanks to the Besties who captured these fleeting moments.',
+
+    // Work categories (single source shared by Projects, detail and Chronicle)
+    'category.series': 'Series',
+    'category.editorial': 'Editorial',
+    'category.appearance': 'Appearance',
+    'category.commercial': 'Commercial',
+    'category.journal': 'Journal',
+    'category.daily': 'Daily',
+    'category.travel': 'Travel',
+    'category.music': 'Music Video',
+    'category.magazine': 'Magazine',
+    'category.other': 'Other',
+
+    // Project detail
+    'project.tabAll': 'All',
+    'project.tabStills': 'Stills',
+    'project.tabBts': 'Behind the scenes',
+    'project.tabPress': 'Press & events',
+    'project.watchNow': 'Watch now',
+    'project.emptyTitle': 'No images in this category yet.',
+    'project.emptyDesc': 'New material appears here once it has been curated.',
+    'project.cover': 'Cover',
+    'project.featured': 'Featured',
+    'project.unsorted': 'Unsorted',
+    'project.dateUnknown': 'Date unknown',
+    'project.noteStillsTitle': 'Curator\u2019s Note',
+    'project.noteStills':
+      'These selected stills preserve the texture of the work and the visual language that defines this project.',
+    'project.noteBtsTitle': 'Behind the Scenes',
+    'project.noteBts':
+      'Moments between takes - the process, the laughter and the craft that bring a story to life.',
+    'project.notePressTitle': 'Press & Events',
+    'project.notePress':
+      'The public journey: red carpets, press events and the excitement shared with fans and media.',
+
+    // Gallery states
+    'gallery.emptyAll': 'No images in the archive yet.',
+    'gallery.emptyFiltered': 'No images match this filter.',
+    'gallery.resetFilter': 'View all images',
+
+    // Projects list states
+    'projects.emptyAll': 'No projects to show yet.',
+    'projects.photoCount': '{count} images',
+    'projects.noImages': 'No archive images yet',
+
+    // Editorial meta
+    'editorial.issueCount': '{count} issues curated',
+    'editorial.releaseDate': 'Release date',
+    'editorial.artifacts': 'Artifacts',
+    'editorial.curatorNote': 'Curator\u2019s note',
+    'editorial.insideIssue': 'Inside this issue',
+    'editorial.pagesPreserved': '{count} pages preserved',
+    'editorial.pagesEmpty': 'This issue has no digitized pages yet.',
+    'editorial.pagesEmptyHint': 'Pages appear here once they have been curated.',
+    'editorial.noCover': 'No cover',
+    'editorial.dateTbd': 'Date to be confirmed',
+    'editorial.loading': 'Loading',
+
+    // Chronicle empty state helper
+    'chronicle.tryAnotherYear': 'Try another year:',
+
+    // Homepage CTAs
+    'home.explore': 'Explore',
+    'home.enterArchive': 'Enter archive',
+    'home.storyContinues': 'Story continues',
+
     // Copyright Page
     'copyright.title': 'Copyright Policy',
     'copyright.subtitle': 'Respecting creators, preserving memories',
@@ -262,6 +349,7 @@ export const translations = {
     'nav.profiles': '成员资料',
     'nav.gallery': '相册',
     'nav.projects': '作品',
+    'nav.copyright': '版权',
     'nav.schedule': '日程',
     'nav.toggleTheme': '切换主题',
     'nav.toggleMenu': '切换菜单',
@@ -472,6 +560,89 @@ export const translations = {
     'footer.twitter': 'Twitter',
     'footer.disclaimer': '版权声明：lmsy.space 是一个非营利性粉丝项目。所有媒体内容归各自所有者所有。',
 
+    // Shared presentation (phase 6 batch 1)
+    'common.viewDetails': '查看详情',
+    'common.watch': '观看',
+    'common.loadMore': '加载更多',
+    'common.loading': '加载中…',
+    'common.imagesOne': '张图片',
+    'common.imagesMany': '张图片',
+    'common.close': '关闭',
+    'common.previous': '上一张',
+    'common.next': '下一张',
+    'common.source': '来源',
+    'common.noImage': '图片暂不可用',
+    'common.curatorNote': '策展手记',
+    'common.backToHub': '返回星际总部',
+
+    // Archive credit lines (editorial + project detail)
+    'credit.officialTitle': '官方内容',
+    'credit.official': '所有图像版权归原出版方所有，此处仅作欣赏与保存。',
+    'credit.fanTitle': '粉丝拍摄内容',
+    'credit.fan': '感谢每一位记录下这些瞬间的 Bestie。',
+
+    // Work categories (single source shared by Projects, detail and Chronicle)
+    'category.series': '剧集',
+    'category.editorial': '杂志特辑',
+    'category.appearance': '公开活动',
+    'category.commercial': '商业合作',
+    'category.journal': '记录',
+    'category.daily': '日常',
+    'category.travel': '旅行',
+    'category.music': '音乐影像',
+    'category.magazine': '杂志',
+    'category.other': '其他',
+
+    // Project detail
+    'project.tabAll': '全部',
+    'project.tabStills': '剧照',
+    'project.tabBts': '幕后',
+    'project.tabPress': '媒体与活动',
+    'project.watchNow': '立即观看',
+    'project.emptyTitle': '该分类下暂无图片。',
+    'project.emptyDesc': '新素材整理后会出现在这里。',
+    'project.cover': '封面',
+    'project.featured': '精选',
+    'project.unsorted': '未归类',
+    'project.dateUnknown': '日期未知',
+    'project.noteStillsTitle': '策展手记',
+    'project.noteStills': '这些精选剧照保留了作品本身的质感，也呈现定义这个项目的视觉语言。',
+    'project.noteBtsTitle': '幕后',
+    'project.noteBts': '拍摄之间的片刻：过程、笑声，以及让故事成立的那份用心。',
+    'project.notePressTitle': '媒体与活动',
+    'project.notePress': '公开行程的记录：红毯、发布会，以及和粉丝、媒体共同分享的期待。',
+
+    // Gallery states
+    'gallery.emptyAll': '档案中暂无图片。',
+    'gallery.emptyFiltered': '该筛选下暂无图片。',
+    'gallery.resetFilter': '查看全部图片',
+
+    // Projects list states
+    'projects.emptyAll': '暂无可展示的作品。',
+    'projects.photoCount': '{count} 张图片',
+    'projects.noImages': '暂无归档图片',
+
+    // Editorial meta
+    'editorial.issueCount': '共 {count} 期特辑',
+    'editorial.releaseDate': '发布日期',
+    'editorial.artifacts': '件藏品',
+    'editorial.curatorNote': '策展手记',
+    'editorial.insideIssue': '本期内容',
+    'editorial.pagesPreserved': '已保存 {count} 页',
+    'editorial.pagesEmpty': '本期尚无数字化内页。',
+    'editorial.pagesEmptyHint': '完成整理后，内页会出现在这里。',
+    'editorial.noCover': '暂无封面',
+    'editorial.dateTbd': '日期待确认',
+    'editorial.loading': '加载中',
+
+    // Chronicle empty state helper
+    'chronicle.tryAnotherYear': '查看其他年份：',
+
+    // Homepage CTAs
+    'home.explore': '探索',
+    'home.enterArchive': '进入档案',
+    'home.storyContinues': '故事仍在继续',
+
     // Copyright Page
     'copyright.title': '版权政策',
     'copyright.subtitle': '尊重创作者，珍藏美好回忆',
@@ -502,6 +673,7 @@ export const translations = {
     'nav.profiles': 'โปรไฟล์',
     'nav.gallery': 'แกลเลอรี่',
     'nav.projects': 'ผลงาน',
+    'nav.copyright': 'ลิขสิทธิ์',
     'nav.schedule': 'กำหนดการ',
     'nav.toggleTheme': 'สลับธีม',
     'nav.toggleMenu': 'สลับเมนู',
@@ -711,6 +883,92 @@ export const translations = {
     'footer.instagram': 'Instagram',
     'footer.twitter': 'Twitter',
     'footer.disclaimer': 'ข้อจำกัดความรับผิดชอบลิขสิทธิ์: lmsy.space เป็นโปรเจกต์แฟนคลับไม่แสวงหากำไร สื่อทั้งหมดเป็นของเจ้าของตามกฎหมาย',
+
+    // Shared presentation (phase 6 batch 1)
+    'common.viewDetails': 'ดูรายละเอียด',
+    'common.watch': 'รับชม',
+    'common.loadMore': 'โหลดเพิ่มเติม',
+    'common.loading': 'กำลังโหลด…',
+    'common.imagesOne': 'รูปภาพ',
+    'common.imagesMany': 'รูปภาพ',
+    'common.close': 'ปิด',
+    'common.previous': 'ก่อนหน้า',
+    'common.next': 'ถัดไป',
+    'common.source': 'ที่มา',
+    'common.noImage': 'ไม่สามารถแสดงรูปภาพได้',
+    'common.curatorNote': 'บันทึกภัณฑารักษ์',
+    'common.backToHub': 'กลับสู่ศูนย์อวกาศ',
+
+    // Archive credit lines (editorial + project detail)
+    'credit.officialTitle': 'เนื้อหาทางการ',
+    'credit.official': 'สื่อทั้งหมดเป็นลิขสิทธิ์ของผู้จัดพิมพ์ต้นฉบับ จัดเก็บไว้เพื่อการชื่นชมเท่านั้น',
+    'credit.fanTitle': 'ภาพจากแฟนคลับ',
+    'credit.fan': 'ขอบคุณ Bestie ทุกคนที่บันทึกช่วงเวลาเหล่านี้ไว้',
+
+    // Work categories (single source shared by Projects, detail and Chronicle)
+    'category.series': 'ซีรีส์',
+    'category.editorial': 'นิตยสารพิเศษ',
+    'category.appearance': 'อีเวนต์',
+    'category.commercial': 'โฆษณา',
+    'category.journal': 'บันทึก',
+    'category.daily': 'ชีวิตประจำวัน',
+    'category.travel': 'ท่องเที่ยว',
+    'category.music': 'มิวสิกวิดีโอ',
+    'category.magazine': 'นิตยสาร',
+    'category.other': 'อื่น ๆ',
+
+    // Project detail
+    'project.tabAll': 'ทั้งหมด',
+    'project.tabStills': 'ภาพนิ่ง',
+    'project.tabBts': 'เบื้องหลัง',
+    'project.tabPress': 'สื่อและอีเวนต์',
+    'project.watchNow': 'รับชมเลย',
+    'project.emptyTitle': 'ยังไม่มีรูปภาพในหมวดนี้',
+    'project.emptyDesc': 'เนื้อหาใหม่จะปรากฏที่นี่เมื่อได้รับการคัดสรร',
+    'project.cover': 'ปก',
+    'project.featured': 'แนะนำ',
+    'project.unsorted': 'ยังไม่จัดกลุ่ม',
+    'project.dateUnknown': 'ไม่ทราบวันที่',
+    'project.noteStillsTitle': 'บันทึกภัณฑารักษ์',
+    'project.noteStills':
+      'ภาพนิ่งที่คัดสรรเหล่านี้เก็บรายละเอียดของผลงานและภาษาภาพที่นิยามโปรเจกต์นี้',
+    'project.noteBtsTitle': 'เบื้องหลัง',
+    'project.noteBts':
+      'ช่วงเวลาระหว่างการถ่ายทำ — กระบวนการ เสียงหัวเราะ และความตั้งใจที่ทำให้เรื่องราวเกิดขึ้น',
+    'project.notePressTitle': 'สื่อและอีเวนต์',
+    'project.notePress':
+      'เส้นทางการพบปะสาธารณะ: พรมแดง งานแถลงข่าว และความตื่นเต้นที่แบ่งปันกับแฟน ๆ และสื่อ',
+
+    // Gallery states
+    'gallery.emptyAll': 'ยังไม่มีรูปภาพในคลัง',
+    'gallery.emptyFiltered': 'ไม่พบรูปภาพที่ตรงกับตัวกรองนี้',
+    'gallery.resetFilter': 'ดูรูปภาพทั้งหมด',
+
+    // Projects list states
+    'projects.emptyAll': 'ยังไม่มีผลงานที่แสดงได้',
+    'projects.photoCount': '{count} รูปภาพ',
+    'projects.noImages': 'ยังไม่มีรูปภาพในคลัง',
+
+    // Editorial meta
+    'editorial.issueCount': 'คัดสรรแล้ว {count} ฉบับ',
+    'editorial.releaseDate': 'วันที่เผยแพร่',
+    'editorial.artifacts': 'ชิ้นงาน',
+    'editorial.curatorNote': 'บันทึกภัณฑารักษ์',
+    'editorial.insideIssue': 'ภายในฉบับนี้',
+    'editorial.pagesPreserved': 'เก็บรักษาไว้ {count} หน้า',
+    'editorial.pagesEmpty': 'ฉบับนี้ยังไม่มีหน้าที่ถูกดิจิทัล',
+    'editorial.pagesEmptyHint': 'หน้าต่าง ๆ จะปรากฏที่นี่เมื่อได้รับการคัดสรร',
+    'editorial.noCover': 'ไม่มีปก',
+    'editorial.dateTbd': 'รอยืนยันวันที่',
+    'editorial.loading': 'กำลังโหลด',
+
+    // Chronicle empty state helper
+    'chronicle.tryAnotherYear': 'ลองดูปีอื่น:',
+
+    // Homepage CTAs
+    'home.explore': 'สำรวจ',
+    'home.enterArchive': 'เข้าสู่คลัง',
+    'home.storyContinues': 'เรื่องราวยังดำเนินต่อ',
 
     // Copyright Page
     'copyright.title': 'นโยบายลิขสิทธิ์',

@@ -9,6 +9,7 @@ import { getImageUrl } from '@/lib/image-url';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
+import { titlePlateLabel } from '@/lib/editorial-meta';
 
 // This is a client-rendered shell; the list is fetched client-side, so the
 // HTML itself is static and safe to cache (the global no-store header and
@@ -121,13 +122,20 @@ export default function EditorialPage() {
     return magazineThemes.default;
   };
 
-  // Get current nebula colors
-  const currentTheme = hoveredMagazine
-    ? getMagazineTheme(magazines.find(m => m.id === hoveredMagazine)!)
+  // Get current nebula colors. `find` can miss while the list is refreshing;
+  // the theme then falls back to the default instead of dereferencing
+  // undefined.
+  const hoveredMagazineEntry = hoveredMagazine
+    ? magazines.find((m) => m.id === hoveredMagazine)
+    : undefined;
+  const currentTheme = hoveredMagazineEntry
+    ? getMagazineTheme(hoveredMagazineEntry)
     : magazineThemes.default;
 
   return (
-    <div className="min-h-screen bg-black transition-colors duration-1000">
+    // The magazine surface uses the site background token (not raw #000) so it
+    // matches the rest of the archive in both themes.
+    <div className="min-h-screen bg-background transition-colors duration-1000">
       {/* Dynamic Nebula Background */}
       <motion.div
         className="fixed inset-0 pointer-events-none z-0"
@@ -152,11 +160,11 @@ export default function EditorialPage() {
           >
             <h1 className="font-serif text-4xl md:text-5xl font-bold mb-2">
               <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                The Editorials
+                {t(language, 'editorial.title')}
               </span>
             </h1>
-            <p className="font-mono text-xs text-ink-2 tracking-[0.3em]">
-              MAGAZINE ARCHIVE COLLECTION
+            <p className="font-mono text-xs text-ink-2 tracking-[0.3em] uppercase">
+              {t(language, 'editorial.subtitle')}
             </p>
           </motion.div>
         </div>
@@ -225,10 +233,10 @@ export default function EditorialPage() {
       </main>
 
       {/* Footer - Archive Metadata */}
-      <footer className="relative z-10 border-t border-white/5 py-12 px-6">
+      <footer className="relative z-10 border-t border-border py-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <p className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
-            LMSY.SPACE · {`${magazines.length}`} ISSUES CURATED
+            LMSY.SPACE · {t(language, 'editorial.issueCount', { count: magazines.length })}
           </p>
         </div>
       </footer>
@@ -238,6 +246,7 @@ export default function EditorialPage() {
 
 // Skeleton Loading - Breathing Effect
 function SkeletonSlot({ index }: { index: number }) {
+  const { language } = useLanguage();
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -281,7 +290,7 @@ function SkeletonSlot({ index }: { index: number }) {
               }}
             />
             <p className="font-mono text-[10px] text-lmsy-yellow/70 tracking-[0.2em] uppercase">
-              Loading...
+              {t(language, 'editorial.loading')}
             </p>
           </div>
         </div>
@@ -398,7 +407,7 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
                 <div className="absolute inset-0 w-6 h-6 border border-white/10 rotate-45 scale-75" />
               </div>
               <p className="font-mono text-[11px] text-ink-2 tracking-[0.2em] uppercase text-center leading-relaxed">
-                NO_COVER
+                {t(language, 'editorial.noCover')}
               </p>
             </div>
           )}
@@ -411,7 +420,7 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
           {/* Artifact Count */}
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 rounded px-2 py-1">
             <span className="font-mono text-[11px] text-ink-2 tracking-[0.15em] uppercase">
-              {magazine.artifact_count} ARTIFACT{magazine.artifact_count !== 1 ? 'S' : ''}
+              {magazine.artifact_count} {t(language, 'editorial.artifacts')}
             </span>
           </div>
 
@@ -422,7 +431,7 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
             whileHover={{ y: 0 }}
           >
             <span className="font-mono text-[10px] text-ink-2 tracking-[0.2em] uppercase">
-              View Issue →
+              {t(language, 'editorial.viewIssue')} →
             </span>
           </motion.div>
         </div>
@@ -443,8 +452,11 @@ function MagazineSlot({ magazine, language, index, catalogId, onHover, isFirst }
         )}
 
         <div className="absolute -bottom-3 -right-3 bg-black/80 backdrop-blur-sm border border-white/10 rounded px-3 py-1.5">
+          {/* Corner plate. Latin titles keep the archive convention
+              (uppercase, spaces→underscores); CJK/Thai titles used to be
+              stripped to "__________" by a global non-ASCII replace. */}
           <span className="font-mono text-[10px] text-ink-2 tracking-wide uppercase">
-            {localizedTitle.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}
+            {titlePlateLabel(localizedTitle)}
           </span>
         </div>
       </Link>
