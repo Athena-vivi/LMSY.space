@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
@@ -52,12 +52,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const supabaseAdmin = getSupabaseAdmin();
 
-  const { data: project } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('id, title, description, portal_visible, curation_status')
-    .eq('id', id)
-    .maybeSingle();
+  const project = await resolveProject(supabaseAdmin, id);
 
   if (!project || !isPublicProject(project)) {
     return {
@@ -69,6 +64,39 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${project.title} | LMSY Official Fan Site`,
     description: project?.description || `Learn more about ${project.title}`,
   };
+}
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * A project URL may carry the stable slug or the raw uuid. Both resolve to the
+ * same row, so links written before the phase-7 slug migration keep working
+ * and new links stay readable.
+ */
+async function resolveProject(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  key: string
+) {
+  const bySlug = await supabaseAdmin
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('*')
+    .eq('slug', key)
+    .maybeSingle();
+
+  if (bySlug.data) return bySlug.data;
+
+  if (!UUID_PATTERN.test(key)) return null;
+
+  const byId = await supabaseAdmin
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('*')
+    .eq('id', key)
+    .maybeSingle();
+
+  return byId.data ?? null;
 }
 
 export default async function ProjectPage({ params }: PageProps) {
@@ -101,27 +129,14 @@ export default async function ProjectPage({ params }: PageProps) {
 
   // Fetch project details.
   // Public visibility (see lib/project-visibility.ts): visitor-facing only
-  // when the admin opted the project in via portal_visible and it is not
-  // archived; back-end containers (ingestion batches, milestone archives)
-  // are management units and must 404 on the front-end.
-  const { data: project, error: projectError } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
+  // when the admin opted the project in via portal_visible, it is not
+  // archived, and it is not an ingestion container.
+  // Phase 7: one canonical detail route. Editorial no longer redirects to a
+  // second surface - the same project is rendered here, once.
+  const project = await resolveProject(supabaseAdmin, id);
 
-  if (projectError || !project || !isPublicProject(project)) {
+  if (!project || !isPublicProject(project)) {
     notFound();
-  }
-
-  // Canonical detail entry (phase-4 batch 2, Task 3): editorial-category
-  // works are read through /editorial/[id], so opening their /projects/[id]
-  // URL forwards there instead of showing a competing detail surface. The
-  // forward target only renders public editorial projects and looks up by
-  // UUID - no redirect loop is possible for a non-editorial id.
-  if (project.category === 'editorial') {
-    redirect(`/editorial/${project.id}`);
   }
 
   // Fetch gallery images for this project
@@ -129,7 +144,7 @@ export default async function ProjectPage({ params }: PageProps) {
     .schema('lmsy_archive')
     .from('gallery_assets')
     .select(PROJECT_GALLERY_COLUMNS)
-    .eq('project_id', id)
+    .eq('project_id', project.id)
     .order('created_at', { ascending: true });
 
   const sortedGalleryImages = sortProjectImages(galleryImages || []);
@@ -155,17 +170,19 @@ export default async function ProjectPage({ params }: PageProps) {
     supabaseAdmin
       .schema('lmsy_archive')
       .from('projects')
-      .select('id, title, title_i18n, category, release_date')
+      .select('id, slug, title, title_i18n, category, event_date, release_date')
   )
-    .neq('id', id)
+    .neq('id', project.id)
     .eq('category', project.category)
-    .order('release_date', { ascending: false })
+    .order('event_date', { ascending: false, nullsFirst: false })
     .limit(6);
 
   let relatedProjects: Array<{
     id: string;
+    slug: string | null;
     title: string;
     title_i18n: LocalizedText | null;
+    event_date: string | null;
     release_date: string | null;
     cover?: string | null;
     category: string;
@@ -182,17 +199,67 @@ export default async function ProjectPage({ params }: PageProps) {
     const covers = pickCoversByProject(relatedAssets || []);
     relatedProjects = related.map((r) => ({
       id: r.id,
+      slug: (r.slug as string | null) ?? null,
       title: r.title,
       title_i18n: (r.title_i18n ?? null) as LocalizedText | null,
+      event_date: (r.event_date as string | null) ?? null,
       release_date: r.release_date,
       cover: covers[r.id] ?? null,
       category: r.category as string,
     }));
   }
 
+  // Relations added in phase 7: who appears in this project, and which work
+  // (series / film) it belongs to. Both are optional - a magazine shoot has no
+  // work, and a project whose cast is not confirmed yet has no people.
+  const { data: peopleLinks } = await supabaseAdmin
+    .schema('lmsy_archive')
+    .from('project_people')
+    .select('role, profile_id')
+    .eq('project_id', project.id);
+
+  const roleByProfile: Record<string, string> = {};
+  for (const link of peopleLinks ?? []) {
+    const row = link as { role: string; profile_id: string };
+    roleByProfile[row.profile_id] = row.role;
+  }
+
+  const peopleIds = Object.keys(roleByProfile);
+  const { data: peopleRows } = peopleIds.length
+    ? await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('profiles')
+        .select('id, name, nickname, slug, avatar_url, role_label')
+        .in('id', peopleIds)
+    : { data: [] as unknown[] };
+
+  // Two plain queries instead of an embedded select: the relations are small
+  // and this keeps the shape identical to what /people reads.
+  const people = (peopleRows ?? []).map((row) => ({
+    ...(row as {
+      id: string;
+      name: string;
+      nickname: string | null;
+      slug: string | null;
+      role_label: string | null;
+    }),
+    role: roleByProfile[(row as { id: string }).id] ?? 'subject',
+  }));
+
+  let work: { id: string; title: string; title_i18n: unknown; year: number | null } | null = null;
+  if (project.work_id) {
+    const { data: workRow } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('works')
+      .select('id, title, title_i18n, year')
+      .eq('id', project.work_id)
+      .maybeSingle();
+    work = (workRow as typeof work) ?? null;
+  }
+
   return (
     <ProjectDetailClient
-      project={{ ...project, cover_rotation: coverRotation }}
+      project={{ ...project, cover_rotation: coverRotation, people, work }}
       images={groupedImages}
       relatedProjects={relatedProjects}
     />

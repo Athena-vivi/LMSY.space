@@ -2,33 +2,40 @@
 
 import { HeroSection } from '@/components/sections/hero-section';
 import { PortalsSection } from '@/components/sections/portals-section';
-import { LongformSection } from '@/components/sections/longform-section';
-import { ChronicleSection } from '@/components/sections/chronicle-section';
+import { FeaturedProjectsSection } from '@/components/sections/featured-projects-section';
+import { TimelinePreviewSection } from '@/components/sections/timeline-preview-section';
+import { PeopleSection } from '@/components/sections/people-section';
 import { MuseumPreface } from '@/components/museum-preface';
 import { HomeHeader } from '@/components/home-header';
 import { LoadingWrapper } from '@/components/loading/loading-wrapper';
 
+/**
+ * Homepage. Five content blocks, each with one job:
+ *
+ *   1. Hero            - what this place is
+ *   2. MuseumPreface   - the archive story (homepage_preface content block)
+ *   3. Portals         - the five fixed halls, with real covers
+ *   4. Featured        - specific projects worth opening
+ *   5. Timeline        - a few years, linking into the full timeline
+ *   6. People          - the two people, linking into /people
+ *
+ * The preface is the "story" half of People & Archive Story: it sits right
+ * after the hero because that is where an opening statement belongs. Nothing
+ * here keeps its own copy of project data - every block reads the same
+ * database through /api/home/summary or /api/home/portals.
+ */
 export default function HomePage() {
   return (
     <LoadingWrapper>
       <div className="relative">
-        {/* Home Navigation - Only on Homepage */}
         <HomeHeader />
 
-        {/* Section 1: Hero - Logo, Preface, Astra Signature */}
         <HeroSection />
-
-        {/* Museum Preface - About Section */}
         <MuseumPreface />
-
-        {/* Section 2: Portals - Four Large Cards (Drama, Live, Journey, Daily) */}
         <PortalsSection />
-
-        {/* Section 3: Longform - Featured Interview Excerpt with Paper Texture */}
-        <LongformSection />
-
-        {/* Section 4: Micro-Chronicle - Minimal Horizontal Timeline */}
-        <ChronicleSection />
+        <FeaturedProjectsSection />
+        <TimelinePreviewSection />
+        <PeopleSection />
       </div>
     </LoadingWrapper>
   );

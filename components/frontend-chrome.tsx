@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { VinylPlayer } from '@/components/vinyl-player';
-import { WhisperFloatingButton } from '@/components/whisper-floating-button';
 import { ScrollProgress } from '@/components/scroll-progress';
 import { NebulaBackground } from '@/components/nebula-background';
 
@@ -42,7 +41,11 @@ export function FrontendChrome({ children }: { children: React.ReactNode }) {
       <div key="vinyl-player">
         <VinylPlayer />
       </div>
-      <WhisperFloatingButton />
+      {/* Whisper floating button removed in phase 7: /api/whispers reads a
+          table that does not exist in this project, so the button led every
+          visitor on every page straight into an HTTP 500. The /whispers route
+          itself is untouched and the component is kept for when a real message
+          store is decided on. */}
     </>
   );
 }

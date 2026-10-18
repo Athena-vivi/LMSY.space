@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
-import {
-  sanitizeSearchTerm,
-  MIN_SEARCH_TERM_LENGTH,
-} from '@/lib/search-term';
+import { sanitizeSearchTerm, MIN_SEARCH_TERM_LENGTH } from '@/lib/search-term';
 import {
   buildSearchResults,
   type GalleryRow,
@@ -12,26 +9,25 @@ import {
 } from '@/lib/search-results';
 import type { Language } from '@/lib/languages';
 
-// Phase 5 rebuild (contract: docs/architecture/20261017-search-contract.md).
-// History: remediation B2-T3 (audit P1-5) moved this route from the empty
-// `gallery` table to gallery_assets + projects and sanitized the term against
-// the .or() filter grammar. Phase 5 adds:
-//   1. the shared public-visibility gate for images too - gallery_assets rows
-//      are constrained with .in('project_id', <visible ids>) exactly like the
-//      /gallery page (fixes acceptance finding P5-1: hidden containers'
-//      radar photos could previously surface here);
-//   2. a unified result contract (type/id/title/href/...), ranked in the pure
-//      lib/search-results.ts module: exact > prefix > contains > metadata,
-//      stable tiebreaks, no fabricated placeholder titles;
-//   3. exhibition category entries backed by real per-category counts;
-//   4. canonical hrefs everywhere (editorial -> /editorial/[id]).
+/**
+ * GET /api/search?q=&lang=
+ *
+ * Contract: docs/architecture/20261017-search-contract.md, updated for the
+ * phase-7 model:
+ *   - one visibility gate for projects and images;
+ *   - project matches come from title, description, the stable category value
+ *     and `search_aliases` (Thai / Chinese / short names);
+ *   - a person match expands to the projects that person is linked to, so
+ *     typing "Lookmhee" surfaces her work rather than nothing;
+ *   - canonical hrefs: /projects/<slug|uuid>, /projects?category=<value>,
+ *     /gallery#<asset uuid>.
+ */
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q') ?? '';
   const langParam = searchParams.get('lang');
-  const lang: Language =
-    langParam === 'zh' || langParam === 'th' ? langParam : 'en';
+  const lang: Language = langParam === 'zh' || langParam === 'th' ? langParam : 'en';
   const searchTerm = sanitizeSearchTerm(query);
 
   if (searchTerm.length < MIN_SEARCH_TERM_LENGTH) {
@@ -39,27 +35,27 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 1. Public project id set - the same gate as every other surface. It
-    //    drives the asset filter AND yields the real per-category counts for
-    //    exhibition entries. Failure here fails closed for gallery results.
+    // 1. Public project set - the same gate as every other surface. It drives
+    //    the asset filter and the per-category counts for category entries.
     const { data: publicProjects, error: idsError } = await applyPublicProjectFilter(
-      supabase.schema('lmsy_archive').from('projects').select('id, category')
+      supabase
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('id, slug, title, description, category, event_date, release_date')
     );
-    const publicRows = (publicProjects ?? []) as Array<{ id: string; category?: string | null }>;
+    const publicRows = (publicProjects ?? []) as unknown as ProjectRow[];
     const publicIds = publicRows.map((row) => row.id);
+    const publicById = new Map(publicRows.map((row) => [row.id, row]));
 
     const categoryCounts: Record<string, number> = {};
     for (const row of publicRows) {
-      const category = row.category;
-      if (category) categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;
+      if (row.category) categoryCounts[row.category] = (categoryCounts[row.category] ?? 0) + 1;
     }
 
-    // 2. Candidate pools (DB-level ILIKE prefilter). Values are double-quoted
-    //    so a term containing spaces cannot break the PostgREST or-grammar;
-    //    the sanitizer already stripped the grammar characters.
+    // 2. Image candidates (DB-level ILIKE prefilter). Values are double-quoted
+    //    so a term containing spaces cannot break the PostgREST or-grammar.
     const galleryOr = `caption.ilike."%${searchTerm}%",tag.ilike."%${searchTerm}%",catalog_id.ilike."%${searchTerm}%"`;
 
-    // Fail-closed: unknown/empty id set -> no image results, never "all".
     async function fetchGalleryCandidates(): Promise<GalleryRow[]> {
       if (idsError || publicIds.length === 0) return [];
       const { data, error } = await supabase
@@ -77,30 +73,59 @@ export async function GET(request: NextRequest) {
       return (data ?? []) as unknown as GalleryRow[];
     }
 
-    // Only visitor-facing projects are searchable (see
-    // lib/project-visibility.ts): back-end containers such as ingestion
-    // batches or the MILESTONES_ARCHIVE collector must not leak through
-    // search results.
+    // 3. Project candidates: title / description / category / aliases.
     const projectQuery = applyPublicProjectFilter(
-      supabase.schema('lmsy_archive').from('projects').select('id, title, description, category, release_date')
+      supabase
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('id, slug, title, description, category, event_date, release_date, search_aliases')
+        .in('id', publicIds)
     )
-      .or(`title.ilike."%${searchTerm}%",description.ilike."%${searchTerm}%",category.ilike."%${searchTerm}%"`)
+      .or(
+        `title.ilike."%${searchTerm}%",description.ilike."%${searchTerm}%",category.ilike."%${searchTerm}%",search_aliases.cs."{${searchTerm}}"`
+      )
       .order('id', { ascending: true })
       .limit(50);
 
-    const [galleryRows, projectRes] = await Promise.all([
+    // 4. People: a name match expands to their linked projects.
+    const profileQuery = supabase
+      .schema('lmsy_archive')
+      .from('profiles')
+      .select('id, name, nickname, slug')
+      .or(`name.ilike."%${searchTerm}%",nickname.ilike."%${searchTerm}%"`)
+      .limit(10);
+
+    const [galleryRows, projectRes, profileRes] = await Promise.all([
       fetchGalleryCandidates(),
-      projectQuery,
+      publicIds.length > 0 ? projectQuery : Promise.resolve({ data: [], error: null }),
+      profileQuery,
     ]);
 
-    // Projects lookup failing is a hard error; images failing just yields
-    // no image results (fail-closed above).
     if (projectRes.error) throw projectRes.error;
 
-    // 3. Contract mapping, ranking, dedup and caps live in the pure module.
+    // Expand people matches into project rows so the result list answers
+    // "what do they appear in", not "here is a name".
+    let peopleProjectRows: ProjectRow[] = [];
+    const matchedProfiles = (profileRes?.data ?? []) as Array<{ id: string }>;
+    if (matchedProfiles.length > 0) {
+      const { data: links } = await supabase
+        .schema('lmsy_archive')
+        .from('project_people')
+        .select('project_id')
+        .in('profile_id', matchedProfiles.map((profile) => profile.id));
+
+      peopleProjectRows = (links ?? [])
+        .map((link) => publicById.get((link as { project_id: string }).project_id))
+        .filter((row): row is ProjectRow => Boolean(row));
+    }
+
+    // 5. Contract mapping, ranking, dedup and caps live in the pure module.
     const results = buildSearchResults({
       term: searchTerm,
-      projectRows: (projectRes.data ?? []) as unknown as ProjectRow[],
+      projectRows: [
+        ...((projectRes.data ?? []) as unknown as ProjectRow[]),
+        ...peopleProjectRows,
+      ],
       galleryRows,
       categoryCounts,
       lang,
@@ -109,9 +134,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results });
   } catch (error) {
     console.error('Search error:', error);
-    return NextResponse.json(
-      { results: [], error: 'search_failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ results: [], error: 'search_failed' }, { status: 500 });
   }
 }

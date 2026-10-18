@@ -21,33 +21,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: 'daily', priority: 1 },
     { url: `${SITE_URL}/projects`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/gallery`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${SITE_URL}/profiles`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${SITE_URL}/chronicle`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/timeline`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${SITE_URL}/people`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/editorial`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
-    { url: `${SITE_URL}/exhibitions`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
-    { url: `${SITE_URL}/schedule`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
-    { url: `${SITE_URL}/resonance`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${SITE_URL}/whispers`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/copyright`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-  // Dynamic project detail routes. `projects` has created_at (no updated_at).
-  // Only visitor-facing projects are listed (see lib/project-visibility.ts):
-  // back-end containers (ingestion batches, milestone archives) must not
-  // advertise their URLs to crawlers. Editorial works advertise their
-  // canonical entry /editorial/[id] (phase-4 batch 2) - listing /projects/[id]
-  // for them would publish a URL that only forwards.
+  // Dynamic project detail routes. Only visitor-facing projects are listed
+  // (see lib/project-visibility.ts): ingestion containers must not advertise
+  // their URLs to crawlers. Every project shares one canonical detail route
+  // since phase 7, addressed by slug.
   let projectRoutes: MetadataRoute.Sitemap = [];
   try {
     const { data } = await applyPublicProjectFilter(
       getSupabaseAdmin()
         .schema('lmsy_archive')
         .from('projects')
-        .select('id, category, created_at')
+        .select('id, slug, created_at')
     );
     projectRoutes = (data || []).map(
-      (project: { id: string; category?: string | null; created_at: string | null }) => ({
-        url: `${SITE_URL}${project.category === 'editorial' ? `/editorial/${project.id}` : `/projects/${project.id}`}`,
+      (project: { id: string; slug?: string | null; created_at: string | null }) => ({
+        url: `${SITE_URL}/projects/${project.slug || project.id}`,
         lastModified: project.created_at ? new Date(project.created_at) : now,
         changeFrequency: 'monthly' as const,
         priority: 0.6,

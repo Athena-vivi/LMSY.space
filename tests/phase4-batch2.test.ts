@@ -62,8 +62,15 @@ describe('chronicle data source', () => {
     assert.ok(timelineSrc.includes('applyPublicProjectFilter'));
   });
 
-  test('editorial works resolve to /editorial/[id], others to /projects/[id]', () => {
-    assert.ok(timelineSrc.includes("category === 'editorial' ? `/editorial/${id}` : `/projects/${id}`"));
+  test('one canonical project href built from the slug', () => {
+    assert.ok(timelineSrc.includes('return `/projects/${slug || id}`;'));
+  });
+
+  test('dates come from event_date, with release_date only as a fallback', () => {
+    assert.ok(timelineSrc.includes('p.event_date as string | null'), 'event_date selected');
+    assert.ok(timelineSrc.includes("(p.event_date as string | null) || (p.release_date as string | null)"));
+    assert.ok(!timelineSrc.includes('const date = (p.release_date as string | null)'),
+      'release_date alone must not date an event');
   });
 
   test('image group ids are stable db-derived combinations', () => {
@@ -72,12 +79,23 @@ describe('chronicle data source', () => {
 });
 
 // ---- Chronicle page year filter -------------------------------------------
-describe('chronicle page year filter', () => {
+describe('timeline page year filter', () => {
   test('accepts only a strict 4-digit year', () => {
-    const pageSrc = src('app/chronicle/page.tsx');
+    const pageSrc = src('app/timeline/page.tsx');
     assert.ok(pageSrc.includes("/^\\d{4}$/"), 'year param must be validated');
     assert.ok(pageSrc.includes('searchParams'), 'page must consume searchParams');
     assert.ok(pageSrc.includes('availableYears'), 'page passes available years to chrome');
+  });
+
+  test('/timeline/[year] validates the segment and 404s otherwise', () => {
+    const yearSrc = src('app/timeline/[year]/page.tsx');
+    assert.ok(yearSrc.includes("notFound()"), 'malformed year is a 404');
+  });
+
+  test('/chronicle forwards to /timeline and keeps the year param', () => {
+    const legacy = src('app/chronicle/page.tsx');
+    assert.ok(legacy.includes("redirect(year ? `/timeline?year="), 'year forwarded');
+    assert.ok(legacy.includes("redirect('/timeline')") === false, 'never drops the year silently');
   });
 });
 
@@ -121,33 +139,36 @@ describe('gallery visibility gate', () => {
   });
 });
 
-// ---- Editorial canonical entry ----------------------------------------------
-describe('editorial canonical detail entry', () => {
-  test('/projects/[id] forwards editorial works to /editorial/[id]', () => {
+// ---- One canonical project detail -------------------------------------------
+describe('single project detail route', () => {
+  test('/projects/[id] no longer forwards editorial works elsewhere', () => {
     const pageSrc = src('app/projects/[id]/page.tsx');
-    assert.ok(pageSrc.includes("project.category === 'editorial'"), 'editorial branch present');
-    assert.ok(pageSrc.includes('redirect(`/editorial/${project.id}`)'), 'redirect target correct');
+    assert.ok(!pageSrc.includes("redirect(`/editorial/${project.id}`)"), 'no second detail surface');
+    assert.ok(pageSrc.includes('resolveProject'), 'slug and uuid both resolve');
   });
 
-  test('related-projects section follows the same rule', () => {
+  test('legacy /editorial/[id] forwards to the project detail', () => {
+    const legacy = src('app/editorial/[id]/page.tsx');
+    assert.ok(legacy.includes('redirect(`/projects/${id}`)'));
+  });
+
+  test('related-projects cards link to /projects/<slug>', () => {
     const clientSrc = src('app/projects/[id]/project-detail-client.tsx');
-    assert.ok(clientSrc.includes("related.category === 'editorial' ? `/editorial/${related.id}`"));
+    assert.ok(clientSrc.includes('`/projects/${related.slug || related.id}`'));
   });
 
-  test('projects list cards follow the same rule', () => {
-    const listSrc = src('app/projects/page.tsx');
-    assert.ok(listSrc.includes("project.category === 'editorial' ? `/editorial/${project.id}`"));
+  test('projects list cards link to /projects/<slug>', () => {
+    const listSrc = src('app/projects/projects-client.tsx');
+    assert.ok(listSrc.includes('const href = `/projects/${project.slug || project.id}`'));
   });
 
   test('search results follow the same rule', () => {
-    // Phase 5 moved the mapping into the pure module lib/search-results.ts;
-    // the route only feeds rows into buildSearchResults().
     const searchSrc = src('app/api/search/route.ts');
     assert.ok(searchSrc.includes('buildSearchResults'), 'route uses the contract builder');
     const resultsSrc = src('lib/search-results.ts');
     assert.ok(
-      resultsSrc.includes("category === 'editorial' ? `/editorial/${id}` : `/projects/${id}`"),
-      'editorial canonical entry lives in the shared mapping'
+      resultsSrc.includes('return `/projects/${slug || id}`;'),
+      'one canonical entry in the shared mapping'
     );
   });
 
@@ -168,32 +189,36 @@ describe('editorial canonical detail entry', () => {
   });
 });
 
-// ---- Homepage portals: zero-work category cards -----------------------------
-describe('homepage portals zero-work gate', () => {
-  test('API reports per-category hasWork', () => {
+// ---- Homepage entries: five fixed halls --------------------------------------
+describe('homepage fixed category entries', () => {
+  test('API serves the five registry entries plus real counts', () => {
     const routeSrc = src('app/api/home/portals/route.ts');
-    assert.ok(routeSrc.includes('hasVisibleProjects'), 'count query helper present');
+    assert.ok(routeSrc.includes('HOME_CATEGORIES'), 'entry list comes from the registry');
     assert.ok(routeSrc.includes('applyPublicProjectFilter'), 'uses the shared visibility rule');
-    assert.ok(routeSrc.includes('hasWork:'), 'response exposes hasWork');
+    assert.ok(routeSrc.includes('counts'), 'response carries per-entry counts');
+    assert.ok(!routeSrc.includes('hasWork'), 'the hide-empty-cards gate is gone');
   });
 
-  test('homepage hides cards reported as hasWork=false, fail-open on unknown', () => {
+  test('homepage renders every entry, never filters on emptiness', () => {
     const sectionSrc = src('components/sections/portals-section.tsx');
-    assert.ok(sectionSrc.includes("hasWork[portal.key] !== false"), 'explicit false hides, unknown keeps');
-    assert.ok(sectionSrc.includes('SPAN_PLANS'), 'grid spans adapt to visible count');
+    assert.ok(sectionSrc.includes('HOME_CATEGORIES.map'), 'renders the registry list');
+    assert.ok(!sectionSrc.includes('hasWork['), 'no card is dropped for being empty');
+    assert.ok(!sectionSrc.includes('SPAN_PLANS'), 'fixed five-card layout is back');
+    assert.ok(sectionSrc.includes("t(language, 'home.collecting')"), 'empty hall shows 收录中');
   });
 });
 
-// ---- Exhibitions index -------------------------------------------------------
-describe('exhibitions index zero-count cards', () => {
-  test('categories with zero visible works are hidden from the index', () => {
-    const indexSrc = src('app/exhibitions/exhibitions-index.tsx');
-    assert.ok(indexSrc.includes('visibleCategories'), 'filtered category list used');
-    assert.ok(indexSrc.includes("(counts[category.type] ?? 0) > 0"), 'zero-count filter present');
+// ---- Legacy exhibition routes -----------------------------------------------
+describe('legacy exhibition routes', () => {
+  test('the index folds into the project index', () => {
+    const pageSrc = src('app/exhibitions/page.tsx');
+    assert.ok(pageSrc.includes("redirect('/projects')"));
   });
 
-  test('category routes themselves remain untouched', () => {
+  test('category routes translate the old type into a registry filter', () => {
     const catSrc = src('app/exhibitions/category/[type]/page.tsx');
-    assert.ok(catSrc.includes("from '@/lib/exhibition-categories'"), 'uses the shared lib');
+    assert.ok(catSrc.includes('normalizeCategory'), 'goes through the registry aliases');
+    assert.ok(catSrc.includes('/projects?category='), 'lands on the filtered index');
   });
 });
+

@@ -1,41 +1,43 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { HOME_CATEGORIES } from '@/lib/category-registry';
 
 /**
  * GET /api/home/portals
  *
- * 🔒 STRICT CATEGORY ISOLATION
- * Fetches the latest cover image (-000) for each portal category based on project.category.
+ * Cover image + public project count for each of the five fixed homepage
+ * entries. The entry list itself comes from lib/category-registry.ts, so the
+ * homepage, the filter chips and the database constraint can never drift.
  *
- * Logic:
- * 1. Query gallery images JOINED with projects to ensure strict category separation
- * 2. Priority: catalog_id ending with '-000' (cover images) first
- * 3. Fallback to any featured image if no cover exists
- * 4. Debug logging for troubleshooting
+ * A category with no public project still gets an entry: the count comes back
+ * as 0 and the card renders its "collecting" placeholder. Empty halls are a
+ * state of the archive, not a reason to remove the door.
  *
- * Category Mapping:
- * - drama (series)      → project.category = 'series'
- * - stage (appearance)  → project.category = 'appearance'
- * - travel (journal)    → project.category = 'travel'
- * - daily (journal)     → project.category = 'daily'
- * - commercial          → project.category = 'commercial'
+ * Cover priority inside the chosen project:
+ *   1. project.cover_url (curated by hand)
+ *   2. the asset whose catalog_id ends in -000
+ *   3. a featured asset
+ *   4. any asset of that project
  *
- * 🔥 INSTANT CACHE REFRESH: revalidate = 0 ensures portal images update immediately
+ * revalidate = 0 so a data change shows up on the next request.
  */
 export const revalidate = 0;
+
+interface PortalCover {
+  imageUrl: string;
+  blurData: string | null;
+}
 
 export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    /**
-     * 🔍 HELPER: Fetch cover image for a specific project category
-     * Priority 1: catalog_id LIKE '%-000' (cover image)
-     * Priority 2: is_featured = true (fallback)
-     */
-    async function fetchPortalImage(category: string, portalName: string) {
-      const { data: prioritizedProject, error: projectError } = await applyPublicProjectFilter(
+    async function fetchPortal(category: string): Promise<{
+      cover: PortalCover | null;
+      count: number;
+    }> {
+      const { data: projects, error } = await applyPublicProjectFilter(
         supabaseAdmin
           .schema('lmsy_archive')
           .from('projects')
@@ -43,168 +45,85 @@ export async function GET() {
           .eq('category', category)
       )
         .order('portal_priority', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('event_date', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
 
-      let selectedProject = prioritizedProject;
-
-      if (projectError) {
-        console.log(`[PORTAL_SYNC] ${portalName} | Portal selection lookup failed | Category: ${category}`);
+      if (error || !projects || projects.length === 0) {
+        return { cover: null, count: 0 };
       }
 
-      if (!selectedProject) {
-        // Fallback must also respect portal visibility: falling back to the
-        // latest project of the category regardless of visibility exposed
-        // back-end containers (e.g. radar imports under Daily). With no
-        // visitor-facing project in the category, return null and let the
-        // portal card use its static gradient.
-        const { data: latestProject } = await applyPublicProjectFilter(
-          supabaseAdmin
+      // First project in priority order that actually resolves to an image.
+      for (const project of projects) {
+        if (project.cover_url) {
+          return { cover: { imageUrl: project.cover_url, blurData: null }, count: projects.length };
+        }
+
+        for (const [column, value] of [
+          ['catalog_id', undefined],
+          ['is_featured', true],
+        ] as const) {
+          let assetQuery = supabaseAdmin
             .schema('lmsy_archive')
-            .from('projects')
-            .select('id, cover_url')
-            .eq('category', category)
-        )
+            .from('gallery_assets')
+            .select('image_url, blur_data')
+            .eq('project_id', project.id);
+
+          if (column === 'catalog_id') {
+            assetQuery = assetQuery.like('catalog_id', '%-000');
+          } else {
+            assetQuery = assetQuery.eq('is_featured', value as boolean);
+          }
+
+          const { data: asset } = await assetQuery
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (asset?.image_url) {
+            return {
+              cover: { imageUrl: asset.image_url, blurData: asset.blur_data ?? null },
+              count: projects.length,
+            };
+          }
+        }
+
+        const { data: anyAsset } = await supabaseAdmin
+          .schema('lmsy_archive')
+          .from('gallery_assets')
+          .select('image_url, blur_data')
+          .eq('project_id', project.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        selectedProject = latestProject;
+        if (anyAsset?.image_url) {
+          return {
+            cover: { imageUrl: anyAsset.image_url, blurData: anyAsset.blur_data ?? null },
+            count: projects.length,
+          };
+        }
       }
 
-      if (!selectedProject) {
-        console.log(`[PORTAL_SYNC] ${portalName} | No project found | Category: ${category}`);
-        return null;
-      }
-
-      if (selectedProject.cover_url) {
-        return {
-          imageUrl: selectedProject.cover_url,
-          blurData: null,
-          catalogId: null,
-        };
-      }
-
-      // Step 2: Try to get cover image (-000) for this project
-      const { data: coverImage } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .select('id, image_url, blur_data, catalog_id, project_id')
-        .eq('project_id', selectedProject.id)
-        .like('catalog_id', '%-000')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (coverImage) {
-        console.log(`[PORTAL_SYNC] ${portalName} | Cover found | ID: ${coverImage.id} | Catalog: ${coverImage.catalog_id} | Project_Category: ${category}`);
-        return {
-          imageUrl: coverImage.image_url,
-          blurData: coverImage.blur_data,
-          catalogId: coverImage.catalog_id,
-        };
-      }
-
-      // Step 3: Fallback to any featured image in this project
-      const { data: featuredImage } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .select('id, image_url, blur_data, catalog_id, project_id')
-        .eq('project_id', selectedProject.id)
-        .eq('is_featured', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (featuredImage) {
-        console.log(`[PORTAL_SYNC] ${portalName} | Featured fallback | ID: ${featuredImage.id} | Catalog: ${featuredImage.catalog_id} | Project_Category: ${category}`);
-        return {
-          imageUrl: featuredImage.image_url,
-          blurData: featuredImage.blur_data,
-          catalogId: featuredImage.catalog_id,
-        };
-      }
-
-      // Step 4: Last resort - any image in this project
-      const { data: anyImage } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .select('id, image_url, blur_data, catalog_id, project_id')
-        .eq('project_id', selectedProject.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (anyImage) {
-        console.log(`[PORTAL_SYNC] ${portalName} | Any image fallback | ID: ${anyImage.id} | Catalog: ${anyImage.catalog_id} | Project_Category: ${category}`);
-        return {
-          imageUrl: anyImage.image_url,
-          blurData: anyImage.blur_data,
-          catalogId: anyImage.catalog_id,
-        };
-      }
-
-      console.log(`[PORTAL_SYNC] ${portalName} | No images found | Project_ID: ${selectedProject.id} | Category: ${category}`);
-      return null;
+      // Projects exist but none has an image yet: the count is real, the
+      // cover is not. The card uses its gradient.
+      return { cover: null, count: projects.length };
     }
 
-    // 🚀 PARALLEL FETCH: Execute all 5 category queries simultaneously
-    const [series, appearance, travel, daily, commercial] = await Promise.all([
-      fetchPortalImage('series', 'Drama'),
-      fetchPortalImage('appearance', 'Stage'),
-      fetchPortalImage('travel', 'Journey'),
-      fetchPortalImage('daily', 'Daily'),
-      fetchPortalImage('commercial', 'Commercial'),
-    ]);
+    const results = await Promise.all(
+      HOME_CATEGORIES.map(async (definition) => {
+        const { cover, count } = await fetchPortal(definition.value);
+        return { value: definition.value, cover, count };
+      })
+    );
 
-    // Phase-4 batch 2, Task 5: tell the homepage which categories actually
-    // hold visitor-facing projects, so cards for empty rooms (e.g. travel
-    // and daily today) can be hidden instead of leading nowhere. This uses
-    // the same public-visibility rule as every other surface.
-    async function hasVisibleProjects(category: string): Promise<boolean> {
-      const { count, error } = await applyPublicProjectFilter(
-        supabaseAdmin
-          .schema('lmsy_archive')
-          .from('projects')
-          .select('id', { count: 'exact', head: true })
-          .eq('category', category)
-      );
-      if (error) {
-        // Fail-open: a transient lookup error must not empty the homepage.
-        return true;
-      }
-      return (count ?? 0) > 0;
+    const covers: Record<string, PortalCover | null> = {};
+    const counts: Record<string, number> = {};
+    for (const result of results) {
+      covers[result.value] = result.cover;
+      counts[result.value] = result.count;
     }
 
-    const [hasSeries, hasAppearance, hasTravel, hasDaily, hasCommercial] = await Promise.all([
-      hasVisibleProjects('series'),
-      hasVisibleProjects('appearance'),
-      hasVisibleProjects('travel'),
-      hasVisibleProjects('daily'),
-      hasVisibleProjects('commercial'),
-    ]);
-
-    // Format response. `hasWork` is kept separate from the image object: a
-    // category with visible projects but no images must still show its card
-    // (gradient fallback), while a category with zero visible projects gets
-    // hasWork=false so the homepage can hide the card entirely.
-    const portals = {
-      series,
-      appearance,
-      travel,
-      daily,
-      commercial,
-      hasWork: {
-        series: hasSeries,
-        appearance: hasAppearance,
-        travel: hasTravel,
-        daily: hasDaily,
-        commercial: hasCommercial,
-      },
-    };
-
-    return NextResponse.json(portals);
+    return NextResponse.json({ covers, counts });
   } catch (error) {
     console.error('[API_PORTALS] Critical error:', error);
     return NextResponse.json(

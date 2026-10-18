@@ -57,7 +57,7 @@ export async function POST(
         .from('projects')
         .insert({
           title: MILESTONE_PROJECT_TITLE,
-          category: 'daily',
+          category: 'personal_travel',
           description: 'Unified project for homepage milestone assets',
           cover_url: draft.r2_media_url,
           release_date: draft.event_date,

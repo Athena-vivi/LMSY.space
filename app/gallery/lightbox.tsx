@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useCallback, useEffect } from 'react';
 import { type GalleryItem } from '@/lib/supabase';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { getLocalizedText } from '@/lib/localized-content';
@@ -19,12 +19,30 @@ interface LightboxProps {
   // Public title/id of the project this asset belongs to. Null/undefined when
   // the project is missing or not publicly readable - the entry is simply
   // hidden, the lightbox keeps working (fail-safe per phase-4 Task 2).
-  project?: { id: string; title: string } | null;
+  project?: { id: string; title: string; slug?: string | null } | null;
   onClose: () => void;
 }
 
-export default function Lightbox({ image, images, project, onClose }: LightboxProps) {
-  const { language } = useLanguage();
+/**
+ * Curator's-note markdown styling. Typed against react-markdown's own
+ * `Components` map instead of `any`, and `node` is dropped before the props
+ * spread (it is a hast node, not a DOM attribute).
+ */
+const MARKDOWN_COMPONENTS: Components = {
+  p: ({ node: _node, ...props }) => <p className="text-ink-2 leading-relaxed mb-4" {...props} />,
+  em: ({ node: _node, ...props }) => <em className="text-lmsy-yellow not-italic" {...props} />,
+  strong: ({ node: _node, ...props }) => (
+    <strong className="text-lmsy-blue font-semibold" {...props} />
+  ),
+  blockquote: ({ node: _node, ...props }) => (
+    <blockquote
+      className="border-l-2 border-lmsy-yellow pl-4 italic text-ink-2 my-4"
+      {...props}
+    />
+  ),
+};
+
+export default function Lightbox({ image, images, project, onClose }: LightboxProps) {  const { language } = useLanguage();
   // Start on the image that was clicked. The parent remounts this component
   // per asset (key={image.id}), so no state-syncing effect is needed - the
   // previous useEffect + setState pair triggered a cascading render on every
@@ -68,8 +86,11 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
   const localizedCaption = currentImage
     ? getLocalizedText(currentImage.caption_i18n, language, currentImage.caption)
     : '';
-  // Project back-link (phase-4 Task 2): /projects/<id>, shown in both modes.
-  const projectLink = project ? `/projects/${project.id}` : null;
+  // Project back-link (phase-4 Task 2, canonicalised in phase 7):
+  // /projects/<slug>, falling back to the uuid for rows created before slugs.
+  const projectLink = project
+    ? `/projects/${project.slug || project.id}`
+    : null;
 
   if (!currentImage) return null;
 
@@ -185,22 +206,7 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
                   {/* Markdown Curator's Note */}
                   {currentImage.curator_note && (
                     <div className="prose prose-lg max-w-none">
-                      <ReactMarkdown
-                        components={{
-                          p: ({ node, ...props }: any) => (
-                            <p className="text-ink-2 leading-relaxed mb-4" {...props} />
-                          ),
-                          em: ({ node, ...props }: any) => (
-                            <em className="text-lmsy-yellow not-italic" {...props} />
-                          ),
-                          strong: ({ node, ...props }: any) => (
-                            <strong className="text-lmsy-blue font-semibold" {...props} />
-                          ),
-                          blockquote: ({ node, ...props }: any) => (
-                            <blockquote className="border-l-2 border-lmsy-yellow pl-4 italic text-ink-2 my-4" {...props} />
-                          ),
-                        }}
-                      >
+                      <ReactMarkdown components={MARKDOWN_COMPONENTS}>
                         {currentImage.curator_note}
                       </ReactMarkdown>
                     </div>

@@ -9,13 +9,17 @@ import CategoryDropdown from '@/app/admin/upload/_components/category-dropdown';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
 
+// The eight stable values from lib/category-registry.ts. The label is the
+// admin-facing shorthand, the prefix feeds catalog_id allocation.
 const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string }[] = [
-  { value: 'series', label: 'TV_SERIES', prefix: 'TV' },
-  { value: 'editorial', label: 'EDITORIAL', prefix: 'ED' },
-  { value: 'appearance', label: 'APPEARANCE', prefix: 'AP' },
-  { value: 'daily', label: 'DAILY', prefix: 'DAILY' },
-  { value: 'travel', label: 'TRAVEL', prefix: 'TRV' },
-  { value: 'commercial', label: 'COMMERCIAL', prefix: 'CM' },
+  { value: 'drama_work', label: 'DRAMA_WORK', prefix: 'STILL' },
+  { value: 'editorial', label: 'EDITORIAL', prefix: 'MAG' },
+  { value: 'live_event', label: 'LIVE_EVENT', prefix: 'STAGE' },
+  { value: 'public_appearance', label: 'PUBLIC_APPEARANCE', prefix: 'TRV' },
+  { value: 'commercial', label: 'COMMERCIAL', prefix: 'AD' },
+  { value: 'behind_the_scenes', label: 'BEHIND_THE_SCENES', prefix: 'BTS' },
+  { value: 'personal_travel', label: 'PERSONAL_TRAVEL', prefix: 'DAILY' },
+  { value: 'early_archive', label: 'EARLY_ARCHIVE', prefix: 'G' },
 ];
 
 const CURATOR_FAVORITE_TAGS = [
@@ -45,7 +49,7 @@ export default function EditProjectModal({
   const [title, setTitle] = useState('');
   const [titleZh, setTitleZh] = useState('');
   const [titleTh, setTitleTh] = useState('');
-  const [category, setCategory] = useState<ProjectCategory>('series');
+  const [category, setCategory] = useState<ProjectCategory>('drama_work');
   const [releaseDate, setReleaseDate] = useState('');
   const [description, setDescription] = useState('');
   const [descriptionZh, setDescriptionZh] = useState('');

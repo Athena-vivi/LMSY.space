@@ -3,40 +3,64 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useLanguage } from '@/components/language-provider';
-import { t } from '@/lib/languages';
+import { t, type TranslationKey } from '@/lib/languages';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { getImageUrl } from '@/lib/image-url';
+import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
 
-interface PortalImage {
+interface PortalCover {
   imageUrl: string | null;
   blurData: string | null;
-  catalogId: string | null;
 }
 
-interface PortalCardProps {
-  titleKey: string;
-  descKey: string;
-  image: PortalImage | null;
-  href: string;
-  index: number;
+interface PortalEntry {
+  value: ProjectCategory;
+  titleKey: TranslationKey;
+  descKey: TranslationKey;
   gradient: string;
+  /** Asymmetric 12-column spans, tuned for exactly five cards. */
+  span: string;
+  /** Copy for the entry, keyed per category. */
+  image: PortalCover | null;
+  count: number;
 }
 
-function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalCardProps) {
+/**
+ * Category-specific copy. The registry owns the label and the gradient; only
+ * the one-line description belongs here because it is homepage voice, not a
+ * category name.
+ */
+const ENTRY_COPY: Record<
+  ProjectCategory,
+  { titleKey: TranslationKey; descKey: TranslationKey; span: string }
+> = {
+  drama_work: { titleKey: 'portal.drama', descKey: 'portal.dramaDesc', span: 'lg:col-span-7' },
+  editorial: { titleKey: 'portal.editorial', descKey: 'portal.editorialDesc', span: 'lg:col-span-5' },
+  live_event: { titleKey: 'portal.live', descKey: 'portal.liveDesc', span: 'lg:col-span-4' },
+  public_appearance: { titleKey: 'portal.appearance', descKey: 'portal.appearanceDesc', span: 'lg:col-span-3' },
+  commercial: { titleKey: 'portal.commercial', descKey: 'portal.commercialDesc', span: 'lg:col-span-5' },
+  // Not homepage entries today. They are listed so the record is total over
+  // the registry type - the two halls below are reachable from /projects.
+  behind_the_scenes: { titleKey: 'category.behindTheScenes', descKey: 'category.behindTheScenes', span: 'lg:col-span-6' },
+  personal_travel: { titleKey: 'category.personalTravel', descKey: 'category.personalTravel', span: 'lg:col-span-6' },
+  early_archive: { titleKey: 'category.earlyArchive', descKey: 'category.earlyArchive', span: 'lg:col-span-12' },
+};
+
+function PortalCard({ entry, index }: { entry: PortalEntry; index: number }) {
   const { language } = useLanguage();
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // One shared treatment for every portal card. Size carries the hierarchy,
-  // so no category gets its own accent colour.
+  // One shared treatment for every card. Size carries the hierarchy, so no
+  // category gets its own accent colour.
   const titleGradient = 'linear-gradient(135deg, rgb(251, 191, 36) 0%, rgb(56, 189, 248) 100%)';
   const glowGradient =
     'radial-gradient(circle at center, rgba(251, 191, 36, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%)';
 
-  // 🔥 GET IMAGE URL: Process through getImageUrl for CDN path
-  const imageUrl = image?.imageUrl ? getImageUrl(image.imageUrl) : null;
-  const blurDataUrl = image?.blurData || undefined;
+  const imageUrl = entry.image?.imageUrl ? getImageUrl(entry.image.imageUrl) : null;
+  const blurDataUrl = entry.image?.blurData || undefined;
+  const isEmpty = !imageUrl;
 
   return (
     <motion.div
@@ -46,13 +70,12 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
       transition={{ duration: 0.6, delay: index * 0.1 }}
       className="group relative"
     >
-      <Link href={href} className="block">
+      <Link href={`/projects?category=${entry.value}`} className="block">
         <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-card/40">
-          {/* 🔥 REAL IMAGE with Blur Placeholder */}
           {imageUrl ? (
             <Image
               src={imageUrl}
-              alt={t(language, titleKey as any)}
+              alt={t(language, entry.titleKey)}
               fill
               className={`object-cover transition-transform duration-700 group-hover:scale-105 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -62,19 +85,30 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
               unoptimized
               priority={index < 2}
               placeholder="blur"
-              blurDataURL={blurDataUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmNTlmMTYiIG9wYWNpdHk9IjAuMiIvPjwvc3ZnPg=='}
+              blurDataURL={
+                blurDataUrl ||
+                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMxYTFhMWEiLz48L3N2Zz4='
+              }
             />
           ) : (
-            /* Fallback Gradient Background */
-            <div className={`absolute inset-0 bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-110`} />
+            <div
+              className={`absolute inset-0 bg-gradient-to-br ${entry.gradient} transition-transform duration-700 group-hover:scale-110`}
+            />
           )}
 
-          {/* 🌌 GRADIENT OVERLAY: From bottom to top for text readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500" />
 
-          {/* Content */}
+          {/* A hall with nothing published yet still keeps its door; the badge
+              says so instead of pretending the shelf is full. */}
+          {isEmpty && (
+            <div className="absolute top-4 right-4">
+              <span className="inline-flex items-center rounded-full border border-white/20 bg-black/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink backdrop-blur">
+                {t(language, 'home.collecting')}
+              </span>
+            </div>
+          )}
+
           <div className="absolute inset-0 flex flex-col justify-end p-8">
-            {/* Title with Duo Color Gradient */}
             <motion.h3
               className="font-serif text-3xl md:text-4xl font-bold text-ink mb-3"
               style={{
@@ -84,15 +118,13 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
                 backgroundClip: 'text',
               }}
             >
-              {t(language, titleKey as any)}
+              {t(language, entry.titleKey)}
             </motion.h3>
 
-            {/* Description */}
             <p className="text-ink text-base md:text-lg font-light leading-relaxed mb-4">
-              {t(language, descKey as any)}
+              {t(language, entry.descKey)}
             </p>
 
-            {/* Arrow Indicator */}
             <motion.div
               className="flex items-center gap-2 text-ink transition-colors"
               initial={{ x: 0 }}
@@ -105,12 +137,9 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
             </motion.div>
           </div>
 
-          {/* Hover Glow Effect */}
           <motion.div
             className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style={{
-              background: glowGradient,
-            }}
+            style={{ background: glowGradient }}
           />
         </div>
       </Link>
@@ -120,98 +149,40 @@ function PortalCard({ titleKey, descKey, image, href, index, gradient }: PortalC
 
 export function PortalsSection() {
   const { language } = useLanguage();
-  const [portalImages, setPortalImages] = useState<Record<string, PortalImage | null>>({});
-  // Phase-4 batch 2, Task 5: categories with zero visitor-facing projects are
-  // removed from the homepage (their routes stay live). Unknown state (fetch
-  // failure) fail-opens to keep the homepage intact.
-  const [hasWork, setHasWork] = useState<Record<string, boolean> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [covers, setCovers] = useState<Record<string, PortalCover | null>>({});
+  const [counts, setCounts] = useState<Record<string, number>>({});
 
-  // 🔥 FETCH FEATURED IMAGES: Load latest featured images for each portal
   useEffect(() => {
-    async function fetchPortalImages() {
+    async function fetchPortals() {
       try {
         const response = await fetch('/api/home/portals');
         if (response.ok) {
           const data = await response.json();
-          setPortalImages(data);
-          if (data.hasWork) setHasWork(data.hasWork);
+          setCovers(data.covers ?? {});
+          setCounts(data.counts ?? {});
         }
       } catch (error) {
-        console.error('[PORTALS] Failed to fetch portal images:', error);
-      } finally {
-        setLoading(false);
+        console.error('[PORTALS] Failed to fetch portal covers:', error);
       }
     }
-
-    fetchPortalImages();
+    fetchPortals();
   }, []);
 
-  const allPortals = [
-    {
-      key: 'series',
-      titleKey: 'portal.drama',
-      descKey: 'portal.dramaDesc',
-      image: portalImages.series || null,
-      href: '/exhibitions/category/drama',
-      gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
-    },
-    {
-      key: 'appearance',
-      titleKey: 'portal.live',
-      descKey: 'portal.liveDesc',
-      image: portalImages.appearance || null,
-      href: '/exhibitions/category/stage',
-      gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
-    },
-    {
-      key: 'travel',
-      titleKey: 'portal.journey',
-      descKey: 'portal.journeyDesc',
-      image: portalImages.travel || null,
-      href: '/exhibitions/category/travel',
-      gradient: 'from-lmsy-yellow/20 to-lmsy-blue/20',
-    },
-    {
-      key: 'daily',
-      titleKey: 'portal.daily',
-      descKey: 'portal.dailyDesc',
-      image: portalImages.daily || null,
-      href: '/exhibitions/category/daily',
-      gradient: 'from-lmsy-blue/20 to-lmsy-yellow/20',
-    },
-    {
-      key: 'commercial',
-      titleKey: 'portal.commercial',
-      descKey: 'portal.commercialDesc',
-      image: portalImages.commercial || null,
-      href: '/exhibitions/category/commercial',
-      gradient: 'from-amber-400/30 via-yellow-500/20 to-amber-600/30',
-    },
-  ];
-
-  // Hide cards whose category has no visible works (only when the API
-  // explicitly reported so).
-  const portals = allPortals.filter(
-    (portal) => hasWork === null || hasWork[portal.key] !== false
-  );
-
-  // The original layout is an asymmetric 12-col grid tuned for five cards.
-  // Reassign spans per visible-card count so the grid never collapses.
-  const SPAN_PLANS: Record<number, string[]> = {
-    5: ['lg:col-span-7', 'lg:col-span-5', 'lg:col-span-4', 'lg:col-span-3', 'lg:col-span-5'],
-    4: ['lg:col-span-7', 'lg:col-span-5', 'lg:col-span-4', 'lg:col-span-8'],
-    3: ['lg:col-span-7', 'lg:col-span-5', 'lg:col-span-12'],
-    2: ['lg:col-span-7', 'lg:col-span-5'],
-    1: ['lg:col-span-12'],
-    0: [],
-  };
-  const spans = SPAN_PLANS[portals.length] || SPAN_PLANS[5];
+  // Always five entries, always in the same order. The list comes from the
+  // registry; nothing here filters on whether a hall happens to be full.
+  const entries: PortalEntry[] = HOME_CATEGORIES.map((definition) => ({
+    value: definition.value,
+    titleKey: ENTRY_COPY[definition.value].titleKey,
+    descKey: ENTRY_COPY[definition.value].descKey,
+    gradient: definition.gradient,
+    span: ENTRY_COPY[definition.value].span,
+    image: covers[definition.value] ?? null,
+    count: counts[definition.value] ?? 0,
+  }));
 
   return (
     <section className="relative py-24 md:py-32 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Section Header */}
         <motion.div
           className="text-center mb-16 md:mb-20"
           initial={{ opacity: 0, y: 30 }}
@@ -229,11 +200,10 @@ export function PortalsSection() {
           </p>
         </motion.div>
 
-        {/* 🔥 ASYMMETRIC LAYOUT: spans adapt to how many portals are visible */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 md:gap-8">
-          {portals.map((portal, index) => (
-            <div key={portal.key} className={spans[index] || 'lg:col-span-12'}>
-              <PortalCard {...portal} index={index} />
+          {entries.map((entry, index) => (
+            <div key={entry.value} className={entry.span}>
+              <PortalCard entry={entry} index={index} />
             </div>
           ))}
         </div>

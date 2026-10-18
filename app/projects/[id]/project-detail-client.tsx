@@ -55,6 +55,8 @@ interface Project {
   title: string;
   title_i18n?: LocalizedText | null;
   category: string;
+  /** When the event or shoot happened. Preferred display date. */
+  event_date?: string | null;
   release_date: string | null;
   description: string | null;
   description_i18n?: LocalizedText | null;
@@ -66,6 +68,16 @@ interface Project {
   is_ongoing?: boolean;
   theme_statement?: string | null;
   theme_statement_i18n?: LocalizedText | null;
+  /** People linked through project_people. Empty when not confirmed yet. */
+  people?: Array<{
+    id: string;
+    name: string;
+    nickname: string | null;
+    slug: string | null;
+    role: string;
+  }> | null;
+  /** The series / film this project belongs to, when it has one. */
+  work?: { id: string; title: string; title_i18n?: unknown; year: number | null } | null;
 }
 
 interface ProjectDetailClientProps {
@@ -75,8 +87,10 @@ interface ProjectDetailClientProps {
   // array = section is hidden. Covers pre-picked server-side; no mock data.
   relatedProjects?: Array<{
     id: string;
+    slug?: string | null;
     title: string;
     title_i18n?: LocalizedText | null;
+    event_date?: string | null;
     release_date: string | null;
     cover?: string | null;
     category?: string;
@@ -206,7 +220,10 @@ export default function ProjectDetailClient({ project, images, relatedProjects =
   // localized and the accent matches the Projects list badge.
   const category = categoryMeta(project.category);
   const categoryLabel = t(language, category.labelKey);
-  const releaseDateLabel = formatDisplayDate(project.release_date, language);
+  // Event date first: that is when it actually happened. release_date stays
+  // as the fallback for rows written before the phase-7 split.
+  const displayDate = project.event_date || project.release_date;
+  const releaseDateLabel = formatDisplayDate(displayDate, language);
 
   // Facets are offered only when they actually hold images (see
   // lib/project-tabs.ts). With the live data - every asset has
@@ -256,9 +273,39 @@ export default function ProjectDetailClient({ project, images, relatedProjects =
               {releaseDateLabel && (
                 <div className="flex items-center gap-2 text-ink-2">
                   <Calendar className="h-4 w-4" />
-                  <time className="text-sm" dateTime={project.release_date ?? undefined}>
+                  <time className="text-sm" dateTime={displayDate ?? undefined}>
                     {releaseDateLabel}
                   </time>
+                </div>
+              )}
+
+              {/* Relations (phase 7): who is in this project, and which work
+                  it belongs to. Both come from real join rows; nothing is
+                  inferred from the title. */}
+              {(project.work || (project.people && project.people.length > 0)) && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-2">
+                  {project.work && (
+                    <span>
+                      {getLocalizedText(
+                        (project.work.title_i18n ?? null) as LocalizedText | null,
+                        language,
+                        project.work.title
+                      )}
+                      {project.work.year ? ` · ${project.work.year}` : ''}
+                    </span>
+                  )}
+                  {project.work && project.people && project.people.length > 0 && (
+                    <span aria-hidden>·</span>
+                  )}
+                  {(project.people ?? []).map((person) => (
+                    <Link
+                      key={person.id}
+                      href={`/people/${person.slug || person.id}`}
+                      className="transition-colors hover:text-ink"
+                    >
+                      {person.nickname || person.name}
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
@@ -577,7 +624,7 @@ export default function ProjectDetailClient({ project, images, relatedProjects =
                       key={related.id}
                       // Canonical detail entry (phase-4 batch 2): editorial
                       // works are read through /editorial/[id], not here.
-                      href={related.category === 'editorial' ? `/editorial/${related.id}` : `/projects/${related.id}`}
+                      href={`/projects/${related.slug || related.id}`}
                       className="group/related block"
                     >
                       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-white/5">
@@ -598,12 +645,12 @@ export default function ProjectDetailClient({ project, images, relatedProjects =
                       <p className="mt-3 text-sm font-medium text-ink group-hover/related:text-lmsy-blue transition-colors line-clamp-1">
                         {getLocalizedText(related.title_i18n, language, related.title)}
                       </p>
-                      {formatDisplayDate(related.release_date, language, {
+                      {formatDisplayDate(related.event_date || related.release_date, language, {
                         month: 'short',
                         day: false,
                       }) && (
                         <p className="text-xs text-ink-2 mt-1">
-                          {formatDisplayDate(related.release_date, language, {
+                          {formatDisplayDate(related.event_date || related.release_date, language, {
                             month: 'short',
                             day: false,
                           })}

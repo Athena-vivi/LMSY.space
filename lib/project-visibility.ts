@@ -14,8 +14,11 @@
  * proxy rules such as "has gallery assets" or "category matches".
  *
  * Rule: a project is visitor-visible only when the admin explicitly
- * opted it in (portal_visible === true) and it is not retired
- * (curation_status !== 'archived').
+ * opted it in (portal_visible === true), it is not retired
+ * (curation_status !== 'archived'), and it is not an ingestion container
+ * (is_container !== true). Containers are never content: they hold the raw
+ * output of a collection run until the images are curated into a real
+ * project.
  *
  * Every front-end read of the projects table goes through this module
  * (list, detail, exhibition categories, editorial, search, sitemap,
@@ -25,6 +28,7 @@
 export interface PublicProjectShape {
   portal_visible?: boolean | null;
   curation_status?: string | null;
+  is_container?: boolean | null;
 }
 
 /** Client-side predicate for an already-fetched project row. */
@@ -33,6 +37,7 @@ export function isPublicProject(
 ): boolean {
   if (!project) return false;
   if (project.portal_visible !== true) return false;
+  if (project.is_container === true) return false;
   return project.curation_status !== 'archived';
 }
 
@@ -57,6 +62,7 @@ export function applyPublicProjectFilter<T extends object>(query: T): T {
   const q = query as unknown as VisibilityQuery;
   const filtered = q
     .eq('portal_visible', true)
+    .eq('is_container', false)
     .neq('curation_status', 'archived');
   return filtered as unknown as T;
 }

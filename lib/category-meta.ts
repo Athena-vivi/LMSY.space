@@ -1,67 +1,27 @@
 /**
- * Canonical work-category presentation (phase-6 batch 1).
+ * Canonical work-category presentation.
  *
  * The archive uses the same `projects.category` values on four surfaces
- * (Projects list, project detail badge, Chronicle timeline, search), and each
- * one used to render its own label: "TV_SERIES" on the list, "TV Series" on
- * the detail page, and the raw lowercase database value on the Chronicle.
- * This module is the single source of truth for the display label and the
- * badge accent class.
+ * (Projects list, project detail badge, Timeline, search), and each one used
+ * to render its own label: "TV_SERIES" on the list, "TV Series" on the detail
+ * page, and the raw lowercase database value on the Chronicle.
  *
- * Label text lives in lib/languages.ts under `category.*` so it stays
- * translated; nothing here is user-visible copy.
+ * Phase 7 folded the whole vocabulary into lib/category-registry.ts, so this
+ * module is now a thin adapter: it normalizes legacy values and returns the
+ * label key plus badge accent from the single registry.
  */
 
 import type { TranslationKey } from './languages';
+import { categoryDefinition, normalizeCategory } from './category-registry.ts';
 
 export interface CategoryMeta {
-  /** Raw projects.category value (or the legacy alias). */
+  /** Normalized registry value, or the raw input when unknown. */
   key: string;
   /** i18n key holding the localized label. */
   labelKey: TranslationKey;
   /** Badge classes: text color + border + tint. */
   accent: string;
 }
-
-const META: Record<string, Omit<CategoryMeta, 'key'>> = {
-  series: {
-    labelKey: 'category.series',
-    accent: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5',
-  },
-  editorial: {
-    labelKey: 'category.editorial',
-    accent: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5',
-  },
-  appearance: {
-    labelKey: 'category.appearance',
-    accent: 'text-ink border-white/20 bg-white/5',
-  },
-  commercial: {
-    labelKey: 'category.commercial',
-    accent: 'text-amber-200/80 border-amber-500/20 bg-amber-500/5',
-  },
-  journal: {
-    labelKey: 'category.journal',
-    accent: 'text-ink border-white/10 bg-transparent',
-  },
-  daily: {
-    labelKey: 'category.daily',
-    accent: 'text-ink border-white/10 bg-white/5',
-  },
-  travel: {
-    labelKey: 'category.travel',
-    accent: 'text-ink border-white/10 bg-white/5',
-  },
-  // Legacy enum values that may still exist on older rows.
-  music: {
-    labelKey: 'category.music',
-    accent: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5',
-  },
-  magazine: {
-    labelKey: 'category.magazine',
-    accent: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5',
-  },
-};
 
 const FALLBACK: Omit<CategoryMeta, 'key'> = {
   labelKey: 'category.other',
@@ -73,10 +33,15 @@ const FALLBACK: Omit<CategoryMeta, 'key'> = {
  * back to a neutral badge whose label is the localized "Other" string.
  */
 export function categoryMeta(category: string | null | undefined): CategoryMeta {
-  const key = (category ?? '').trim().toLowerCase();
-  const found = META[key];
-  if (!found) return { key, ...FALLBACK };
-  return { key, ...found };
+  const definition = categoryDefinition(category);
+  if (!definition) {
+    return { key: (category ?? '').trim().toLowerCase(), ...FALLBACK };
+  }
+  return {
+    key: definition.value,
+    labelKey: definition.labelKey,
+    accent: definition.accent,
+  };
 }
 
 /** Convenience for surfaces that only need the i18n key. */
@@ -99,9 +64,12 @@ const ASSET_TAG_KEYS: Record<string, TranslationKey> = {
   advertising: 'gallery.tagAdvertising',
   stage: 'gallery.tagStage',
   still: 'gallery.tagStill',
+  bts: 'gallery.tagStill',
 };
 
 export function assetTagLabelKey(tag: string | null | undefined): TranslationKey | null {
   const key = (tag ?? '').trim().toLowerCase();
   return ASSET_TAG_KEYS[key] ?? null;
 }
+
+export { normalizeCategory };

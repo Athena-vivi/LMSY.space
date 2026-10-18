@@ -125,6 +125,10 @@ export const translations = {
     'portal.dailyDesc': 'Beautiful ordinary days',
     'portal.commercial': 'Commercial',
     'portal.commercialDesc': 'Where inspiration meets value',
+    'portal.editorial': 'Editorial',
+    'portal.editorialDesc': 'Covers, spreads and photobooks',
+    'portal.appearance': 'Public Appearances',
+    'portal.appearanceDesc': 'Airports, red carpets, official outings',
 
     // Longform
 
@@ -265,6 +269,40 @@ export const translations = {
     'category.music': 'Music Video',
     'category.magazine': 'Magazine',
     'category.other': 'Other',
+    // Stable eight-category vocabulary (see lib/category-registry.ts)
+    'category.dramaWork': 'Drama & Works',
+    'category.liveEvent': 'Live Events',
+    'category.publicAppearance': 'Public Appearances',
+    'category.behindTheScenes': 'Behind the Scenes',
+    'category.personalTravel': 'Personal & Travel',
+    'category.earlyArchive': 'Early Archive',
+
+    // Navigation (phase 7: four entries + search)
+    'nav.timeline': 'Timeline',
+    'nav.people': 'People',
+
+    // Homepage sections
+    'home.collecting': 'Collecting',
+    'home.featuredTitle': 'Featured Projects',
+    'home.featuredSubtitle': 'A selection worth opening first.',
+    'home.timelineTitle': 'Timeline',
+    'home.timelineSubtitle': 'Pick a year and walk the archive in order.',
+    'home.peopleTitle': 'People & Archive Story',
+    'home.peopleSubtitle': 'The two people, and how this archive is kept.',
+
+    // Timeline
+    'timeline.title': 'Timeline',
+    'timeline.description': 'Every dated record in the archive, ordered by when it happened.',
+    'timeline.emptyYear': 'No records for this year yet.',
+    'timeline.records': '{count} records',
+    'timeline.unknownDate': 'Undated',
+
+    // People
+    'people.title': 'People',
+    'people.description': 'The two people this archive is built around.',
+    'people.relatedProjects': 'Related projects',
+    'people.noProjects': 'No linked projects yet.',
+    'people.birthday': 'Birthday',
 
     // Project detail
     'project.tabAll': 'All',
@@ -452,6 +490,10 @@ export const translations = {
     'portal.dailyDesc': '美好的平凡岁月',
     'portal.commercial': '商务',
     'portal.commercialDesc': '品牌灵感的碰撞',
+    'portal.editorial': '杂志特辑',
+    'portal.editorialDesc': '封面、内页与写真书',
+    'portal.appearance': '公开亮相',
+    'portal.appearanceDesc': '机场、红毯与公开行程',
 
     // Longform
 
@@ -592,6 +634,40 @@ export const translations = {
     'category.music': '音乐影像',
     'category.magazine': '杂志',
     'category.other': '其他',
+    // Stable eight-category vocabulary (see lib/category-registry.ts)
+    'category.dramaWork': '剧集作品',
+    'category.liveEvent': '现场活动',
+    'category.publicAppearance': '公开亮相',
+    'category.behindTheScenes': '幕后花絮',
+    'category.personalTravel': '个人与旅行',
+    'category.earlyArchive': '早期档案',
+
+    // Navigation (phase 7: four entries + search)
+    'nav.timeline': '时间线',
+    'nav.people': '人物',
+
+    // Homepage sections
+    'home.collecting': '收录中',
+    'home.featuredTitle': '精选项目',
+    'home.featuredSubtitle': '值得先打开的那些。',
+    'home.timelineTitle': '时间线',
+    'home.timelineSubtitle': '选一个年份，按顺序走一遍档案。',
+    'home.peopleTitle': '人物与档案说明',
+    'home.peopleSubtitle': '两个人，以及这份档案是怎么被保存的。',
+
+    // Timeline
+    'timeline.title': '时间线',
+    'timeline.description': '按实际发生时间排列的全部有日期记录。',
+    'timeline.emptyYear': '这一年还没有记录。',
+    'timeline.records': '{count} 条记录',
+    'timeline.unknownDate': '日期未定',
+
+    // People
+    'people.title': '人物',
+    'people.description': '这份档案围绕的两个人。',
+    'people.relatedProjects': '相关项目',
+    'people.noProjects': '暂无已关联的项目。',
+    'people.birthday': '生日',
 
     // Project detail
     'project.tabAll': '全部',
@@ -776,6 +852,10 @@ export const translations = {
     'portal.dailyDesc': 'วันธรรมดาที่งดงาม',
     'portal.commercial': 'ธุรกิจ',
     'portal.commercialDesc': 'จุดบรรจบของแรงบันดาลความคุณค่า',
+    'portal.editorial': 'นิตยสาร',
+    'portal.editorialDesc': 'ปก หน้าภายใน และหนังสือภาพ',
+    'portal.appearance': 'การปรากฏตัว',
+    'portal.appearanceDesc': 'สนามบิน พรมแดง และงานออกงาน',
 
     // Longform
 
@@ -916,6 +996,40 @@ export const translations = {
     'category.music': 'มิวสิกวิดีโอ',
     'category.magazine': 'นิตยสาร',
     'category.other': 'อื่น ๆ',
+    // Stable eight-category vocabulary (see lib/category-registry.ts)
+    'category.dramaWork': 'ละครและผลงาน',
+    'category.liveEvent': 'อีเวนต์สด',
+    'category.publicAppearance': 'การปรากฏตัวต่อสาธารณะ',
+    'category.behindTheScenes': 'เบื้องหลัง',
+    'category.personalTravel': 'ชีวิตส่วนตัวและการเดินทาง',
+    'category.earlyArchive': 'คลังภาพยุคแรก',
+
+    // Navigation (phase 7: four entries + search)
+    'nav.timeline': 'ไทม์ไลน์',
+    'nav.people': 'บุคคล',
+
+    // Homepage sections
+    'home.collecting': 'กำลังรวบรวม',
+    'home.featuredTitle': 'ผลงานคัดสรร',
+    'home.featuredSubtitle': 'สิ่งที่ควรเปิดดูก่อน',
+    'home.timelineTitle': 'ไทม์ไลน์',
+    'home.timelineSubtitle': 'เลือกปีแล้วไล่ดูคลังภาพตามลำดับ',
+    'home.peopleTitle': 'บุคคลและเรื่องราวของคลังภาพ',
+    'home.peopleSubtitle': 'สองคน และวิธีที่คลังภาพนี้ถูกเก็บรักษา',
+
+    // Timeline
+    'timeline.title': 'ไทม์ไลน์',
+    'timeline.description': 'ทุกบันทึกที่มีวันที่ เรียงตามเวลาที่เกิดขึ้นจริง',
+    'timeline.emptyYear': 'ปียังไม่มีบันทึก',
+    'timeline.records': '{count} รายการ',
+    'timeline.unknownDate': 'ไม่ทราบวันที่',
+
+    // People
+    'people.title': 'บุคคล',
+    'people.description': 'สองคนที่คลังภาพนี้สร้างขึ้นมาเพื่อพวกเธอ',
+    'people.relatedProjects': 'ผลงานที่เกี่ยวข้อง',
+    'people.noProjects': 'ยังไม่มีผลงานที่เชื่อมโยง',
+    'people.birthday': 'วันเกิด',
 
     // Project detail
     'project.tabAll': 'ทั้งหมด',

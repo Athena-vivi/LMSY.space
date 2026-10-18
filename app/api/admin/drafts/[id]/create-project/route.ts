@@ -20,11 +20,14 @@ function pickLocalizedText(value: unknown): string {
 function inferCategory(tags: string[] | null | undefined) {
   const normalized = (tags || []).map((tag) => tag.toLowerCase());
   if (normalized.some((tag) => tag.includes('editorial') || tag.includes('magazine'))) return 'editorial';
-  if (normalized.some((tag) => tag.includes('travel'))) return 'travel';
+  if (normalized.some((tag) => tag.includes('travel'))) return 'personal_travel';
   if (normalized.some((tag) => tag.includes('commercial') || tag.includes('brand') || tag.includes('ad'))) return 'commercial';
-  if (normalized.some((tag) => tag.includes('stage') || tag.includes('appearance') || tag.includes('performance'))) return 'appearance';
-  if (normalized.some((tag) => tag.includes('series') || tag.includes('drama') || tag.includes('still'))) return 'series';
-  return 'daily';
+  if (normalized.some((tag) => tag.includes('stage') || tag.includes('appearance') || tag.includes('performance'))) return 'live_event';
+  if (normalized.some((tag) => tag.includes('series') || tag.includes('drama') || tag.includes('still'))) return 'drama_work';
+  if (normalized.some((tag) => tag.includes('bts') || tag.includes('behind'))) return 'behind_the_scenes';
+  // No usable signal: the raw collection lands in the holding bucket instead of
+  // being guessed into a real hall.
+  return 'early_archive';
 }
 
 export async function POST(

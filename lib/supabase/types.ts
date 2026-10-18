@@ -20,16 +20,36 @@ export interface Member {
   created_at: string;
 }
 
+/**
+ * Stable project categories. The database CHECK constraint, the front-end
+ * filter chips and the URL parameter all use these eight values; see
+ * lib/category-registry.ts.
+ */
 export type ProjectCategory =
-  | 'series'
+  | 'drama_work'
   | 'editorial'
-  | 'appearance'
-  | 'daily'
-  | 'travel'
-  | 'commercial';
+  | 'live_event'
+  | 'public_appearance'
+  | 'commercial'
+  | 'behind_the_scenes'
+  | 'personal_travel'
+  | 'early_archive';
 
 export interface Project {
   id: string;
+  /** Stable URL segment. Falls back to `id` on older rows. */
+  slug?: string | null;
+  /** When the event or shoot actually happened. Null when unconfirmed. */
+  event_date?: string | null;
+  /** When the source published it (magazine issue date, original post). */
+  source_published_at?: string | null;
+  location?: string | null;
+  publisher_brand?: string | null;
+  search_aliases?: string[] | null;
+  /** Ingestion container: never shown in the public project index. */
+  is_container?: boolean | null;
+  work_id?: string | null;
+  updated_at?: string | null;
   title: string;
   title_i18n?: LocalizedText | null;
   category: ProjectCategory;
@@ -57,6 +77,8 @@ export type MilestonePriority = 1 | 2 | 3 | 4 | 5 | null;
 export interface GalleryItem {
   id: string;
   image_url: string;
+  /** When the pictured event happened. Null when unconfirmed. */
+  event_date?: string | null;
   title?: string | null;
   title_i18n?: LocalizedText | null;
   excerpt?: string | null;

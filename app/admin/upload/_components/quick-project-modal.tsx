@@ -13,13 +13,17 @@ interface QuickProjectModalProps {
   onProjectCreated: (project: Project) => void;
 }
 
+// Eight stable values (lib/category-registry.ts). Admin labels are English
+// on purpose: they are operator-facing, not visitor copy.
 const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string }[] = [
-  { value: 'series', label: 'Series (TV/Drama)', prefix: 'STILL' },
+  { value: 'drama_work', label: 'Drama & Works', prefix: 'STILL' },
   { value: 'editorial', label: 'Editorial (Magazine)', prefix: 'MAG' },
-  { value: 'appearance', label: 'Appearance (Event/Stage)', prefix: 'STAGE' },
-  { value: 'daily', label: 'Daily (日常)', prefix: 'DAILY' },
-  { value: 'travel', label: 'Travel (旅途)', prefix: 'TRV' },
+  { value: 'live_event', label: 'Live Events', prefix: 'STAGE' },
+  { value: 'public_appearance', label: 'Public Appearances', prefix: 'TRV' },
   { value: 'commercial', label: 'Commercial (Ad/Brand)', prefix: 'AD' },
+  { value: 'behind_the_scenes', label: 'Behind the Scenes', prefix: 'BTS' },
+  { value: 'personal_travel', label: 'Personal & Travel', prefix: 'DAILY' },
+  { value: 'early_archive', label: 'Early Archive', prefix: 'G' },
 ];
 
 export default function QuickProjectModal({
@@ -28,7 +32,7 @@ export default function QuickProjectModal({
   onProjectCreated,
 }: QuickProjectModalProps) {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<ProjectCategory>('series');
+  const [category, setCategory] = useState<ProjectCategory>('drama_work');
   const [releaseDate, setReleaseDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -109,7 +113,7 @@ export default function QuickProjectModal({
 
       // Reset form
       setTitle('');
-      setCategory('series');
+      setCategory('drama_work');
       setReleaseDate('');
 
       // Notify parent component

@@ -5,7 +5,12 @@ import assert from 'node:assert/strict';
 
 import { pickCoverForProject, pickCoversByProject } from '../lib/project-covers.ts';
 import { formatChapterTitle } from '../lib/chapter-title.ts';
-import { EXHIBITION_TYPE_MAPPING, EXHIBITION_CATEGORIES } from '../lib/exhibition-categories.ts';
+import {
+  PROJECT_CATEGORIES,
+  HOME_CATEGORIES,
+  normalizeCategory,
+  categoryDefinition,
+} from '../lib/category-registry.ts';
 
 // ---------- pickCoverForProject ----------
 
@@ -75,21 +80,47 @@ test('chapter title: malformed key returns the key itself', () => {
   assert.equal(formatChapterTitle('not-a-month', 'en'), 'not-a-month');
 });
 
-// ---------- exhibition category mapping ----------
+// ---------- category registry ----------
 
-test('exhibition mapping: five categories with valid projects.category values', () => {
-  assert.equal(EXHIBITION_CATEGORIES.length, 5);
-  const categories = EXHIBITION_CATEGORIES.map((c) => c.category).sort();
-  assert.deepEqual(categories, ['appearance', 'commercial', 'daily', 'series', 'travel']);
-  // The legacy music/magazine enum entries must never become exhibition types.
-  assert.ok(!('music' in EXHIBITION_TYPE_MAPPING));
-  assert.ok(!('magazine' in EXHIBITION_TYPE_MAPPING));
+test('category registry: exactly the eight stable values', () => {
+  assert.deepEqual([...PROJECT_CATEGORIES], [
+    'drama_work',
+    'editorial',
+    'live_event',
+    'public_appearance',
+    'commercial',
+    'behind_the_scenes',
+    'personal_travel',
+    'early_archive',
+  ]);
 });
 
-test('exhibition mapping: types are unique URL-safe segments', () => {
-  const types = EXHIBITION_CATEGORIES.map((c) => c.type);
-  assert.equal(new Set(types).size, types.length);
-  for (const type of types) {
-    assert.match(type, /^[a-z]+$/);
+test('category registry: five fixed homepage entries', () => {
+  const values = HOME_CATEGORIES.map((definition) => definition.value);
+  assert.deepEqual(values, [
+    'drama_work',
+    'editorial',
+    'live_event',
+    'public_appearance',
+    'commercial',
+  ]);
+});
+
+test('legacy values still resolve so old links keep working', () => {
+  assert.equal(normalizeCategory('series'), 'drama_work');
+  assert.equal(normalizeCategory('appearance'), 'live_event');
+  assert.equal(normalizeCategory('travel'), 'public_appearance');
+  assert.equal(normalizeCategory('daily'), 'personal_travel');
+  assert.equal(normalizeCategory('DRAMA_WORK'), 'drama_work');
+  assert.equal(normalizeCategory('nonsense'), null);
+  assert.equal(normalizeCategory(null), null);
+});
+
+test('every definition carries a label key and a gradient', () => {
+  for (const value of PROJECT_CATEGORIES) {
+    const definition = categoryDefinition(value);
+    assert.ok(definition, `${value} resolves`);
+    assert.ok(definition!.labelKey.startsWith('category.'), `${value} has an i18n key`);
+    assert.ok(definition!.gradient.includes('from-'), `${value} has a fallback gradient`);
   }
 });

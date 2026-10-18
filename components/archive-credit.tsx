@@ -26,8 +26,11 @@ export function ArchiveCredit({
   const { language } = useLanguage();
 
   // Determine content type
-  const isOfficialContent = ['editorial', 'series'].includes(category);
-  const isFanContent = ['appearance', 'journal', 'commercial'].includes(category);
+  // Phase 7 vocabulary: editorials and the official drama material carry a
+  // publisher credit; everything collected from other sources carries a fan
+  // credit.
+  const isOfficialContent = ['editorial', 'drama_work'].includes(category);
+  const isFanContent = ['live_event', 'public_appearance', 'commercial'].includes(category);
 
   // Default to fan content if category doesn't match
   const showOfficialCredit = isOfficialContent;

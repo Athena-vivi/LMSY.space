@@ -75,14 +75,16 @@ describe('display dates are locale-aware', () => {
 
 describe('category labels come from one place', () => {
   test('known categories map to localized keys', () => {
-    assert.equal(categoryLabelKey('series'), 'category.series');
+    assert.equal(categoryLabelKey('drama_work'), 'category.dramaWork');
     assert.equal(categoryLabelKey('editorial'), 'category.editorial');
-    assert.equal(categoryLabelKey('appearance'), 'category.appearance');
+    assert.equal(categoryLabelKey('live_event'), 'category.liveEvent');
     assert.equal(categoryLabelKey('commercial'), 'category.commercial');
   });
 
-  test('case and whitespace do not break the lookup', () => {
-    assert.equal(categoryLabelKey(' Series '), 'category.series');
+  test('legacy values are normalized before lookup', () => {
+    assert.equal(categoryLabelKey(' Series '), 'category.dramaWork');
+    assert.equal(categoryLabelKey('daily'), 'category.personalTravel');
+    assert.equal(categoryLabelKey('travel'), 'category.publicAppearance');
   });
 
   test('unknown categories fall back to a neutral label, never crash', () => {
@@ -313,7 +315,7 @@ describe('homepage', () => {
 });
 
 describe('projects list', () => {
-  const page = src('app/projects/page.tsx');
+  const page = src('app/projects/projects-client.tsx');
 
   test('cover falls back to the curated database cover', () => {
     assert.ok(page.includes('covers[project.id] || project.cover_url'));
@@ -333,18 +335,20 @@ describe('projects list', () => {
     assert.ok(page.includes("t(language, 'projects.emptyAll')"));
   });
 
-  test('category chips use the shared localized label', () => {
-    assert.ok(page.includes('categoryMeta(cat).labelKey'));
+  test('category chips use the shared registry label', () => {
+    assert.ok(page.includes('definition.labelKey'));
+    assert.ok(page.includes('INDEX_CATEGORIES'));
     assert.ok(!page.includes("'TV_SERIES'"));
   });
 
-  test('dates use the shared formatter', () => {
-    assert.ok(page.includes('formatDisplayDate(project.release_date, language)'));
+  test('dates use the shared formatter and prefer event_date', () => {
+    assert.ok(page.includes('formatDisplayDate(project.event_date, language)'));
     assert.ok(!page.includes("toLocaleDateString(language ==="));
   });
 
-  test('cards keep the canonical editorial / project split', () => {
-    assert.ok(page.includes("project.category === 'editorial' ? `/editorial/${project.id}` : `/projects/${project.id}`"));
+  test('cards use the single canonical detail route', () => {
+    assert.ok(page.includes('`/projects/${project.slug || project.id}`'));
+    assert.ok(!page.includes('/editorial/${project.id}'));
   });
 });
 
@@ -386,45 +390,19 @@ describe('gallery', () => {
 
 describe('editorial', () => {
   const list = src('app/editorial/page.tsx');
-  const detail = src('app/editorial/[id]/editorial-detail-content.tsx');
   const api = src('app/api/editorial/route.ts');
 
-  test('list surface drops raw black and hard-coded english chrome', () => {
-    // Overlay scrims (bg-black/60) stay: they sit on top of photographs. The
-    // page-level raw black background is what had to go.
-    assert.ok(!list.includes('min-h-screen bg-black'));
-    assert.ok(list.includes('min-h-screen bg-background'));
+  test('editorial is a filtered view of the project index, not a second list', () => {
+    assert.ok(list.includes('<ProjectsClient lockedCategory="editorial" />'));
+    assert.ok(!list.includes('fetch('), 'no data fetching of its own');
+  });
+
+  test('the old editorial chrome is gone', () => {
     assert.ok(!list.includes('MAGAZINE ARCHIVE COLLECTION'));
     assert.ok(!list.includes('ISSUES CURATED'));
     assert.ok(!list.includes('NO_COVER'));
     assert.ok(!list.includes('ARTIFACT{'));
-  });
-
-  test('list header and count are localized', () => {
-    assert.ok(list.includes("t(language, 'editorial.title')"));
-    assert.ok(list.includes("t(language, 'editorial.subtitle')"));
-    assert.ok(list.includes("t(language, 'editorial.issueCount'"));
-    assert.ok(list.includes("t(language, 'editorial.viewIssue')"));
-  });
-
-  test('corner plate survives non-latin titles', () => {
-    assert.ok(list.includes('titlePlateLabel(localizedTitle)'));
-    assert.ok(!list.includes("replace(/[^a-zA-Z0-9]/g, '_')"));
-  });
-
-  test('detail page localizes meta and dates', () => {
-    assert.ok(detail.includes("t(language, 'editorial.releaseDate')"));
-    assert.ok(detail.includes("t(language, 'editorial.artifacts')"));
-    assert.ok(detail.includes("t(language, 'editorial.curatorNote')"));
-    assert.ok(detail.includes("t(language, 'editorial.insideIssue')"));
-    assert.ok(!detail.includes("toLocaleDateString('en-US'"));
-    assert.ok(!detail.includes('ARCHIVE_EMPTY'));
-    assert.ok(!detail.includes('bg-black'));
-  });
-
-  test('artifact count uses the shared distinct-counter', () => {
-    assert.ok(detail.includes('countIssueArtifacts(galleryImages, magazine.cover_url)'));
-    assert.ok(!detail.includes('galleryImages.length + 1'));
+    assert.ok(!list.includes('DATABASE_MISMATCH'));
   });
 
   test('api no longer leaks internals or logs every request', () => {
@@ -438,7 +416,7 @@ describe('editorial', () => {
 
 describe('chronicle', () => {
   const timeline = src('components/chronicle-timeline.tsx');
-  const chroniclePage = src('app/chronicle/page.tsx');
+  const chroniclePage = src('app/timeline/page.tsx');
 
   test('no position-by-percentage dots that never lined up with cards', () => {
     assert.ok(!timeline.includes('(index / Math.max(events.length - 1, 1)) * 100'));
@@ -482,7 +460,7 @@ describe('chronicle', () => {
 
 describe('shared page intro', () => {
   test('projects and gallery use the same header component', () => {
-    assert.ok(src('app/projects/page.tsx').includes('<PageIntro'));
+    assert.ok(src('app/projects/projects-client.tsx').includes('<PageIntro'));
     assert.ok(src('app/gallery/page.tsx').includes('<PageIntro'));
     const intro = src('components/page-intro.tsx');
     assert.ok(intro.includes('font-serif'));

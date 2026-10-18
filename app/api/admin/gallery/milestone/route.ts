@@ -25,7 +25,7 @@ async function ensureMilestoneProject() {
       .from('projects')
       .insert({
         title: MILESTONE_PROJECT_TITLE,
-        category: 'daily',
+        category: 'personal_travel',
         description: 'Unified project for homepage milestone assets',
         curation_status: 'published',
         portal_visible: false,

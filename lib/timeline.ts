@@ -2,7 +2,8 @@
  * Chronicle timeline data source (phase-4 batch 2, Task 2).
  *
  * Chronicle is now a derived view over the site's real content objects:
- *   - project events, dated by projects.release_date
+ *   - project events, dated by projects.event_date (release_date only as a
+ *     fallback for rows written before the phase-7 date split)
  *   - image-group events, dated by gallery_assets.event_date, grouped per
  *     (project, event_date) so hundreds of assets collapse into a handful of
  *     thumbnail sets
@@ -56,10 +57,10 @@ export type ChronicleEvent =
       images: TimelineImageRef[];
     };
 
-function projectHref(category: string, id: string): string {
-  // Canonical detail entry (phase-4 batch 2, Task 3): editorial works are
-  // read through the Editorial surface, everything else through Projects.
-  return category === 'editorial' ? `/editorial/${id}` : `/projects/${id}`;
+function projectHref(slug: string | null, id: string): string {
+  // One canonical detail route since phase 7. The slug is the stable URL;
+  // rows created before the migration (or via quick-create) fall back to id.
+  return `/projects/${slug || id}`;
 }
 
 export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
@@ -71,7 +72,7 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
     supabase
       .schema('lmsy_archive')
       .from('projects')
-      .select('id, title, title_i18n, category, release_date')
+      .select('id, slug, title, title_i18n, category, event_date, release_date')
   );
 
   if (projectsError) {
@@ -83,8 +84,12 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
   const events: ChronicleEvent[] = [];
 
   for (const p of rows) {
-    const date = (p.release_date as string | null) || '';
-    if (!date) continue; // projects without a release date have no timeline slot
+    // Event date first (when it actually happened). release_date is only a
+    // fallback for rows that predate the phase-7 split - it is the source
+    // publication date and must never be confused with the collection date.
+    const date =
+      ((p.event_date as string | null) || (p.release_date as string | null)) ?? '';
+    if (!date) continue; // undated projects have no timeline slot
     events.push({
       kind: 'project',
       id: `project-${p.id}`,
@@ -92,7 +97,7 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
       title: p.title as string,
       titleI18n: normalizeLocalizedText(p.title_i18n as LocalizedText | null, p.title as string),
       category: p.category as string,
-      href: projectHref(p.category as string, p.id as string),
+      href: projectHref(p.slug as string | null, p.id as string),
     });
   }
 
@@ -147,7 +152,7 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
         projectId,
         projectTitle: project.title as string,
         projectTitleI18n: normalizeLocalizedText(project.title_i18n as LocalizedText | null, project.title as string),
-        href: projectHref(project.category as string, projectId),
+        href: projectHref(project.slug as string | null, projectId),
         images,
       });
     }

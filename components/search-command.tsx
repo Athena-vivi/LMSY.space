@@ -35,7 +35,12 @@ const TYPE_LABEL_KEY: Record<SearchResultType, 'search.typeProject' | 'search.ty
   exhibition: 'search.typeExhibition',
 };
 
-export function SearchCommand() {
+export function SearchCommand({
+  variant = 'icon',
+}: {
+  /** 'bar' renders the wide trigger used in the centre of the main nav. */
+  variant?: 'icon' | 'bar';
+} = {}) {
   const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -187,21 +192,38 @@ export function SearchCommand() {
   };
 
   const quickAccess = [
-    { label: t(language, 'nav.gallery'), url: '/gallery', icon: FileImage, color: 'text-lmsy-yellow' },
     { label: t(language, 'nav.projects'), url: '/projects', icon: FolderKanban, color: 'text-lmsy-blue' },
-    { label: t(language, 'nav.profiles'), url: '/profiles', icon: Hash, color: 'text-purple-500' },
+    { label: t(language, 'nav.timeline'), url: '/timeline', icon: Hash, color: 'text-lmsy-blue' },
+    { label: t(language, 'nav.people'), url: '/people', icon: Hash, color: 'text-purple-500' },
+    { label: t(language, 'nav.gallery'), url: '/gallery', icon: FileImage, color: 'text-lmsy-yellow' },
   ];
 
   return (
     <>
-      {/* Trigger Button - Icon only */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="p-2 hover:bg-muted rounded-full transition-colors group"
-        aria-label={t(language, 'search.open')}
-      >
-        <Search className="h-5 w-5 text-ink-2 group-hover:text-foreground transition-colors" />
-      </button>
+      {/* Trigger: wide bar in the middle of the nav, icon otherwise */}
+      {variant === 'bar' ? (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="group flex w-full items-center gap-2.5 rounded-full border border-white/12 bg-white/5 px-4 py-2 text-left transition-colors hover:border-white/25 hover:bg-white/10"
+          aria-label={t(language, 'search.open')}
+        >
+          <Search className="h-4 w-4 shrink-0 text-ink-2 transition-colors group-hover:text-foreground" />
+          <span className="flex-1 truncate text-xs text-ink-2 transition-colors group-hover:text-foreground">
+            {t(language, 'search.placeholder')}
+          </span>
+          <kbd className="hidden shrink-0 rounded border border-white/10 bg-black/30 px-1.5 py-0.5 font-mono text-[10px] text-ink-2 lg:inline-block">
+            ⌘K
+          </kbd>
+        </button>
+      ) : (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-2 hover:bg-muted rounded-full transition-colors group"
+          aria-label={t(language, 'search.open')}
+        >
+          <Search className="h-5 w-5 text-ink-2 group-hover:text-foreground transition-colors" />
+        </button>
+      )}
 
       {/* Spotlight-style Modal */}
       <AnimatePresence>

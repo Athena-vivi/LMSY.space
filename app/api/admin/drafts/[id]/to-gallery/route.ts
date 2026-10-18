@@ -38,7 +38,7 @@ export async function POST(
 
     const { data: draft, error: draftError } = await supabaseAdmin
       .from('draft_items')
-      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt,chronicle_excerpt_i18n,source_url,source_platform,source_account')
+      .select('id,r2_media_url,media_type,title,description,event_date,tags,is_featured,project_id,chronicle_excerpt,chronicle_excerpt_i18n,source_url,source_platform,source_account,source_post_id,file_hash')
       .eq('id', id)
       .single();
 
@@ -140,6 +140,12 @@ export async function POST(
       source_url: provenance.source_url,
       source_platform: provenance.source_platform,
       source_account: provenance.source_account,
+      // Phase 7: the original post id and the file hash are collected at
+      // ingest time and used to trace a photo back to its post and to spot
+      // duplicate files. They are copied verbatim - a missing value stays
+      // missing rather than being derived from something else.
+      source_post_id: draft.source_post_id ?? null,
+      file_hash: draft.file_hash ?? null,
       integrity_status: 'ok',
       display_role: 'regular',
     };

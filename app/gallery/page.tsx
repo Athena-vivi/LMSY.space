@@ -13,6 +13,7 @@ import { PageIntro } from '@/components/page-intro';
 import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions, FALLBACK_ASPECT_RATIO } from '@/lib/image-dimensions';
 import { getLocalizedText } from '@/lib/localized-content';
+import { formatDisplayDate } from '@/lib/display-date';
 import { assetTagLabelKey } from '@/lib/category-meta';
 
 const gradients = [
@@ -27,7 +28,7 @@ const gradients = [
 // `select('*')` also pulled every long text column (excerpt, title, credits,
 // i18n blobs) for all 330 rows.
 const GALLERY_COLUMNS =
-  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform, project_id';
+  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, event_date, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform, project_id';
 const PAGE_SIZE = 60;
 
 // Minimal project info for the "view project" back-link. Fetched in one
@@ -37,6 +38,7 @@ interface ProjectRef {
   id: string;
   title: string;
   title_i18n: Record<string, string | null> | null;
+  slug: string | null;
 }
 
 // Phase-4 batch 2, Task 1: the gallery now shares the site-wide public
@@ -62,7 +64,7 @@ async function fetchProjectRefs(ids: string[]): Promise<Record<string, ProjectRe
   const { data, error } = await supabase
     .schema('lmsy_archive')
     .from('projects')
-    .select('id, title, title_i18n')
+    .select('id, title, title_i18n, slug')
     .in('id', unique);
   if (error || !data) return {}; // fail-safe: hide the entry, never crash
   const map: Record<string, ProjectRef> = {};
@@ -357,18 +359,28 @@ export default function GalleryPage() {
                         {/* 🌌 Nebula Hover Glow */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                        {/* 📖 Catalog Number - Always visible.
-                            ADR-001 D5: show the asset's persistent catalog_id;
-                            assets without one (e.g. promoted before numbering
-                            was wired) simply show nothing — never a generated
-                            stand-in number. */}
-                        <div className="absolute bottom-2 right-2 opacity-60 hover:opacity-100 transition-opacity">
-                          {item.catalog_id && (
+                        {/* 📖 Project name + date - the visitor-facing label.
+                            Phase 7: the internal catalog_id is no longer the
+                            most prominent thing on every card; it stays in the
+                            lightbox detail where it is actually useful. Both
+                            values here are real columns - when a project has no
+                            event date, only the name is shown. */}
+                        <div className="absolute bottom-2 right-2 text-right">
+                          {item.project_id && projectMap[item.project_id] && (
+                            <span className="block max-w-[60vw] truncate text-[10px] font-medium text-white/85">
+                              {getLocalizedText(
+                                projectMap[item.project_id].title_i18n as never,
+                                language,
+                                projectMap[item.project_id].title
+                              )}
+                            </span>
+                          )}
+                          {item.event_date && (
                             <span
-                              className="text-[10px] font-mono tracking-wide text-white/70"
+                              className="block text-[10px] font-mono tracking-wide text-white/55"
                               style={{ fontVariantNumeric: 'tabular-nums' }}
                             >
-                              {item.catalog_id}
+                              {formatDisplayDate(item.event_date, language)}
                             </span>
                           )}
                         </div>

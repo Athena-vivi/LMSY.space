@@ -23,7 +23,7 @@ import {
   projectHref,
   scoreResult,
   compareResults,
-  buildExhibitionResults,
+  buildCategoryResults,
   SCORE_EXACT,
   SCORE_PREFIX,
   SCORE_CONTAINS,
@@ -36,9 +36,11 @@ import { sanitizeSearchTerm } from '../lib/search-term.ts';
 
 const PROJECT = (over: Partial<ProjectRow> = {}): ProjectRow => ({
   id: '11111111-1111-1111-1111-111111111111',
+  slug: null,
   title: 'Affair',
   description: 'A drama series',
-  category: 'series',
+  category: 'drama_work',
+  event_date: '2025-10-10',
   release_date: '2025-10-10',
   ...over,
 });
@@ -57,10 +59,10 @@ const ASSET = (over: Partial<GalleryRow> = {}): GalleryRow => ({
 // ---- Contract mapping -------------------------------------------------------
 
 describe('search contract mapping', () => {
-  test('project href: editorial -> /editorial/[id], others -> /projects/[id]', () => {
-    assert.equal(projectHref('editorial', 'abc'), '/editorial/abc');
-    assert.equal(projectHref('series', 'abc'), '/projects/abc');
+  test('project href: slug wins, uuid is the fallback', () => {
+    assert.equal(projectHref('gaze', 'abc'), '/projects/gaze');
     assert.equal(projectHref(null, 'abc'), '/projects/abc');
+    assert.equal(projectHref(undefined, 'abc'), '/projects/abc');
   });
 
   test('project rows map to the full contract', () => {
@@ -71,21 +73,24 @@ describe('search contract mapping', () => {
     assert.equal(r.href, '/projects/11111111-1111-1111-1111-111111111111');
     assert.equal(r.description, 'A drama series');
     assert.equal(r.date, '2025-10-10');
-    assert.equal(r.category, 'series');
+    assert.equal(r.category, 'drama_work');
   });
 
   test('missing optional project fields are omitted, never fabricated', () => {
-    const r = mapProjectRow(PROJECT({ description: null, release_date: null, category: null }))!;
+    const r = mapProjectRow(
+      PROJECT({ description: null, event_date: null, release_date: null, category: null })
+    )!;
     assert.equal(r.description, undefined);
     assert.equal(r.date, undefined);
     assert.equal(r.category, undefined);
     assert.ok(!('description' in r && r.description === ''));
   });
 
-  test('editorial project maps to /editorial/[id] with type=project', () => {
-    const r = mapProjectRow(PROJECT({ category: 'editorial' }))!;
+  test('event_date wins over release_date, and the slug builds the href', () => {
+    const r = mapProjectRow(PROJECT({ slug: 'gaze', event_date: '2024-01-02' }))!;
     assert.equal(r.type, 'project');
-    assert.equal(r.href, '/editorial/11111111-1111-1111-1111-111111111111');
+    assert.equal(r.href, '/projects/gaze');
+    assert.equal(r.date, '2024-01-02');
   });
 
   test('gallery title fallback chain: caption -> catalog_id -> #tag', () => {
@@ -184,31 +189,30 @@ describe('search dedup and scope', () => {
     assert.ok(results.some((r) => r.type === 'gallery'));
   });
 
-  test('exhibition entries only for categories with visible works', () => {
+  test('category entries only for categories with visible works', () => {
     const results = buildSearchResults({
       term: 'drama',
       projectRows: [],
       galleryRows: [],
-      categoryCounts: { series: 3, travel: 0 },
+      categoryCounts: { drama_work: 3, personal_travel: 0 },
       lang: 'en',
     });
     assert.equal(results.length, 1);
     assert.equal(results[0].type, 'exhibition');
-    assert.equal(results[0].id, 'drama');
-    assert.equal(results[0].href, '/exhibitions/category/drama');
-    assert.equal(results[0].description, 'Television series and dramatic works featuring LMSY');
+    assert.equal(results[0].id, 'drama_work');
+    assert.equal(results[0].href, '/projects?category=drama_work');
   });
 
-  test('exhibition entries match localized labels too', () => {
-    const zh = buildSearchResults({ term: '剧集', projectRows: [], galleryRows: [], categoryCounts: { series: 2 }, lang: 'zh' });
+  test('category entries match localized labels too', () => {
+    const zh = buildSearchResults({ term: '剧集', projectRows: [], galleryRows: [], categoryCounts: { drama_work: 2 }, lang: 'zh' });
     assert.equal(zh.length, 1);
-    assert.equal(zh[0].href, '/exhibitions/category/drama');
-    const th = buildSearchResults({ term: 'เวที', projectRows: [], galleryRows: [], categoryCounts: { appearance: 1 }, lang: 'th' });
+    assert.equal(zh[0].href, '/projects?category=drama_work');
+    const th = buildSearchResults({ term: 'อีเวนต์สด', projectRows: [], galleryRows: [], categoryCounts: { live_event: 1 }, lang: 'th' });
     assert.equal(th.length, 1);
   });
 
-  test('zero-work categories never get exhibition entries', () => {
-    const results = buildExhibitionResults('travel', { travel: 0 }, 'en');
+  test('empty categories never get category entries', () => {
+    const results = buildCategoryResults('personal travel', { personal_travel: 0, editorial: 4 }, 'en');
     assert.equal(results.length, 0);
   });
 
@@ -323,7 +327,8 @@ describe('search frontend', () => {
   test('Quick Access labels and search controls are localized', () => {
     assert.ok(commandSrc.includes("t(language, 'nav.gallery')"));
     assert.ok(commandSrc.includes("t(language, 'nav.projects')"));
-    assert.ok(commandSrc.includes("t(language, 'nav.profiles')"));
+    assert.ok(commandSrc.includes("t(language, 'nav.timeline')"));
+    assert.ok(commandSrc.includes("t(language, 'nav.people')"));
     assert.ok(commandSrc.includes("aria-label={t(language, 'search.open')}"));
     assert.ok(commandSrc.includes("aria-label={t(language, 'search.clear')}"));
   });
@@ -332,12 +337,14 @@ describe('search frontend', () => {
 // ---- Route hygiene ------------------------------------------------------------
 
 describe('related routing fixes', () => {
-  test('sitemap advertises the canonical editorial entry', () => {
+  test('sitemap advertises the one canonical project entry, by slug', () => {
     const sitemapSrc = src('app/sitemap.ts');
     assert.ok(
-      sitemapSrc.includes("project.category === 'editorial' ? `/editorial/${project.id}` : `/projects/${project.id}`"),
-      'editorial projects are listed under /editorial/[id]'
+      sitemapSrc.includes('`${SITE_URL}/projects/${project.slug || project.id}`'),
+      'every project is listed under /projects/[slug]'
     );
+    assert.ok(sitemapSrc.includes('/timeline'), 'timeline is advertised');
+    assert.ok(sitemapSrc.includes('/people'), 'people is advertised');
   });
 
   test('chronicle image groups have a deterministic within-group order', () => {

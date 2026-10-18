@@ -19,8 +19,8 @@
 
 // NOTE: the explicit .ts extension keeps this module importable both by the
 // Next.js build (allowImportingTsExtensions) and by node --strip-types tests.
-import { EXHIBITION_CATEGORIES } from './exhibition-categories.ts';
-import type { Language } from './languages';
+import { CATEGORY_DEFINITIONS } from './category-registry.ts';
+import { t, type Language } from './languages.ts';
 
 // ---- Contract --------------------------------------------------------------
 
@@ -43,9 +43,12 @@ export interface SearchResult {
 /** Minimal shapes of the rows the search API selects. */
 export interface ProjectRow {
   id: string;
+  slug?: string | null;
   title: string | null;
   description?: string | null;
   category?: string | null;
+  /** When the event actually happened. Preferred over release_date. */
+  event_date?: string | null;
   release_date?: string | null;
 }
 
@@ -111,11 +114,12 @@ export function compareResults(
 // ---- Mapping ---------------------------------------------------------------
 
 /**
- * Canonical detail entry (phase-4 batch 2, Task 3): editorial works are read
- * through /editorial/[id], everything else through /projects/[id].
+ * Canonical detail entry since phase 7: one route for every project. The slug
+ * is the stable segment; rows without one fall back to the uuid so older
+ * links and freshly created rows both resolve.
  */
-export function projectHref(category: string | null | undefined, id: string): string {
-  return category === 'editorial' ? `/editorial/${id}` : `/projects/${id}`;
+export function projectHref(slug: string | null | undefined, id: string): string {
+  return `/projects/${slug || id}`;
 }
 
 export function mapProjectRow(row: ProjectRow): SearchResult | null {
@@ -125,9 +129,9 @@ export function mapProjectRow(row: ProjectRow): SearchResult | null {
     type: 'project',
     id: row.id,
     title,
-    href: projectHref(row.category, row.id),
+    href: projectHref(row.slug, row.id),
     description: (row.description ?? '').trim() || undefined,
-    date: row.release_date || undefined,
+    date: row.event_date || row.release_date || undefined,
     category: row.category || undefined,
   };
 }
@@ -156,13 +160,13 @@ export function mapGalleryRow(row: GalleryRow): SearchResult | null {
 }
 
 /**
- * Exhibition entries are the real category view, not fabricated exhibition
+ * Category entries are the real hall view, not fabricated exhibition
  * entities: a category only appears when it currently holds at least one
  * publicly visible project (counts derived from the public project set).
- * The term must match the category type, the projects.category value or one
- * of its real localized labels.
+ * The term must match the stable value or one of the localized labels the
+ * registry resolves.
  */
-export function buildExhibitionResults(
+export function buildCategoryResults(
   term: string,
   categoryCounts: Record<string, number>,
   lang: Language
@@ -170,24 +174,20 @@ export function buildExhibitionResults(
   const q = term.toLowerCase();
   if (!q) return [];
   const results: SearchResult[] = [];
-  for (const category of EXHIBITION_CATEGORIES) {
-    if ((categoryCounts[category.category] ?? 0) <= 0) continue;
+  for (const definition of CATEGORY_DEFINITIONS) {
+    if ((categoryCounts[definition.value] ?? 0) <= 0) continue;
     const haystacks = [
-      category.type,
-      category.category,
-      category.title,
-      category.label.en,
-      category.label.zh,
-      category.label.th,
-    ].map((s) => s.toLowerCase());
-    if (!haystacks.some((s) => s === q || s.includes(q))) continue;
+      definition.value,
+      definition.value.replace(/_/g, ' '),
+      ...(['en', 'zh', 'th'] as Language[]).map((code) => t(code, definition.labelKey)),
+    ].map((value) => value.toLowerCase());
+    if (!haystacks.some((value) => value === q || value.includes(q))) continue;
     results.push({
       type: 'exhibition',
-      id: category.type,
-      title: category.label[lang] ?? category.label.en,
-      href: `/exhibitions/category/${category.type}`,
-      description: category.description,
-      category: category.category,
+      id: definition.value,
+      title: t(lang, definition.labelKey),
+      href: `/projects?category=${definition.value}`,
+      category: definition.value,
     });
   }
   return results;
@@ -202,7 +202,7 @@ export interface BuildSearchResultsInput {
   term: string;
   projectRows: ProjectRow[];
   galleryRows: GalleryRow[];
-  /** projects.category -> count over ALL publicly visible projects. */
+  /** projects.category (stable value) -> count over ALL publicly visible projects. */
   categoryCounts: Record<string, number>;
   lang: Language;
 }
@@ -223,7 +223,7 @@ export function buildSearchResults(input: BuildSearchResultsInput): SearchResult
     const mappedRow = mapGalleryRow(row);
     if (mappedRow) mapped.push(mappedRow);
   }
-  mapped.push(...buildExhibitionResults(term, categoryCounts, lang));
+  mapped.push(...buildCategoryResults(term, categoryCounts, lang));
 
   // Structural dedup: same type + same db id can only appear once.
   const seen = new Set<string>();

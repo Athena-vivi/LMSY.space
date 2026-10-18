@@ -29,7 +29,7 @@ export function VaultTabs({ activeTab, onChange, data }: VaultTabsProps) {
       case 'chronicle':
         return data.events.length;
       case 'editorial':
-        return data.projects.filter(p => p.category === 'editorial' || p.category === 'series').length;
+        return data.projects.filter(p => p.category === 'editorial' || p.category === 'drama_work').length;
       case 'milestones':
         return Object.keys(data.milestones).length;
       default:

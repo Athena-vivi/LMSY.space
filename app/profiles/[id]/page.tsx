@@ -1,77 +1,14 @@
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import type { Member } from '@/lib/supabase/types';
-import ProfileClient from './profile-client';
-
-interface PageProps {
-  // params is a Promise in Next.js 15+ (see app/projects/[id]/page.tsx for
-  // the same convention) - it must be awaited, or params.id is undefined and
-  // every dynamic profile renders the not-found branch.
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-/** Shape of the profiles table (lmsy_archive schema), verified read-only. */
-interface ProfileRow {
-  id: string;
-  name: string;
-  nickname: string;
-  birthday: string | null;
-  bio: string | null;
-  avatar_url: string | null;
-  ig_handle: string | null;
-  x_handle: string | null;
-  created_at: string;
-}
+import { redirect } from 'next/navigation';
 
 /**
- * Adapt a profiles row to the Member shape consumed by ProfileClient.
- * profiles has no height / weibo_handle / xhs_handle columns, so those
- * fields are explicitly null (the client already renders conditionally).
+ * Old profile detail URLs forwarded to the unified people route, which
+ * accepts both the slug and the raw uuid.
  */
-function toMember(row: ProfileRow): Member {
-  return {
-    ...row,
-    height: null,
-    weibo_handle: null,
-    xhs_handle: null,
-  };
-}
-
-// Generate metadata for SEO
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export default async function ProfileDetailRedirect({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (!profile) {
-    return {
-      title: 'Member Not Found | LMSY',
-    };
-  }
-
-  return {
-    title: `${profile.name} | LMSY Official Fan Site`,
-    description: profile?.bio || `Get to know ${profile.name} from LMSY`,
-  };
-}
-
-export default async function ProfilePage({ params }: PageProps) {
-  const { id } = await params;
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error || !profile) {
-    notFound();
-  }
-
-  return <ProfileClient member={toMember(profile as ProfileRow)} />;
+  redirect(`/people/${id}`);
 }
