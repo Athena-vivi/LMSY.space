@@ -16,8 +16,12 @@ import { mainNavItems } from '@/lib/nav-items';
 
 /**
  * Homepage header. Same four entries as every inner page, but with the softer
- * glass treatment the hero sits behind. Layout matches the inner header:
- * logo + search on the left, the four entries together on the right.
+ * glass treatment the hero sits behind.
+ *
+ * Layout is identical to SiteHeader by design: search + four entries as one
+ * centred cluster with a single uniform gap, pinned to the page axis with
+ * `absolute left-1/2 -translate-x-1/2`; logo left, language switcher right.
+ * Keep the two headers in sync.
  */
 
 export function HomeHeader() {
@@ -28,7 +32,7 @@ export function HomeHeader() {
     <Link
       key={item.href}
       href={item.href}
-      className="group relative font-serif text-sm uppercase tracking-[0.15em] text-ink-2 transition-colors duration-300 hover:text-ink py-2 inline-block"
+      className="group relative font-serif text-sm uppercase tracking-[0.15em] text-ink-2 transition-colors duration-300 hover:text-ink py-2 inline-block whitespace-nowrap"
     >
       {t(language, item.key as TranslationKey)}
       <motion.span
@@ -46,7 +50,7 @@ export function HomeHeader() {
       style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center gap-3 md:gap-4 lg:gap-5">
+        <div className="relative flex h-16 items-center gap-3">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity shrink-0">
             <div className="relative h-8 w-8 md:h-9 md:w-9">
@@ -74,20 +78,21 @@ export function HomeHeader() {
             </span>
           </Link>
 
-          {/* Search sits next to the logo, out of the entry row */}
-          <div className="hidden w-[190px] shrink-0 md:block lg:w-[300px]">
-            <SearchCommand variant="bar" />
+          {/*
+            The centred cluster: search + four entries.
+            One flex row, one gap, so every spacing in the group is identical.
+            Absolutely pinned to the page axis so the group stays centred
+            whatever the logo and the switcher measure.
+          */}
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-4 md:flex lg:gap-6">
+            <div className="w-[130px] shrink-0 lg:w-[180px] xl:w-[220px]">
+              <SearchCommand variant="bar" />
+            </div>
+            {mainNavItems.map(renderLink)}
           </div>
 
-          <div className="flex-1" />
-
-          {/* Desktop Navigation - all four entries on the right */}
-          <nav className="hidden md:flex md:items-center md:gap-3 lg:gap-8">
-            {mainNavItems.map(renderLink)}
-          </nav>
-
-          {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right column: language switcher and the mobile menu button */}
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             <div className="md:hidden">
               <SearchCommand variant="icon" />
             </div>

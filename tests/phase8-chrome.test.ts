@@ -15,14 +15,28 @@ import path from 'node:path';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = (p: string) => readFileSync(path.join(ROOT, p), 'utf-8');
 
-describe('header puts search left and the entries together', () => {
+describe('header centres the search and the four entries as one cluster', () => {
   for (const file of ['components/site-header.tsx', 'components/home-header.tsx']) {
-    test(`${file} keeps one nav group`, () => {
+    test(`${file} renders search + entries inside one centred cluster`, () => {
       const code = src(file);
       assert.ok(!code.includes('LEFT_ITEMS'), 'nav is no longer split around the search');
       assert.ok(!code.includes('RIGHT_ITEMS'), 'nav is no longer split around the search');
-      assert.ok(code.includes('mainNavItems.map(renderLink)'), 'all four entries render in one block');
-      assert.ok(!code.includes('md:justify-center'), 'entries are not centred');
+      assert.ok(
+        code.includes('absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-4 md:flex'),
+        'the whole group is pinned to the page axis with one uniform gap'
+      );
+
+      // The cluster must physically contain both the search and the entries:
+      // if the entries move to the right column the search drifts off centre.
+      const cluster = code.slice(
+        code.indexOf('absolute left-1/2 top-1/2'),
+        code.indexOf('ml-auto flex items-center')
+      );
+      assert.ok(cluster.includes('<SearchCommand variant="bar" />'), 'search lives in the cluster');
+      assert.ok(cluster.includes('mainNavItems.map(renderLink)'), 'entries live in the same cluster');
+      // One gap on the row means the search-to-entry spacing equals the
+      // entry-to-entry spacing.
+      assert.ok(!cluster.includes('gap-3 lg:gap-5'), 'no second, different gap inside the cluster');
     });
 
     test(`${file} renders the search bar before the nav`, () => {

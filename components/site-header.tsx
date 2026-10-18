@@ -19,13 +19,16 @@ import { mainNavItems } from '@/lib/nav-items';
  * Global inner-page header. Mounted in the root layout; hidden on the
  * homepage (home header owns that) and on /admin (admin has its own shell).
  *
- * Phase 7: four entries split two-and-two around the search trigger, so the
- * search sits at the visual centre of the bar instead of being parked next to
- * the language switcher.
+ * Layout: the search bar and the four entries form ONE cluster. All five
+ * items are siblings of a single flex row with a single gap, so the spacing
+ * between the search and "Projects" is the same as the spacing between any
+ * two entries. The cluster itself is pinned to the horizontal centre of the
+ * bar with `absolute left-1/2 -translate-x-1/2`, which keeps the GROUP on the
+ * page axis regardless of how wide the logo or the language switcher is.
  *
- * Follow-up: splitting the entries around the search read as two stranded
- * pairs. The bar is now logo + search on the left, the four entries as one
- * block on the right, and the language switcher collapsed into a dropdown.
+ * Do not split the entries around the search, do not park the entries in the
+ * right column, and do not centre only the search - the five items move
+ * together as one centred cluster.
  */
 
 export function SiteHeader() {
@@ -43,7 +46,7 @@ export function SiteHeader() {
     <Link
       key={item.href}
       href={item.href}
-      className={`group relative font-serif text-sm uppercase tracking-[0.15em] transition-colors duration-300 py-2 inline-block ${
+      className={`group relative font-serif text-sm uppercase tracking-[0.15em] transition-colors duration-300 py-2 inline-block whitespace-nowrap ${
         isActive(item.href) ? 'text-ink' : 'text-ink-2 hover:text-ink'
       }`}
     >
@@ -62,7 +65,7 @@ export function SiteHeader() {
       style={{ backgroundColor: 'rgba(10, 10, 10, 0.85)' }}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center gap-3 md:gap-4 lg:gap-5">
+        <div className="relative flex h-16 items-center gap-3">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity shrink-0">
             <div className="relative h-8 w-8 md:h-9 md:w-9">
@@ -88,20 +91,21 @@ export function SiteHeader() {
             </span>
           </Link>
 
-          {/* Search sits next to the logo, out of the entry row */}
-          <div className="hidden w-[190px] shrink-0 md:block lg:w-[300px]">
-            <SearchCommand variant="bar" />
+          {/*
+            The centred cluster: search + four entries.
+            One flex row, one gap, so every spacing in the group is identical.
+            Absolutely pinned to the page axis so the group stays centred
+            whatever the logo and the switcher measure.
+          */}
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-4 md:flex lg:gap-6">
+            <div className="w-[130px] shrink-0 lg:w-[180px] xl:w-[220px]">
+              <SearchCommand variant="bar" />
+            </div>
+            {mainNavItems.map(renderLink)}
           </div>
 
-          <div className="flex-1" />
-
-          {/* Desktop Navigation - all four entries on the right */}
-          <nav className="hidden md:flex md:items-center md:gap-3 lg:gap-8">
-            {mainNavItems.map(renderLink)}
-          </nav>
-
-          {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right column: language switcher and the mobile menu button */}
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             <div className="md:hidden">
               <SearchCommand variant="icon" />
             </div>
