@@ -32,6 +32,7 @@ import { translateDraftItem } from '@/lib/ai-translator';
 import { requireMachineKey } from '@/lib/security/machine-auth';
 import { describeError } from '@/lib/security/http';
 import { isDuplicateFileHash } from '@/lib/catalog-id';
+import { deriveIngestDraftDates } from '@/lib/provenance';
 
 /**
  * URL 清洗函数 - 去除查询参数和片段
@@ -267,6 +268,23 @@ export async function POST(request: NextRequest) {
     const initialTitle = buildMultilingualContent(body.title);
     const initialDescription = buildMultilingualContent(body.description);
 
+    // Date semantics (phase 6 batch 4): event_date is a curation claim, not a
+    // timestamp. A caller that knows only "now" must not turn the collection
+    // moment into an event date - that is exactly how 9 images ended up dated
+    // 2026-03-20 on the public chronicle. The supplied value is kept as
+    // raw_event_date (evidence) and event_date stays NULL until a curator
+    // confirms it.
+    const draftDates = deriveIngestDraftDates({
+      eventDate: body.event_date,
+      rawEventDate: body.raw_event_date,
+    });
+    if (body.event_date && draftDates.event_date === null) {
+      console.warn(
+        '[INGEST_API] event_date demoted to raw_event_date (no source timestamp supplied):',
+        maskUrlForLog(body.source_url)
+      );
+    }
+
     const { data: newDraft, error: createError } = await supabaseAdmin
       .from('draft_items')
       .insert({
@@ -277,8 +295,8 @@ export async function POST(request: NextRequest) {
         ingestion_stage: 'translating' as IngestionStage,
         title: initialTitle,
         description: initialDescription,
-        event_date: body.event_date || null,
-        raw_event_date: body.raw_event_date || null,
+        event_date: draftDates.event_date,
+        raw_event_date: draftDates.raw_event_date,
         tags: body.tags || [],
         media_type: detectedMediaType,
         r2_media_url: r2Url,
@@ -430,6 +448,7 @@ export async function POST(request: NextRequest) {
         ingestion_stage: 'ready',
         message: 'Draft item created and processed successfully',
         is_duplicate: false,
+        date_needs_curation: draftDates.date_needs_curation,
       },
       { status: 201 }
     );

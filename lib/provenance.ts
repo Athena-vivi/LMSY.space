@@ -62,3 +62,67 @@ export function deriveTelegramDraftDates(messageDate: Date): {
     raw_event_date: messageDate.toISOString(),
   };
 }
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Date fields for a generic ingest request (phase 6 batch 4).
+ *
+ * The bug this prevents: a collector that only knows "now" sent today's date
+ * as event_date, so 35/35 weibo drafts were dated on their collection day and
+ * one batch of 9 images reached the public chronicle as a 2026 event.
+ *
+ * Rule - no extra work for callers that supply a real date:
+ *  - both fields present  -> event_date is a claim, raw_event_date is evidence
+ *  - only a PAST date     -> accepted as the event date, copied to raw as well
+ *  - only TODAY's date    -> that is the caller's clock, not an event; it goes
+ *                            to raw_event_date and event_date stays NULL until
+ *                            a curator confirms the real date
+ *  - nothing              -> both NULL, needs curation
+ */
+export function deriveIngestDraftDates(input: {
+  eventDate?: string | null;
+  rawEventDate?: string | null;
+  /** YYYY-MM-DD, defaults to the current UTC date. Injectable for tests. */
+  today?: string;
+}): {
+  event_date: string | null;
+  raw_event_date: string | null;
+  date_needs_curation: boolean;
+} {
+  const event = typeof input.eventDate === 'string' ? input.eventDate.trim() : '';
+  const raw = typeof input.rawEventDate === 'string' ? input.rawEventDate.trim() : '';
+  const today = input.today || new Date().toISOString().split('T')[0];
+  const validEvent = ISO_DATE.test(event) ? event : null;
+
+  if (raw) {
+    return {
+      event_date: validEvent,
+      raw_event_date: raw,
+      date_needs_curation: validEvent === null,
+    };
+  }
+
+  if (validEvent && validEvent !== today) {
+    return {
+      event_date: validEvent,
+      raw_event_date: validEvent,
+      date_needs_curation: false,
+    };
+  }
+
+  if (validEvent) {
+    // Exactly the collection day with no source timestamp: clock value only.
+    return {
+      event_date: null,
+      raw_event_date: validEvent,
+      date_needs_curation: true,
+    };
+  }
+
+  return {
+    event_date: null,
+    raw_event_date: event ? event : null,
+    date_needs_curation: true,
+  };
+}
