@@ -1,0 +1,363 @@
+/**
+ * Phase-5 tests: search contract, ranking, routing and entry hygiene.
+ * Contract: docs/architecture/20261017-search-contract.md
+ *
+ * The ranking/mapping logic lives in lib/search-results.ts as pure functions
+ * (no path aliases) so it is directly testable. DB-coupled behaviour (the
+ * visibility gate actually filtering) is source-asserted here and verified by
+ * live smoke checks against the dev server.
+ */
+import { test, describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const src = (p: string) => readFileSync(path.join(ROOT, p), 'utf-8');
+
+import {
+  buildSearchResults,
+  mapGalleryRow,
+  mapProjectRow,
+  projectHref,
+  scoreResult,
+  compareResults,
+  buildExhibitionResults,
+  SCORE_EXACT,
+  SCORE_PREFIX,
+  SCORE_CONTAINS,
+  SCORE_METADATA,
+  type GalleryRow,
+  type ProjectRow,
+  type SearchResult,
+} from '../lib/search-results.ts';
+import { sanitizeSearchTerm } from '../lib/search-term.ts';
+
+const PROJECT = (over: Partial<ProjectRow> = {}): ProjectRow => ({
+  id: '11111111-1111-1111-1111-111111111111',
+  title: 'Affair',
+  description: 'A drama series',
+  category: 'series',
+  release_date: '2025-10-10',
+  ...over,
+});
+
+const ASSET = (over: Partial<GalleryRow> = {}): GalleryRow => ({
+  id: '22222222-2222-2222-2222-222222222222',
+  caption: 'Photo from Lookmhee',
+  tag: 'Magazine',
+  catalog_id: 'MAG237-01-001',
+  image_url: 'gallery/photo.jpg',
+  event_date: '2025-11-08',
+  project_id: '11111111-1111-1111-1111-111111111111',
+  ...over,
+});
+
+// ---- Contract mapping -------------------------------------------------------
+
+describe('search contract mapping', () => {
+  test('project href: editorial -> /editorial/[id], others -> /projects/[id]', () => {
+    assert.equal(projectHref('editorial', 'abc'), '/editorial/abc');
+    assert.equal(projectHref('series', 'abc'), '/projects/abc');
+    assert.equal(projectHref(null, 'abc'), '/projects/abc');
+  });
+
+  test('project rows map to the full contract', () => {
+    const r = mapProjectRow(PROJECT())!;
+    assert.equal(r.type, 'project');
+    assert.equal(r.id, '11111111-1111-1111-1111-111111111111');
+    assert.equal(r.title, 'Affair');
+    assert.equal(r.href, '/projects/11111111-1111-1111-1111-111111111111');
+    assert.equal(r.description, 'A drama series');
+    assert.equal(r.date, '2025-10-10');
+    assert.equal(r.category, 'series');
+  });
+
+  test('missing optional project fields are omitted, never fabricated', () => {
+    const r = mapProjectRow(PROJECT({ description: null, release_date: null, category: null }))!;
+    assert.equal(r.description, undefined);
+    assert.equal(r.date, undefined);
+    assert.equal(r.category, undefined);
+    assert.ok(!('description' in r && r.description === ''));
+  });
+
+  test('editorial project maps to /editorial/[id] with type=project', () => {
+    const r = mapProjectRow(PROJECT({ category: 'editorial' }))!;
+    assert.equal(r.type, 'project');
+    assert.equal(r.href, '/editorial/11111111-1111-1111-1111-111111111111');
+  });
+
+  test('gallery title fallback chain: caption -> catalog_id -> #tag', () => {
+    assert.equal(mapGalleryRow(ASSET())!.title, 'Photo from Lookmhee');
+    assert.equal(mapGalleryRow(ASSET({ caption: null }))!.title, 'MAG237-01-001');
+    assert.equal(mapGalleryRow(ASSET({ caption: null, catalog_id: null }))!.title, '#Magazine');
+  });
+
+  test('assets without any real title field are excluded (no Untitled)', () => {
+    const r = mapGalleryRow(ASSET({ caption: '', catalog_id: null, tag: null }));
+    assert.equal(r, null);
+    const blankCaption = mapGalleryRow(ASSET({ caption: '   ' }));
+    assert.equal(blankCaption!.title, 'MAG237-01-001', 'whitespace-only caption falls through');
+  });
+
+  test('gallery href is the real asset uuid anchor', () => {
+    const r = mapGalleryRow(ASSET())!;
+    assert.equal(r.href, '/gallery#22222222-2222-2222-2222-222222222222');
+    assert.equal(r.type, 'gallery');
+    assert.equal(r.image, 'gallery/photo.jpg');
+    assert.equal(r.date, '2025-11-08');
+    assert.equal(r.category, 'Magazine');
+  });
+
+  test('no catalog_id is ever invented for anchorless assets', () => {
+    const r = mapGalleryRow(ASSET({ caption: 'Still', catalog_id: null }))!;
+    assert.ok(!r.href.includes('MAG'), 'href only uses the db uuid');
+  });
+});
+
+// ---- Ranking ----------------------------------------------------------------
+
+describe('search ranking', () => {
+  test('exact > prefix > contains > metadata', () => {
+    assert.ok(scoreResult({ type: 'project', id: 'a', title: 'affair', href: '' }, 'affair') === SCORE_EXACT);
+    assert.ok(scoreResult({ type: 'project', id: 'a', title: 'affair season', href: '' }, 'affair') === SCORE_PREFIX);
+    assert.ok(scoreResult({ type: 'project', id: 'a', title: 'the affair story', href: '' }, 'affair') === SCORE_CONTAINS);
+    assert.ok(scoreResult({ type: 'project', id: 'a', title: 'unrelated', href: '', category: 'affair' }, 'affair') === SCORE_METADATA);
+  });
+
+  test('scoring is case-insensitive', () => {
+    assert.equal(scoreResult({ type: 'gallery', id: 'a', title: 'Photo From Radar', href: '' }, 'photo from'), SCORE_PREFIX);
+  });
+
+  test('exhibition entries keep the documented metadata score', () => {
+    const result: SearchResult = { type: 'exhibition', id: 'drama', title: 'Drama Archive', href: '/exhibitions/category/drama' };
+    assert.equal(scoreResult(result, 'drama archive'), SCORE_METADATA);
+  });
+
+  test('same score: project before exhibition before gallery', () => {
+    const term = 'x';
+    const a: SearchResult = { type: 'project', id: '1', title: 'unrelated project', href: '' };
+    const b: SearchResult = { type: 'exhibition', id: '2', title: 'unrelated exhibition', href: '' };
+    const c: SearchResult = { type: 'gallery', id: '3', title: 'unrelated gallery', href: '' };
+    assert.ok(compareResults(a, b, term) < 0);
+    assert.ok(compareResults(b, c, term) < 0);
+    assert.ok(compareResults(a, c, term) < 0);
+  });
+
+  test('same score/type: real date desc, missing date sinks, then id', () => {
+    const newer: SearchResult = { type: 'gallery', id: 'b', title: 'x', href: '', date: '2026-01-01' };
+    const older: SearchResult = { type: 'gallery', id: 'a', title: 'x', href: '', date: '2025-01-01' };
+    const noDate: SearchResult = { type: 'gallery', id: 'c', title: 'x', href: '' };
+    const sorted = [noDate, older, newer].sort((m, n) => compareResults(m, n, 'x'));
+    assert.deepEqual(sorted.map((r) => r.id), ['b', 'a', 'c']);
+  });
+
+  test('identical input produces a stable order', () => {
+    const term = 'photo';
+    const rows = [ASSET({ id: 'a' }), ASSET({ id: 'b' }), ASSET({ id: 'c' })];
+    const once = buildSearchResults({ term, projectRows: [], galleryRows: rows, categoryCounts: {}, lang: 'en' });
+    const twice = buildSearchResults({ term, projectRows: [], galleryRows: rows, categoryCounts: {}, lang: 'en' });
+    assert.deepEqual(once.map((r) => r.id), twice.map((r) => r.id));
+  });
+});
+
+// ---- Dedup & scope ----------------------------------------------------------
+
+describe('search dedup and scope', () => {
+  test('same type+id appears once', () => {
+    const rows = [ASSET(), ASSET()];
+    const results = buildSearchResults({ term: 'photo', projectRows: [], galleryRows: rows, categoryCounts: {}, lang: 'en' });
+    assert.equal(results.length, 1);
+  });
+
+  test('a project and its image both appear (different types, not duplicates)', () => {
+    const results = buildSearchResults({
+      term: 'affair',
+      projectRows: [PROJECT()],
+      galleryRows: [ASSET()],
+      categoryCounts: { series: 1 },
+      lang: 'en',
+    });
+    assert.equal(results.length, 2);
+    assert.ok(results.some((r) => r.type === 'project'));
+    assert.ok(results.some((r) => r.type === 'gallery'));
+  });
+
+  test('exhibition entries only for categories with visible works', () => {
+    const results = buildSearchResults({
+      term: 'drama',
+      projectRows: [],
+      galleryRows: [],
+      categoryCounts: { series: 3, travel: 0 },
+      lang: 'en',
+    });
+    assert.equal(results.length, 1);
+    assert.equal(results[0].type, 'exhibition');
+    assert.equal(results[0].id, 'drama');
+    assert.equal(results[0].href, '/exhibitions/category/drama');
+    assert.equal(results[0].description, 'Television series and dramatic works featuring LMSY');
+  });
+
+  test('exhibition entries match localized labels too', () => {
+    const zh = buildSearchResults({ term: '剧集', projectRows: [], galleryRows: [], categoryCounts: { series: 2 }, lang: 'zh' });
+    assert.equal(zh.length, 1);
+    assert.equal(zh[0].href, '/exhibitions/category/drama');
+    const th = buildSearchResults({ term: 'เวที', projectRows: [], galleryRows: [], categoryCounts: { appearance: 1 }, lang: 'th' });
+    assert.equal(th.length, 1);
+  });
+
+  test('zero-work categories never get exhibition entries', () => {
+    const results = buildExhibitionResults('travel', { travel: 0 }, 'en');
+    assert.equal(results.length, 0);
+  });
+
+  test('caps: at most 10 per type and 15 total', () => {
+    const manyAssets = Array.from({ length: 20 }, (_, i) => ASSET({ id: String(i), caption: `photo ${i}` }));
+    const manyProjects = Array.from({ length: 20 }, (_, i) => PROJECT({ id: String(i), title: `affair ${i}` }));
+    const results = buildSearchResults({ term: 'a', projectRows: manyProjects, galleryRows: manyAssets, categoryCounts: {}, lang: 'en' });
+    assert.ok(results.length <= 15);
+    assert.ok(results.filter((r) => r.type === 'project').length <= 10);
+    assert.ok(results.filter((r) => r.type === 'gallery').length <= 10);
+  });
+});
+
+// ---- API wiring (source assertions) -----------------------------------------
+
+describe('search api visibility wiring', () => {
+  const routeSrc = src('app/api/search/route.ts');
+
+  test('gallery_assets query is gated by the public project id set', () => {
+    assert.ok(routeSrc.includes('applyPublicProjectFilter'), 'uses the shared visibility rule');
+    assert.ok(routeSrc.includes(".in('project_id', publicIds)"), 'image search filtered to visible projects');
+    assert.ok(routeSrc.includes('publicIds.length === 0'), 'empty id set fails closed');
+  });
+
+  test('hidden-container radar photos can no longer leak (P5-1 regression guard)', () => {
+    // The old query had no project constraint at all; assert the constraint
+    // sits on the gallery_assets branch, not only on projects.
+    const galleryFn = routeSrc.slice(routeSrc.indexOf('fetchGalleryCandidates'), routeSrc.indexOf('const projectQuery'));
+    assert.ok(galleryFn.includes(".in('project_id', publicIds)"));
+  });
+
+  test('projects query keeps the shared visibility filter', () => {
+    const projectQuery = routeSrc.slice(routeSrc.indexOf('const projectQuery'), routeSrc.indexOf('const [galleryRows'));
+    assert.ok(projectQuery.includes('applyPublicProjectFilter'));
+  });
+
+  test('no fabricated Untitled fallback anywhere in the search path', () => {
+    assert.ok(!routeSrc.includes('Untitled'), 'route does not fabricate titles');
+    const resultsSrc = src('lib/search-results.ts');
+    assert.ok(!resultsSrc.includes('Untitled'), 'mapping does not fabricate titles');
+  });
+
+  test('draft_items never enters the search route', () => {
+    assert.ok(!routeSrc.includes('draft_items'));
+  });
+
+  test('sanitizer strips PostgREST grammar and quote delimiters', () => {
+    assert.equal(sanitizeSearchTerm('  A"b,c(%)_*  '), 'abc');
+    assert.equal(sanitizeSearchTerm("Lookmhee's"), 'lookmhees');
+  });
+
+  test('candidate pools have deterministic ordering before their limits', () => {
+    const orderCount = routeSrc.split(".order('id', { ascending: true })").length - 1;
+    assert.equal(orderCount, 2, 'gallery and project candidates both order by id');
+    assert.ok(routeSrc.includes('.limit(100)'), 'gallery pool is large enough not to truncate recall');
+    assert.ok(routeSrc.includes('.limit(50)'), 'project pool is large enough not to truncate recall');
+  });
+});
+
+// ---- Frontend hygiene ---------------------------------------------------------
+
+describe('search frontend', () => {
+  const commandSrc = src('components/search-command.tsx');
+
+  test('schedule placeholder is gone from results and Quick Access', () => {
+    assert.ok(!commandSrc.includes("'schedule'"), 'no schedule result type');
+    assert.ok(!commandSrc.includes("url: '/schedule'"), 'no schedule Quick Access entry');
+  });
+
+  test('three states are distinct: loading, no results, error', () => {
+    assert.ok(commandSrc.includes('isLoading'));
+    assert.ok(commandSrc.includes('isError'));
+    assert.ok(commandSrc.includes("t(language, 'search.error')"));
+    assert.ok(commandSrc.includes("t(language, 'search.noResults')"));
+  });
+
+  test('navigation uses result.href (contract), not title inference', () => {
+    assert.ok(commandSrc.includes('navigateToResult(result.href)'));
+    assert.ok(commandSrc.includes('TYPE_ICON[result.type]'));
+  });
+
+  test('result replacement resets keyboard selection and ignores stale requests', () => {
+    assert.ok(commandSrc.includes('setSelectedIndex(0)'));
+    assert.ok(commandSrc.includes('results[selectedIndex] ?? results[0]'));
+    assert.ok(commandSrc.includes('requestId !== requestIdRef.current'));
+  });
+
+  test('all copy goes through the three-language keys', () => {
+    const languages = src('lib/languages.ts');
+    for (const key of [
+      'search.placeholder',
+      'search.open',
+      'search.clear',
+      'search.noResults',
+      'search.noResultsHint',
+      'search.error',
+      'search.quickAccess',
+      'search.typeProject',
+      'search.typeGallery',
+      'search.typeExhibition',
+      'search.footerNavigate',
+      'search.footerEnter',
+      'search.footerEsc',
+    ]) {
+      const en = languages.includes(`'${key}': '`);
+      assert.ok(en, `key ${key} exists`);
+      const count = languages.split(`'${key}':`).length - 1;
+      assert.equal(count, 3, `key ${key} present in all three language blocks`);
+    }
+  });
+
+  test('Quick Access labels and search controls are localized', () => {
+    assert.ok(commandSrc.includes("t(language, 'nav.gallery')"));
+    assert.ok(commandSrc.includes("t(language, 'nav.projects')"));
+    assert.ok(commandSrc.includes("t(language, 'nav.profiles')"));
+    assert.ok(commandSrc.includes("aria-label={t(language, 'search.open')}"));
+    assert.ok(commandSrc.includes("aria-label={t(language, 'search.clear')}"));
+  });
+});
+
+// ---- Route hygiene ------------------------------------------------------------
+
+describe('related routing fixes', () => {
+  test('sitemap advertises the canonical editorial entry', () => {
+    const sitemapSrc = src('app/sitemap.ts');
+    assert.ok(
+      sitemapSrc.includes("project.category === 'editorial' ? `/editorial/${project.id}` : `/projects/${project.id}`"),
+      'editorial projects are listed under /editorial/[id]'
+    );
+  });
+
+  test('chronicle image groups have a deterministic within-group order', () => {
+    const timelineSrc = src('lib/timeline.ts');
+    const assetQuery = timelineSrc.slice(timelineSrc.indexOf('.from(\'gallery_assets\')'), timelineSrc.indexOf('if (assetsError)'));
+    assert.ok(assetQuery.includes(".order('event_date'"), 'assets ordered by event_date');
+    assert.ok(assetQuery.includes(".order('catalog_id'"), 'then catalog_id');
+    assert.ok(assetQuery.includes(".order('id'"), 'then id (total order)');
+  });
+
+  test('gallery handles hash navigation after the page is already mounted', () => {
+    const gallerySrc = src('app/gallery/page.tsx');
+    assert.ok(gallerySrc.includes("window.addEventListener('hashchange'"));
+    assert.ok(gallerySrc.includes("setSelectedTag('All')"));
+    assert.ok(gallerySrc.includes('setPendingAnchor(decodeURIComponent'));
+  });
+
+  test('schedule route itself is untouched (only the search entry was removed)', () => {
+    const scheduleSrc = src('app/schedule/page.tsx');
+    assert.ok(scheduleSrc.includes('scheduleItems'), 'page keeps its (empty) data contract');
+    assert.ok(scheduleSrc.includes("t(language, 'schedule.noEvents')"), 'honest empty state stays');
+  });
+});

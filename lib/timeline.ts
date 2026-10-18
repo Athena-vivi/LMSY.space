@@ -107,7 +107,13 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
         'project_id',
         rows.map((r) => r.id)
       )
-      .not('event_date', 'is', null);
+      .not('event_date', 'is', null)
+      // Stable within-group order (phase-4 final acceptance finding):
+      // PostgREST gives no ordering guarantee without ORDER BY, which made
+      // thumbnails/lightbox sequences jitter between requests.
+      .order('event_date', { ascending: true })
+      .order('catalog_id', { ascending: true })
+      .order('id', { ascending: true });
 
     if (assetsError) {
       console.error('[CHRONICLE] Failed to fetch public assets:', assetsError);

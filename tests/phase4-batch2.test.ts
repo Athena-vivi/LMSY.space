@@ -140,8 +140,15 @@ describe('editorial canonical detail entry', () => {
   });
 
   test('search results follow the same rule', () => {
+    // Phase 5 moved the mapping into the pure module lib/search-results.ts;
+    // the route only feeds rows into buildSearchResults().
     const searchSrc = src('app/api/search/route.ts');
-    assert.ok(searchSrc.includes("item.category === 'editorial' ? `/editorial/${item.id}`"));
+    assert.ok(searchSrc.includes('buildSearchResults'), 'route uses the contract builder');
+    const resultsSrc = src('lib/search-results.ts');
+    assert.ok(
+      resultsSrc.includes("category === 'editorial' ? `/editorial/${id}` : `/projects/${id}`"),
+      'editorial canonical entry lives in the shared mapping'
+    );
   });
 
   test('no fictional collection numbers on editorial surfaces', () => {

@@ -154,6 +154,21 @@ export const translations = {
     'editorial.emptyTitle': 'No editorials available yet',
     'editorial.emptyDesc': 'Curated magazine features will appear here once published.',
 
+    // Search (phase 5)
+    'search.placeholder': 'Search photos, projects…',
+    'search.open': 'Open search',
+    'search.clear': 'Clear search',
+    'search.noResults': 'No results found',
+    'search.noResultsHint': 'Try different keywords or browse the gallery',
+    'search.error': 'Search is temporarily unavailable. Please try again later.',
+    'search.quickAccess': 'Quick Access',
+    'search.typeProject': 'Project',
+    'search.typeGallery': 'Photo',
+    'search.typeExhibition': 'Collection',
+    'search.footerNavigate': 'Use arrows to navigate',
+    'search.footerEnter': 'Enter to open',
+    'search.footerEsc': 'Esc to close',
+
     // Whispers (community message wall)
     'whispers.subtitle': 'Collecting the Resonance of Besties',
     'whispers.empty': 'Searching for Echoes...',
@@ -379,6 +394,21 @@ export const translations = {
     'editorial.emptyTitle': '暂无可展示的杂志特辑',
     'editorial.emptyDesc': '正式发布的杂志特辑会在这里出现。',
 
+    // Search (phase 5)
+    'search.placeholder': '搜索图片、作品…',
+    'search.open': '打开搜索',
+    'search.clear': '清空搜索',
+    'search.noResults': '未找到相关结果',
+    'search.noResultsHint': '换个关键词，或去画廊逛逛',
+    'search.error': '搜索暂时不可用，请稍后再试。',
+    'search.quickAccess': '快速访问',
+    'search.typeProject': '作品',
+    'search.typeGallery': '图片',
+    'search.typeExhibition': '主题展',
+    'search.footerNavigate': '方向键选择',
+    'search.footerEnter': 'Enter 打开',
+    'search.footerEsc': 'Esc 关闭',
+
     // Whispers (community message wall)
     'whispers.subtitle': '收集挚友们的共鸣',
     'whispers.empty': '正在寻找回声…',
@@ -603,6 +633,21 @@ export const translations = {
     // Editorial empty state
     'editorial.emptyTitle': 'ยังไม่มีนิตยสารพิเศษที่แสดงได้',
     'editorial.emptyDesc': 'นิตยสารพิเศษจะปรากฏที่นี่เมื่อเผยแพร่อย่างเป็นทางการ',
+
+    // Search (phase 5)
+    'search.placeholder': 'ค้นหารูปภาพ ผลงาน…',
+    'search.open': 'เปิดการค้นหา',
+    'search.clear': 'ล้างคำค้นหา',
+    'search.noResults': 'ไม่พบผลลัพธ์',
+    'search.noResultsHint': 'ลองใช้คำค้นหาอื่น หรือเลือกดูหอศิลป์',
+    'search.error': 'ขณะนี้ค้นหาไม่ได้ กรุณาลองใหม่ภายหลัง',
+    'search.quickAccess': 'ทางลัด',
+    'search.typeProject': 'ผลงาน',
+    'search.typeGallery': 'รูปภาพ',
+    'search.typeExhibition': 'คอลเลกชัน',
+    'search.footerNavigate': 'ใช้ลูกศรเพื่อเลือก',
+    'search.footerEnter': 'กด Enter เพื่อเปิด',
+    'search.footerEsc': 'กด Esc เพื่อปิด',
 
     // Whispers (community message wall)
     'whispers.subtitle': 'สะสมเสียงสะท้อนของเบสตี้',

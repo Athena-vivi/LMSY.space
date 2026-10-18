@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ZoomIn } from 'lucide-react';
 import Image from 'next/image';
@@ -117,20 +117,41 @@ export default function GalleryPage() {
   // Search results link to /gallery#<asset-id>; remember the anchor so the
   // grid can auto-load pages until the target image is present, then scroll.
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
+  const selectedTagRef = useRef(selectedTag);
   const { language } = useLanguage();
+
+  useEffect(() => {
+    selectedTagRef.current = selectedTag;
+  }, [selectedTag]);
 
   useEffect(() => {
     let active = true;
     fetchPublicProjectIds().then((ids) => {
       if (active) setProjectIds(ids);
     });
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    if (hash && hash.length > 1) {
-      setPendingAnchor(decodeURIComponent(hash.slice(1)));
-    }
     return () => {
       active = false;
     };
+  }, []);
+
+  // Hash navigation can happen after this client page has already mounted
+  // (for example, selecting a search result while already on /gallery).
+  // Listen for those changes, reset a restrictive tag filter, then let the
+  // paging effect load until the asset uuid becomes available.
+  useEffect(() => {
+    const syncAnchorFromHash = () => {
+      const hash = window.location.hash;
+      if (!hash || hash.length <= 1) return;
+      if (selectedTagRef.current !== 'All') {
+        setLoading(true);
+        setSelectedTag('All');
+      }
+      setPendingAnchor(decodeURIComponent(hash.slice(1)));
+    };
+
+    syncAnchorFromHash();
+    window.addEventListener('hashchange', syncAnchorFromHash);
+    return () => window.removeEventListener('hashchange', syncAnchorFromHash);
   }, []);
 
   const mergeProjectRefs = useCallback(async (rows: GalleryItem[]) => {
@@ -193,10 +214,12 @@ export default function GalleryPage() {
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setPendingAnchor(null);
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
       return;
     }
     if (!hasMore) {
       setPendingAnchor(null);
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
       return;
     }
     if (!loadingMore) {
@@ -218,7 +241,7 @@ export default function GalleryPage() {
     { key: 'gallery.tagStage', value: 'STAGE' },
     { key: 'gallery.tagStill', value: 'STILL' },
     { key: 'gallery.tagUntagged', value: UNTAGGED },
-  ];
+  ] as const;
 
   const filteredImages = images;
 
@@ -274,7 +297,7 @@ export default function GalleryPage() {
                     : 'bg-muted text-ink-2 border-border hover:border-lmsy-blue hover:text-lmsy-blue'
                 }`}
               >
-                #{t(language, tag.key as any)}
+                #{t(language, tag.key)}
               </button>
             ))}
           </motion.div>

@@ -34,21 +34,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic project detail routes. `projects` has created_at (no updated_at).
   // Only visitor-facing projects are listed (see lib/project-visibility.ts):
   // back-end containers (ingestion batches, milestone archives) must not
-  // advertise their URLs to crawlers.
+  // advertise their URLs to crawlers. Editorial works advertise their
+  // canonical entry /editorial/[id] (phase-4 batch 2) - listing /projects/[id]
+  // for them would publish a URL that only forwards.
   let projectRoutes: MetadataRoute.Sitemap = [];
   try {
     const { data } = await applyPublicProjectFilter(
       getSupabaseAdmin()
         .schema('lmsy_archive')
         .from('projects')
-        .select('id, created_at')
+        .select('id, category, created_at')
     );
-    projectRoutes = (data || []).map((project: { id: string; created_at: string | null }) => ({
-      url: `${SITE_URL}/projects/${project.id}`,
-      lastModified: project.created_at ? new Date(project.created_at) : now,
-      changeFrequency: 'monthly' as const,
-      priority: 0.6,
-    }));
+    projectRoutes = (data || []).map(
+      (project: { id: string; category?: string | null; created_at: string | null }) => ({
+        url: `${SITE_URL}${project.category === 'editorial' ? `/editorial/${project.id}` : `/projects/${project.id}`}`,
+        lastModified: project.created_at ? new Date(project.created_at) : now,
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      })
+    );
   } catch {
     // A sitemap failure must not break the route; fall back to static entries.
   }

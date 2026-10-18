@@ -2,28 +2,78 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, FileImage, FolderKanban, Calendar, Hash } from 'lucide-react';
+import { Search, X, FileImage, FolderKanban, LayoutGrid, Hash, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useKeyPress } from '@/lib/hooks';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
+import { resolveImageUrl } from '@/lib/image-url';
+import type { SearchResult, SearchResultType } from '@/lib/search-results';
 
-interface SearchResult {
-  id: string;
-  type: 'gallery' | 'project' | 'schedule';
-  title: string;
-  description?: string | null;
-  subtitle?: string;
-  url: string;
-}
+// Phase 5: consumes the unified search contract (see
+// docs/architecture/20261017-search-contract.md). The type badge/icon comes
+// from result.type only - never inferred from the title text. All copy goes
+// through the three-language keys (search.*), and the Schedule placeholder
+// is gone from Quick Access (the /schedule route itself stays).
+
+const TYPE_ICON: Record<SearchResultType, typeof FileImage> = {
+  project: FolderKanban,
+  gallery: FileImage,
+  exhibition: LayoutGrid,
+};
+
+const TYPE_COLOR: Record<SearchResultType, string> = {
+  gallery: 'text-lmsy-yellow bg-lmsy-yellow/10 border-lmsy-yellow/20',
+  project: 'text-lmsy-blue bg-lmsy-blue/10 border-lmsy-blue/20',
+  exhibition: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+};
+
+const TYPE_LABEL_KEY: Record<SearchResultType, 'search.typeProject' | 'search.typeGallery' | 'search.typeExhibition'> = {
+  project: 'search.typeProject',
+  gallery: 'search.typeGallery',
+  exhibition: 'search.typeExhibition',
+};
 
 export function SearchCommand() {
+  const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
+
+  const resetAndClose = useCallback(() => {
+    requestIdRef.current += 1;
+    setIsOpen(false);
+    setQuery('');
+    setResults([]);
+    setIsLoading(false);
+    setIsError(false);
+    setSelectedIndex(0);
+  }, []);
+
+  const navigateToResult = useCallback((href: string) => {
+    // The gallery reads hash changes to resolve an asset that may live beyond
+    // the first page. Re-dispatch when the same hash is selected twice so the
+    // current /gallery instance does not need to remount.
+    if (typeof window !== 'undefined' && href.startsWith('/gallery#') && window.location.pathname === '/gallery') {
+      const nextHash = href.slice('/gallery'.length);
+      if (window.location.hash === nextHash) {
+        window.dispatchEvent(new Event('hashchange'));
+      } else {
+        window.location.hash = nextHash;
+      }
+    } else {
+      router.push(href);
+    }
+    resetAndClose();
+  }, [resetAndClose, router]);
 
   // Keyboard shortcuts
   useKeyPress(['Meta+k', 'Ctrl+k'], (e) => {
@@ -32,9 +82,7 @@ export function SearchCommand() {
   });
 
   useKeyPress(['Escape'], () => {
-    setIsOpen(false);
-    setQuery('');
-    setResults([]);
+    if (isOpen) resetAndClose();
   });
 
   useKeyPress(['ArrowDown'], (e) => {
@@ -54,10 +102,8 @@ export function SearchCommand() {
   useKeyPress(['Enter'], (e) => {
     if (isOpen && results.length > 0) {
       e.preventDefault();
-      router.push(results[selectedIndex].url);
-      setIsOpen(false);
-      setQuery('');
-      setResults([]);
+      const selected = results[selectedIndex] ?? results[0];
+      if (selected) navigateToResult(selected.href);
     }
   });
 
@@ -68,28 +114,39 @@ export function SearchCommand() {
     }
   }, [isOpen]);
 
-  // Search function
+  // Search function: three explicit states - loading / no results / error.
   const performSearch = useCallback(async (searchQuery: string) => {
+    const requestId = ++requestIdRef.current;
     if (!searchQuery.trim()) {
       setResults([]);
+      setIsLoading(false);
+      setIsError(false);
+      setSelectedIndex(0);
       return;
     }
 
     setIsLoading(true);
+    setIsError(false);
 
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+      const response = await fetch(
+        `/api/search?q=${encodeURIComponent(searchQuery)}&lang=${language}`
+      );
+      if (!response.ok) throw new Error(`search failed: ${response.status}`);
       const data = await response.json();
-
-      setResults(data.results || []);
+      if (requestId !== requestIdRef.current) return;
+      setResults(Array.isArray(data.results) ? data.results : []);
       setSelectedIndex(0);
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Search error:', error);
       setResults([]);
+      setSelectedIndex(0);
+      setIsError(true);
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   // Debounced search
   useEffect(() => {
@@ -112,36 +169,10 @@ export function SearchCommand() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'gallery':
-        return FileImage;
-      case 'project':
-        return FolderKanban;
-      case 'schedule':
-        return Calendar;
-      default:
-        return Search;
-    }
-  };
+  const highlightMatch = (text: string, term: string) => {
+    if (!term) return text;
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'gallery':
-        return 'text-lmsy-yellow bg-lmsy-yellow/10 border-lmsy-yellow/20';
-      case 'project':
-        return 'text-lmsy-blue bg-lmsy-blue/10 border-lmsy-blue/20';
-      case 'schedule':
-        return 'text-purple-500 bg-purple-500/10 border-purple-500/20';
-      default:
-        return 'text-ink-2 bg-muted';
-    }
-  };
-
-  const highlightMatch = (text: string, query: string) => {
-    if (!query) return text;
-
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
 
     return parts.map((part, index) =>
@@ -155,13 +186,19 @@ export function SearchCommand() {
     );
   };
 
+  const quickAccess = [
+    { label: t(language, 'nav.gallery'), url: '/gallery', icon: FileImage, color: 'text-lmsy-yellow' },
+    { label: t(language, 'nav.projects'), url: '/projects', icon: FolderKanban, color: 'text-lmsy-blue' },
+    { label: t(language, 'nav.profiles'), url: '/profiles', icon: Hash, color: 'text-purple-500' },
+  ];
+
   return (
     <>
       {/* Trigger Button - Icon only */}
       <button
         onClick={() => setIsOpen(true)}
         className="p-2 hover:bg-muted rounded-full transition-colors group"
-        aria-label="Search"
+        aria-label={t(language, 'search.open')}
       >
         <Search className="h-5 w-5 text-ink-2 group-hover:text-foreground transition-colors" />
       </button>
@@ -197,17 +234,28 @@ export function SearchCommand() {
                     ref={inputRef}
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search photos, projects, events..."
+                    onChange={(e) => {
+                      requestIdRef.current += 1;
+                      setQuery(e.target.value);
+                      setSelectedIndex(0);
+                      setIsLoading(false);
+                      setIsError(false);
+                    }}
+                    placeholder={t(language, 'search.placeholder')}
                     className="flex-1 bg-transparent text-foreground placeholder:text-ink-2 focus:outline-none text-lg"
                   />
                   {query && (
                     <button
                       onClick={() => {
+                        requestIdRef.current += 1;
                         setQuery('');
                         setResults([]);
+                        setSelectedIndex(0);
+                        setIsLoading(false);
+                        setIsError(false);
                       }}
                       className="p-1 hover:bg-muted rounded-full transition-colors"
+                      aria-label={t(language, 'search.clear')}
                     >
                       <X className="h-5 w-5 text-ink-2" />
                     </button>
@@ -223,34 +271,51 @@ export function SearchCommand() {
                     <div className="flex items-center justify-center py-12">
                       <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-foreground" />
                     </div>
+                  ) : isError ? (
+                    /* Request failure - distinct from "no results" */
+                    <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                      <AlertCircle className="h-12 w-12 text-ink-2 mb-3" />
+                      <p className="text-ink-2">{t(language, 'search.error')}</p>
+                    </div>
                   ) : query && results.length > 0 ? (
                     <div className="p-2">
                       {results.map((result, index) => {
-                        const Icon = getIcon(result.type);
+                        const Icon = TYPE_ICON[result.type];
                         const isSelected = index === selectedIndex;
+                        const imageUrl = result.image ? resolveImageUrl(result.image) : null;
 
                         return (
                           <motion.button
-                            key={result.id}
-                            onClick={() => {
-                              router.push(result.url);
-                              setIsOpen(false);
-                              setQuery('');
-                              setResults([]);
-                            }}
+                            key={`${result.type}-${result.id}`}
+                            onClick={() => navigateToResult(result.href)}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
+                            transition={{ delay: Math.min(index, 8) * 0.05 }}
                             className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all ${
                               isSelected
                                 ? 'bg-gradient-to-r from-lmsy-yellow/10 to-lmsy-blue/10 border border-lmsy-yellow/20'
                                 : 'hover:bg-muted'
                             }`}
                           >
-                            <div className={`p-2 rounded-lg border ${getTypeColor(result.type)}`}>
-                              <Icon className="h-4 w-4" />
+                            {/* Real thumbnail when the contract carries one,
+                                unified empty style otherwise */}
+                            <div className="relative shrink-0 w-11 h-11 rounded-lg overflow-hidden border border-border bg-gradient-to-br from-lmsy-yellow/10 to-lmsy-blue/10">
+                              {imageUrl ? (
+                                <Image
+                                  src={imageUrl}
+                                  alt=""
+                                  fill
+                                  sizes="44px"
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Icon className={`h-4 w-4 ${result.type === 'gallery' ? 'text-lmsy-yellow' : result.type === 'project' ? 'text-lmsy-blue' : 'text-purple-500'}`} />
+                                </div>
+                              )}
                             </div>
-                            <div className="flex-1 text-left">
+                            <div className="flex-1 text-left min-w-0">
                               <div className="font-medium text-foreground">
                                 {highlightMatch(result.title, query)}
                               </div>
@@ -259,12 +324,16 @@ export function SearchCommand() {
                                   {highlightMatch(result.description, query)}
                                 </div>
                               )}
-                              {result.subtitle && (
-                                <div className="text-xs text-ink-2 mt-1 flex items-center gap-1">
-                                      <Hash className="h-3 w-3" />
-                                      {result.subtitle}
-                                </div>
-                              )}
+                              <div className="text-xs text-ink-2 mt-1 flex items-center gap-1.5 flex-wrap">
+                                <span className={`px-1.5 py-0.5 rounded border ${TYPE_COLOR[result.type]}`}>
+                                  {t(language, TYPE_LABEL_KEY[result.type])}
+                                </span>
+                                {result.date && (
+                                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                    {result.date.slice(0, 10)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </motion.button>
                         );
@@ -273,28 +342,23 @@ export function SearchCommand() {
                   ) : query ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                       <Search className="h-12 w-12 text-ink-2 mb-3" />
-                      <p className="text-ink-2">No results found for "{query}"</p>
+                      <p className="text-ink-2">{t(language, 'search.noResults')}</p>
                       <p className="text-sm text-ink-2 mt-1">
-                        Try different keywords or browse the gallery
+                        {t(language, 'search.noResultsHint')}
                       </p>
                     </div>
                   ) : (
                     <div className="p-4">
-                      <p className="text-sm text-ink-2 mb-4">Quick Access</p>
+                      <p className="text-sm text-ink-2 mb-4">{t(language, 'search.quickAccess')}</p>
                       <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { label: 'Gallery', url: '/gallery', icon: FileImage, color: 'text-lmsy-yellow' },
-                          { label: 'Projects', url: '/projects', icon: FolderKanban, color: 'text-lmsy-blue' },
-                          { label: 'Profiles', url: '/profiles', icon: Hash, color: 'text-purple-500' },
-                          { label: 'Schedule', url: '/schedule', icon: Calendar, color: 'text-green-500' },
-                        ].map((item) => {
+                        {quickAccess.map((item) => {
                           const Icon = item.icon;
                           return (
                             <button
                               key={item.label}
                               onClick={() => {
                                 router.push(item.url);
-                                setIsOpen(false);
+                                resetAndClose();
                               }}
                               className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
                             >
@@ -312,10 +376,10 @@ export function SearchCommand() {
                 <div className="px-4 py-2 border-t border-border bg-muted/30">
                   <div className="flex items-center justify-between text-xs text-ink-2">
                     <div className="flex items-center gap-3">
-                      <span className="hidden sm:inline">Use arrows to navigate</span>
-                      <span>Enter to select</span>
+                      <span className="hidden sm:inline">{t(language, 'search.footerNavigate')}</span>
+                      <span>{t(language, 'search.footerEnter')}</span>
                     </div>
-                    <span>Esc to close</span>
+                    <span>{t(language, 'search.footerEsc')}</span>
                   </div>
                 </div>
               </motion.div>

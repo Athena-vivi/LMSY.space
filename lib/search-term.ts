@@ -15,6 +15,6 @@ export function sanitizeSearchTerm(input: string): string {
   return input
     .trim()
     .toLowerCase()
-    .replace(/[,()[\]\\%*_]/g, '')
+    .replace(/[,()[\]\\%*_"']/g, '')
     .slice(0, MAX_SEARCH_TERM_LENGTH);
 }
