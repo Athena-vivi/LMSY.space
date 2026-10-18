@@ -283,7 +283,7 @@ export const translations = {
     // Homepage sections
     'home.collecting': 'Collecting',
     'home.featuredTitle': 'Soul Resonance',
-    'home.featuredSubtitle': '',
+    'home.featuredSubtitle': 'The tacit understanding between her and her',
     'home.interviewPhoto': 'Photo Interviews',
     'home.interviewVideo': 'Video Interviews',
     'home.interviewEntries': '{count} entries',
@@ -652,7 +652,7 @@ export const translations = {
     // Homepage sections
     'home.collecting': '收录中',
     'home.featuredTitle': '灵魂共振',
-    'home.featuredSubtitle': '',
+    'home.featuredSubtitle': '她与她的默契',
     'home.interviewPhoto': '图片采访',
     'home.interviewVideo': '视频采访',
     'home.interviewEntries': '{count} 篇',
@@ -1018,7 +1018,7 @@ export const translations = {
     // Homepage sections
     'home.collecting': 'กำลังรวบรวม',
     'home.featuredTitle': 'เสียงสะท้อนของหัวใจ',
-    'home.featuredSubtitle': '',
+    'home.featuredSubtitle': 'ความเข้าใจกันระหว่างเธอกับเธอ',
     'home.interviewPhoto': 'บทสัมภาษณ์ภาพ',
     'home.interviewVideo': 'บทสัมภาษณ์วิดีโอ',
     'home.interviewEntries': '{count} บท',
