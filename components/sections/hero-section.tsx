@@ -118,18 +118,24 @@ export function HeroSection() {
 
           {/* Right - Hero Image */}
           <Link href="/editorial" className="order-1 lg:order-2 relative block">
+            {/*
+              No filter/blur on this wrapper. A CSS filter makes the browser
+              rasterise the whole subtree into one texture, and on mobile GPUs
+              the animated texture came back partially painted: a hard-edged
+              black block of page background sitting over the top-left of the
+              photo, right across one of their faces. Opacity and scale give
+              the same entrance without the extra layer.
+            */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, filter: 'blur(8px)', y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{
                 opacity: 1,
                 scale: 1,
-                filter: 'blur(0px)',
                 y: [20, 10, 20],
               }}
               transition={{
                 opacity: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
                 scale: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
-                filter: { duration: 1 },
                 y: {
                   duration: 6,
                   repeat: Infinity,
@@ -181,7 +187,7 @@ export function HeroSection() {
                   alt="Lookmhee & Sonya"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="50vw"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
                   onLoad={() => setImageLoaded(true)}
                 />
