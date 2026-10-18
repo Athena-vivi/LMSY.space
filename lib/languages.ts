@@ -288,8 +288,8 @@ export const translations = {
     'home.interviewVideo': 'Video Interviews',
     'home.interviewEntries': '{count} entries',
     'home.timelineTitle': 'Finding Them Again Through Time',
-    'home.timelineSubtitle': 'Some frames belong to the past. Some memories are worth returning to.',
-    'home.peopleTitle': 'The Two, and This Archive',
+    'home.timelineSubtitle': 'Some memories are worth revisiting',
+    'home.peopleTitle': 'Them and the Besties',
     'home.peopleSubtitle': 'It began with loving their work. It continues because the memories are worth keeping.',
 
     // Timeline
@@ -657,8 +657,8 @@ export const translations = {
     'home.interviewVideo': '视频采访',
     'home.interviewEntries': '{count} 篇',
     'home.timelineTitle': '沿着时间，重新遇见',
-    'home.timelineSubtitle': '有些画面已经留在过去，有些记忆，值得再回来看一眼。',
-    'home.peopleTitle': '她们，与这座档案',
+    'home.timelineSubtitle': '有些记忆，值得再次重温',
+    'home.peopleTitle': '她们与 besties',
     'home.peopleSubtitle': '因为喜欢她们，所以开始收藏；因为珍惜这些记忆，所以一直没有停下。',
 
     // Timeline
@@ -1023,8 +1023,8 @@ export const translations = {
     'home.interviewVideo': 'บทสัมภาษณ์วิดีโอ',
     'home.interviewEntries': '{count} บท',
     'home.timelineTitle': 'กลับไปพบพวกเธออีกครั้งผ่านกาลเวลา',
-    'home.timelineSubtitle': 'บางภาพกลายเป็นส่วนหนึ่งของอดีต บางความทรงจำก็ยังควรค่าแก่การกลับไปมองอีกครั้ง',
-    'home.peopleTitle': 'พวกเธอ กับคลังแห่งนี้',
+    'home.timelineSubtitle': 'บางความทรงจำคุ้มค่าที่จะย้อนกลับมา',
+    'home.peopleTitle': 'พวกเธอกับ Besties',
     'home.peopleSubtitle': 'ทุกอย่างเริ่มต้นจากความชื่นชอบในตัวพวกเธอ และดำเนินต่อไปเพราะความทรงจำเหล่านี้มีคุณค่าที่ควรเก็บรักษาไว้',
 
     // Timeline
