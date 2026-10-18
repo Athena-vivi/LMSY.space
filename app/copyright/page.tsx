@@ -114,14 +114,14 @@ export default function CopyrightPage() {
 
             {/* Credits */}
             <motion.div
-              className="bg-gradient-to-br from-lmsy-yellow/5 to-lmsy-blue/5 rounded-2xl p-8 md:p-12 border border-lmsy-yellow/20"
+              className="bg-muted/20 rounded-2xl p-8 md:p-12 border border-border/50"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
               <div className="flex items-start gap-4 mb-6">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-lmsy-yellow/30 to-lmsy-blue/30 flex items-center justify-center">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-lmsy-yellow/20 flex items-center justify-center">
                   <AlertCircle className="w-6 h-6 text-lmsy-yellow" />
                 </div>
                 <h2 className="font-serif text-2xl md:text-3xl font-bold pt-2">
@@ -189,7 +189,7 @@ export default function CopyrightPage() {
             >
               <Link
                 href="/"
-                className="inline-block px-8 py-3 bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-white font-serif rounded-full hover:shadow-lg hover:shadow-lmsy-blue/20 transition-all duration-300"
+                className="inline-block rounded-full border border-white/15 bg-gradient-to-r from-lmsy-yellow/15 to-lmsy-blue/15 px-8 py-3 font-serif text-white transition-all duration-300 hover:border-white/30 hover:from-lmsy-yellow/25 hover:to-lmsy-blue/25"
               >
                 Back to Home
               </Link>
