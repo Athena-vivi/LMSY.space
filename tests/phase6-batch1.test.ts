@@ -9,7 +9,7 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -122,11 +122,22 @@ describe('asset tags reuse the gallery filter vocabulary', () => {
 });
 
 describe('shared navigation copy is not hardcoded', () => {
-  test('both hub-return components read common.backToHub', () => {
-    for (const file of ['components/back-button.tsx', 'components/space-hub-return.tsx']) {
-      const code = src(file);
-      assert.ok(code.includes("t(language, 'common.backToHub')"), `${file} localized`);
-      assert.ok(!code.includes('>Back to Space Hub<'), `${file} has no hardcoded label`);
+  test('no page re-introduces a back-to-hub logo above the title', () => {
+    // The global header is the only navigation entry point now. A second
+    // "back to hub" logo pushed every title block down and duplicated the
+    // logo, so both components and every call site were removed.
+    assert.ok(!existsSync('components/back-button.tsx'));
+    assert.ok(!existsSync('components/space-hub-return.tsx'));
+    const surfaces = [
+      'components/page-intro.tsx',
+      'components/chronicle-chrome.tsx',
+      'app/projects/[id]/project-detail-client.tsx',
+      'app/schedule/page.tsx',
+      'app/resonance/page.tsx',
+      'app/whispers/page.tsx',
+    ];
+    for (const file of surfaces) {
+      assert.ok(!src(file).includes('BackButton'), `${file} has no back logo`);
     }
   });
 
@@ -228,7 +239,6 @@ describe('new copy exists in all three languages', () => {
     'common.source',
     'common.noImage',
     'common.curatorNote',
-    'common.backToHub',
     'common.close',
     'common.previous',
     'nav.copyright',
@@ -464,7 +474,10 @@ describe('shared page intro', () => {
     assert.ok(src('app/gallery/page.tsx').includes('<PageIntro'));
     const intro = src('components/page-intro.tsx');
     assert.ok(intro.includes('font-serif'));
-    assert.ok(intro.includes('BackButton'));
+    // The intro starts directly with the title: no logo row, no extra top
+    // padding reserved for one.
+    assert.ok(!intro.includes('BackButton'));
+    assert.ok(intro.includes('pt-14 pb-10 md:pt-20 md:pb-14'));
   });
 });
 

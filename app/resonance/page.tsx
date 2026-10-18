@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { Music } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { BackButton } from '@/components/back-button';
 
 /**
  * Resonance placeholder (phase-4 batch 2, Task 4).
@@ -66,12 +65,8 @@ export default function ResonancePage() {
         </svg>
       </div>
 
-      <section className="relative pt-32 pb-16 px-6">
+      <section className="relative pt-20 pb-16 px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="mb-8">
-            <BackButton />
-          </div>
-
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

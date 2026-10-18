@@ -6,7 +6,6 @@ import { X, Loader2 } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { BackButton } from '@/components/back-button';
 
 interface Message {
   id: string;
@@ -170,16 +169,6 @@ export default function WhispersPage() {
 
       {/* Content */}
       <div className="relative z-10">
-        {/* The Masthead */}
-        <section className="relative pt-24 pb-16 px-6">
-          <div className="container mx-auto max-w-6xl">
-            {/* Back Button */}
-            <div className="mb-8">
-              <BackButton />
-            </div>
-          </div>
-        </section>
-
         <section className="relative pt-12 pb-12 px-6">
           <div className="max-w-6xl mx-auto">
             <motion.div

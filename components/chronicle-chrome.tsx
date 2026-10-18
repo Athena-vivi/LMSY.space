@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { BackButton } from '@/components/back-button';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 
@@ -22,10 +21,6 @@ export function ChronicleChrome({ eventCount, imageCount, availableYears, active
 
   return (
     <aside className="mb-12 xl:fixed xl:top-28 xl:left-14 xl:w-[220px] xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto xl:pr-3">
-      <div className="mb-8">
-        <BackButton />
-      </div>
-
       <div className="mb-5 max-w-[220px]">
         <span className="inline-flex items-center rounded-full border border-lmsy-yellow/25 bg-lmsy-yellow/10 px-3 py-1 text-[10px] font-mono tracking-[0.22em] uppercase text-lmsy-yellow">
           {t(language, 'chronicle.badge')}

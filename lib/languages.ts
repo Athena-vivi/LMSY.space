@@ -250,7 +250,6 @@ export const translations = {
     'common.source': 'Source',
     'common.noImage': 'Image not available',
     'common.curatorNote': 'Curator\u2019s Note',
-    'common.backToHub': 'Back to Space Hub',
 
     // Archive credit lines (editorial + project detail)
     'credit.officialTitle': 'Official Content',
@@ -615,7 +614,6 @@ export const translations = {
     'common.source': '来源',
     'common.noImage': '图片暂不可用',
     'common.curatorNote': '策展手记',
-    'common.backToHub': '返回星际总部',
 
     // Archive credit lines (editorial + project detail)
     'credit.officialTitle': '官方内容',
@@ -977,7 +975,6 @@ export const translations = {
     'common.source': 'ที่มา',
     'common.noImage': 'ไม่สามารถแสดงรูปภาพได้',
     'common.curatorNote': 'บันทึกภัณฑารักษ์',
-    'common.backToHub': 'กลับสู่ศูนย์อวกาศ',
 
     // Archive credit lines (editorial + project detail)
     'credit.officialTitle': 'เนื้อหาทางการ',

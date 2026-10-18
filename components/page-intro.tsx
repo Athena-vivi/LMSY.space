@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { BackButton } from '@/components/back-button';
 
 /**
  * Shared page intro for the archive surfaces (phase-6 batch 1).
@@ -14,6 +13,10 @@ import { BackButton } from '@/components/back-button';
  *
  * Note: these pages intentionally keep distinct content structures - this is
  * the title block only.
+ *
+ * The hub logo that used to sit above the title was removed: every page now
+ * carries the global header, so a second return entry point only pushed the
+ * title further down. Top padding is trimmed to match.
  */
 interface PageIntroProps {
   title: string;
@@ -24,12 +27,8 @@ interface PageIntroProps {
 
 export function PageIntro({ title, description, meta }: PageIntroProps) {
   return (
-    <section className="pt-24 pb-10 md:pt-32 md:pb-14">
+    <section className="pt-14 pb-10 md:pt-20 md:pb-14">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <BackButton />
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

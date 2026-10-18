@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { BackButton } from '@/components/back-button';
 import { GalleryImageWithLightbox } from './gallery-image';
 import { getImageUrl } from '@/lib/image-url';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
@@ -63,9 +62,7 @@ export function EditorialDetailContent({
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="relative z-10 px-6 py-8 md:px-12 md:py-12 border-b border-border">
-        <div className="flex items-start justify-between max-w-7xl mx-auto">
-          <BackButton />
-
+        <div className="flex items-start justify-end max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
