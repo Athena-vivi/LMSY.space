@@ -402,9 +402,21 @@ describe('editorial', () => {
   const list = src('app/editorial/page.tsx');
   const api = src('app/api/editorial/route.ts');
 
-  test('editorial is a filtered view of the project index, not a second list', () => {
-    assert.ok(list.includes('<ProjectsClient lockedCategory="editorial" />'));
-    assert.ok(!list.includes('fetch('), 'no data fetching of its own');
+  // The magazine rack is its own surface: covers, catalog ids and the
+  // per-issue reading entry. It is NOT the project index with a locked
+  // filter - that one lives at /projects?category=editorial and stays the
+  // homepage portal target.
+  test('editorial is the issue rack, not the project list with a locked filter', () => {
+    assert.ok(list.includes('function MagazineIndex()'));
+    assert.ok(list.includes("fetch('/api/editorial'"), 'it reads the editorial endpoint');
+    assert.ok(!list.includes('lockedCategory'), 'it does not reuse the project index');
+    assert.ok(!list.includes('ProjectsClient'), 'no locked project list');
+  });
+
+  test('the homepage portal still opens the filtered project list', () => {
+    const portals = src('components/sections/portals-section.tsx');
+    assert.ok(portals.includes('/projects?category=${entry.value}'));
+    assert.ok(!portals.includes('/editorial'), 'the portal is untouched');
   });
 
   test('the old editorial chrome is gone', () => {

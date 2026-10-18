@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { milestonePriorityToYear } from '@/lib/milestone-years';
 
 /**
  * GET /api/home/summary
@@ -45,6 +46,8 @@ interface FeaturedRow {
   cover_url: string | null;
   homepage_featured: boolean | null;
   portal_priority: number | null;
+  interview_md: string | null;
+  interview_video_url: string | null;
 }
 
 export async function GET() {
@@ -56,7 +59,7 @@ export async function GET() {
         .schema('lmsy_archive')
         .from('projects')
         .select(
-          'id, slug, title, title_i18n, category, event_date, cover_url, homepage_featured, portal_priority'
+          'id, slug, title, title_i18n, category, event_date, cover_url, homepage_featured, portal_priority, interview_md, interview_video_url'
         )
     );
 
@@ -138,6 +141,34 @@ export async function GET() {
       });
     }
 
+    // ---- interviews ------------------------------------------------------
+    // Two doors on the homepage: interviews that came from a magazine shoot
+    // (text only) and interviews that came from a video (text on site, video
+    // opened elsewhere). Derived from what the curator actually wrote - an
+    // empty interview_md means the entry does not exist yet.
+    const interviewRows = projects.filter(
+      (project) => (project.interview_md ?? '').trim().length > 0
+    );
+    const interviewCover = (rows: FeaturedRow[]): string | null => {
+      for (const row of rows) {
+        const cover = coverByProject[row.id] ?? row.cover_url;
+        if (cover) return cover;
+      }
+      return null;
+    };
+    const photoInterviews = interviewRows.filter((row) => !row.interview_video_url);
+    const videoInterviews = interviewRows.filter((row) => !!row.interview_video_url);
+    const interviews = {
+      photo: {
+        count: photoInterviews.length,
+        cover: interviewCover(photoInterviews),
+      },
+      video: {
+        count: videoInterviews.length,
+        cover: interviewCover(videoInterviews),
+      },
+    };
+
     // ---- years ----------------------------------------------------------
     const countsByYear: Record<number, number> = {};
     for (const project of projects) {
@@ -149,9 +180,9 @@ export async function GET() {
 
     // A picture per year. Two sources, both real:
     //   1. `milestone_priority` - the per-year representative photo curated in
-    //      the admin (1 = 2022 ... 4 = 2025, 5 = the current year). These rows
-    //      hang off the collection container, not off a public project, which
-    //      is why they are read separately.
+    //      the admin; the slot number is the year (priority 1 = 2022). These
+    //      rows hang off the collection container, not off a public project,
+    //      which is why they are read separately.
     //   2. the most recent public project of that year that has any image.
     const { data: milestoneRows } = await supabaseAdmin
       .schema('lmsy_archive')
@@ -160,23 +191,16 @@ export async function GET() {
       .not('milestone_priority', 'is', null)
       .order('milestone_priority', { ascending: true });
 
-    // The admin grid offers 2022-2025 plus one "ongoing" slot, displayed as ∞
-    // and stored as priority 5. That slot belongs to whatever year is current,
-    // so the newest column shows the photo the curator picked for it instead
-    // of an unrelated project cover.
+    // The admin grid offers one slot per year from 2022 up to the current
+    // year, and the slot number is the year (priority 5 = 2026). This used to
+    // stop at 2025, so the newest year silently fell back to an unrelated
+    // project cover instead of the photo the curator had picked.
     const currentYear = new Date().getFullYear();
-    const MILESTONE_YEAR: Record<number, number> = {
-      1: 2022,
-      2: 2023,
-      3: 2024,
-      4: 2025,
-      5: currentYear,
-    };
     const milestoneCover: Record<number, string> = {};
     for (const row of milestoneRows ?? []) {
       const typed = row as { milestone_priority: number; image_url: string | null };
-      const year = MILESTONE_YEAR[typed.milestone_priority];
-      if (!year || !typed.image_url) continue;
+      const year = Number(milestonePriorityToYear(typed.milestone_priority));
+      if (!Number.isFinite(year) || !typed.image_url) continue;
       milestoneCover[year] = typed.image_url;
     }
 
@@ -245,7 +269,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ featured, years, people });
+    return NextResponse.json({ featured, years, people, interviews });
   } catch (error) {
     console.error('[HOME_SUMMARY] critical error:', error);
     return NextResponse.json({ error: 'Failed to load summary' }, { status: 500 });

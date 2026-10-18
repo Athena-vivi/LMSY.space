@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { getAdminEmail } from '@/lib/security/api-auth';
+import { milestonePriorityToYear } from '@/lib/milestone-years';
 
 type DraftPayload = {
   id: string;
@@ -92,20 +93,14 @@ export async function GET(request: NextRequest) {
       gallery
         .filter((item) => item.milestone_priority)
         .map((item) => {
-          const yearMap: Record<number, string> = {
-            1: '2022',
-            2: '2023',
-            3: '2024',
-            4: '2025',
-            5: '∞',
-          };
+          const year = milestonePriorityToYear(item.milestone_priority);
 
           return [
-            yearMap[item.milestone_priority as number],
+            year,
             {
               id: item.id,
               image_url: item.image_url,
-              year: yearMap[item.milestone_priority as number],
+              year,
               caption: item.caption,
               tag: item.tag,
             },

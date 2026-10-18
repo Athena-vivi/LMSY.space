@@ -62,6 +62,8 @@ export default function EditProjectModal({
   const [themeStatement, setThemeStatement] = useState('');
   const [themeStatementZh, setThemeStatementZh] = useState('');
   const [themeStatementTh, setThemeStatementTh] = useState('');
+  const [interviewMd, setInterviewMd] = useState('');
+  const [interviewVideoUrl, setInterviewVideoUrl] = useState('');
   const [curationStatus, setCurationStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [translatingLang, setTranslatingLang] = useState<AdminTranslateTarget | null>(null);
@@ -88,6 +90,8 @@ export default function EditProjectModal({
       setThemeStatement(project.theme_statement || '');
       setThemeStatementZh(themeStatementI18n.zh || '');
       setThemeStatementTh(themeStatementI18n.th || '');
+      setInterviewMd(project.interview_md || '');
+      setInterviewVideoUrl(project.interview_video_url || '');
       setCurationStatus(project.curation_status || 'draft');
     }
   }, [project]);
@@ -158,6 +162,8 @@ export default function EditProjectModal({
           th: themeStatementTh || '',
         },
         curation_status: curationStatus,
+        interview_md: interviewMd.trim() ? interviewMd : null,
+        interview_video_url: interviewVideoUrl.trim() || null,
       };
 
       // Update via API
@@ -595,6 +601,45 @@ export default function EditProjectModal({
                       })}
                     </div>
                   </div>
+                </div>
+
+                {/* Interview. Markdown, rendered with a reading measure on the
+                    detail page. Empty means no interview section at all. */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
+                      INTERVIEW_MARKDOWN
+                    </label>
+                    <span className="text-[10px] font-mono text-ink-2/50">
+                      {interviewMd.length} CHARS
+                    </span>
+                  </div>
+                  <textarea
+                    value={interviewMd}
+                    onChange={(e) => setInterviewMd(e.target.value)}
+                    placeholder={'Interview body in Markdown.\n\n## Question\nAnswer...\n\n> A pull quote stays in the yellow rule.'}
+                    rows={14}
+                    spellCheck={false}
+                    className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm leading-6 focus:outline-none border focus:border-lmsy-blue/40 transition-colors placeholder:text-ink-2/40 resize-y font-mono"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  />
+                  <p className="text-[10px] font-mono text-ink-2/50">
+                    SUPPORTS # HEADINGS · **BOLD** · &gt; QUOTE · - LIST · [LINK](URL)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
+                    INTERVIEW_VIDEO_URL
+                  </label>
+                  <input
+                    type="url"
+                    value={interviewVideoUrl}
+                    onChange={(e) => setInterviewVideoUrl(e.target.value)}
+                    placeholder="https://... (external video, optional)"
+                    className="w-full px-0 py-2 bg-transparent text-ink-2 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-ink-2"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  />
                 </div>
 
                 {/* Reference Link */}

@@ -228,6 +228,12 @@ export async function PATCH(
     if (body.theme_statement !== undefined) updateData.theme_statement = body.theme_statement || null;
     if (body.theme_statement_i18n !== undefined) updateData.theme_statement_i18n = body.theme_statement_i18n || null;
     if (body.homepage_excerpt_i18n !== undefined) updateData.homepage_excerpt_i18n = body.homepage_excerpt_i18n || null;
+    // Interview body is Markdown on purpose: the detail page renders it with a
+    // real typographic scale, so raw newlines are not enough.
+    if (body.interview_md !== undefined) updateData.interview_md = body.interview_md || null;
+    if (body.interview_video_url !== undefined) {
+      updateData.interview_video_url = body.interview_video_url || null;
+    }
     if (body.curation_status !== undefined) updateData.curation_status = body.curation_status || 'draft';
 
     console.log('[PROJECTS_PATCH] Update data:', updateData);

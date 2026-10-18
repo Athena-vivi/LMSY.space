@@ -67,6 +67,10 @@ export interface Project {
   homepage_cover_url?: string | null;
   theme_statement?: string | null;
   theme_statement_i18n?: LocalizedText | null;
+  /** Interview body in Markdown, rendered on the project detail page. */
+  interview_md?: string | null;
+  /** External video link for a video interview. */
+  interview_video_url?: string | null;
   curation_status?: 'draft' | 'published' | 'archived' | null;
   created_at: string;
 }

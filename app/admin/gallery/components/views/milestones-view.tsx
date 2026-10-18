@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Calendar, X } from 'lucide-react';
 import Image from 'next/image';
-import { getCdnUrl, milestoneYearToApi } from '../../utils';
+import { getCdnUrl } from '../../utils';
 import { YEARS } from '../../constants';
 import { VaultImagePicker } from '../vault-image-picker';
 import { useAdminHeaders } from '../../hooks/use-admin-headers';
@@ -63,12 +63,11 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
   const setMilestone = async (item: GalleryItem, year: string) => {
     setBusy(true);
     try {
-      const apiYear = milestoneYearToApi(year);
       const response = await fetch('/api/admin/gallery/milestone', {
         method: 'PATCH',
         headers: await authHeaders(),
         credentials: 'include',
-        body: JSON.stringify({ imageId: item.id, year: apiYear }),
+        body: JSON.stringify({ imageId: item.id, year }),
       });
 
       if (!response.ok) {
@@ -81,7 +80,7 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
         [year]: {
           id: item.id,
           image_url: item.image_url,
-          year: apiYear,
+          year,
           caption: item.caption ?? null,
           tag: item.tag ?? null,
         },

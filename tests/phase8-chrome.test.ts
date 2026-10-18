@@ -107,13 +107,27 @@ describe('homepage blocks are picture doors', () => {
     assert.ok(!route.includes('linkedByProfile'), 'no portrait is guessed from credited projects');
   });
 
-  // The admin grid has 2022-2025 plus one "ongoing" slot (∞, priority 5).
-  // Leaving priority 5 out meant the newest year silently fell back to some
-  // project cover, so a photo the curator had picked never appeared.
-  test('the ongoing milestone slot feeds the current year', () => {
-    const route = src('app/api/home/summary/route.ts');
-    assert.ok(route.includes('5: currentYear'), 'priority 5 is mapped to the current year');
-    assert.ok(route.includes('const currentYear = new Date().getFullYear()'), 'current year is computed, not hardcoded');
+  // One slot per year, 2022 up to the current year - the slot number IS the
+  // year. The mapping used to be copied into four hard-coded tables that all
+  // stopped at 2025, so the newest year silently lost its curated photo.
+  test('milestone slots are derived from the year, not listed by hand', () => {
+    const helper = src('lib/milestone-years.ts');
+    assert.ok(helper.includes('MILESTONE_START_YEAR = 2022'), 'archive starts in 2022');
+    assert.ok(helper.includes('value - MILESTONE_START_YEAR + 1'), 'priority is year - 2021');
+    assert.ok(helper.includes('MILESTONE_START_YEAR + priority - 1'), 'year is priority + 2021');
+
+    for (const file of [
+      'app/api/home/summary/route.ts',
+      'app/api/admin/gallery/milestone/route.ts',
+      'app/api/admin/vault/route.ts',
+    ]) {
+      const code = src(file);
+      assert.ok(code.includes('milestone-years'), `${file} uses the shared mapping`);
+      assert.ok(!code.includes("'∞'"), `${file} has no infinity slot left`);
+    }
+
+    const constants = src('app/admin/gallery/constants.ts');
+    assert.ok(constants.includes('milestoneYears()'), 'admin grid is generated');
   });
 
   test('portraits are picked by hand and have their own tab', () => {
@@ -180,7 +194,7 @@ describe('hover emphasis uses the site gradient', () => {
   test('the three homepage blocks use it instead of one end of the ramp', () => {
     for (const file of [
       'components/sections/timeline-preview-section.tsx',
-      'components/sections/featured-projects-section.tsx',
+      'components/sections/soul-resonance-section.tsx',
       'components/sections/people-section.tsx',
     ]) {
       const code = src(file);

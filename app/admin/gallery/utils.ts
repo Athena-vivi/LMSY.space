@@ -12,22 +12,6 @@ export const getCdnUrl = (path: string | null): string | null => {
 };
 
 /**
- * Convert milestone year to API format
- */
-export const milestoneYearToApi = (year: string): string => {
-  if (year === '∞') return 'infinity';
-  return year;
-};
-
-/**
- * Convert API year back to display format
- */
-export const apiYearToMilestone = (year: string): string => {
-  if (year === 'infinity') return '∞';
-  return year;
-};
-
-/**
  * Group events by year for Chronicle view
  */
 export const groupEventsByYear = <T extends { event_date: string }>(events: T[]): Record<number, T[]> => {

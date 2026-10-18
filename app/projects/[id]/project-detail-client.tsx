@@ -11,6 +11,7 @@ import { formatChapterTitle } from '@/lib/chapter-title';
 import { t, type Language, type TranslationKey } from '@/lib/languages';
 import { NebulaBackground } from '@/components/nebula-background';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
+import { InterviewArticle } from '@/components/interview-article';
 import type { CategoryType } from './page';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
@@ -67,6 +68,10 @@ interface Project {
   is_ongoing?: boolean;
   theme_statement?: string | null;
   theme_statement_i18n?: LocalizedText | null;
+  /** Interview body written in Markdown by the curator. */
+  interview_md?: string | null;
+  /** External video link for a video interview; the text stays on site. */
+  interview_video_url?: string | null;
   /** People linked through project_people. Empty when not confirmed yet. */
   people?: Array<{
     id: string;
@@ -599,6 +604,16 @@ export default function ProjectDetailClient({ project, images, relatedProjects =
               <p className="text-ink text-lg">{t(language, 'project.emptyTitle')}</p>
               <p className="text-ink-2 text-sm mt-2">{t(language, 'project.emptyDesc')}</p>
             </motion.div>
+          )}
+
+          {/* Interview (phase 8): Markdown body written in the admin, plus an
+              optional external video link. Only rendered when the curator has
+              actually written something - no placeholder. */}
+          {project.interview_md && project.interview_md.trim().length > 0 && (
+            <InterviewArticle
+              markdown={project.interview_md}
+              videoUrl={project.interview_video_url}
+            />
           )}
 
           {/* More in this category (phase-4 Task 4): same category, different

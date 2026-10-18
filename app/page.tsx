@@ -2,7 +2,7 @@
 
 import { HeroSection } from '@/components/sections/hero-section';
 import { PortalsSection } from '@/components/sections/portals-section';
-import { FeaturedProjectsSection } from '@/components/sections/featured-projects-section';
+import { SoulResonanceSection } from '@/components/sections/soul-resonance-section';
 import { TimelinePreviewSection } from '@/components/sections/timeline-preview-section';
 import { PeopleSection } from '@/components/sections/people-section';
 import { MuseumPreface } from '@/components/museum-preface';
@@ -33,7 +33,7 @@ export default function HomePage() {
         <HeroSection />
         <MuseumPreface />
         <PortalsSection />
-        <FeaturedProjectsSection />
+        <SoulResonanceSection />
         <TimelinePreviewSection />
         <PeopleSection />
       </div>

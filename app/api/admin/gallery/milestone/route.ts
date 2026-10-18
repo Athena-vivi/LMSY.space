@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
+import { MILESTONE_START_YEAR, milestonePriorityToYear, yearToMilestonePriority } from '@/lib/milestone-years';
 
 const MILESTONE_PROJECT_TITLE = 'MILESTONES_ARCHIVE';
 
@@ -61,11 +62,14 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { imageId, year } = body;
 
-    // Validate year
-    const validYears = ['2022', '2023', '2024', '2025', 'infinity', null];
-    if (!validYears.includes(year)) {
+    // "infinity" is the legacy spelling for the ongoing slot; it now simply
+    // means the current year, which is an ordinary slot like the others.
+    const resolvedYear = year === 'infinity' ? new Date().getFullYear() : year;
+    const newPriority = year === null ? null : yearToMilestonePriority(resolvedYear);
+
+    if (year !== null && newPriority === null) {
       return NextResponse.json(
-        { error: 'Invalid year. Must be 2022, 2023, 2024, 2025, infinity, or null' },
+        { error: `Invalid year. Must be ${MILESTONE_START_YEAR} or later, or null` },
         { status: 400 }
       );
     }
@@ -78,18 +82,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
-
-    // Map year to priority
-    const yearToPriority: Record<string, number | null> = {
-      '2022': 1,
-      '2023': 2,
-      '2024': 3,
-      '2025': 4,
-      'infinity': 5,
-      'null': null,
-    };
-
-    const newPriority = yearToPriority[String(year)];
 
     if (newPriority !== null) {
       const milestoneProject = await ensureMilestoneProject();
@@ -171,19 +163,10 @@ export async function GET(request: NextRequest) {
       return apiServerError('admin/gallery/milestone GET', error);
     }
 
-    // Map to year
-    const priorityToYear: Record<number, string> = {
-      1: '2022',
-      2: '2023',
-      3: '2024',
-      4: '2025',
-      5: '∞',
-    };
-
     const milestones = data?.map(item => ({
       id: item.id,
       image_url: item.image_url,
-      year: priorityToYear[item.milestone_priority!],
+      year: milestonePriorityToYear(item.milestone_priority),
       caption: item.caption,
       tag: item.tag,
     })) || [];
