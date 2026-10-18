@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { countIssueArtifacts } from '@/lib/editorial-meta';
 
 /**
  * Editorial issues (projects with category='editorial'), plus their gallery
@@ -102,7 +103,9 @@ export async function GET() {
       .filter((project) => project.category === 'editorial')
       .map((project) => {
         const galleryImages = project.gallery_assets || [];
-        const artifactCount = galleryImages.length;
+        // Same definition as the detail page: the cover counts once whether it
+        // is stored as a relative path or as the CDN URL of the same file.
+        const artifactCount = countIssueArtifacts(galleryImages, project.cover_url);
 
         let finalCoverUrl: string | null = null;
         let coverSource: 'database' | 'gallery_discovery' | 'empty_vault' = 'empty_vault';

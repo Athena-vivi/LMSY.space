@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
+import { resolveFeaturedExcerpt } from '@/lib/featured-excerpt';
 import { DEFAULT_LONGFORM_CONTENT, normalizeLongformContent } from '@/app/admin/settings/content-blocks';
 
 interface FeaturedEditorial {
@@ -73,17 +74,22 @@ export function LongformSection() {
   const featuredTitle = featuredEditorial
     ? getLocalizedText(featuredEditorial.title_i18n, language, featuredEditorial.title)
     : currentLongformContent.fallbackTitle;
-  const featuredExcerpt = featuredEditorial
-    ? getLocalizedText(
-        featuredEditorial.homepage_excerpt_i18n,
-        language,
-        getLocalizedText(
-          featuredEditorial.description_i18n,
-          language,
-          featuredEditorial.homepage_excerpt || featuredEditorial.description
-        )
-      )
-    : currentLongformContent.fallbackExcerpt;
+
+  // The quote card only exists when there is real text to quote. A featured
+  // project whose four excerpt fields are all empty must not render the card
+  // (or its attribution line) - the rest of the block (title, image, link)
+  // stays exactly as it is.
+  const featuredExcerpt = resolveFeaturedExcerpt({
+    hasFeaturedProject: Boolean(featuredEditorial),
+    language,
+    homepageExcerptI18n: featuredEditorial?.homepage_excerpt_i18n,
+    descriptionI18n: featuredEditorial?.description_i18n,
+    homepageExcerpt: featuredEditorial?.homepage_excerpt,
+    description: featuredEditorial?.description,
+    siteFallback: currentLongformContent.fallbackExcerpt,
+  });
+  const showExcerpt = featuredExcerpt.length > 0;
+
   const featuredHref = featuredEditorial ? `/editorial/${featuredEditorial.id}` : '/chronicle';
   const featuredImageUrl = featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url
     ? getImageUrl(featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url || '')
@@ -181,45 +187,49 @@ export function LongformSection() {
               </motion.div>
             </div>
 
-            {/* Excerpt */}
-            <motion.div
-              className="relative py-8 px-6 md:px-10 rounded-2xl backdrop-blur-xl border"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                borderColor: 'rgba(255, 255, 255, 0.05)',
-              }}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-            >
-              {/* Quote Mark */}
-              <div className="absolute top-4 left-4 text-6xl font-serif text-lmsy-yellow/20 leading-none">
-                "
-              </div>
+            {/* Excerpt - only when there is text to quote */}
+            {showExcerpt && (
+              <motion.div
+                className="relative py-8 px-6 md:px-10 rounded-2xl backdrop-blur-xl border"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  borderColor: 'rgba(255, 255, 255, 0.05)',
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+              >
+                {/* Quote Mark */}
+                <div className="absolute top-4 left-4 text-6xl font-serif text-lmsy-yellow/20 leading-none">
+                  "
+                </div>
 
-              <blockquote className="relative z-10">
-                <p className="font-serif text-lg md:text-xl lg:text-2xl leading-relaxed text-ink pl-6">
-                  {featuredExcerpt}
-                </p>
-              </blockquote>
+                <blockquote className="relative z-10">
+                  <p className="font-serif text-lg md:text-xl lg:text-2xl leading-relaxed text-ink pl-6">
+                    {featuredExcerpt}
+                  </p>
+                </blockquote>
 
-              {/* Bottom Quote Mark */}
-              <div className="absolute bottom-4 right-4 text-6xl font-serif text-lmsy-blue/20 leading-none">
-                "
-              </div>
-            </motion.div>
+                {/* Bottom Quote Mark */}
+                <div className="absolute bottom-4 right-4 text-6xl font-serif text-lmsy-blue/20 leading-none">
+                  "
+                </div>
+              </motion.div>
+            )}
 
-            {/* Source */}
-            <motion.p
-              className="text-sm md:text-base text-ink-2 italic pl-6 border-l-2 border-lmsy-blue/30"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
-          >
-              {currentLongformContent.source}
-            </motion.p>
+            {/* Source - attribution belongs to the quote, so it hides with it */}
+            {showExcerpt && (
+              <motion.p
+                className="text-sm md:text-base text-ink-2 italic pl-6 border-l-2 border-lmsy-blue/30"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+              >
+                {currentLongformContent.source}
+              </motion.p>
+            )}
 
             {/* CTA Button */}
             <motion.div
