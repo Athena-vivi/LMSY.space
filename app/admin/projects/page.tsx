@@ -638,6 +638,11 @@ export default function AdminProjectsPage() {
                           ? t('status.archived')
                           : t('status.candidate')}
                     </span>
+                    {project.project_kind === 'theme' && (
+                      <span className="ml-2 border border-lmsy-blue/40 px-1 py-0.5 text-[9px] font-mono tracking-[0.1em] text-lmsy-blue/80">
+                        {t('status.theme')}
+                      </span>
+                    )}
                   </div>
 
                   {/* Actions */}

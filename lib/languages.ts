@@ -339,6 +339,7 @@ export const translations = {
     'projects.emptyAll': 'This page is still taking shape. More works will find their way here.',
     'projects.photoCount': '{count} images',
     'projects.noImages': 'No archive images yet',
+    'projects.kindTheme': 'Themes',
 
     // Editorial meta
     'editorial.issueCount': '{count} issues curated',
@@ -705,6 +706,7 @@ export const translations = {
     'projects.emptyAll': '这一页还在慢慢填满，新的作品会陆续来到这里。',
     'projects.photoCount': '{count} 张图片',
     'projects.noImages': '暂无归档图片',
+    'projects.kindTheme': '专题',
 
     // Editorial meta
     'editorial.issueCount': '共 {count} 期特辑',
@@ -1074,6 +1076,7 @@ export const translations = {
     'projects.emptyAll': 'หน้านี้กำลังค่อย ๆ เติมเต็ม ผลงานใหม่ ๆ จะทยอยมาที่นี่',
     'projects.photoCount': '{count} รูปภาพ',
     'projects.noImages': 'ยังไม่มีรูปภาพในคลัง',
+    'projects.kindTheme': 'ธีม',
 
     // Editorial meta
     'editorial.issueCount': 'คัดสรรแล้ว {count} ฉบับ',

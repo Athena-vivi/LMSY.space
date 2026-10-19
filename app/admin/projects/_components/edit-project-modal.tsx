@@ -65,6 +65,13 @@ export default function EditProjectModal({
   const [interviewMd, setInterviewMd] = useState('');
   const [interviewVideoUrl, setInterviewVideoUrl] = useState('');
   const [curationStatus, setCurationStatus] = useState<'draft' | 'published' | 'archived'>('draft');
+  /**
+   * event = one dated happening (timeline gets a project point).
+   * theme = a subject that recurs across dates ("Back View"); no project point
+   * on the timeline, and the surfaces show the span of its images instead of
+   * a single date. Defaults to event for every row written before phase 9.
+   */
+  const [projectKind, setProjectKind] = useState<'event' | 'theme'>('event');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [translatingLang, setTranslatingLang] = useState<AdminTranslateTarget | null>(null);
 
@@ -93,6 +100,7 @@ export default function EditProjectModal({
       setInterviewMd(project.interview_md || '');
       setInterviewVideoUrl(project.interview_video_url || '');
       setCurationStatus(project.curation_status || 'draft');
+      setProjectKind(project.project_kind === 'theme' ? 'theme' : 'event');
     }
   }, [project]);
 
@@ -144,6 +152,7 @@ export default function EditProjectModal({
           th: titleTh.trim(),
         },
         category,
+        project_kind: projectKind,
         release_date: releaseDate || null,
         description: description || null,
         description_i18n: {
@@ -361,6 +370,31 @@ export default function EditProjectModal({
                     value={category}
                     onChange={setCategory}
                   />
+                </div>
+
+                {/* Project kind - an event on one date, or a subject that
+                    recurs across dates. It decides whether the timeline gets a
+                    project point and whether the surfaces show one date or the
+                    span of the images. */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
+                    PROJECT_KIND
+                  </label>
+                  <select
+                    value={projectKind}
+                    onChange={(e) => setProjectKind(e.target.value as 'event' | 'theme')}
+                    className="w-full px-3 py-2 bg-black text-ink-2 font-mono text-sm focus:outline-none border"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  >
+                    <option value="event">event — one dated happening</option>
+                    <option value="theme">theme — a subject across dates</option>
+                  </select>
+                  {projectKind === 'theme' && (
+                    <p className="text-[11px] text-ink-2/70">
+                      No project point on the timeline. The date below is not displayed; the
+                      span is derived from the images&apos; own dates.
+                    </p>
+                  )}
                 </div>
 
                 {/* Release Date */}

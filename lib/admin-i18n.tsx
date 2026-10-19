@@ -81,6 +81,9 @@ const DICT: Record<string, [string, string]> = {
   'status.published': ['已发布', 'PUBLISHED'],
   'status.candidate': ['候选', 'CANDIDATE'],
   'status.archived': ['已归档', 'ARCHIVED'],
+  // Project form: 'theme' projects are subjects that recur across dates, so
+  // they carry no single event date and get no point on the timeline.
+  'status.theme': ['主题型', 'THEME'],
   'status.legacy': ['存量', 'LEGACY'],
   'status.available': ['可展示', 'AVAILABLE'],
 

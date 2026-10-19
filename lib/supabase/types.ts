@@ -41,6 +41,12 @@ export interface Project {
   slug?: string | null;
   /** When the event or shoot actually happened. Null when unconfirmed. */
   event_date?: string | null;
+  /**
+   * Event project (one dated happening, shows on the timeline as a point) or
+   * theme project (a subject that recurs across dates, dated by its images).
+   * Defaults to 'event'; see lib/project-kind.ts.
+   */
+  project_kind?: 'event' | 'theme' | null;
   /** When the source published it (magazine issue date, original post). */
   source_published_at?: string | null;
   location?: string | null;

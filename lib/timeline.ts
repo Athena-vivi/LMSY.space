@@ -22,6 +22,7 @@
  */
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { normalizeLocalizedText, type LocalizedText } from '@/lib/localized-content';
+import { isThemeProject } from '@/lib/project-kind';
 
 // Pure helpers live in an alias-free module so they are directly testable.
 export { formatChronicleDate, extractYears } from '@/lib/chronicle-dates';
@@ -72,7 +73,7 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
     supabase
       .schema('lmsy_archive')
       .from('projects')
-      .select('id, slug, title, title_i18n, category, event_date, release_date')
+      .select('id, slug, title, title_i18n, category, project_kind, event_date, release_date')
   );
 
   if (projectsError) {
@@ -84,6 +85,12 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
   const events: ChronicleEvent[] = [];
 
   for (const p of rows) {
+    // A theme project carries no single event date by definition ("Back View"
+    // is a subject, not a happening). Putting a project point on the timeline
+    // for it would mean inventing a date, so it is skipped here - its images
+    // still show up below, each under the date it actually happened.
+    if (isThemeProject(p as { project_kind?: unknown })) continue;
+
     // Event date first (when it actually happened). release_date is only a
     // fallback for rows that predate the phase-7 split - it is the source
     // publication date and must never be confused with the collection date.

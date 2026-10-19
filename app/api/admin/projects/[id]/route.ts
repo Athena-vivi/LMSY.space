@@ -235,6 +235,12 @@ export async function PATCH(
       updateData.interview_video_url = body.interview_video_url || null;
     }
     if (body.curation_status !== undefined) updateData.curation_status = body.curation_status || 'draft';
+    // 'event' (one dated happening) or 'theme' (a subject across dates).
+    // Anything else falls back to 'event' - the historical behaviour - rather
+    // than letting a typo reach the check constraint and fail the whole save.
+    if (body.project_kind !== undefined) {
+      updateData.project_kind = body.project_kind === 'theme' ? 'theme' : 'event';
+    }
 
     console.log('[PROJECTS_PATCH] Update data:', updateData);
 

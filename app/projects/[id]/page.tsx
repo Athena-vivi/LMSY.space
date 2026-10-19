@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
+import { aggregateProjectSpans } from '@/lib/project-span';
 import type { LocalizedText } from '@/lib/localized-content';
 import ProjectDetailClient from './project-detail-client';
 
@@ -149,6 +150,17 @@ export default async function ProjectPage({ params }: PageProps) {
 
   const sortedGalleryImages = sortProjectImages(galleryImages || []);
 
+  // A theme project has no single event date, so its header is dated by the
+  // span its images cover. Derived from the assets already fetched above - the
+  // curator never types a range that could drift away from the photos.
+  const spanRecord = aggregateProjectSpans(
+    sortedGalleryImages.map((image) => ({
+      project_id: project.id,
+      event_date: image.event_date,
+    }))
+  );
+  const dateSpan = spanRecord[project.id] ?? null;
+
   const coverRotation =
     sortedGalleryImages.find((img) => img.image_url === project.cover_url)?.rotation
     ?? sortedGalleryImages.find((img) => img.is_cover)?.rotation
@@ -261,6 +273,7 @@ export default async function ProjectPage({ params }: PageProps) {
     <ProjectDetailClient
       project={{ ...project, cover_rotation: coverRotation, people, work }}
       images={groupedImages}
+      dateSpan={dateSpan}
       relatedProjects={relatedProjects}
     />
   );

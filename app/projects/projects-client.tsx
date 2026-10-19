@@ -29,6 +29,13 @@ import { PageIntro } from '@/components/page-intro';
 import { categoryMeta } from '@/lib/category-meta';
 import { formatDisplayDate } from '@/lib/display-date';
 import { getLocalizedText } from '@/lib/localized-content';
+import { isThemeProject, resolveProjectKind } from '@/lib/project-kind';
+import {
+  aggregateProjectSpans,
+  formatProjectSpan,
+  projectSortDate,
+  type ProjectSpan,
+} from '@/lib/project-span';
 import {
   INDEX_CATEGORIES,
   normalizeCategory,
@@ -76,9 +83,14 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
   // does not maintain a second copy of the same list.
   const requested = lockedCategory ?? normalizeCategory(searchParams.get('category'));
 
+  // `kind` is a second axis, not a hall: it narrows the list to theme projects
+  // (a subject that spans several dates) without touching the category chips.
+  const kindFilter = searchParams.get('kind') === 'theme' ? 'theme' : null;
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
   const [counts, setCounts] = useState<ProjectCounts>({});
+  const [spans, setSpans] = useState<Record<string, ProjectSpan>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,7 +101,7 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
         supabase
           .from('projects')
           .select(
-            'id, slug, title, title_i18n, description, description_i18n, category, event_date, release_date, created_at, watch_url, curation_status, cover_url'
+            'id, slug, title, title_i18n, description, description_i18n, category, project_kind, event_date, release_date, created_at, watch_url, curation_status, cover_url'
           )
       )
         .order('event_date', { ascending: false, nullsFirst: false })
@@ -97,19 +109,24 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
 
       if (!error && data) {
         const rows = data as unknown as Project[];
-        setProjects(rows);
 
         const ids = rows.map((p) => p.id);
+        let nextSpans: Record<string, ProjectSpan> = {};
         if (ids.length > 0) {
+          // event_date is selected so a theme project can be dated by its
+          // images instead of a single project-level date it does not have.
           const { data: assets } = await supabase
             .from('gallery_assets')
-            .select('project_id, image_url, is_cover, catalog_id')
+            .select('project_id, image_url, is_cover, catalog_id, event_date')
             .in('project_id', ids)
             .order('is_cover', { ascending: false })
             .order('created_at', { ascending: true, nullsFirst: false });
 
           if (assets) {
             setCovers(pickCoversByProject(assets));
+            nextSpans = aggregateProjectSpans(
+              assets as unknown as Array<{ project_id: string | null; event_date: string | null }>
+            );
             const nextCounts: ProjectCounts = {};
             for (const row of assets) {
               const pid = (row as { project_id: string | null }).project_id;
@@ -117,8 +134,24 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
               nextCounts[pid] = (nextCounts[pid] ?? 0) + 1;
             }
             setCounts(nextCounts);
+            setSpans(nextSpans);
           }
         }
+
+        // Newest first, with one rule per kind: an event project is dated by
+        // its own event date, a theme project by the latest image it holds.
+        // Both were already covered by the query order for event projects, so
+        // only theme rows can move - to where their newest photo belongs.
+        const ordered = [...rows].sort((a, b) => {
+          const aDate = projectSortDate(a, nextSpans[a.id]);
+          const bDate = projectSortDate(b, nextSpans[b.id]);
+          if (aDate && bDate && aDate !== bDate) return aDate < bDate ? 1 : -1;
+          if (aDate && !bDate) return -1;
+          if (!aDate && bDate) return 1;
+          return (b.created_at || '').localeCompare(a.created_at || '');
+        });
+
+        setProjects(ordered);
       }
       setLoading(false);
     }
@@ -134,6 +167,14 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
 
+  const toggleThemeKind = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (kindFilter) params.delete('kind');
+    else params.set('kind', 'theme');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
   // Only halls that hold at least one visible project get a chip; the full
   // eight-value vocabulary is documented in the registry and the database, but
   // a chip that leads to an empty list is noise on an index page.
@@ -142,10 +183,12 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
     return INDEX_CATEGORIES.filter((definition) => present.has(definition.value));
   }, [projects]);
 
-  const visibleProjects = useMemo(
-    () => (requested ? projects.filter((p) => p.category === requested) : projects),
-    [projects, requested]
-  );
+  const visibleProjects = useMemo(() => {
+    let list = projects;
+    if (requested) list = list.filter((p) => p.category === requested);
+    if (kindFilter) list = list.filter((p) => resolveProjectKind(p.project_kind) === kindFilter);
+    return list;
+  }, [projects, requested, kindFilter]);
 
   if (loading) {
     return (
@@ -193,6 +236,28 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                 {t(language, definition.labelKey)}
               </button>
             ))}
+
+            {/* Second axis, kept apart from the halls: a theme project is not a
+                category, it is a project whose subject returns across several
+                dates. It stays visible even while no theme project is public
+                yet - the entry was asked for, and hiding it would make the
+                feature look broken the day it is used. */}
+            {!lockedCategory && (
+              <>
+                <span aria-hidden className="w-px self-stretch bg-border" />
+                <button
+                  onClick={toggleThemeKind}
+                  aria-pressed={kindFilter === 'theme'}
+                  className={`px-5 py-2 text-sm font-medium transition-all duration-300 rounded-full border ${
+                    kindFilter === 'theme'
+                      ? 'border-lmsy-blue text-lmsy-blue bg-lmsy-blue/10'
+                      : 'bg-muted text-ink-2 border-border hover:border-lmsy-blue hover:text-lmsy-blue'
+                  }`}
+                >
+                  {t(language, 'projects.kindTheme')}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -214,7 +279,15 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                 language,
                 project.description
               );
-              const dateLabel = formatDisplayDate(project.event_date, language);
+              // An event project has one date; a theme project has the span its
+              // images cover. The span is derived from the assets' event_date -
+              // never typed in, never guessed from created_at.
+              const themeProject = isThemeProject(project);
+              const projectSpan = spans[project.id] ?? null;
+              const dateLabel = themeProject
+                ? formatProjectSpan(projectSpan, language)
+                : formatDisplayDate(project.event_date, language);
+              const dateTimeValue = themeProject ? projectSpan?.end : project.event_date;
               const imageCount = counts[project.id] ?? 0;
               const href = `/projects/${project.slug || project.id}`;
 
@@ -281,7 +354,7 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                           {(dateLabel || imageCount > 0) && (
                             <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.15em] text-ink-2">
                               {dateLabel && (
-                                <time dateTime={project.event_date ?? undefined}>{dateLabel}</time>
+                                <time dateTime={dateTimeValue ?? undefined}>{dateLabel}</time>
                               )}
                               {dateLabel && imageCount > 0 && <span aria-hidden>·</span>}
                               {imageCount > 0 && (

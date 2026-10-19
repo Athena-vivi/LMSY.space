@@ -17,6 +17,8 @@ import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { categoryMeta } from '@/lib/category-meta';
 import { formatDisplayDate } from '@/lib/display-date';
+import { isThemeProject } from '@/lib/project-kind';
+import { formatProjectSpan, type ProjectSpan } from '@/lib/project-span';
 import { visibleProjectTabs } from '@/lib/project-tabs';
 
 // Masonry is 1/2/3 columns; tell the image optimizer the real render width.
@@ -57,6 +59,8 @@ interface Project {
   category: string;
   /** When the event or shoot happened. Preferred display date. */
   event_date?: string | null;
+  /** 'event' (one dated happening) or 'theme' (a subject across dates). */
+  project_kind?: 'event' | 'theme' | null;
   release_date: string | null;
   description: string | null;
   description_i18n?: LocalizedText | null;
@@ -87,6 +91,8 @@ interface Project {
 interface ProjectDetailClientProps {
   project: Project;
   images: GroupedImages;
+  /** Date span of a theme project's images; null when none is dated. */
+  dateSpan?: ProjectSpan | null;
   // Same-category public projects for the "more like this" section. Empty
   // array = section is hidden. Covers pre-picked server-side; no mock data.
   relatedProjects?: Array<{
@@ -211,7 +217,12 @@ function getChapterTitle(currentMonth: string, language: Language): string {
   return formatChapterTitle(currentMonth, language);
 }
 
-export default function ProjectDetailClient({ project, images, relatedProjects = [] }: ProjectDetailClientProps) {
+export default function ProjectDetailClient({
+  project,
+  images,
+  dateSpan = null,
+  relatedProjects = [],
+}: ProjectDetailClientProps) {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<CategoryType>('all');
   const currentImages = images[activeTab] || [];
@@ -226,8 +237,15 @@ export default function ProjectDetailClient({ project, images, relatedProjects =
   const categoryLabel = t(language, category.labelKey);
   // Event date first: that is when it actually happened. release_date stays
   // as the fallback for rows written before the phase-7 split.
-  const displayDate = project.event_date || project.release_date;
-  const releaseDateLabel = formatDisplayDate(displayDate, language);
+  // A theme project has no such date - its header shows the span its images
+  // cover instead, so a date typed at collection time never masquerades as
+  // the day the subject happened.
+  const themeProject = isThemeProject(project);
+  const displayDate = themeProject ? null : project.event_date || project.release_date;
+  const releaseDateLabel = themeProject
+    ? formatProjectSpan(dateSpan, language)
+    : formatDisplayDate(displayDate, language);
+  const displayDateTime = themeProject ? dateSpan?.end ?? null : displayDate;
 
   // Facets are offered only when they actually hold images (see
   // lib/project-tabs.ts). With the live data - every asset has
@@ -271,7 +289,7 @@ export default function ProjectDetailClient({ project, images, relatedProjects =
               {releaseDateLabel && (
                 <div className="flex items-center gap-2 text-ink-2">
                   <Calendar className="h-4 w-4" />
-                  <time className="text-sm" dateTime={displayDate ?? undefined}>
+                  <time className="text-sm" dateTime={displayDateTime ?? undefined}>
                     {releaseDateLabel}
                   </time>
                 </div>
