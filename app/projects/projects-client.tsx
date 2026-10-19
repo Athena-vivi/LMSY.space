@@ -233,8 +233,13 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                           isEven ? '' : 'md:grid-flow-dense'
                         }`}
                       >
+                        {/* 4:5, not the old 16:10 landscape box. Almost every cover
+                            in this archive is a portrait frame (0.65-0.80), so a
+                            landscape window threw away half the photo - usually the
+                            faces. At 4:5 the crop drops to ~16%, and object-position
+                            sits slightly above centre, where faces actually are. */}
                         <div
-                          className={`relative aspect-[16/10] md:aspect-auto md:min-h-[320px] overflow-hidden bg-gradient-to-br ${
+                          className={`relative aspect-[4/5] overflow-hidden bg-gradient-to-br ${
                             (category && CATEGORY_TINTS[category]) || FALLBACK_TINT
                           } ${isEven ? 'md:order-1' : 'md:order-2'}`}
                         >
@@ -244,7 +249,7 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                               alt={localizedTitle}
                               fill
                               sizes={PROJECT_LIST_IMAGE_SIZES}
-                              className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                              className="object-cover object-[50%_38%] transition-transform duration-700 group-hover:scale-[1.03]"
                               unoptimized
                             />
                           ) : (
