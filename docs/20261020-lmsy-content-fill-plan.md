@@ -304,7 +304,14 @@ group by 1;
 分栏靠两个字段，不靠标题猜：
 
 - `subtype`：`duo` / `solo`
-- `project_people`（`project_id, profile_id, role`）：双人写两条，单人写一条
+- `project_people`（`project_id, profile_id, role`）：双人写两条，单人写一条。`role` 统一用 **`subject`**（库里现有 4 条全是这个值，不新造）
+
+两个现成的 profile id 别写错：
+
+| 人 | profile_id |
+|---|---|
+| Lookmhee | `b2906bdd-36d1-4df2-93b0-641a10994f8c` |
+| Sonya | `5a7f435a-0b79-45ac-a0c8-14e392d0b9d0` |
 
 `/live` 已经改成读这两个字段：`duo` Tab 取 `subtype='duo'`，`Lookmhee` / `Sonya` 两个 Tab 取 `subtype='solo'` 且 `project_people` 里有对应的人。**双人场不会同时出现在单人 Tab 里**，否则分栏就没意义。
 
@@ -403,7 +410,17 @@ delete from lmsy_archive.projects where tags @> array['batch_d1_interview'];
 
 对照 106 场的缺口：**约 7 成场次档案站自带图**，剩下 3 成（多为早期场次和部分公开活动）档案站没挂图，只能从微博现场记录补，那条路要逐场搜，无法批量。
 
+分门粗估（按页面归属，不是精确匹配——精确匹配要等建记录时逐条对标题）：
+
+| 门 | 目标 | 档案站有图 | 估覆盖率 |
+|---|---|---|---|
+| 3 号门 见面会 | 40 | 31 张海报（fm-24 6 / fm-25 20 / fm-26 5） | ~78% |
+| 3 号门 品牌活动 | 12 | 15（fan-events 三页） | 够用 |
+| 3 号门 生日会 | 8 | 混在 fan-events / galas 里，未单列 | 待建时核 |
+| 4 号门 公开活动 | 46 | 27 个活动标题（galas 24/25/26） | ~59% |
+
 所以补图不是「有/没有」的开关，而是**按场次覆盖**：有图的先补，没图的留空但记录仍可见（详情页无图不影响可读，只影响 `/projects` 大卡的观感）。若某门补图比例过低，那时候再单独讨论这一门的展示，**现在不动展示层**。
+
 
 
 ---
