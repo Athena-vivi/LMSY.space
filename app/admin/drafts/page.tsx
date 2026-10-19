@@ -101,15 +101,10 @@ export default function DraftsPage() {
       }))
       .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
 
-    const list: DraftFolder[] = [
-      {
-        id: 'all',
-        title: t('d.folders.all'),
-        count: draftsState.drafts.length,
-        thumb: null,
-        tone: 'all',
-      },
-    ];
+    // Order reflects what the rail is for: this is a work list, so the bucket
+    // that still needs a decision sits on top, the projects below it, and the
+    // read-only "everything" view last where it is out of the way.
+    const list: DraftFolder[] = [];
 
     if (orphans.length > 0) {
       list.push({
@@ -121,7 +116,15 @@ export default function DraftsPage() {
       });
     }
 
-    return [...list, ...projectFolders];
+    list.push(...projectFolders, {
+      id: 'all',
+      title: t('d.folders.all'),
+      count: draftsState.drafts.length,
+      thumb: null,
+      tone: 'all',
+    });
+
+    return list;
   }, [draftsState.drafts, projectTitles, t]);
 
   const visibleDrafts = useMemo(() => {

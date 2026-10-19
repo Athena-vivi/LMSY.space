@@ -83,7 +83,13 @@ export function DraftsFolderRail({
                   event.dataTransfer.getData('text/plain');
                 if (payload) onDropOnFolder?.(folder.id, payload);
               }}
-              className={isOver ? 'ring-2 ring-inset ring-lmsy-yellow' : undefined}
+              className={
+                folder.tone === 'all'
+                  ? 'mt-1 border-t border-white/10 pt-1'
+                  : isOver
+                    ? 'ring-2 ring-inset ring-lmsy-yellow'
+                    : undefined
+              }
             >
               <button
                 type="button"
