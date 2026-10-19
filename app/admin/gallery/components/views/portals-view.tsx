@@ -41,8 +41,8 @@ interface PortalsViewProps {
 }
 
 const INTERVIEW_DOORS: Array<{ door: 'talk' | 'live'; label: string }> = [
-  { door: 'talk', label: '被问到 / TALK' },
-  { door: 'live', label: '自己说 / LIVE' },
+  { door: 'talk', label: '对话 / TALK' },
+  { door: 'live', label: '直播 / LIVE' },
 ];
 
 function doorKey(ref: DoorRef): string {

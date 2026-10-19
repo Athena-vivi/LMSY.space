@@ -10,7 +10,7 @@ import { LiveClient } from './live-client';
  * surfaces so switching language does not reload the page.
  */
 export const metadata: Metadata = pageMetadata({
-  title: 'Said Themselves',
+  title: 'Live',
   description:
     'Live streams Lookmhee & Sonya opened themselves — no cuts, no interviewer, the closest thing to them talking on their own.',
   path: '/live',

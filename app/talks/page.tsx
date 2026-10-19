@@ -11,7 +11,7 @@ import { TalksClient } from './talks-client';
  * boundary holds the whole view.
  */
 export const metadata: Metadata = pageMetadata({
-  title: 'Asked',
+  title: 'Conversations',
   description:
     'Interviews, variety spots and radio — every time somebody else asked Lookmhee & Sonya, and cut the answer.',
   path: '/talks',

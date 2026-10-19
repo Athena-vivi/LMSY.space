@@ -288,9 +288,9 @@ export const translations = {
     'home.collecting': 'Collecting',
     'home.featuredTitle': 'Soul Resonance',
     'home.featuredSubtitle': 'The tacit understanding between her and her',
-    'home.talkDoor': 'Asked',
+    'home.talkDoor': 'Conversations',
     'home.talkDoorHint': 'Somebody else asked, and then cut it.',
-    'home.liveDoor': 'Said Themselves',
+    'home.liveDoor': 'Live',
     'home.liveDoorHint': 'No cuts, and nobody asking.',
     'home.talkEntries': '{count} entries',
     'home.liveEntries': '{count} streams',
@@ -300,13 +300,13 @@ export const translations = {
     'home.peopleSubtitle': 'It began with loving their work. It continues because the memories are worth keeping.',
 
     // /talks and /live - the two soul-resonance landing pages
-    'talks.title': 'Asked',
+    'talks.title': 'Conversations',
     'talks.description': 'The questions come from outside.',
     'talks.tabAll': 'All',
     'talks.tabInterview': 'Interviews',
     'talks.tabVariety': 'Variety',
     'talks.tabRadio': 'Radio',
-    'live.title': 'Said Themselves',
+    'live.title': 'Live',
     'live.description': 'They hold the camera themselves.',
 
     // Timeline
@@ -675,9 +675,9 @@ export const translations = {
     'home.collecting': '收录中',
     'home.featuredTitle': '灵魂共振',
     'home.featuredSubtitle': '她与她的默契',
-    'home.talkDoor': '被问到',
+    'home.talkDoor': '对话',
     'home.talkDoorHint': '问题由别人提出，也由别人剪好。',
-    'home.liveDoor': '自己说',
+    'home.liveDoor': '直播',
     'home.liveDoorHint': '没有剪辑，也没有提问的人。',
     'home.talkEntries': '{count} 条',
     'home.liveEntries': '{count} 场',
@@ -687,13 +687,13 @@ export const translations = {
     'home.peopleSubtitle': '因为喜欢她们，所以开始收藏；因为珍惜这些记忆，所以一直没有停下。',
 
     // /talks 与 /live - 灵魂共振的两个落地页
-    'talks.title': '被问到',
+    'talks.title': '对话',
     'talks.description': '问题从外面来。',
     'talks.tabAll': '全部',
     'talks.tabInterview': '访谈',
     'talks.tabVariety': '综艺',
     'talks.tabRadio': '电台',
-    'live.title': '自己说',
+    'live.title': '直播',
     'live.description': '镜头是她们自己拿的。',
 
     // Timeline
@@ -1059,9 +1059,9 @@ export const translations = {
     'home.collecting': 'กำลังรวบรวม',
     'home.featuredTitle': 'เสียงสะท้อนของหัวใจ',
     'home.featuredSubtitle': 'ความเข้าใจกันระหว่างเธอกับเธอ',
-    'home.talkDoor': 'ถูกถาม',
+    'home.talkDoor': 'บทสนทนา',
     'home.talkDoorHint': 'คนอื่นถาม แล้วคนอื่นตัดต่อ',
-    'home.liveDoor': 'พูดเอง',
+    'home.liveDoor': 'ไลฟ์',
     'home.liveDoorHint': 'ไม่มีการตัดต่อ ไม่มีคนถาม',
     'home.talkEntries': '{count} รายการ',
     'home.liveEntries': '{count} ครั้ง',
@@ -1071,13 +1071,13 @@ export const translations = {
     'home.peopleSubtitle': 'ทุกอย่างเริ่มต้นจากความชื่นชอบในตัวพวกเธอ และดำเนินต่อไปเพราะความทรงจำเหล่านี้มีคุณค่าที่ควรเก็บรักษาไว้',
 
     // /talks และ /live - หน้าปลายทางของสองประตู
-    'talks.title': 'ถูกถาม',
+    'talks.title': 'บทสนทนา',
     'talks.description': 'คำถามมาจากข้างนอก',
     'talks.tabAll': 'ทั้งหมด',
     'talks.tabInterview': 'บทสัมภาษณ์',
     'talks.tabVariety': 'วาไรตี้',
     'talks.tabRadio': 'วิทยุ',
-    'live.title': 'พูดเอง',
+    'live.title': 'ไลฟ์',
     'live.description': 'พวกเธอถือกล้องเอง',
 
     // Timeline
