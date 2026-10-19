@@ -25,6 +25,7 @@ interface DraftsContentProps {
   onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
   onDelete: (id: string, r2Key: string | null) => void;
+  onDragStartDraft?: (id: string, event: React.DragEvent<HTMLDivElement>) => void;
 }
 
 export function DraftsContent({
@@ -41,6 +42,7 @@ export function DraftsContent({
   onSetMilestone,
   onEdit,
   onDelete,
+  onDragStartDraft,
 }: DraftsContentProps) {
   const [hoveredVideoId, setHoveredVideoId] = useState<string | null>(null);
 
@@ -66,6 +68,7 @@ export function DraftsContent({
           onSetMilestone={onSetMilestone}
           onEdit={onEdit}
           onDelete={onDelete}
+          onDragStartDraft={onDragStartDraft}
         />
       )}
     </AnimatePresence>

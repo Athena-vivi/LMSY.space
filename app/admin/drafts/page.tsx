@@ -33,7 +33,7 @@ function thumbOf(drafts: DraftItem[]): string | null {
 }
 
 export default function DraftsPage() {
-  const { t } = useAdminLang();
+  const { lang, t } = useAdminLang();
 
   // Core data state
   const draftsState = useDrafts();
@@ -142,6 +142,70 @@ export default function DraftsPage() {
 
   const activeFolderLabel = folders.find((f) => f.id === activeFolder)?.title ?? '';
 
+  // Dragging carries the whole selection when the grabbed card is part of it,
+  // otherwise just the grabbed card - the same rule a file manager uses.
+  const handleDragStartDraft = (id: string, event: React.DragEvent<HTMLDivElement>) => {
+    const ids = draftsState.selectedIds.has(id) ? Array.from(draftsState.selectedIds) : [id];
+    const payload = JSON.stringify({ draftIds: ids });
+    event.dataTransfer.setData('application/x-lmsy-drafts', payload);
+    event.dataTransfer.setData('text/plain', payload);
+  };
+
+  const handleDropOnFolder = async (folderId: string, payload: string) => {
+    let ids: string[] = [];
+    try {
+      const parsed = JSON.parse(payload);
+      ids = Array.isArray(parsed?.draftIds)
+        ? parsed.draftIds.filter((value: unknown): value is string => typeof value === 'string')
+        : [];
+    } catch {
+      return;
+    }
+    if (ids.length === 0) return;
+
+    const folder = folders.find((f) => f.id === folderId);
+    if (!folder) return;
+
+    const affected = draftsState.drafts.filter((draft) => ids.includes(draft.id));
+    if (affected.length === 0) return;
+
+    const unlink = folderId === 'unassigned';
+    if (!unlink && affected.every((draft) => draft.project_id === folderId)) {
+      draftsState.showToast('DROPPED_ON_ITSELF');
+      return;
+    }
+
+    // Move them in the UI first so the grid responds to the gesture, then write.
+    for (const draft of affected) {
+      draftsState.updateDraftOptimistically(draft.id, { project_id: unlink ? null : folderId });
+    }
+    draftsState.setSelectedIds(new Set<string>());
+
+    try {
+      const response = await fetch('/api/admin/drafts/batch-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(unlink ? { ids, unlink: true } : { ids, projectId: folderId }),
+      });
+      if (!response.ok) throw new Error('batch-link failed');
+
+      const count = affected.length;
+      const plural = count > 1 ? (lang === 'en' ? 's' : '') : '';
+      draftsState.showToast(
+        unlink
+          ? lang === 'en'
+            ? `Unfiled ${count} item${plural}`
+            : `已移出项目 · ${count} 张`
+          : lang === 'en'
+            ? `Filed ${count} item${plural} under ${folder.title}`
+            : `已归入「${folder.title}」· ${count} 张`
+      );
+    } catch {
+      await draftsState.fetchDrafts();
+      draftsState.showToast('MOVE_FAILED', 'error');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -154,6 +218,7 @@ export default function DraftsPage() {
             activeId={activeFolder}
             onSelect={setActiveFolder}
             loading={draftsState.loading}
+            onDropOnFolder={handleDropOnFolder}
           />
         </aside>
 
@@ -214,6 +279,7 @@ export default function DraftsPage() {
               const result = actions.handleDelete(id, r2Key);
               forms.showDeleteConfirm(result.id, result.r2Key);
             }}
+            onDragStartDraft={handleDragStartDraft}
           />
         </div>
       </div>

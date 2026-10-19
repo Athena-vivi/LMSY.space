@@ -42,6 +42,7 @@ interface DraftCardProps {
   onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
   onDelete: (id: string, r2Key: string | null) => void;
+  onDragStartDraft?: (id: string, event: React.DragEvent<HTMLDivElement>) => void;
 }
 
 export function DraftCard({
@@ -59,13 +60,28 @@ export function DraftCard({
   onSetMilestone,
   onEdit,
   onDelete,
+  onDragStartDraft,
 }: DraftCardProps) {
   const { t } = useAdminLang();
   const isVideo = draft.media_type === 'video';
-  const canCreateAsset = draft.media_type === 'image' && !!draft.r2_media_url;
   const hasProject = !!draft.project_id;
+  const isImageWithMedia = draft.media_type === 'image' && !!draft.r2_media_url;
+  // Promotion writes a gallery_assets row, and that row needs a project to hang
+  // from. Without one the button used to stay enabled and only failed after the
+  // click - now it says what it is waiting for.
+  const canCreateAsset = isImageWithMedia;
+  const canPromote = isImageWithMedia && hasProject;
 
   return (
+    <div
+      draggable
+      onDragStart={(event) => {
+        if (!onDragStartDraft) return;
+        event.dataTransfer.effectAllowed = 'move';
+        onDragStartDraft(draft.id, event);
+      }}
+      className="relative"
+    >
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -254,11 +270,12 @@ export function DraftCard({
             </button>
             <button
               onClick={() => onAddToAssets(draft.id)}
-              disabled={!canCreateAsset}
+              disabled={!canPromote}
+              title={hasProject ? undefined : t('d.needProjectFirst')}
               className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-yellow/10 border border-lmsy-yellow/30 text-lmsy-yellow/80 text-[10px] font-mono hover:bg-lmsy-yellow/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ImagePlus className="h-3 w-3" strokeWidth={2} />
-              <span>{t('d.addToAssets')}</span>
+              <span>{hasProject ? t('d.addToAssets') : t('d.needProjectFirst')}</span>
             </button>
             <div className="grid grid-cols-5 gap-1">
               {[
@@ -283,5 +300,6 @@ export function DraftCard({
         </div>
       </div>
     </motion.div>
+    </div>
   );
 }

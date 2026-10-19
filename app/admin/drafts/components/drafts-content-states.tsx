@@ -73,6 +73,7 @@ interface DraftsGridProps {
   onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
   onDelete: (id: string, r2Key: string | null) => void;
+  onDragStartDraft?: (id: string, event: React.DragEvent<HTMLDivElement>) => void;
 }
 
 export function DraftsGrid({
@@ -90,6 +91,7 @@ export function DraftsGrid({
   onSetMilestone,
   onEdit,
   onDelete,
+  onDragStartDraft,
 }: DraftsGridProps) {
   return (
     <motion.div
@@ -120,6 +122,7 @@ export function DraftsGrid({
             onSetMilestone={onSetMilestone}
             onEdit={onEdit}
             onDelete={onDelete}
+            onDragStartDraft={onDragStartDraft}
           />
         );
       })}
