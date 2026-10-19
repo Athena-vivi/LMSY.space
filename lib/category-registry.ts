@@ -15,6 +15,7 @@
  */
 
 import type { TranslationKey } from './languages';
+import type { ProjectSubtype } from './supabase/types';
 
 export const PROJECT_CATEGORIES = [
   'drama_work',
@@ -223,6 +224,57 @@ export const CATEGORIES_WITH_OWN_DOOR: ReadonlySet<string> = new Set<string>([
 export const INDEX_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter(
   (definition) => !CATEGORIES_WITH_OWN_DOOR.has(definition.value)
 );
+
+/**
+ * Sub-classes, but only for the halls that are big enough to need a second
+ * axis. The vocabulary itself is decided by the database CHECK constraint and
+ * typed in lib/supabase/types.ts; this table only says **which hall shows which
+ * sub-class, in what order, under what label** - the UI must not invent a value
+ * the database would reject.
+ *
+ * Halls missing from this map have no tabs on purpose:
+ *   drama_work / editorial / commercial / behind_the_scenes / personal_travel /
+ *   early_archive  - the work itself is the smallest unit
+ *   interview / variety / radio / live_stream - these own a landing page
+ *   (/talks, /live) that already splits them, so they never reach /projects
+ */
+export interface SubtypeDefinition {
+  value: ProjectSubtype;
+  labelKey: TranslationKey;
+}
+
+export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefinition[]>> = {
+  live_event: [
+    { value: 'fanmeeting', labelKey: 'subtype.fanmeeting' },
+    { value: 'brand_event', labelKey: 'subtype.brand_event' },
+    { value: 'birthday', labelKey: 'subtype.birthday' },
+  ],
+  public_appearance: [
+    { value: 'premiere', labelKey: 'subtype.premiere' },
+    { value: 'awards', labelKey: 'subtype.awards' },
+    { value: 'fashion', labelKey: 'subtype.fashion' },
+    { value: 'fanday', labelKey: 'subtype.fanday' },
+    { value: 'brand_stage', labelKey: 'subtype.brand_stage' },
+    { value: 'charity', labelKey: 'subtype.charity' },
+    { value: 'industry', labelKey: 'subtype.industry' },
+  ],
+};
+
+/**
+ * Tabs for a hall, keeping the curated order and dropping values no visible
+ * row uses. Returns an empty array when the hall has no sub-classes or when
+ * only one of them is populated - a tab row holding "All 40 / Fanmeeting 40"
+ * is a filter that filters nothing.
+ */
+export function subtypeTabs(
+  category: ProjectCategory | null,
+  counts: Record<string, number>
+): SubtypeDefinition[] {
+  if (!category) return [];
+  const defined = SUBTYPES_BY_CATEGORY[category] ?? [];
+  const populated = defined.filter((definition) => (counts[definition.value] ?? 0) > 0);
+  return populated.length >= 2 ? populated : [];
+}
 
 /**
  * URL segment per category for /timeline and /projects filtering. Equal to

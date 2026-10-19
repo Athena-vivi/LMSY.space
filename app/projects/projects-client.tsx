@@ -44,6 +44,8 @@ import {
   CATEGORIES_WITH_OWN_DOOR,
   INDEX_CATEGORIES,
   normalizeCategory,
+  subtypeTabs,
+  SUBTYPES_BY_CATEGORY,
   type ProjectCategory,
 } from '@/lib/category-registry';
 
@@ -100,6 +102,18 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
   // (a subject that spans several dates) without touching the category chips.
   const kindFilter = searchParams.get('kind') === 'theme' ? 'theme' : null;
 
+  // `subtype` is a third axis, and unlike `kind` it only exists inside a hall
+  // that has sub-classes (see SUBTYPES_BY_CATEGORY). An unknown value is
+  // ignored rather than applied, so a hand-edited URL cannot empty the list.
+  const requestedSubtype = searchParams.get('subtype');
+  const currentSubtype = useMemo(() => {
+    if (!requested || !requestedSubtype) return null;
+    const allowed = SUBTYPES_BY_CATEGORY[requested] ?? [];
+    return allowed.some((definition) => definition.value === requestedSubtype)
+      ? requestedSubtype
+      : null;
+  }, [requested, requestedSubtype]);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
   const [counts, setCounts] = useState<ProjectCounts>({});
@@ -114,7 +128,7 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
         supabase
           .from('projects')
           .select(
-            'id, slug, title, title_i18n, description, description_i18n, category, project_kind, event_date, release_date, created_at, watch_url, curation_status, cover_url'
+            'id, slug, title, title_i18n, description, description_i18n, category, subtype, project_kind, event_date, release_date, created_at, watch_url, curation_status, cover_url'
           )
       )
         .order('event_date', { ascending: false, nullsFirst: false })
@@ -182,6 +196,18 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set('category', value);
     else params.delete('category');
+    // A sub-class belongs to one hall only. Carrying it across a hall switch
+    // would filter the new hall by a value it does not know, i.e. an empty
+    // page that looks like a bug.
+    params.delete('subtype');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
+  const setSubtype = (value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set('subtype', value);
+    else params.delete('subtype');
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
@@ -202,12 +228,36 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
     return INDEX_CATEGORIES.filter((definition) => present.has(definition.value));
   }, [projects]);
 
+  // Counted over the whole hall, never over the already-filtered list: a tab
+  // must keep showing its own total while another tab is active.
+  const subtypeCounts = useMemo(() => {
+    const out: Record<string, number> = {};
+    if (!requested) return out;
+    for (const project of projects) {
+      if (project.category !== requested) continue;
+      const value = project.subtype ?? '';
+      if (value) out[value] = (out[value] ?? 0) + 1;
+    }
+    return out;
+  }, [projects, requested]);
+
+  const subTabs = useMemo(() => subtypeTabs(requested, subtypeCounts), [requested, subtypeCounts]);
+
+  // The hall total includes rows with no sub-class, so "All" can legitimately
+  // read one higher than the tabs sum to. That gap is the honest state of a
+  // hall that still holds an unfiled row; hiding it would hide the row.
+  const hallSize = useMemo(
+    () => (requested ? projects.filter((p) => p.category === requested).length : 0),
+    [projects, requested]
+  );
+
   const visibleProjects = useMemo(() => {
     let list = projects;
     if (requested) list = list.filter((p) => p.category === requested);
+    if (currentSubtype) list = list.filter((p) => p.subtype === currentSubtype);
     if (kindFilter) list = list.filter((p) => resolveProjectKind(p.project_kind) === kindFilter);
     return list;
-  }, [projects, requested, kindFilter]);
+  }, [projects, requested, currentSubtype, kindFilter]);
 
   if (loading) {
     return (
@@ -278,6 +328,43 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
               </>
             )}
           </div>
+
+          {/* Sub-class tabs. Deliberately a different shape from the chips
+              above: the pills pick a hall, these pick a section inside it.
+              Two weights make the hierarchy readable without a second heading. */}
+          {subTabs.length > 0 && (
+            <div className="mt-7 flex flex-wrap items-center gap-x-7 gap-y-1 border-b border-border/70">
+              <button
+                onClick={() => setSubtype(null)}
+                aria-pressed={currentSubtype === null}
+                className={`-mb-px border-b-2 pb-2.5 text-sm transition-colors ${
+                  currentSubtype === null
+                    ? 'border-lmsy-blue font-medium text-foreground'
+                    : 'border-transparent text-ink-2 hover:text-foreground'
+                }`}
+              >
+                {t(language, 'gallery.tagAll')}
+                <span className="ml-1.5 font-mono text-xs text-ink-2/60">{hallSize}</span>
+              </button>
+              {subTabs.map((definition) => (
+                <button
+                  key={definition.value}
+                  onClick={() => setSubtype(definition.value)}
+                  aria-pressed={currentSubtype === definition.value}
+                  className={`-mb-px border-b-2 pb-2.5 text-sm transition-colors ${
+                    currentSubtype === definition.value
+                      ? 'border-lmsy-blue font-medium text-foreground'
+                      : 'border-transparent text-ink-2 hover:text-foreground'
+                  }`}
+                >
+                  {t(language, definition.labelKey)}
+                  <span className="ml-1.5 font-mono text-xs text-ink-2/60">
+                    {subtypeCounts[definition.value] ?? 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

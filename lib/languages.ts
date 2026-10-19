@@ -360,6 +360,19 @@ export const translations = {
     'projects.noImages': 'No archive images yet',
     'projects.kindTheme': 'Themes',
 
+    // Sub-class tabs inside a hall. Only halls listed in
+    // SUBTYPES_BY_CATEGORY render these, and only when two or more have rows.
+    'subtype.fanmeeting': 'Fan Meetings',
+    'subtype.brand_event': 'Brand Events',
+    'subtype.birthday': 'Birthdays',
+    'subtype.premiere': 'Premieres',
+    'subtype.awards': 'Awards',
+    'subtype.fashion': 'Fashion Weeks',
+    'subtype.fanday': 'Fan Days',
+    'subtype.brand_stage': 'Brand Appearances',
+    'subtype.charity': 'Charity',
+    'subtype.industry': 'Industry',
+
     // Editorial meta
     'editorial.issueCount': '{count} issues curated',
     'editorial.releaseDate': 'Release date',
@@ -745,6 +758,19 @@ export const translations = {
     'projects.photoCount': '{count} 张图片',
     'projects.noImages': '暂无归档图片',
     'projects.kindTheme': '专题',
+
+    // 分类内部的子类 Tab。只在 SUBTYPES_BY_CATEGORY 列出的门里出现，
+    // 且至少两类有内容时才显示。
+    'subtype.fanmeeting': '见面会',
+    'subtype.brand_event': '品牌活动',
+    'subtype.birthday': '生日会',
+    'subtype.premiere': '首映',
+    'subtype.awards': '颁奖礼',
+    'subtype.fashion': '时装周',
+    'subtype.fanday': '公司粉丝日',
+    'subtype.brand_stage': '品牌站台',
+    'subtype.charity': '公益',
+    'subtype.industry': '行业活动',
 
     // Editorial meta
     'editorial.issueCount': '共 {count} 期特辑',
@@ -1134,6 +1160,18 @@ export const translations = {
     'projects.photoCount': '{count} รูปภาพ',
     'projects.noImages': 'ยังไม่มีรูปภาพในคลัง',
     'projects.kindTheme': 'ธีม',
+
+    // แท็บหมวดย่อยภายในฮอลล์
+    'subtype.fanmeeting': 'แฟนมีตติ้ง',
+    'subtype.brand_event': 'อีเวนต์แบรนด์',
+    'subtype.birthday': 'วันเกิด',
+    'subtype.premiere': 'รอบปฐมทัศน์',
+    'subtype.awards': 'รางวัล',
+    'subtype.fashion': 'สัปดาห์แฟชั่น',
+    'subtype.fanday': 'แฟนเดย์',
+    'subtype.brand_stage': 'งานแบรนด์',
+    'subtype.charity': 'การกุศล',
+    'subtype.industry': 'งานอุตสาหกรรม',
 
     // Editorial meta
     'editorial.issueCount': 'คัดสรรแล้ว {count} ฉบับ',
