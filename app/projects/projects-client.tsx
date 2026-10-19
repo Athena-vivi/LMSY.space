@@ -237,9 +237,14 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                             in this archive is a portrait frame (0.65-0.80), so a
                             landscape window threw away half the photo - usually the
                             faces. At 4:5 the crop drops to ~16%, and object-position
-                            sits slightly above centre, where faces actually are. */}
-                        <div
-                          className={`relative aspect-[4/5] overflow-hidden bg-gradient-to-br ${
+                            sits slightly above centre, where faces actually are.
+
+                            The image itself is the door: a visitor aimed at a photo
+                            should not have to find a "view details" button first. */}
+                        <Link
+                          href={href}
+                          aria-label={localizedTitle}
+                          className={`relative aspect-[4/5] overflow-hidden bg-gradient-to-br block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lmsy-blue focus-visible:ring-offset-2 ${
                             (category && CATEGORY_TINTS[category]) || FALLBACK_TINT
                           } ${isEven ? 'md:order-1' : 'md:order-2'}`}
                         >
@@ -266,7 +271,7 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                               {categoryLabel}
                             </span>
                           </div>
-                        </div>
+                        </Link>
 
                         <div
                           className={`p-6 md:p-10 flex flex-col justify-center ${
