@@ -32,6 +32,18 @@ function thumbOf(drafts: DraftItem[]): string | null {
   return withMedia?.r2_media_url ?? null;
 }
 
+/**
+ * Which folder the rail should open on.
+ *
+ * The list order already encodes the priority (unassigned, then projects from
+ * smallest to largest, then the read-only "all" view), so the landing folder
+ * is simply the first entry that is not that view. An empty inbox has nothing
+ * else to offer and falls back to "all".
+ */
+function landingFolderId(folders: DraftFolder[]): string {
+  return (folders.find((folder) => folder.tone !== 'all') ?? folders[0])?.id ?? '';
+}
+
 export default function DraftsPage() {
   const { lang, t } = useAdminLang();
 
@@ -52,7 +64,12 @@ export default function DraftsPage() {
 
   // Folder pane (layout B). Purely a way of looking at the inbox: selecting a
   // folder never writes anything, and drafts keep whatever project they had.
-  const [activeFolder, setActiveFolder] = useState('all');
+  //
+  // The rail is a work list, so the folder it opens on is the one that still
+  // needs the most attention, not a fixed entry: unassigned first, otherwise
+  // the smallest project (a project with hundreds of images is already done).
+  // Empty until the first load settles - see the effect below.
+  const [activeFolder, setActiveFolder] = useState('');
   const [projectTitles, setProjectTitles] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -99,7 +116,7 @@ export default function DraftsPage() {
         thumb: thumbOf(items),
         tone: 'project' as const,
       }))
-      .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
+      .sort((a, b) => a.count - b.count || a.title.localeCompare(b.title));
 
     // Order reflects what the rail is for: this is a work list, so the bucket
     // that still needs a decision sits on top, the projects below it, and the
@@ -127,13 +144,32 @@ export default function DraftsPage() {
     return list;
   }, [draftsState.drafts, projectTitles, t]);
 
+  // One rule covers two cases: the initial pick (activeFolder starts empty,
+  // because the right folder is only knowable once the drafts are in) and a
+  // folder vanishing under the curator - unfiling the last orphan removes the
+  // unassigned bucket, and emptying a project folder removes that one. Neither
+  // may leave the grid pointing at a folder that no longer exists.
+  useEffect(() => {
+    if (draftsState.loading) return;
+    if (folders.some((folder) => folder.id === activeFolder)) return;
+    setActiveFolder(landingFolderId(folders));
+  }, [draftsState.loading, folders, activeFolder]);
+
+  // Read through this instead of activeFolder: on the very first render the
+  // state is still empty, and a folder that has just been emptied is gone from
+  // the list. Both resolve to the landing folder without waiting for the
+  // effect, so the grid never flashes an empty folder.
+  const effectiveFolder = folders.some((folder) => folder.id === activeFolder)
+    ? activeFolder
+    : landingFolderId(folders);
+
   const visibleDrafts = useMemo(() => {
-    if (activeFolder === 'all') return draftsState.filteredDrafts;
-    if (activeFolder === 'unassigned') {
+    if (effectiveFolder === 'all') return draftsState.filteredDrafts;
+    if (effectiveFolder === 'unassigned') {
       return draftsState.filteredDrafts.filter((d) => !d.project_id);
     }
-    return draftsState.filteredDrafts.filter((d) => d.project_id === activeFolder);
-  }, [draftsState.filteredDrafts, activeFolder]);
+    return draftsState.filteredDrafts.filter((d) => d.project_id === effectiveFolder);
+  }, [draftsState.filteredDrafts, effectiveFolder]);
 
   // Select-all must only reach the drafts currently on screen, otherwise a
   // folder view would silently select items the curator cannot see.
@@ -143,7 +179,7 @@ export default function DraftsPage() {
     draftsState.setSelectedIds(allSelected ? new Set<string>() : new Set(ids));
   };
 
-  const activeFolderLabel = folders.find((f) => f.id === activeFolder)?.title ?? '';
+  const activeFolderLabel = folders.find((f) => f.id === effectiveFolder)?.title ?? '';
 
   // Dragging carries the whole selection when the grabbed card is part of it,
   // otherwise just the grabbed card - the same rule a file manager uses.
@@ -218,7 +254,7 @@ export default function DraftsPage() {
         <aside className="hidden lg:block">
           <DraftsFolderRail
             folders={folders}
-            activeId={activeFolder}
+            activeId={effectiveFolder}
             onSelect={setActiveFolder}
             loading={draftsState.loading}
             onDropOnFolder={handleDropOnFolder}
@@ -233,7 +269,7 @@ export default function DraftsPage() {
             </label>
             <select
               id="draft-folder-select"
-              value={activeFolder}
+              value={effectiveFolder}
               onChange={(e) => setActiveFolder(e.target.value)}
               className="w-full px-3 py-2 bg-transparent text-ink-2 text-xs font-mono focus:outline-none border border-white/10 focus:border-lmsy-yellow/40 tracking-wider"
             >

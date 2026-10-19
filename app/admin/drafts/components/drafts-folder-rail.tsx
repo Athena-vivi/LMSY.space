@@ -1,12 +1,16 @@
 /**
  * Drafts Folder Rail (layout B)
  *
- * The inbox is grouped by project, the way a folder pane works: one entry for
- * every project that still has drafts, plus a pinned bucket for drafts that
- * were never linked to anything. Selecting a folder only narrows the grid on
- * the right - it never changes a draft's ownership. Dropping a thumbnail on a
- * folder is the one gesture that does write, and it goes through the existing
- * batch-link endpoint.
+ * The inbox is grouped by project, the way a folder pane works. The order is
+ * not alphabetical: this is a work list, so the unassigned bucket sits on top
+ * (it is the one that still needs a decision), projects follow from the
+ * smallest to the largest - a project with hundreds of drafts is usually done -
+ * and the read-only "all drafts" view is pinned to the bottom, separated by a
+ * rule so it does not read as another folder.
+ *
+ * Selecting a folder only narrows the grid on the right - it never changes a
+ * draft's ownership. Dropping a thumbnail on a folder is the one gesture that
+ * does write, and it goes through the existing batch-link endpoint.
  */
 
 'use client';
