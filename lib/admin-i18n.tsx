@@ -100,6 +100,10 @@ const DICT: Record<string, [string, string]> = {
   // --- Draft inbox ---
   'd.title': ['草稿箱', 'Draft Inbox'],
   'd.subtitle': ['采集内容整理与审核', 'Content ingestion & curation'],
+  'd.folders.title': ['项目文件夹', 'Project folders'],
+  'd.folders.all': ['全部草稿', 'All drafts'],
+  'd.folders.unassigned': ['未归属', 'Unassigned'],
+  'd.folders.select': ['选择文件夹', 'Select a folder'],
   'd.searchPlaceholder': ['搜索标题 / 来源链接…', 'Search title / source URL...'],
   'd.status.all': ['全部', 'All'],
   'd.status.draft': ['待处理', 'Draft'],
