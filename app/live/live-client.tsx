@@ -2,13 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ExternalLink, MapPin } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { PageIntro } from '@/components/page-intro';
-import { t } from '@/lib/languages';
+import { t, type TranslationKey } from '@/lib/languages';
 import { supabase, type Project } from '@/lib/supabase';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { pickCoversByProject } from '@/lib/project-covers';
+import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate, formatMonthYear } from '@/lib/display-date';
 import { STREAM_CATEGORIES } from '@/lib/category-registry';
@@ -22,18 +25,43 @@ import { STREAM_CATEGORIES } from '@/lib/category-registry';
  * instead of a tab - inside the talks list it would be buried under ninety
  * finished programmes.
  *
+ * Who held the phone comes from project_people, not from the title: 45 of the
+ * first 55 streams were one of them alone, and a title suffix is a guessable
+ * convention while a join row is a fact. Duo and solo are also the reason the
+ * page has tabs at all - laid out flat, it reads as a Sonya archive.
+ *
  * The archive does not host video, so each row links out when a link exists and
  * simply stays a record when it does not. It does not pretend to play anything:
  * an unlinked row is dated, titled and described, and that is all it claims.
  */
 
+type LiveTab = 'all' | 'duo' | 'lookmhee' | 'sonya';
+
 interface LiveRow extends Project {
   sortDate: string | null;
+  peopleSlugs: string[];
+}
+
+/** project_people comes back as a nested array; profiles may be object or array. */
+function peopleSlugsOf(relations: unknown): string[] {
+  if (!Array.isArray(relations)) return [];
+  const slugs: string[] = [];
+  for (const relation of relations) {
+    const profiles = (relation as { profiles?: unknown }).profiles;
+    const list = Array.isArray(profiles) ? profiles : profiles ? [profiles] : [];
+    for (const profile of list) {
+      const slug = (profile as { slug?: string | null }).slug;
+      if (slug) slugs.push(slug);
+    }
+  }
+  return slugs;
 }
 
 export function LiveClient() {
   const { language } = useLanguage();
   const [rows, setRows] = useState<LiveRow[]>([]);
+  const [covers, setCovers] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState<LiveTab>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,7 +70,7 @@ export function LiveClient() {
         supabase
           .from('projects')
           .select(
-            'id, slug, title, title_i18n, description, description_i18n, category, event_date, release_date, created_at, watch_url, location, cover_url, curation_status'
+            'id, slug, title, title_i18n, description, description_i18n, category, subtype, event_date, release_date, created_at, watch_url, location, cover_url, curation_status, project_people(role, profiles(slug))'
           )
       ).in('category', STREAM_CATEGORIES as unknown as string[]);
 
@@ -52,8 +80,26 @@ export function LiveClient() {
         return;
       }
 
-      const withSort = (data as unknown as Project[]).map((project) => ({
+      const projects = data as unknown as Array<
+        Project & { project_people?: unknown }
+      >;
+
+      if (projects.length > 0) {
+        const { data: assets } = await supabase
+          .from('gallery_assets')
+          .select('project_id, image_url, is_cover, catalog_id')
+          .in(
+            'project_id',
+            projects.map((project) => project.id)
+          )
+          .order('is_cover', { ascending: false })
+          .order('created_at', { ascending: true, nullsFirst: false });
+        if (assets) setCovers(pickCoversByProject(assets));
+      }
+
+      const withSort = projects.map((project) => ({
         ...project,
+        peopleSlugs: peopleSlugsOf(project.project_people),
         sortDate: project.event_date ?? project.release_date ?? null,
       }));
 
@@ -72,9 +118,33 @@ export function LiveClient() {
     load();
   }, []);
 
+  const counts = useMemo(() => {
+    const result: Record<LiveTab, number> = { all: rows.length, duo: 0, lookmhee: 0, sonya: 0 };
+    for (const row of rows) {
+      if (row.subtype === 'duo') result.duo += 1;
+      // A solo tab counts solo streams only. A duo stream has both names on it,
+      // and putting it under a person's tab would make the split meaningless.
+      if (row.subtype === 'solo') {
+        if (row.peopleSlugs.includes('lookmhee')) result.lookmhee += 1;
+        if (row.peopleSlugs.includes('sonya')) result.sonya += 1;
+      }
+    }
+    return result;
+  }, [rows]);
+
+  const visible = useMemo(() => {
+    if (tab === 'all') return rows;
+    if (tab === 'duo') return rows.filter((row) => row.subtype === 'duo');
+    return rows.filter(
+      (row) => row.subtype === 'solo' && row.peopleSlugs.includes(tab)
+    );
+  }, [rows, tab]);
+
+  // Month buckets, newest first. Entries with no date at all go to the end -
+  // they are still worth listing, but they cannot be placed.
   const months = useMemo(() => {
     const buckets = new Map<string, LiveRow[]>();
-    for (const row of rows) {
+    for (const row of visible) {
       const key = row.sortDate ? row.sortDate.slice(0, 7) : 'unknown';
       const list = buckets.get(key) ?? [];
       list.push(row);
@@ -85,7 +155,14 @@ export function LiveClient() {
       if (b[0] === 'unknown') return -1;
       return a[0] < b[0] ? 1 : -1;
     });
-  }, [rows]);
+  }, [visible]);
+
+  const tabs: Array<{ key: LiveTab; labelKey: TranslationKey | null; literal?: string }> = [
+    { key: 'all', labelKey: 'live.tabAll' },
+    { key: 'duo', labelKey: 'live.tabDuo' },
+    { key: 'lookmhee', labelKey: null, literal: 'Lookmhee' },
+    { key: 'sonya', labelKey: null, literal: 'Sonya' },
+  ];
 
   if (loading) {
     return (
@@ -99,9 +176,38 @@ export function LiveClient() {
     <div className="min-h-screen">
       <PageIntro title={t(language, 'live.title')} description={t(language, 'live.description')} />
 
+      <section className="pb-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap gap-3">
+            {tabs.map((entry) => {
+              // A tab that holds nothing stays clickable: the archive is being
+              // filled, and a missing tab would read as "this never happened".
+              const active = tab === entry.key;
+              return (
+                <button
+                  key={entry.key}
+                  onClick={() => setTab(entry.key)}
+                  aria-pressed={active}
+                  className={`px-5 py-2 text-sm font-medium transition-all duration-300 rounded-full border ${
+                    active
+                      ? 'bg-gradient-to-r from-lmsy-yellow to-lmsy-blue text-black border-transparent shadow-lg shadow-lmsy-yellow/20'
+                      : 'bg-muted text-ink-2 border-border hover:border-lmsy-blue hover:text-lmsy-blue'
+                  }`}
+                >
+                  {entry.labelKey ? t(language, entry.labelKey) : entry.literal}
+                  <span className={`ml-2 font-mono text-xs ${active ? 'text-black/60' : 'text-ink-2/70'}`}>
+                    {counts[entry.key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <section className="pb-24 md:pb-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {rows.length === 0 && (
+          {visible.length === 0 && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -126,6 +232,8 @@ export function LiveClient() {
                       language,
                       row.description
                     );
+                    const coverSource = covers[row.id] ?? row.cover_url ?? null;
+                    const cover = coverSource ? getImageUrl(coverSource) : null;
                     const dayLabel = formatDisplayDate(row.sortDate, language, {
                       month: 'short',
                       day: true,
@@ -139,8 +247,25 @@ export function LiveClient() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: '-40px' }}
                         transition={{ duration: 0.4, delay: Math.min(index, 8) * 0.03 }}
-                        className="flex items-start gap-4 py-4"
+                        className="flex items-center gap-4 py-4"
                       >
+                        {cover ? (
+                          <Link
+                            href={href}
+                            className="relative hidden h-16 w-12 shrink-0 overflow-hidden rounded bg-muted sm:block"
+                            aria-label={title}
+                          >
+                            <Image
+                              src={cover}
+                              alt={title}
+                              fill
+                              sizes="48px"
+                              className="object-cover object-[50%_35%]"
+                              unoptimized
+                            />
+                          </Link>
+                        ) : null}
+
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                             <Link

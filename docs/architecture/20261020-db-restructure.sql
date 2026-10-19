@@ -109,3 +109,30 @@ where id = 'd975076b-3988-457c-8e7f-0323fad1fae7' and title = 'coffee';
 
 select title, coalesce(publisher_brand,'(null)') as brand, category
 from lmsy_archive.projects where category = 'commercial' order by title;
+
+-- ============================================================
+-- Round 2 - 2026-10-20 - subtype whitelist expansion
+-- Owner's decision: hall 4 must hold brand stage / charity / industry
+-- (21 rows had no slot), hall 7 must split duo vs solo into two tabs.
+-- This only widens the constraint; no row is rewritten and no data is
+-- lost. Rollback = re-add the round-1 definition below.
+-- ============================================================
+alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
+alter table lmsy_archive.projects add constraint projects_subtype_check
+  check (subtype is null or subtype in (
+    'fanmeeting','brand_event','birthday',
+    'premiere','awards','fashion','fanday',
+    'brand_stage','charity','industry',
+    'feature','press','tv_news',
+    'duo','solo'
+  ));
+
+-- Rollback (round-1 whitelist, 10 values):
+-- alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
+-- alter table lmsy_archive.projects add constraint projects_subtype_check
+--   check (subtype is null or subtype in (
+--     'fanmeeting','brand_event','birthday','premiere','awards','fashion','fanday',
+--     'feature','press','tv_news'));
+
+select pg_get_constraintdef(oid) as subtype_check
+from pg_constraint where conname = 'projects_subtype_check';

@@ -308,6 +308,8 @@ export const translations = {
     'talks.tabRadio': 'Radio',
     'live.title': 'Live',
     'live.description': 'They hold the camera themselves.',
+    'live.tabAll': 'All',
+    'live.tabDuo': 'Both',
 
     // Timeline
     'timeline.title': 'Timeline',
@@ -695,6 +697,8 @@ export const translations = {
     'talks.tabRadio': '电台',
     'live.title': '直播',
     'live.description': '镜头是她们自己拿的。',
+    'live.tabAll': '全部',
+    'live.tabDuo': '双人',
 
     // Timeline
     'timeline.title': '时间线',
@@ -1079,6 +1083,8 @@ export const translations = {
     'talks.tabRadio': 'วิทยุ',
     'live.title': 'ไลฟ์',
     'live.description': 'พวกเธอถือกล้องเอง',
+    'live.tabAll': 'ทั้งหมด',
+    'live.tabDuo': 'คู่',
 
     // Timeline
     'timeline.title': 'ไทม์ไลน์',

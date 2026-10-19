@@ -42,9 +42,13 @@ export type ProjectCategory =
 /**
  * Sub-class inside a hall, shared by every hall that needs one:
  *   live_event        fanmeeting / brand_event / birthday
- *   public_appearance premiere / awards / fashion / fanday
+ *   public_appearance premiere / awards / fashion / fanday /
+ *                     brand_stage / charity / industry
  *   interview         feature / press / tv_news
+ *   live_stream       duo / solo
  * NULL means "the hall itself is enough" - most rows need no sub-class.
+ * Pair with `category` when reading: the same value can mean different
+ * things in different halls.
  */
 export type ProjectSubtype =
   | 'fanmeeting'
@@ -54,9 +58,14 @@ export type ProjectSubtype =
   | 'awards'
   | 'fashion'
   | 'fanday'
+  | 'brand_stage'
+  | 'charity'
+  | 'industry'
   | 'feature'
   | 'press'
-  | 'tv_news';
+  | 'tv_news'
+  | 'duo'
+  | 'solo';
 
 export interface Project {
   id: string;
