@@ -16,6 +16,10 @@ import {
   Archive,
   Sparkles,
   ExternalLink,
+  MessageSquareText,
+  Tv,
+  Podcast,
+  Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,6 +41,7 @@ import {
   type ProjectSpan,
 } from '@/lib/project-span';
 import {
+  CATEGORIES_WITH_OWN_DOOR,
   INDEX_CATEGORIES,
   normalizeCategory,
   type ProjectCategory,
@@ -51,6 +56,10 @@ const CATEGORY_ICONS: Record<ProjectCategory, React.ComponentType<{ className?: 
   live_event: Ticket,
   public_appearance: Plane,
   commercial: Briefcase,
+  interview: MessageSquareText,
+  variety: Tv,
+  radio: Podcast,
+  live_stream: Radio,
   behind_the_scenes: Camera,
   personal_travel: Compass,
   early_archive: Archive,
@@ -62,6 +71,10 @@ const CATEGORY_TINTS: Record<ProjectCategory, string> = {
   live_event: 'from-fuchsia-100 to-fuchsia-200 dark:from-fuchsia-900/30 dark:to-fuchsia-950/30',
   public_appearance: 'from-teal-100 to-teal-200 dark:from-teal-900/30 dark:to-teal-950/30',
   commercial: 'from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-950/30',
+  interview: 'from-violet-100 to-violet-200 dark:from-violet-900/30 dark:to-violet-950/30',
+  variety: 'from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-950/30',
+  radio: 'from-cyan-100 to-cyan-200 dark:from-cyan-900/30 dark:to-cyan-950/30',
+  live_stream: 'from-pink-100 to-pink-200 dark:from-pink-900/30 dark:to-pink-950/30',
   behind_the_scenes: 'from-zinc-100 to-zinc-200 dark:from-zinc-900/30 dark:to-zinc-950/30',
   personal_travel: 'from-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:to-emerald-950/30',
   early_archive: 'from-stone-100 to-stone-200 dark:from-stone-900/30 dark:to-stone-950/30',
@@ -108,7 +121,13 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        const rows = data as unknown as Project[];
+        // Halls that own a landing page (/talks, /live) stay out of this index:
+        // one hall, one front door. Their rows are still reachable from the
+        // door and from search; listing them here would put the same 97 rows
+        // behind a category chip that only repeats the door.
+        const rows = (data as unknown as Project[]).filter(
+          (project) => !CATEGORIES_WITH_OWN_DOOR.has(project.category ?? '')
+        );
 
         const ids = rows.map((p) => p.id);
         let nextSpans: Record<string, ProjectSpan> = {};

@@ -4,46 +4,51 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Camera, Play } from 'lucide-react';
+import { ArrowRight, MessageSquareText, Radio } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 
-interface InterviewDoor {
+interface DoorData {
   count: number;
   cover: string | null;
 }
 
-interface InterviewSummary {
-  photo: InterviewDoor;
-  video: InterviewDoor;
+interface TalkSummary {
+  talk: DoorData;
+  live: DoorData;
 }
 
-const EMPTY: InterviewSummary = {
-  photo: { count: 0, cover: null },
-  video: { count: 0, cover: null },
+const EMPTY: TalkSummary = {
+  talk: { count: 0, cover: null },
+  live: { count: 0, cover: null },
 };
 
 /**
  * Soul Resonance.
  *
- * This block used to repeat the portal row with a second grid of covers - the
- * same photos, sorted differently. It is now the reading entrance: two
- * landscape doors, one for interviews that came from a magazine shoot (text
- * only) and one for interviews that came from a video (text stays here, the
- * video opens elsewhere).
+ * Two landscape doors, split by how the thing was made rather than by medium:
  *
- * Both doors open the magazine index (/editorial) - the issue rack that
- * already holds covers, catalog ids and the per-issue reading entry. That page
- * is deliberately left unfiltered: the door only says which kind of interview
- * you are looking for, the rack stays one rack.
+ *   talk - somebody else asked, filmed it, and cut it. Interviews, variety
+ *          spots and radio all live behind this door because 21 variety spots
+ *          cannot carry a page of their own; the landing page separates them
+ *          with tabs instead.
+ *   live - they held the phone themselves and nobody cut anything. This is the
+ *          only content on the site with no third party in the middle, which
+ *          is why it gets its own door instead of drowning inside the 97 rows
+ *          of the other one.
+ *
+ * A magazine interview is NOT a door. The written interview is a field on the
+ * issue that carried it, and the project detail page already renders it - so
+ * reading an interview happens inside /projects/... , where the cover, the
+ * issue number and the photos are on the same screen.
  *
  * The subtitle is empty until the curator writes one; an empty string renders
  * nothing rather than an empty paragraph.
  */
 export function SoulResonanceSection() {
   const { language } = useLanguage();
-  const [interviews, setInterviews] = useState<InterviewSummary>(EMPTY);
+  const [summary, setSummary] = useState<TalkSummary>(EMPTY);
 
   useEffect(() => {
     async function load() {
@@ -51,7 +56,7 @@ export function SoulResonanceSection() {
         const response = await fetch('/api/home/summary');
         if (!response.ok) return;
         const data = await response.json();
-        if (data.interviews) setInterviews(data.interviews as InterviewSummary);
+        if (data.interviews) setSummary(data.interviews as TalkSummary);
       } catch (error) {
         console.error('[SOUL_RESONANCE] failed to load:', error);
       }
@@ -63,18 +68,20 @@ export function SoulResonanceSection() {
 
   const doors = [
     {
-      key: 'photo' as const,
-      href: '/editorial',
-      label: t(language, 'home.interviewPhoto'),
-      icon: Camera,
-      data: interviews.photo,
+      key: 'talk' as const,
+      href: '/talks',
+      label: t(language, 'home.talkDoor'),
+      countKey: 'home.talkEntries' as const,
+      icon: MessageSquareText,
+      data: summary.talk,
     },
     {
-      key: 'video' as const,
-      href: '/editorial',
-      label: t(language, 'home.interviewVideo'),
-      icon: Play,
-      data: interviews.video,
+      key: 'live' as const,
+      href: '/live',
+      label: t(language, 'home.liveDoor'),
+      countKey: 'home.liveEntries' as const,
+      icon: Radio,
+      data: summary.live,
     },
   ];
 
@@ -144,7 +151,7 @@ export function SoulResonanceSection() {
                       </h3>
                       <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white/60">
                         {door.data.count > 0
-                          ? t(language, 'home.interviewEntries', { count: door.data.count })
+                          ? t(language, door.countKey, { count: door.data.count })
                           : t(language, 'home.collecting')}
                       </p>
                     </div>

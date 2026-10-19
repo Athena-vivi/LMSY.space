@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { milestonePriorityToYear } from '@/lib/milestone-years';
+import { STREAM_CATEGORIES, TALK_CATEGORIES } from '@/lib/category-registry';
 
 /**
  * GET /api/home/summary
@@ -31,10 +32,17 @@ const CATEGORY_WEIGHT: Record<string, number> = {
   live_event: 3,
   public_appearance: 2,
   commercial: 1,
+  interview: 2,
+  variety: 1,
+  radio: 1,
+  live_stream: 2,
   behind_the_scenes: 1,
   personal_travel: 1,
   early_archive: 0,
 };
+
+const TALK_SET = new Set<string>(TALK_CATEGORIES);
+const STREAM_SET = new Set<string>(STREAM_CATEGORIES);
 
 interface FeaturedRow {
   id: string;
@@ -46,8 +54,6 @@ interface FeaturedRow {
   cover_url: string | null;
   homepage_featured: boolean | null;
   portal_priority: number | null;
-  interview_md: string | null;
-  interview_video_url: string | null;
 }
 
 export async function GET() {
@@ -59,7 +65,7 @@ export async function GET() {
         .schema('lmsy_archive')
         .from('projects')
         .select(
-          'id, slug, title, title_i18n, category, event_date, cover_url, homepage_featured, portal_priority, interview_md, interview_video_url'
+          'id, slug, title, title_i18n, category, event_date, cover_url, homepage_featured, portal_priority'
         )
     );
 
@@ -141,27 +147,30 @@ export async function GET() {
       });
     }
 
-    // ---- interviews ------------------------------------------------------
-    // Two doors on the homepage: interviews that came from a magazine shoot
-    // (text only) and interviews that came from a video (text on site, video
-    // opened elsewhere). Derived from what the curator actually wrote - an
-    // empty interview_md means the entry does not exist yet.
-    const interviewRows = projects.filter(
-      (project) => (project.interview_md ?? '').trim().length > 0
-    );
-    const interviewCover = (rows: FeaturedRow[]): string | null => {
+    // ---- soul resonance --------------------------------------------------
+    // Two doors, split by how the thing was made - not by medium:
+    //   talk - a third party filmed it, cut it, and gave it a running time
+    //          (interviews, variety spots, radio)
+    //   live - they held the phone themselves and nobody cut anything
+    //
+    // The count is the number of public projects in those halls. It is
+    // deliberately NOT derived from `interview_md`: that field is the body of
+    // a written interview, and using it as the door's definition meant both
+    // doors stayed empty while 170 interviews sat in the archive unbuilt.
+    const talkProjects = projects.filter((project) => TALK_SET.has(project.category ?? ''));
+    const liveProjects = projects.filter((project) => STREAM_SET.has(project.category ?? ''));
+
+    const firstCover = (rows: FeaturedRow[]): string | null => {
       for (const row of rows) {
         const cover = coverByProject[row.id] ?? row.cover_url;
         if (cover) return cover;
       }
       return null;
     };
-    const photoInterviews = interviewRows.filter((row) => !row.interview_video_url);
-    const videoInterviews = interviewRows.filter((row) => !!row.interview_video_url);
 
     // A door can be pinned to an image from the vault (Asset Vault -> PORTALS).
-    // That choice wins over whatever the interview projects happen to carry,
-    // and it stands even when no interview has been written yet.
+    // That choice wins over whatever the projects happen to carry, and it
+    // stands even while the hall is still empty.
     const { data: pinnedDoors } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('gallery_assets')
@@ -177,13 +186,13 @@ export async function GET() {
     }
 
     const interviews = {
-      photo: {
-        count: photoInterviews.length,
-        cover: pinnedCover.photo ?? interviewCover(photoInterviews),
+      talk: {
+        count: talkProjects.length,
+        cover: pinnedCover.talk ?? firstCover(talkProjects),
       },
-      video: {
-        count: videoInterviews.length,
-        cover: pinnedCover.video ?? interviewCover(videoInterviews),
+      live: {
+        count: liveProjects.length,
+        cover: pinnedCover.live ?? firstCover(liveProjects),
       },
     };
 

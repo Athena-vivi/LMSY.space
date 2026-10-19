@@ -4,8 +4,7 @@
  * Every fixed door on the homepage and the photo behind it. Two families sit
  * here because they are the same decision:
  *   - the five category entries (PORTAL_SLOT, one per HOME_CATEGORIES value)
- *   - the two interview doors in the soul-resonance block (INTERVIEW_SLOT,
- *     photo and video)
+ *   - the two soul-resonance doors (INTERVIEW_SLOT, `talk` and `live`)
  *
  * An empty door is not broken - it falls back to the cover derived from the
  * projects in that hall. The card says AUTO so "nobody chose one" stays
@@ -32,7 +31,7 @@ interface DoorSlot {
 
 type DoorRef =
   | { kind: 'portal'; category: ProjectCategory }
-  | { kind: 'interview'; door: 'photo' | 'video' };
+  | { kind: 'interview'; door: 'talk' | 'live' };
 
 interface PortalsViewProps {
   data: {
@@ -41,9 +40,9 @@ interface PortalsViewProps {
   loading: boolean;
 }
 
-const INTERVIEW_DOORS: Array<{ door: 'photo' | 'video'; label: string }> = [
-  { door: 'photo', label: '图片采访 / PHOTO_INTERVIEW' },
-  { door: 'video', label: '视频采访 / VIDEO_INTERVIEW' },
+const INTERVIEW_DOORS: Array<{ door: 'talk' | 'live'; label: string }> = [
+  { door: 'talk', label: '被问到 / TALK' },
+  { door: 'live', label: '自己说 / LIVE' },
 ];
 
 function doorKey(ref: DoorRef): string {

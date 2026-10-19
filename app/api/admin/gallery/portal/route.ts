@@ -10,15 +10,20 @@ import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
  * Two families of fixed door read their photo from this table:
  *   - the five entries under /api/home/portals, one per HOME_CATEGORIES value
  *     (`gallery_assets.portal_slot`)
- *   - the two interview doors in the soul-resonance block, photo and video
- *     (`gallery_assets.interview_slot`)
+ *   - the two soul-resonance doors in the soul-resonance block, `talk` and
+ *     `live` (`gallery_assets.interview_slot`)
+ *
+ * The column is still called `interview_slot` for history's sake; its values
+ * are `talk` and `live`, matching the two landing pages. The old `photo` /
+ * `video` pair is gone - it split the same 97 rows by medium, which is how the
+ * "video interviews" door ended up opening a wall of magazine covers.
  *
  * Until this route existed both families derived their photo from project
  * covers, which the curator could not choose. Now each door can be pinned to
  * an image from the vault, exactly like the year photos and the portraits.
  *
  * PATCH { imageId, category: ProjectCategory | null }   -> portal_slot
- * PATCH { imageId, interview: 'photo' | 'video' | null } -> interview_slot
+ * PATCH { imageId, interview: 'talk' | 'live' | null }  -> interview_slot
  *
  * Exactly one of `category` / `interview` must be present. A null value clears
  * the door and it falls back to the derived cover it used before.
@@ -27,7 +32,7 @@ import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
  * so the partial unique index on either column never sees two rows.
  */
 
-const INTERVIEW_SLOTS = ['photo', 'video'] as const;
+const INTERVIEW_SLOTS = ['talk', 'live'] as const;
 type InterviewSlot = (typeof INTERVIEW_SLOTS)[number];
 
 interface SlotTarget {

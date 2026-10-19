@@ -42,7 +42,12 @@ const ENTRY_COPY: Record<
   public_appearance: { titleKey: 'portal.appearance', descKey: 'portal.appearanceDesc', span: 'lg:col-span-3' },
   commercial: { titleKey: 'portal.commercial', descKey: 'portal.commercialDesc', span: 'lg:col-span-5' },
   // Not homepage entries today. They are listed so the record is total over
-  // the registry type - the two halls below are reachable from /projects.
+  // the registry type. The three below are reachable from /projects; the four
+  // soul-resonance halls have their own doors and their own landing pages.
+  interview: { titleKey: 'category.interview', descKey: 'category.interview', span: 'lg:col-span-6' },
+  variety: { titleKey: 'category.variety', descKey: 'category.variety', span: 'lg:col-span-6' },
+  radio: { titleKey: 'category.radio', descKey: 'category.radio', span: 'lg:col-span-6' },
+  live_stream: { titleKey: 'category.liveStream', descKey: 'category.liveStream', span: 'lg:col-span-6' },
   behind_the_scenes: { titleKey: 'category.behindTheScenes', descKey: 'category.behindTheScenes', span: 'lg:col-span-6' },
   personal_travel: { titleKey: 'category.personalTravel', descKey: 'category.personalTravel', span: 'lg:col-span-6' },
   early_archive: { titleKey: 'category.earlyArchive', descKey: 'category.earlyArchive', span: 'lg:col-span-12' },

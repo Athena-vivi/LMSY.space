@@ -22,6 +22,10 @@ export const PROJECT_CATEGORIES = [
   'live_event',
   'public_appearance',
   'commercial',
+  'interview',
+  'variety',
+  'radio',
+  'live_stream',
   'behind_the_scenes',
   'personal_travel',
   'early_archive',
@@ -87,6 +91,41 @@ const DEFINITIONS: Record<ProjectCategory, Omit<CategoryDefinition, 'value' | 'o
     accent: 'text-ink border-white/20 bg-white/5',
     gradient: 'from-amber-500/25 via-yellow-400/15 to-orange-600/25',
   },
+  // -- soul-resonance door 1: everything someone else asked them -------------
+  // One hall of three categories. They share a production model (a third party
+  // shoots it, cuts it, and gives it a running time) and that is exactly what
+  // separates them from a live stream. They do NOT share a subject, so the
+  // door splits them with tabs instead of pages: 21 variety spots would be a
+  // thin page on their own.
+  interview: {
+    labelKey: 'category.interview',
+    homeEntry: false,
+    cardTitleKey: 'category.interview',
+    accent: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5',
+    gradient: 'from-indigo-500/25 via-violet-400/15 to-purple-600/25',
+  },
+  variety: {
+    labelKey: 'category.variety',
+    homeEntry: false,
+    cardTitleKey: 'category.variety',
+    accent: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5',
+    gradient: 'from-orange-500/25 via-amber-400/15 to-rose-600/25',
+  },
+  radio: {
+    labelKey: 'category.radio',
+    homeEntry: false,
+    cardTitleKey: 'category.radio',
+    accent: 'text-ink-2 border-border bg-muted',
+    gradient: 'from-cyan-500/25 via-sky-400/15 to-blue-600/25',
+  },
+  // -- soul-resonance door 2: no edit, nobody asking -------------------------
+  live_stream: {
+    labelKey: 'category.liveStream',
+    homeEntry: false,
+    cardTitleKey: 'category.liveStream',
+    accent: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5',
+    gradient: 'from-rose-500/25 via-pink-400/15 to-fuchsia-600/25',
+  },
   behind_the_scenes: {
     labelKey: 'category.behindTheScenes',
     homeEntry: false,
@@ -94,6 +133,11 @@ const DEFINITIONS: Record<ProjectCategory, Omit<CategoryDefinition, 'value' | 'o
     accent: 'text-ink-2 border-border bg-muted',
     gradient: 'from-zinc-500/25 via-slate-400/15 to-stone-600/25',
   },
+  /**
+   * @deprecated Folded into `behind_the_scenes`. Two archived rows still carry
+   * it and the database CHECK still accepts it, so it stays in the vocabulary
+   * until those rows are migrated - it has no home entry and no chip.
+   */
   personal_travel: {
     labelKey: 'category.personalTravel',
     homeEntry: false,
@@ -157,8 +201,28 @@ export const HOME_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter
   (definition) => definition.homeEntry
 );
 
-/** Filter chips for the full index: all eight, in a stable order. */
-export const INDEX_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS;
+/**
+ * The soul-resonance block: one door per production model.
+ *
+ * `TALK_CATEGORIES` is the first door (third party films it, cuts it, gives it
+ * a running time). `STREAM_CATEGORIES` is the second (they hold the phone
+ * themselves, nothing is cut). Both doors have their own landing page, so the
+ * halls holding them stay out of `/projects` - one hall, one front door, no
+ * second copy of the same 97 rows under a category chip.
+ */
+export const TALK_CATEGORIES = ['interview', 'variety', 'radio'] as const;
+export const STREAM_CATEGORIES = ['live_stream'] as const;
+
+/** Categories whose front door is /talks or /live rather than /projects. */
+export const CATEGORIES_WITH_OWN_DOOR: ReadonlySet<string> = new Set<string>([
+  ...TALK_CATEGORIES,
+  ...STREAM_CATEGORIES,
+]);
+
+/** Filter chips for the full index: every hall except the two door halls. */
+export const INDEX_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter(
+  (definition) => !CATEGORIES_WITH_OWN_DOOR.has(definition.value)
+);
 
 /**
  * URL segment per category for /timeline and /projects filtering. Equal to

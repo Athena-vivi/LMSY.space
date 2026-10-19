@@ -8,6 +8,8 @@ import { formatChapterTitle } from '../lib/chapter-title.ts';
 import {
   PROJECT_CATEGORIES,
   HOME_CATEGORIES,
+  INDEX_CATEGORIES,
+  CATEGORIES_WITH_OWN_DOOR,
   normalizeCategory,
   categoryDefinition,
 } from '../lib/category-registry.ts';
@@ -82,17 +84,32 @@ test('chapter title: malformed key returns the key itself', () => {
 
 // ---------- category registry ----------
 
-test('category registry: exactly the eight stable values', () => {
+test('category registry: exactly the stable values, in registry order', () => {
   assert.deepEqual([...PROJECT_CATEGORIES], [
     'drama_work',
     'editorial',
     'live_event',
     'public_appearance',
     'commercial',
+    'interview',
+    'variety',
+    'radio',
+    'live_stream',
     'behind_the_scenes',
     'personal_travel',
     'early_archive',
   ]);
+});
+
+test('index chips skip the halls that own a landing page', () => {
+  // /talks and /live are the front doors for these three/four halls; a chip on
+  // /projects would list the same rows behind a second door.
+  const indexValues = INDEX_CATEGORIES.map((definition) => definition.value);
+  for (const value of CATEGORIES_WITH_OWN_DOOR) {
+    assert.ok(!indexValues.includes(value as never), `${value} has its own door, not a chip`);
+  }
+  assert.ok(indexValues.includes('drama_work'), 'the five door halls keep their chips');
+  assert.ok(indexValues.includes('behind_the_scenes'), 'halls without a door keep their chip');
 });
 
 test('category registry: five fixed homepage entries', () => {

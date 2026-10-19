@@ -22,7 +22,7 @@ export interface Member {
 
 /**
  * Stable project categories. The database CHECK constraint, the front-end
- * filter chips and the URL parameter all use these eight values; see
+ * filter chips and the URL parameter all use these values; see
  * lib/category-registry.ts.
  */
 export type ProjectCategory =
@@ -31,9 +31,32 @@ export type ProjectCategory =
   | 'live_event'
   | 'public_appearance'
   | 'commercial'
+  | 'interview'
+  | 'variety'
+  | 'radio'
+  | 'live_stream'
   | 'behind_the_scenes'
   | 'personal_travel'
   | 'early_archive';
+
+/**
+ * Sub-class inside a hall, shared by every hall that needs one:
+ *   live_event        fanmeeting / brand_event / birthday
+ *   public_appearance premiere / awards / fashion / fanday
+ *   interview         feature / press / tv_news
+ * NULL means "the hall itself is enough" - most rows need no sub-class.
+ */
+export type ProjectSubtype =
+  | 'fanmeeting'
+  | 'brand_event'
+  | 'birthday'
+  | 'premiere'
+  | 'awards'
+  | 'fashion'
+  | 'fanday'
+  | 'feature'
+  | 'press'
+  | 'tv_news';
 
 export interface Project {
   id: string;
@@ -59,6 +82,8 @@ export interface Project {
   title: string;
   title_i18n?: LocalizedText | null;
   category: ProjectCategory;
+  /** Sub-class inside the hall; see ProjectSubtype. */
+  subtype?: ProjectSubtype | null;
   release_date: string | null;
   description: string | null;
   description_i18n?: LocalizedText | null;
@@ -111,7 +136,7 @@ export interface GalleryItem {
    */
   portal_slot?: string | null;
   /**
-   * Soul-resonance door this image was pinned to: 'photo' or 'video'.
+   * Soul-resonance door this image was pinned to: 'talk' or 'live'.
    * NULL means the door uses its derived cover. At most one row per value.
    */
   interview_slot?: string | null;
