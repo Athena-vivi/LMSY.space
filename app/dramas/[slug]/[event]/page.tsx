@@ -51,7 +51,7 @@ async function resolve(slug: string, eventSlug: string) {
     .schema('lmsy_archive')
     .from('drama_events')
     .select(
-      'id, project_id, group_key, slug, title, title_i18n, event_date, description, description_i18n, source_url, result, sort_order, cover_url'
+      'id, project_id, group_key, slug, title, title_i18n, event_date, description, description_i18n, source_url, result, sort_order, media_kind, cover_url'
     )
     .eq('project_id', series.id)
     .eq('slug', eventSlug)

@@ -42,6 +42,7 @@ export interface DramaEventPageEvent {
   description_i18n: LocalizedText | null;
   source_url: string | null;
   result: string | null;
+  media_kind: string | null;
 }
 
 export interface DramaEventPageAsset {
@@ -83,6 +84,9 @@ export function DramaEventPageClient({
     day: true,
   });
   const groupKey = GROUP_LABEL[event.group_key];
+  // A video entry is an introduction, not an exhibit: the site shows the cover
+  // and the writing, and watching happens on the platform that hosts it.
+  const isVideo = event.media_kind === 'video';
 
   return (
     <div className="min-h-screen">
@@ -125,7 +129,28 @@ export function DramaEventPageClient({
               <p className="mt-5 max-w-2xl text-lg text-ink-2">{description}</p>
             ) : null}
 
-            {event.source_url ? (
+            {isVideo ? (
+              event.source_url ? (
+                <div className="mt-6">
+                  <a
+                    href={event.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-lmsy-blue/40 bg-lmsy-blue/[0.08] px-5 py-2.5 text-sm text-lmsy-blue transition-colors hover:border-lmsy-blue hover:bg-lmsy-blue/[0.14]"
+                  >
+                    {t(language, 'drama.watchExternal')}
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <p className="mt-3 max-w-xl font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">
+                    {t(language, 'drama.watchNote')}
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-6 inline-flex rounded-full border border-dashed border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">
+                  {t(language, 'drama.linkPending')}
+                </p>
+              )
+            ) : event.source_url ? (
               <a
                 href={event.source_url}
                 target="_blank"
@@ -144,7 +169,9 @@ export function DramaEventPageClient({
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6 flex items-baseline gap-4">
             <span className="font-mono text-xs uppercase tracking-[0.22em] text-ink-2">
-              {t(language, 'drama.eventImages', { count: assets.length })}
+              {isVideo
+                ? t(language, 'drama.relatedImages', { count: assets.length })
+                : t(language, 'drama.eventImages', { count: assets.length })}
             </span>
             <span className="h-px flex-1 bg-border/70" />
           </div>

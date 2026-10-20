@@ -4,11 +4,10 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Play } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
-import { getImageDimensions } from '@/lib/image-dimensions';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
 import type { ProjectSubtype } from '@/lib/supabase/types';
@@ -55,6 +54,7 @@ export interface DramaEventCard {
   source_url: string | null;
   result: string | null;
   sort_order: number;
+  media_kind: string | null;
   cover_url: string | null;
   cover: string | null;
   imageCount: number;
@@ -85,12 +85,10 @@ export function DramaDetailClient({
   drama,
   siblings,
   events,
-  assets,
 }: {
   drama: DramaSeriesRow;
   siblings: DramaSeriesRow[];
   events: DramaEventCard[];
-  assets: DramaAssetRow[];
 }) {
   const { language } = useLanguage();
   const title = getLocalizedText(drama.title_i18n, language, drama.title);
@@ -199,7 +197,6 @@ export function DramaDetailClient({
                 key={group.key}
                 group={group}
                 rows={sorted.filter((row) => row.group_key === group.key)}
-                assets={assets}
                 seriesSlug={seriesSlug}
               />
             ))}
@@ -213,20 +210,17 @@ export function DramaDetailClient({
 function GroupSection({
   group,
   rows,
-  assets,
   seriesSlug,
 }: {
   group: { key: string; labelKey: TranslationKey };
   rows: DramaEventCard[];
-  assets: DramaAssetRow[];
   seriesSlug: string;
 }) {
   const { language } = useLanguage();
 
   const body = (() => {
-    if (group.key === 'footage') {
-      return <FootageGrid assets={assets} />;
-    }
+    // Footage is a group of entries like any other: a stills body, a vlog run,
+    // a reaction run. Each one opens its own page; the wall lives there.
     if (group.key === 'award') {
       return <AwardGrid rows={rows} seriesSlug={seriesSlug} />;
     }
@@ -315,7 +309,15 @@ function EventCard({
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-95" />
 
-          {row.imageCount > 1 ? (
+          {row.media_kind === 'video' ? (
+            // A video entry says so on the card: what opens is an introduction
+            // with a link out, not a picture wall.
+            <div className="absolute right-3 top-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/25 bg-black/50 backdrop-blur">
+                <Play className="h-3 w-3 fill-current text-ink" />
+              </span>
+            </div>
+          ) : row.imageCount > 1 ? (
             <div className="absolute right-3 top-3">
               <span className="rounded-full border border-white/20 bg-black/50 px-2.5 py-1 font-mono text-[10px] text-ink backdrop-blur">
                 {row.imageCount}
@@ -367,62 +369,5 @@ function AwardGrid({ rows, seriesSlug }: { rows: DramaEventCard[]; seriesSlug: s
           </div>
         ))}
     </div>
-  );
-}
-
-function FootageGrid({ assets }: { assets: DramaAssetRow[] }) {
-  const { language } = useLanguage();
-
-  if (assets.length === 0) return <EmptyRow />;
-
-  return (
-    <div>
-      <div className="columns-2 gap-4 md:columns-3 lg:columns-4">
-        {assets.map((asset, index) => (
-          <AssetCard key={asset.id} asset={asset} index={index} />
-        ))}
-      </div>
-      <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-2">
-        <Link href="/gallery" className="hover:text-lmsy-blue">
-          {t(language, 'drama.footageCount', { count: assets.length })}
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-function AssetCard({ asset, index }: { asset: DramaAssetRow; index: number }) {
-  const imageUrl = getImageUrl(asset.image_url);
-  const dimensions = getImageDimensions(asset.image_url);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.32) }}
-      className="mb-4 break-inside-avoid"
-    >
-      <Link href={`/gallery#${asset.id}`} className="group block">
-        <div className="relative overflow-hidden rounded-xl border border-border bg-muted">
-          <Image
-            src={imageUrl || ''}
-            alt={asset.caption || `Still ${index + 1}`}
-            width={dimensions?.width ?? 1200}
-            height={dimensions?.height ?? 1600}
-            sizes="(max-width: 768px) 50vw, 25vw"
-            className="h-auto w-full transition-transform duration-700 group-hover:scale-105"
-            placeholder="empty"
-          />
-          {asset.catalog_id ? (
-            <div className="absolute bottom-2 right-2 opacity-70 transition-opacity group-hover:opacity-100">
-              <span className="rounded bg-black/40 px-2 py-1 font-mono text-[10px] text-lmsy-yellow/80 backdrop-blur-sm">
-                {asset.catalog_id}
-              </span>
-            </div>
-          ) : null}
-        </div>
-      </Link>
-    </motion.div>
   );
 }
