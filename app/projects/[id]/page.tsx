@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
@@ -138,6 +138,14 @@ export default async function ProjectPage({ params }: PageProps) {
 
   if (!project || !isPublicProject(project)) {
     notFound();
+  }
+
+  // Door 1 (drama_work) has had its own front door since 2026-10-21: a series
+  // is read at /dramas/<slug> with its dated entries, never here. Known slugs
+  // are redirected in next.config; this catches the uuid form and any slug the
+  // config list has not caught up with, so a series keeps exactly one URL.
+  if (project.category === 'drama_work') {
+    redirect(`/dramas/${project.slug || project.id}`);
   }
 
   // Fetch gallery images for this project

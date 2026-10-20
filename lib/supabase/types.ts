@@ -46,6 +46,8 @@ export type ProjectCategory =
  *                     charity / premiere
  *   interview         feature / press / tv_news
  *   live_stream       duo / solo
+ *   drama_work        affair / harmony_secret / hometown_romance
+ *                     (one tab per series; a new series is a new value)
  * NULL means "the hall itself is enough" - most rows need no sub-class.
  * Pair with `category` when reading: the same value can mean different
  * things in different halls.
@@ -64,7 +66,10 @@ export type ProjectSubtype =
   | 'press'
   | 'tv_news'
   | 'duo'
-  | 'solo';
+  | 'solo'
+  | 'affair'
+  | 'harmony_secret'
+  | 'hometown_romance';
 
 export interface Project {
   id: string;

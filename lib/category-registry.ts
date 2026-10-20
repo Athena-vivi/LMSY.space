@@ -203,22 +203,31 @@ export const HOME_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter
 );
 
 /**
- * The soul-resonance block: one door per production model.
- *
- * `TALK_CATEGORIES` is the first door (third party films it, cuts it, gives it
- * a running time). `STREAM_CATEGORIES` is the second (they hold the phone
- * themselves, nothing is cut). Both doors have their own landing page, so the
- * halls holding them stay out of `/projects` - one hall, one front door, no
- * second copy of the same 97 rows under a category chip.
+ * Categories whose front door is /talks, /live or /dramas rather than
+ * /projects. One hall, one front door: the halls holding them stay out of the
+ * /projects index so the same rows never exist under two addresses.
  */
 export const TALK_CATEGORIES = ['interview', 'variety', 'radio'] as const;
 export const STREAM_CATEGORIES = ['live_stream'] as const;
 
 /** Categories whose front door is /talks or /live rather than /projects. */
 export const CATEGORIES_WITH_OWN_DOOR: ReadonlySet<string> = new Set<string>([
+  'drama_work',
   ...TALK_CATEGORIES,
   ...STREAM_CATEGORIES,
 ]);
+
+/**
+ * The front-door path per hall that owns one. Everything else is served by the
+ * /projects index with a `?category=` filter.
+ */
+const DOOR_PATHS: Partial<Record<ProjectCategory, string>> = {
+  drama_work: '/dramas',
+  interview: '/talks',
+  variety: '/talks',
+  radio: '/talks',
+  live_stream: '/live',
+};
 
 /** Filter chips for the full index: every hall except the two door halls. */
 export const INDEX_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter(
@@ -233,7 +242,7 @@ export const INDEX_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filte
  * the database would reject.
  *
  * Halls missing from this map have no tabs on purpose:
- *   drama_work / editorial / commercial / behind_the_scenes / personal_travel /
+ *   editorial / commercial / behind_the_scenes / personal_travel /
  *   early_archive  - the work itself is the smallest unit
  *   interview / variety / radio / live_stream - these own a landing page
  *   (/talks, /live) that already splits them, so they never reach /projects
@@ -244,6 +253,13 @@ export interface SubtypeDefinition {
 }
 
 export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefinition[]>> = {
+  // Door 1: one tab per series, in broadcast order. A fourth series is a new
+  // value here plus a row in the database - never a new hall.
+  drama_work: [
+    { value: 'affair', labelKey: 'subtype.affair' },
+    { value: 'harmony_secret', labelKey: 'subtype.harmony_secret' },
+    { value: 'hometown_romance', labelKey: 'subtype.hometown_romance' },
+  ],
   live_event: [
     { value: 'fanmeeting', labelKey: 'subtype.fanmeeting' },
     { value: 'brand_event', labelKey: 'subtype.brand_event' },
@@ -278,10 +294,10 @@ export function subtypeTabs(
 }
 
 /**
- * URL segment per category for /timeline and /projects filtering. Equal to
- * the database value today, but kept as a separate accessor so a future
- * rename only touches this file.
+ * URL segment per category for /timeline and /projects filtering. Halls with
+ * their own front door resolve to that door, so a homepage entry never sends a
+ * visitor to a filtered copy of a page that already exists.
  */
 export function categoryHref(value: ProjectCategory): string {
-  return `/projects?category=${value}`;
+  return DOOR_PATHS[value] ?? `/projects?category=${value}`;
 }

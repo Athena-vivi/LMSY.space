@@ -81,6 +81,12 @@ const nextConfig: NextConfig = {
       { source: '/editorial/:id', destination: '/projects/:id', permanent: true },
       { source: '/profiles', destination: '/people', permanent: true },
       { source: '/profiles/:id', destination: '/people/:id', permanent: true },
+      // Door 1 moved to its own front door (2026-10-21). The three series keep
+      // one canonical address each; /projects/<slug> for a drama_work row now
+      // redirects, so no series exists under two URLs.
+      { source: '/projects/affair', destination: '/dramas/affair', permanent: true },
+      { source: '/projects/harmony-secret', destination: '/dramas/harmony-secret', permanent: true },
+      { source: '/projects/hometown-romance', destination: '/dramas/hometown-romance', permanent: true },
     ];
   },
 

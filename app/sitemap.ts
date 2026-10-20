@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/editorial`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/talks`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/live`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/dramas`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/copyright`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
@@ -34,24 +35,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // their URLs to crawlers. Every project shares one canonical detail route
   // since phase 7, addressed by slug.
   let projectRoutes: MetadataRoute.Sitemap = [];
+  // Door 1 keeps its own address space since 2026-10-21: drama_work rows are
+  // listed under /dramas/<slug> below and redirect from /projects/<slug>, so
+  // advertising them here would submit a URL that only 308s.
+  let dramaRoutes: MetadataRoute.Sitemap = [];
   try {
     const { data } = await applyPublicProjectFilter(
       getSupabaseAdmin()
         .schema('lmsy_archive')
         .from('projects')
-        .select('id, slug, created_at')
+        .select('id, slug, category, created_at')
     );
-    projectRoutes = (data || []).map(
-      (project: { id: string; slug?: string | null; created_at: string | null }) => ({
-        url: `${SITE_URL}/projects/${project.slug || project.id}`,
-        lastModified: project.created_at ? new Date(project.created_at) : now,
-        changeFrequency: 'monthly' as const,
-        priority: 0.6,
-      })
-    );
+    projectRoutes = (data || [])
+      .filter((project: { category?: string | null }) => project.category !== 'drama_work')
+      .map(
+        (project: { id: string; slug?: string | null; created_at: string | null }) => ({
+          url: `${SITE_URL}/projects/${project.slug || project.id}`,
+          lastModified: project.created_at ? new Date(project.created_at) : now,
+          changeFrequency: 'monthly' as const,
+          priority: 0.6,
+        })
+      );
+    dramaRoutes = (data || [])
+      .filter((project: { category?: string | null }) => project.category === 'drama_work')
+      .map(
+        (project: { id: string; slug?: string | null; created_at: string | null }) => ({
+          url: `${SITE_URL}/dramas/${project.slug || project.id}`,
+          lastModified: project.created_at ? new Date(project.created_at) : now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.8,
+        })
+      );
   } catch {
     // A sitemap failure must not break the route; fall back to static entries.
   }
 
-  return [...staticRoutes, ...projectRoutes];
+  return [...staticRoutes, ...dramaRoutes, ...projectRoutes];
 }

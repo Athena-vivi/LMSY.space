@@ -8,7 +8,7 @@ import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { getImageUrl } from '@/lib/image-url';
-import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
+import { HOME_CATEGORIES, categoryHref, type ProjectCategory } from '@/lib/category-registry';
 
 interface PortalCover {
   imageUrl: string | null;
@@ -75,7 +75,9 @@ function PortalCard({ entry, index }: { entry: PortalEntry; index: number }) {
       transition={{ duration: 0.6, delay: index * 0.1 }}
       className="group relative"
     >
-      <Link href={`/projects?category=${entry.value}`} className="block">
+      {/* Halls with their own front door (/dramas, /talks, /live) send the
+          card there; the rest filter the /projects index. */}
+      <Link href={categoryHref(entry.value)} className="block">
         <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-card/40">
           {imageUrl ? (
             <Image
