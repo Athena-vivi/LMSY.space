@@ -19,7 +19,7 @@
 
 // NOTE: the explicit .ts extension keeps this module importable both by the
 // Next.js build (allowImportingTsExtensions) and by node --strip-types tests.
-import { CATEGORY_DEFINITIONS } from './category-registry.ts';
+import { CATEGORY_DEFINITIONS, categoryHref, homeDoorEntryPath } from './category-registry.ts';
 import { t, type Language } from './languages.ts';
 
 // ---- Contract --------------------------------------------------------------
@@ -47,6 +47,8 @@ export interface ProjectRow {
   title: string | null;
   description?: string | null;
   category?: string | null;
+  /** Sub-class inside the hall, needed to address an entry under its door. */
+  subtype?: string | null;
   /** When the event actually happened. Preferred over release_date. */
   event_date?: string | null;
   release_date?: string | null;
@@ -129,7 +131,9 @@ export function mapProjectRow(row: ProjectRow): SearchResult | null {
     type: 'project',
     id: row.id,
     title,
-    href: projectHref(row.slug, row.id),
+    // Halls with their own door answer at their own address; only the halls
+    // served by /projects fall back to the shared detail route.
+    href: homeDoorEntryPath(row) ?? projectHref(row.slug, row.id),
     description: (row.description ?? '').trim() || undefined,
     date: row.event_date || row.release_date || undefined,
     category: row.category || undefined,
@@ -186,7 +190,7 @@ export function buildCategoryResults(
       type: 'exhibition',
       id: definition.value,
       title: t(lang, definition.labelKey),
-      href: `/projects?category=${definition.value}`,
+      href: categoryHref(definition.value),
       category: definition.value,
     });
   }

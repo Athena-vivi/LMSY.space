@@ -10,6 +10,7 @@ import {
   HOME_CATEGORIES,
   INDEX_CATEGORIES,
   CATEGORIES_WITH_OWN_DOOR,
+  HALLS_OUTSIDE_INDEX,
   normalizeCategory,
   categoryDefinition,
 } from '../lib/category-registry.ts';
@@ -102,13 +103,15 @@ test('category registry: exactly the stable values, in registry order', () => {
 });
 
 test('index chips skip the halls that own a landing page', () => {
-  // /talks and /live are the front doors for these three/four halls; a chip on
-  // /projects would list the same rows behind a second door.
+  // Only the halls whose entries live outside the /projects namespace stay out
+  // of the index: door 1, /talks and /live. Doors 2-5 own a page too, but the
+  // index keeps an entry for them - their cards open at the door address.
   const indexValues = INDEX_CATEGORIES.map((definition) => definition.value);
-  for (const value of CATEGORIES_WITH_OWN_DOOR) {
-    assert.ok(!indexValues.includes(value as never), `${value} has its own door, not a chip`);
+  for (const value of HALLS_OUTSIDE_INDEX) {
+    assert.ok(!indexValues.includes(value as never), `${value} lives outside this index`);
   }
-  assert.ok(indexValues.includes('drama_work'), 'the five door halls keep their chips');
+  assert.ok(!indexValues.includes('drama_work'), 'door 1 has /dramas, not a chip');
+  assert.ok(indexValues.includes('editorial'), 'the magazine hall keeps an index entry');
   assert.ok(indexValues.includes('behind_the_scenes'), 'halls without a door keep their chip');
 });
 

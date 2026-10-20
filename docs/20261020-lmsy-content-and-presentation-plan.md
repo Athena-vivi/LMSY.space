@@ -310,3 +310,27 @@ SQL 全文：`docs/architecture/20261020-db-restructure.sql`，说明：同名 `
 | 曾主张加第 8 门放直播 | 对，但随之要把 6、7 号门扩容成三门，门数一进一出又回到 8 |
 | 「图文对话」并回杂志 | 专访是刊物的一部分，详情页早就在渲染，并回去是纯减法 |
 | 「视频对话」改名「对话」，内部 Tab | 97 条里访谈占 63、综艺 21、电台 13；按载体分栏（文字 / 视频）会让同一批内容出现两次 |
+
+---
+
+## 十、首页五个门各有独立页面（2026-10-21 执行）
+
+首页「多维入口」五张卡不再指向 `/projects?category=`。每张卡有自己的门页，门页下是分类，分类下是事件，三层各有地址、各自可被搜索引擎收录。
+
+| 门 | category | 门页 | 分类页 | 事件页 |
+|---|---|---|---|---|
+| 1 影视作品 | `drama_work` | `/dramas` | `/dramas/<剧 slug>` | `/dramas/<剧 slug>/<事件 slug>` |
+| 2 杂志特辑 | `editorial` | `/editorial` | 一期即事件，无中间层 | `/editorial/<刊 slug>` |
+| 3 线下活动 | `live_event` | `/live-events` | `/live-events/<分类>` | `/live-events/<分类>/<事件 slug>` |
+| 4 公开活动 | `public_appearance` | `/appearances` | `/appearances/<分类>` | `/appearances/<分类>/<事件 slug>` |
+| 5 商务 | `commercial` | `/commercial` | 没有分类层 | `/commercial/<事件 slug>` |
+
+**规则**
+
+- 分类段用短横线，数据库值用下划线：`brand_event` → `/live-events/brand-event`。转换只在 `subtypeSegment()` 一处。
+- 1 号门与 /talks、/live 从 `/projects` 索引里排除（`HALLS_OUTSIDE_INDEX`），它们的事件地址不在 `/projects` 命名空间下。
+- 2-5 号门**保留 `/projects` 里的入口**（`/projects` 是总索引，抽掉五个门会只剩空页），但列表卡片的链接指向门内地址，所以它只是入口，不是第二个地址。
+- 没归类的行落在 `<门>/unfiled`，任何一行都有入口，不会因为没填 subtype 就消失。
+- 门页与分类页都是服务端渲染。事件页各有 title / description / canonical，全部进 sitemap。
+- 2/3/4/5 号门不再走 `/projects/<slug>`，也不发重定向：旧地址没有搜索量，留着只会让同一内容占两个 URL。`/projects/<id>` 仍能打开（后台预览在用），但 canonical 指向门内地址。
+- `/editorial` 恢复成旧版的大图封面墙（catalog 编号 + 展签），不再被 308 到 `/projects`。

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { normalizeCategory } from '@/lib/category-registry';
+import { categoryHref, normalizeCategory } from '@/lib/category-registry';
 
 /**
  * Legacy exhibition categories. Each one mapped to a projects.category value
@@ -22,5 +22,8 @@ export default async function ExhibitionCategoryRedirect({
 }) {
   const { type } = await params;
   const category = normalizeCategory(LEGACY_TYPE_TO_CATEGORY[type] ?? type);
-  redirect(category ? `/projects?category=${category}` : '/projects');
+  // Halls with their own front door go there; the rest still land on the
+  // filtered index. /projects no longer carries the five homepage halls, so a
+  // hard-coded /projects?category= would now answer with an empty list.
+  redirect(category ? categoryHref(category) : '/projects');
 }

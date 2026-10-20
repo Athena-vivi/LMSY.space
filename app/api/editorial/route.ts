@@ -61,6 +61,7 @@ export async function GET() {
         .from('projects')
         .select(`
         id,
+        slug,
         title,
         title_i18n,
         description,
@@ -120,6 +121,7 @@ export async function GET() {
 
         return {
           id: project.id,
+          slug: project.slug,
           title: project.title,
           title_i18n: project.title_i18n || null,
           category: project.category,

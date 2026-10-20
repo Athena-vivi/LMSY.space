@@ -75,10 +75,15 @@ const nextConfig: NextConfig = {
    */
   async redirects() {
     return [
-      { source: '/exhibitions/category/:type', destination: '/projects?category=:type', permanent: true },
+      // /exhibitions/category/<type> is handled by its page, which translates
+      // the legacy type through the registry and sends it to whichever door
+      // owns that hall now. A static rule here could only point at /projects,
+      // which no longer lists the five homepage halls.
       { source: '/exhibitions', destination: '/projects', permanent: true },
       { source: '/chronicle', destination: '/timeline', permanent: true },
-      { source: '/editorial/:id', destination: '/projects/:id', permanent: true },
+      // /editorial/<slug> is a real page again (2026-10-21): the issue is the
+      // entry, and an entry owns an address of its own. The old rule sent every
+      // issue to /projects/<id>, which is no longer where it lives.
       { source: '/profiles', destination: '/people', permanent: true },
       { source: '/profiles/:id', destination: '/people/:id', permanent: true },
       // Door 1 moved to its own front door (2026-10-21). The three series keep

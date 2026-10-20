@@ -19,7 +19,9 @@ import type { Language } from '@/lib/languages';
  *     and `search_aliases` (Thai / Chinese / short names);
  *   - a person match expands to the projects that person is linked to, so
  *     typing "Lookmhee" surfaces her work rather than nothing;
- *   - canonical hrefs: /projects/<slug|uuid>, /projects?category=<value>,
+ *   - canonical hrefs: the hall's own door when it owns one (a homepage
+ *     entry resolves to /dramas, /editorial, /live-events, /appearances or
+ *     /commercial), otherwise /projects/<slug|uuid>; images stay at
  *     /gallery#<asset uuid>.
  */
 
@@ -41,7 +43,7 @@ export async function GET(request: NextRequest) {
       supabase
         .schema('lmsy_archive')
         .from('projects')
-        .select('id, slug, title, description, category, event_date, release_date')
+        .select('id, slug, title, description, category, subtype, event_date, release_date')
     );
     const publicRows = (publicProjects ?? []) as unknown as ProjectRow[];
     const publicIds = publicRows.map((row) => row.id);
@@ -78,7 +80,7 @@ export async function GET(request: NextRequest) {
       supabase
         .schema('lmsy_archive')
         .from('projects')
-        .select('id, slug, title, description, category, event_date, release_date, search_aliases')
+        .select('id, slug, title, description, category, subtype, event_date, release_date, search_aliases')
         .in('id', publicIds)
     )
       .or(

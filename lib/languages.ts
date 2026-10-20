@@ -312,6 +312,14 @@ export const translations = {
     'dramas.description': 'Every story they have told, kept here. The story ends; the meeting does not.',
     'dramas.eventCount': '{count} entries',
     'dramas.viewSeries': 'Open the series',
+
+    // Doors 2-5 (homepage entries with a page of their own)
+    'door.description.liveEvents': 'The nights when everyone gathered.',
+    'door.description.appearances': 'The moments they were seen.',
+    'door.description.commercial': 'What they made for the brands.',
+    'door.viewCategory': 'Open the shelf',
+    'door.unfiled': 'Not filed yet',
+    'door.video': 'Video',
     'drama.footageCount': '{count} stills and clips',
     'drama.back': 'Back to Series',
     'drama.eventImages': '{count} images',
@@ -739,6 +747,14 @@ export const translations = {
     'dramas.description': '她们演过的故事，都收在这里。故事结束了，相遇还没有。',
     'dramas.eventCount': '{count} 条',
     'dramas.viewSeries': '进入这一部',
+
+    // Doors 2-5
+    'door.description.liveEvents': '人聚在一起的那些晚上。',
+    'door.description.appearances': '被看见的那些时刻。',
+    'door.description.commercial': '她们替品牌留下的画面。',
+    'door.viewCategory': '进入这一类',
+    'door.unfiled': '未归类',
+    'door.video': '视频',
     'drama.footageCount': '{count} 张影像物料',
     'drama.back': '返回影视作品',
     'drama.eventImages': '{count} 张图片',
@@ -1163,6 +1179,14 @@ export const translations = {
     'dramas.description': 'เรื่องจบไปแล้ว แต่การพบกันยังไม่จบ',
     'dramas.eventCount': '{count} รายการ',
     'dramas.viewSeries': 'เปิดซีรีส์',
+
+    // Doors 2-5
+    'door.description.liveEvents': 'คืนที่ทุกคนมารวมกัน',
+    'door.description.appearances': 'ช่วงเวลาที่ถูกมองเห็น',
+    'door.description.commercial': 'สิ่งที่พวกเธอทำไว้ให้แบรนด์',
+    'door.viewCategory': 'เปิดหมวดนี้',
+    'door.unfiled': 'ยังไม่จัดหมวด',
+    'door.video': 'วิดีโอ',
     'drama.footageCount': '{count} ชิ้น',
     'drama.back': 'กลับไปซีรีส์',
     'drama.eventImages': '{count} รูป',

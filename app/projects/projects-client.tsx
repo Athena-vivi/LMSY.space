@@ -41,8 +41,9 @@ import {
   type ProjectSpan,
 } from '@/lib/project-span';
 import {
-  CATEGORIES_WITH_OWN_DOOR,
+  HALLS_OUTSIDE_INDEX,
   INDEX_CATEGORIES,
+  homeDoorEntryPath,
   normalizeCategory,
   subtypeTabs,
   SUBTYPES_BY_CATEGORY,
@@ -135,12 +136,13 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        // Halls that own a landing page (/talks, /live) stay out of this index:
-        // one hall, one front door. Their rows are still reachable from the
-        // door and from search; listing them here would put the same 97 rows
-        // behind a category chip that only repeats the door.
+        // Only the halls whose entries live outside this namespace stay out of
+        // the index (door 1, /talks, /live): listing them here would repeat a
+        // door that already holds every row. Doors 2-5 keep an entry - their
+        // cards open at the door address, so this page is an entrance, not a
+        // second address.
         const rows = (data as unknown as Project[]).filter(
-          (project) => !CATEGORIES_WITH_OWN_DOOR.has(project.category ?? '')
+          (project) => !HALLS_OUTSIDE_INDEX.has(project.category ?? '')
         );
 
         const ids = rows.map((p) => p.id);
@@ -395,7 +397,10 @@ export function ProjectsClient({ lockedCategory }: { lockedCategory?: ProjectCat
                 : formatDisplayDate(project.event_date, language);
               const dateTimeValue = themeProject ? projectSpan?.end : project.event_date;
               const imageCount = counts[project.id] ?? 0;
-              const href = `/projects/${project.slug || project.id}`;
+              // A row that belongs to a homepage door opens at that door's
+              // address: the index is a way in, not a second home for the row.
+              const href =
+                homeDoorEntryPath(project) ?? `/projects/${project.slug || project.id}`;
 
               return (
                 <motion.div

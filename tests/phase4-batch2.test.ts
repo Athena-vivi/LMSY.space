@@ -147,9 +147,12 @@ describe('single project detail route', () => {
     assert.ok(pageSrc.includes('resolveProject'), 'slug and uuid both resolve');
   });
 
-  test('legacy /editorial/[id] forwards to the project detail', () => {
+  test('/editorial/<slug> opens the issue itself', () => {
+    // Until 2026-10-21 this forwarded to /projects/<id>. An issue is an entry,
+    // and an entry owns an address under its door.
     const legacy = src('app/editorial/[id]/page.tsx');
-    assert.ok(legacy.includes('redirect(`/projects/${id}`)'));
+    assert.ok(legacy.includes('loadEditorialIssue'), 'reads the issue instead of forwarding');
+    assert.ok(!legacy.includes('redirect('), 'no second address for the same issue');
   });
 
   test('related-projects cards link to /projects/<slug>', () => {
@@ -157,9 +160,12 @@ describe('single project detail route', () => {
     assert.ok(clientSrc.includes('`/projects/${related.slug || related.id}`'));
   });
 
-  test('projects list cards link to /projects/<slug>', () => {
+  test('projects list cards open at the address the row actually owns', () => {
     const listSrc = src('app/projects/projects-client.tsx');
-    assert.ok(listSrc.includes('const href = `/projects/${project.slug || project.id}`'));
+    assert.ok(
+      listSrc.includes('homeDoorEntryPath(project) ?? `/projects/${project.slug || project.id}`'),
+      'a door row opens under its door; the rest keep /projects/<slug>'
+    );
   });
 
   test('search results follow the same rule', () => {
@@ -167,8 +173,8 @@ describe('single project detail route', () => {
     assert.ok(searchSrc.includes('buildSearchResults'), 'route uses the contract builder');
     const resultsSrc = src('lib/search-results.ts');
     assert.ok(
-      resultsSrc.includes('return `/projects/${slug || id}`;'),
-      'one canonical entry in the shared mapping'
+      resultsSrc.includes('homeDoorEntryPath(row)'),
+      'a hall with its own door answers under that door'
     );
   });
 

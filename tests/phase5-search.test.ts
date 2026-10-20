@@ -200,13 +200,14 @@ describe('search dedup and scope', () => {
     assert.equal(results.length, 1);
     assert.equal(results[0].type, 'exhibition');
     assert.equal(results[0].id, 'drama_work');
-    assert.equal(results[0].href, '/projects?category=drama_work');
+    // Door 1 owns /dramas; a category result lands on the door itself.
+    assert.equal(results[0].href, '/dramas');
   });
 
   test('category entries match localized labels too', () => {
     const zh = buildSearchResults({ term: '剧集', projectRows: [], galleryRows: [], categoryCounts: { drama_work: 2 }, lang: 'zh' });
     assert.equal(zh.length, 1);
-    assert.equal(zh[0].href, '/projects?category=drama_work');
+    assert.equal(zh[0].href, '/dramas');
     const th = buildSearchResults({ term: 'อีเวนต์สด', projectRows: [], galleryRows: [], categoryCounts: { live_event: 1 }, lang: 'th' });
     assert.equal(th.length, 1);
   });
@@ -340,8 +341,12 @@ describe('related routing fixes', () => {
   test('sitemap advertises the one canonical project entry, by slug', () => {
     const sitemapSrc = src('app/sitemap.ts');
     assert.ok(
-      sitemapSrc.includes('`${SITE_URL}/projects/${project.slug || project.id}`'),
-      'every project is listed under /projects/[slug]'
+      sitemapSrc.includes('homeDoorEntryPath(project)'),
+      'an entry inside a homepage door is submitted at the door, not at /projects'
+    );
+    assert.ok(
+      sitemapSrc.includes('`/projects/${project.slug || project.id}`'),
+      'halls without a door fall back to /projects/[slug]'
     );
     assert.ok(sitemapSrc.includes('/timeline'), 'timeline is advertised');
     assert.ok(sitemapSrc.includes('/people'), 'people is advertised');

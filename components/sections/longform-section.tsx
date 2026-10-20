@@ -13,6 +13,7 @@ import { DEFAULT_LONGFORM_CONTENT, normalizeLongformContent } from '@/app/admin/
 
 interface FeaturedEditorial {
   id: string;
+  slug?: string | null;
   title: string;
   title_i18n?: LocalizedText | null;
   description: string | null;
@@ -90,7 +91,9 @@ export function LongformSection() {
   });
   const showExcerpt = featuredExcerpt.length > 0;
 
-  const featuredHref = featuredEditorial ? `/editorial/${featuredEditorial.id}` : '/chronicle';
+  const featuredHref = featuredEditorial
+    ? `/editorial/${featuredEditorial.slug || featuredEditorial.id}`
+    : '/chronicle';
   const featuredImageUrl = featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url
     ? getImageUrl(featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url || '')
     : null;

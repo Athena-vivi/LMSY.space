@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { aggregateProjectSpans } from '@/lib/project-span';
+import { homeDoorEntryPath } from '@/lib/category-registry';
 import type { LocalizedText } from '@/lib/localized-content';
 import ProjectDetailClient from './project-detail-client';
 
@@ -61,9 +62,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
+  // Halls 2-5 serve an entry at its own address under the door. This route
+  // still opens - the admin previews rows through it - but the canonical points
+  // at the door so a search engine files the entry once, under one address.
+  const doorUrl = homeDoorEntryPath(project as { category?: string | null; subtype?: string | null; slug?: string | null; id: string });
+
   return {
     title: `${project.title} | LMSY Official Fan Site`,
     description: project?.description || `Learn more about ${project.title}`,
+    ...(doorUrl ? { alternates: { canonical: doorUrl } } : {}),
   };
 }
 

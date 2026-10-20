@@ -202,17 +202,68 @@ export const HOME_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter
   (definition) => definition.homeEntry
 );
 
+/** Just their values, for "does this hall own a homepage door" checks. */
+export const HOME_CATEGORY_VALUES: ReadonlySet<string> = new Set(
+  HOME_CATEGORIES.map((definition) => definition.value)
+);
+
 /**
- * Categories whose front door is /talks, /live or /dramas rather than
- * /projects. One hall, one front door: the halls holding them stay out of the
- * /projects index so the same rows never exist under two addresses.
+ * The address of one entry inside a homepage door, outside door 1.
+ *
+ * Door 1 is excluded because its entries hang off a series slug, which this
+ * pure function cannot know; /dramas builds those itself. Everything here is
+ * pure so the sitemap and the route handlers compute the same string.
+ *
+ * Returns null for a hall without its own door - those rows are served by
+ * /projects and have no second address.
+ */
+export function homeDoorEntryPath(project: {
+  category?: string | null;
+  subtype?: string | null;
+  slug?: string | null;
+  id: string;
+}): string | null {
+  const category = normalizeCategory(project.category);
+  if (!category || !HOME_CATEGORY_VALUES.has(category) || category === 'drama_work') {
+    return null;
+  }
+
+  const door = categoryHref(category);
+  const key = project.slug || project.id;
+  const definitions = SUBTYPES_BY_CATEGORY[category] ?? [];
+
+  if (definitions.length === 0) return `${door}/${key}`;
+
+  const filed = definitions.find(
+    (definition) => String(definition.value) === String(project.subtype ?? '')
+  );
+  const segment = filed
+    ? subtypeSegment(filed.value)
+    : UNFILED_SUBTYPE_SEGMENT;
+
+  return `${door}/${segment}/${key}`;
+}
+
+/**
+ * Categories whose front door is their own page rather than /projects. One
+ * hall, one front door: the halls holding them stay out of the /projects index
+ * so the same rows never exist under two addresses.
+ *
+ * Since 2026-10-21 every one of the five homepage entries has its own page -
+ * door 1 through door 5 - so the entry cards and the index no longer overlap.
+ * The three conversation halls still share /talks, and the two stream halls
+ * share /live: one subject, one page.
  */
 export const TALK_CATEGORIES = ['interview', 'variety', 'radio'] as const;
 export const STREAM_CATEGORIES = ['live_stream'] as const;
 
-/** Categories whose front door is /talks or /live rather than /projects. */
+/** Categories whose front door is a page of its own rather than /projects. */
 export const CATEGORIES_WITH_OWN_DOOR: ReadonlySet<string> = new Set<string>([
   'drama_work',
+  'editorial',
+  'live_event',
+  'public_appearance',
+  'commercial',
   ...TALK_CATEGORIES,
   ...STREAM_CATEGORIES,
 ]);
@@ -220,18 +271,83 @@ export const CATEGORIES_WITH_OWN_DOOR: ReadonlySet<string> = new Set<string>([
 /**
  * The front-door path per hall that owns one. Everything else is served by the
  * /projects index with a `?category=` filter.
+ *
+ * Each of the five homepage entries resolves here, which is why the homepage
+ * never links to a filtered copy of /projects any more.
  */
 const DOOR_PATHS: Partial<Record<ProjectCategory, string>> = {
   drama_work: '/dramas',
+  editorial: '/editorial',
+  live_event: '/live-events',
+  public_appearance: '/appearances',
+  commercial: '/commercial',
   interview: '/talks',
   variety: '/talks',
   radio: '/talks',
   live_stream: '/live',
 };
 
-/** Filter chips for the full index: every hall except the two door halls. */
+/**
+ * A sub-class is stored with underscores (`brand_event`) and written in a URL
+ * with hyphens (`/live-events/brand-event`). These two functions are the only
+ * place that translation happens, so a link and a stored value can never drift
+ * apart.
+ */
+export function subtypeSegment(value: string): string {
+  return value.replace(/_/g, '-');
+}
+
+export function parseSubtypeSegment(segment: string): ProjectSubtype | null {
+  const value = segment.replace(/-/g, '_');
+  for (const definitions of Object.values(SUBTYPES_BY_CATEGORY)) {
+    const match = (definitions ?? []).find((definition) => definition.value === value);
+    if (match) return match.value;
+  }
+  return null;
+}
+
+/**
+ * URL segment for rows a hall holds but has not filed under one of its own
+ * sub-classes. They still need a door of their own: a row without a place to
+ * land is a row nobody can reach.
+ */
+export const UNFILED_SUBTYPE_SEGMENT = 'unfiled';
+
+/**
+ * Label for a hall's second-level segment, as it appears in a URL. Null means
+ * the segment is the unfiled bucket, which carries its own label.
+ */
+export function subtypeLabelKey(
+  category: ProjectCategory,
+  segment: string
+): TranslationKey | null {
+  if (segment === UNFILED_SUBTYPE_SEGMENT) return null;
+  const wanted = segment.replace(/-/g, '_');
+  return (
+    (SUBTYPES_BY_CATEGORY[category] ?? []).find((item) => item.value === wanted)?.labelKey ?? null
+  );
+}
+
+/**
+ * Halls whose rows stay out of the /projects index. Only the halls whose entry
+ * addresses live outside the /projects namespace: door 1 and the two
+ * soul-resonance doors.
+ *
+ * This is narrower than CATEGORIES_WITH_OWN_DOOR on purpose. Doors 2-5 own a
+ * page and their entries own an address under it, but /projects is still where
+ * a visitor browses the whole archive - so those halls keep an index entry,
+ * and the cards there open the entry at its door address. The index is an
+ * entrance, not a second address.
+ */
+export const HALLS_OUTSIDE_INDEX: ReadonlySet<string> = new Set<string>([
+  'drama_work',
+  ...TALK_CATEGORIES,
+  ...STREAM_CATEGORIES,
+]);
+
+/** Filter chips for the full index: every hall except the ones above. */
 export const INDEX_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter(
-  (definition) => !CATEGORIES_WITH_OWN_DOOR.has(definition.value)
+  (definition) => !HALLS_OUTSIDE_INDEX.has(definition.value)
 );
 
 /**

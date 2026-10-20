@@ -404,19 +404,25 @@ describe('editorial', () => {
 
   // The magazine rack is its own surface: covers, catalog ids and the
   // per-issue reading entry. It is NOT the project index with a locked
-  // filter - that one lives at /projects?category=editorial and stays the
-  // homepage portal target.
-  test('editorial is the issue rack, not the project list with a locked filter', () => {
-    assert.ok(list.includes('function MagazineIndex()'));
-    assert.ok(list.includes("fetch('/api/editorial'"), 'it reads the editorial endpoint');
+  // filter. Since 2026-10-21 it is also read on the server, so the issues are
+  // in the HTML instead of arriving after paint.
+  test('editorial is the issue rack, rendered on the server', () => {
+    assert.ok(list.includes('loadEditorialIssues'), 'the rack is read before paint');
+    assert.ok(list.includes('EditorialClient'), 'covers are drawn by the rack view');
     assert.ok(!list.includes('lockedCategory'), 'it does not reuse the project index');
     assert.ok(!list.includes('ProjectsClient'), 'no locked project list');
   });
 
-  test('the homepage portal still opens the filtered project list', () => {
+  test('every homepage portal opens its own door', () => {
     const portals = src('components/sections/portals-section.tsx');
-    assert.ok(portals.includes('/projects?category=${entry.value}'));
-    assert.ok(!portals.includes('/editorial'), 'the portal is untouched');
+    assert.ok(
+      portals.includes('categoryHref(entry.value)'),
+      'the card asks the registry where its hall lives'
+    );
+    assert.ok(
+      !portals.includes('/projects?category=${entry.value}'),
+      'no entry points at a filtered copy of the index any more'
+    );
   });
 
   test('the old editorial chrome is gone', () => {
