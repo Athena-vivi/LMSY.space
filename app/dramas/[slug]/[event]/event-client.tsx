@@ -10,6 +10,7 @@ import { getImageUrl } from '@/lib/image-url';
 import { getImageDimensions } from '@/lib/image-dimensions';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
+import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 
 /**
  * One entry, and the pictures under it.
@@ -53,14 +54,10 @@ export interface DramaEventPageAsset {
   rotation: number | null;
 }
 
-const GROUP_LABEL: Record<string, TranslationKey> = {
-  series_body: 'drama.group.seriesBody',
-  music: 'drama.group.music',
-  novel: 'drama.group.novel',
-  promo: 'drama.group.promo',
-  footage: 'drama.group.footage',
-  award: 'drama.group.award',
-};
+// Group names come from the hall registry, never from a local list.
+const GROUP_LABEL: Record<string, TranslationKey> = Object.fromEntries(
+  (SUBTYPES_BY_CATEGORY.drama_work ?? []).map((group) => [group.value, group.labelKey])
+);
 
 export function DramaEventPageClient({
   series,

@@ -19,7 +19,7 @@ interface ProjectPreviewAsset {
 }
 
 export default function AdminProjectsPage() {
-  const { t } = useAdminLang();
+  const { t, lang } = useAdminLang();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +54,10 @@ export default function AdminProjectsPage() {
 
   const fetchProjects = async () => {
     setLoading(true);
-    const [{ data: projectData, error: projectError }, { data: assetData, error: assetError }] = await Promise.all([
+    const [
+      { data: projectData, error: projectError },
+      { data: assetData, error: assetError },
+    ] = await Promise.all([
       supabase
         .schema('lmsy_archive')
         .from('projects')

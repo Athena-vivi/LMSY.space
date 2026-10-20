@@ -39,34 +39,59 @@ async function resolve(slug: string, eventSlug: string) {
     .schema('lmsy_archive')
     .from('projects')
     .select(
-      'id, slug, title, title_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible'
+      'id, work_id, slug, title, title_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible'
     )
     .eq('category', 'drama_work')
+    .eq('project_kind', 'series')
     .eq(UUID_PATTERN.test(slug) ? 'id' : 'slug', slug)
     .maybeSingle();
 
   if (!series || !isPublicProject(series)) return null;
 
-  const { data: event } = await supabaseAdmin
+  // The entry is a project row too: same table, addressed by the work it
+  // belongs to plus its own slug.
+  const { data: entry } = await supabaseAdmin
     .schema('lmsy_archive')
-    .from('drama_events')
+    .from('projects')
     .select(
-      'id, project_id, group_key, slug, title, title_i18n, event_date, description, description_i18n, source_url, result, sort_order, media_kind, cover_url'
+      'id, work_id, slug, title, title_i18n, event_date, description, description_i18n, watch_url, tags, portal_priority, project_kind, subtype, cover_url'
     )
-    .eq('project_id', series.id)
-    .eq('slug', eventSlug)
+    .eq('work_id', series.work_id ?? series.id)
+    .neq('project_kind', 'series')
+    .eq(UUID_PATTERN.test(eventSlug) ? 'id' : 'slug', eventSlug)
     .maybeSingle();
 
-  if (!event) return null;
+  if (!entry) return null;
+
+  const event = {
+    id: entry.id,
+    group_key: entry.subtype ?? '',
+    slug: entry.slug ?? entry.id,
+    title: entry.title,
+    title_i18n: entry.title_i18n,
+    event_date: entry.event_date,
+    description: entry.description,
+    description_i18n: entry.description_i18n,
+    source_url: entry.watch_url,
+    result: awardResult(entry.tags as string[] | null),
+    media_kind: entry.project_kind === 'video' ? 'video' : 'picture',
+  };
 
   const { data: assets } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('gallery_assets')
-    .select('id, image_url, caption, catalog_id, rotation, event_id')
-    .eq('event_id', event.id)
+    .select('id, image_url, caption, catalog_id, rotation')
+    .eq('project_id', entry.id)
     .order('created_at', { ascending: true });
 
   return { series, event, assets: assets ?? [] };
+}
+
+function awardResult(tags: string[] | null): string | null {
+  if (!tags) return null;
+  if (tags.includes('award-won')) return 'won';
+  if (tags.some((tag) => tag.startsWith('award-'))) return 'nominated';
+  return null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

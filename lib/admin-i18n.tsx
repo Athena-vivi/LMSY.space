@@ -248,6 +248,28 @@ const DICT: Record<string, [string, string]> = {
   'p.searchLink': ['按项目名称、ID 或类别搜索', 'Search by project title, ID, or category'],
   'p.linkHint': ['为这条草稿选择一个已有项目，然后继续加入图库。', 'Select an existing project for this draft, then continue with WRITE_TO_ASSETS.'],
 
+  // --- Project -> front-of-house entry link ---
+  'pe.linkEntry': ['关联前台事件', 'File under entry'],
+  'pe.title': ['把本项目归入一个前台事件', 'File this project under an entry'],
+  'pe.picturesTotal': ['张图', 'pictures'],
+  'pe.picturesUnassigned': ['张未关联', 'unfiled'],
+  'pe.targetEntry': ['目标事件', 'Target entry'],
+  'pe.selectPlaceholder': ['— 选择一个事件 —', '— Select an entry —'],
+  'pe.noEntries': ['还没有前台事件', 'No entries exist yet'],
+  'pe.entryHas': ['该事件现有', 'currently filed'],
+  'pe.mode': ['关联方式', 'Filing mode'],
+  'pe.modeUnassigned': ['只挂未关联的图', 'Only unfiled pictures'],
+  'pe.modeUnassignedHint': ['已挂在其他事件下的图片保持不动，可重复执行。', 'Pictures already filed elsewhere stay put. Safe to repeat.'],
+  'pe.modeAll': ['全部改挂到这个事件', 'Move every picture here'],
+  'pe.modeAllHint': ['会覆盖项目内所有图片的归属，用来纠正挂错的事件。', 'Repoints every picture in the project. Use it to repair a wrong entry.'],
+  'pe.confirmAll': ['这会把项目里的全部图片改挂到该事件，原本挂在别处的也会被移走。继续？', 'Every picture in this project will be moved to this entry, including ones filed elsewhere. Continue?'],
+  'pe.submit': ['[ 关联并发布 ]', '[ FILE & PROCEED ]'],
+  'pe.submitting': ['关联中…', 'Filing...'],
+  'pe.done': ['张图片已归入', 'pictures filed under'],
+  'pe.nothing': ['没有可关联的图片', 'Nothing left to file'],
+  'pe.pickFirst': ['先选择目标事件', 'Pick an entry first'],
+  'pe.linkFailed': ['关联失败', 'Filing failed'],
+
   // --- Upload ---
   'u.title': ['批量上传工作室', 'Upload'],
   'u.reminder': ['策展提醒：尊重每一位拍摄者的劳动。', "Curator's Reminder: Respect the shutter's effort."],

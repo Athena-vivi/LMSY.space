@@ -33,36 +33,51 @@ export default async function DramasPage() {
 async function loadSeries(): Promise<DramaCardRow[]> {
   const supabaseAdmin = getSupabaseAdmin();
 
+  // A series is a project row of its own (project_kind = 'series'); every entry
+  // under it is another project row pointing back through work_id. One table,
+  // one kind field - the door never talks to a second list.
   const { data } = await applyPublicProjectFilter(
     supabaseAdmin
       .schema('lmsy_archive')
       .from('projects')
       .select(
-        'id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url'
+        'id, work_id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url'
       )
   )
     .eq('category', 'drama_work')
+    .eq('project_kind', 'series')
     .order('event_date', { ascending: true, nullsFirst: false });
 
-  const dramas = (data ?? []) as unknown as Omit<DramaCardRow, 'entryCount'>[];
+  const dramas = (data ?? []) as unknown as Array<
+    Omit<DramaCardRow, 'entryCount'> & { work_id: string | null }
+  >;
   if (dramas.length === 0) return [];
 
   // One query for the counts: the door needs a number per card, not the
-  // entries themselves.
-  const { data: events } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('drama_events')
-    .select('project_id')
-    .in(
-      'project_id',
-      dramas.map((drama) => drama.id)
-    );
+  // entries themselves. An entry carries the same work_id as its series, so
+  // the grouping key is the work, not the series row.
+  const workIds = dramas
+    .map((drama) => drama.work_id)
+    .filter((id): id is string => Boolean(id));
+
+  const { data: events } = workIds.length
+    ? await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('work_id')
+        .in('work_id', workIds)
+        .neq('project_kind', 'series')
+    : { data: [] as Array<{ work_id: string | null }> };
 
   const counts: Record<string, number> = {};
   for (const row of events ?? []) {
-    const id = (row as { project_id: string }).project_id;
+    const id = (row as { work_id: string | null }).work_id;
+    if (!id) continue;
     counts[id] = (counts[id] ?? 0) + 1;
   }
 
-  return dramas.map((drama) => ({ ...drama, entryCount: counts[drama.id] ?? 0 }));
+  return dramas.map((drama) => ({
+    ...drama,
+    entryCount: drama.work_id ? counts[drama.work_id] ?? 0 : 0,
+  }));
 }

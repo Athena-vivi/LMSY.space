@@ -141,11 +141,33 @@ export default async function ProjectPage({ params }: PageProps) {
   }
 
   // Door 1 (drama_work) has had its own front door since 2026-10-21: a series
-  // is read at /dramas/<slug> with its dated entries, never here. Known slugs
-  // are redirected in next.config; this catches the uuid form and any slug the
-  // config list has not caught up with, so a series keeps exactly one URL.
+  // is read at /dramas/<slug>, and an entry under it one level deeper at
+  // /dramas/<series>/<entry>. Known slugs are redirected in next.config; this
+  // catches the uuid form and any slug the config list has not caught up with,
+  // so a row keeps exactly one URL.
   if (project.category === 'drama_work') {
-    redirect(`/dramas/${project.slug || project.id}`);
+    if (project.project_kind === 'series') {
+      redirect(`/dramas/${project.slug || project.id}`);
+    }
+
+    // An entry carries the work id of its series, not the series row id, so
+    // the series slug has to be looked up before the address can be built.
+    const { data: seriesRow } = project.work_id
+      ? await supabaseAdmin
+          .schema('lmsy_archive')
+          .from('projects')
+          .select('slug')
+          .eq('category', 'drama_work')
+          .eq('project_kind', 'series')
+          .eq('work_id', project.work_id)
+          .maybeSingle()
+      : { data: null };
+
+    const seriesSlug = (seriesRow as { slug?: string | null } | null)?.slug;
+    if (seriesSlug) {
+      redirect(`/dramas/${seriesSlug}/${project.slug || project.id}`);
+    }
+    redirect('/dramas');
   }
 
   // Fetch gallery images for this project

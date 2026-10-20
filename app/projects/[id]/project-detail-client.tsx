@@ -611,7 +611,9 @@ export default function ProjectDetailClient({
           </section>
           </div>
 
-          {/* Empty State */}
+          {/* Empty State. An entry whose payload is a link (a vlog, a pilot, a
+              reaction) has no picture wall to be missing - it says where the
+              thing actually lives instead of apologising for empty frames. */}
           {currentImages.length === 0 && (
             <motion.div
               key="empty"
@@ -619,8 +621,25 @@ export default function ProjectDetailClient({
               animate={{ opacity: 1 }}
               className="text-center py-24"
             >
-              <p className="text-ink text-lg">{t(language, 'project.emptyTitle')}</p>
-              <p className="text-ink-2 text-sm mt-2">{t(language, 'project.emptyDesc')}</p>
+              {project.watch_url ? (
+                <>
+                  <p className="text-ink text-lg">{t(language, 'project.emptyTitle')}</p>
+                  <a
+                    href={project.watch_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-6 inline-flex items-center border px-5 py-2.5 font-mono text-xs tracking-wider text-ink transition-colors hover:border-lmsy-yellow/50"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.15)' }}
+                  >
+                    {t(language, 'project.watchNow')}
+                  </a>
+                </>
+              ) : (
+                <>
+                  <p className="text-ink text-lg">{t(language, 'project.emptyTitle')}</p>
+                  <p className="text-ink-2 text-sm mt-2">{t(language, 'project.emptyDesc')}</p>
+                </>
+              )}
             </motion.div>
           )}
 

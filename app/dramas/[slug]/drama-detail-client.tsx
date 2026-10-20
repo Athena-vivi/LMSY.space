@@ -10,6 +10,7 @@ import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
+import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import type { ProjectSubtype } from '@/lib/supabase/types';
 
 /**
@@ -66,20 +67,16 @@ export interface DramaAssetRow {
   caption: string | null;
   catalog_id: string | null;
   rotation: number | null;
-  event_id: string | null;
+  project_id: string | null;
 }
 
 // Reading order the owner fixed: the series itself, then everything that was
 // released around it, then what it won, and footage last - a still is what you
-// look at after you already know what it is a still of.
-const GROUP_ORDER: Array<{ key: string; labelKey: TranslationKey }> = [
-  { key: 'series_body', labelKey: 'drama.group.seriesBody' },
-  { key: 'music', labelKey: 'drama.group.music' },
-  { key: 'novel', labelKey: 'drama.group.novel' },
-  { key: 'promo', labelKey: 'drama.group.promo' },
-  { key: 'award', labelKey: 'drama.group.award' },
-  { key: 'footage', labelKey: 'drama.group.footage' },
-];
+// look at after you already know what it is a still of. The list itself lives
+// in lib/category-registry.ts so the hall has one source of truth.
+const GROUP_ORDER: Array<{ key: string; labelKey: TranslationKey }> = (
+  SUBTYPES_BY_CATEGORY.drama_work ?? []
+).map((group) => ({ key: group.value, labelKey: group.labelKey }));
 
 export function DramaDetailClient({
   drama,

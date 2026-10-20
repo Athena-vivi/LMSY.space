@@ -146,3 +146,37 @@ L3 竖列表  每部剧详情页内纵向分组，每组下面是带日期的条
 - 不建任何数据，直到你说"从 D1.1 开始"
 - 不碰 6 号门的 97 条（等 1 号门收尾）
 - 不改 3、4 号门已建的 100 条，除了第四节那 2 条日期/合并修正
+
+---
+
+## 十、表结构统一（2026-10-20 晚已执行，推翻本文第三节的临时做法）
+
+方案最初为 1 号门单开了一张 `drama_events`。这是错的：它让「同一件事」在后台有两个身份（一个项目 + 一个事件），于是加一条事件就等于多加一个项目，草稿箱和项目管理两个列表对不上。已按下面这一套改回来。
+
+**唯一的规则：前台最小单位（事件）= `projects` 里的一行。门就是类型。**
+
+| 层级 | 由什么表达 | 例子 |
+|---|---|---|
+| 门 | `projects.category` | `drama_work` / `public_appearance` / `live_event` |
+| 门内分类 | 1 号门用「剧行」表达（`project_kind='series'`）；其他门用 `subtype` | Affair / Harmony Secret / Hometown Romance；`awards` / `fashion` / `premiere` |
+| 事件 | 一行 project | Premiere、Hub Awards、I'm Yours |
+| 事件的内容形态 | `project_kind` + 已有字段 | `event`=图片墙、`video`=介绍+外链（`watch_url`）、有 `interview_md`=正文 |
+
+1 号门内再往下分六组（`series_body / music / novel / promo / award / footage`），这六组是**事件的 subtype**，不是剧的分类——新增一部剧不会改这张表，只是多一行 `project_kind='series'`。
+
+**已执行的动作（快照可回滚）**
+
+1. 快照：`projects_snap_m1_20261020`、`gallery_assets_snap_m1_20261020`、`drama_events_snap_m1_20261020`
+2. 三部剧行：`project_kind='series'`，`subtype` 置空
+3. CHECK 约束扩容：`project_kind ∈ (event, theme, series, video)`；`subtype` 去掉三个剧名、加六个组名
+4. `slug` 唯一性从「全局唯一」改为「(所属作品, slug) 唯一」，否则三部剧不能各有一个 `premiere`
+5. 43 条事件全部落进 `projects`，其中 4 条原本已按公开活动手工登记（CHANGE2561 Showcase / Harmony First Premiere / Hometown Final Episode / KAZZ Awards 2026）→ **改挂而不是新建**，避免同名两份
+6. 18 张 Affair stills 的 `gallery_assets.project_id` 从剧行改指 `stills` 事件行
+7. 代码：`/dramas` 三页、`sitemap`、后台项目管理改成读 `projects`；删掉只服务旧模型的 `/api/admin/drama-events`、`/api/admin/projects/[id]/event-link` 和关联弹窗
+
+`drama_events` 表**没有删**，作历史快照保留，代码不再读取。
+
+**后台因此得到的两个入口（这一轮补的）**
+
+- 新建项目：选门 → 选分类（subtype）→ 1 号门再选所属剧；建完即为已发布事件，图片直接挂在这一行上
+- 编辑项目：同上，另外 `project_kind` 可设 `series`（作品本体）/ `video`（外链条目）

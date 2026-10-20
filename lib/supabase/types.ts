@@ -46,8 +46,8 @@ export type ProjectCategory =
  *                     charity / premiere
  *   interview         feature / press / tv_news
  *   live_stream       duo / solo
- *   drama_work        affair / harmony_secret / hometown_romance
- *                     (one tab per series; a new series is a new value)
+ *   drama_work        series_body / music / novel / promo / award / footage
+ *                     (the six groups every entry is filed under)
  * NULL means "the hall itself is enough" - most rows need no sub-class.
  * Pair with `category` when reading: the same value can mean different
  * things in different halls.
@@ -67,9 +67,12 @@ export type ProjectSubtype =
   | 'tv_news'
   | 'duo'
   | 'solo'
-  | 'affair'
-  | 'harmony_secret'
-  | 'hometown_romance';
+  | 'series_body'
+  | 'music'
+  | 'novel'
+  | 'promo'
+  | 'award'
+  | 'footage';
 
 export interface Project {
   id: string;
@@ -78,11 +81,14 @@ export interface Project {
   /** When the event or shoot actually happened. Null when unconfirmed. */
   event_date?: string | null;
   /**
-   * Event project (one dated happening, shows on the timeline as a point) or
-   * theme project (a subject that recurs across dates, dated by its images).
+   * What kind of row this is, independent of which hall it sits in:
+   *   event    one dated happening (the normal case)
+   *   theme    a subject that recurs across dates, dated by its images
+   *   series   a work that other rows hang under (door 1's containers)
+   *   video    an entry whose payload is a link, not a picture wall
    * Defaults to 'event'; see lib/project-kind.ts.
    */
-  project_kind?: 'event' | 'theme' | null;
+  project_kind?: 'event' | 'theme' | 'series' | 'video' | null;
   /** When the source published it (magazine issue date, original post). */
   source_published_at?: string | null;
   location?: string | null;

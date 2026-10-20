@@ -180,9 +180,12 @@
 
 | 门 | subtype 取值 |
 |---|---|
+| 1 影视作品 | `series_body` / `music` / `novel` / `promo` / `award` / `footage`（剧本身不是 subtype，是 `project_kind='series'` 的一行） |
 | 3 线下活动 | `fanmeeting` / `brand_event` / `birthday` |
 | 4 公开活动 | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `premiere` |
 | 6 访谈 | `feature` / `press` / `tv_news` |
+
+**事件的形态由 `project_kind` 表达，不由 subtype 表达**：`event`（一次有日期的事，默认）/ `theme`（跨日期的主题）/ `series`（作品本体，别的行挂在它下面）/ `video`（内容在外链，站内只放介绍和封面）。一条事件点进去是图片墙还是介绍外链，看的就是这一列加 `watch_url`。
 
 **不拆 category 来区分子类**。`live_event` 如果拆成三个 category，3 号门就要改成多分类查询，CHECK 约束和筛选器全要跟着动；一个 subtype 字段解决全部。
 

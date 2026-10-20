@@ -150,3 +150,51 @@ alter table lmsy_archive.projects add constraint projects_category_check
 4. **11 本刊物的 `catalog_id` 全是 NULL**。`/editorial` 的杂志架子读的就是这个字段（`app/api/editorial/route.ts:135`），编号为空等于架子没有索引号。补编号要先定格式。
 5. **4 条 `commercial` 的标题只有单词**（`Sweet` / `Close` / `live` / `coffee`）。这四条合计 54 张图，不是空壳；品牌已按 3.4 回填三条，标题本身还没改——改标题要定一套命名规范。
 6. **`personal_travel` 还有 2 行残留**（已归档），清掉之后才能从 CHECK 约束里删掉这个值。
+
+---
+
+## 五、事件表统一（2026-10-20 晚追加执行）
+
+前面几节默认「一个门一张表」可以做下去，实际跑一遍才发现代价：1 号门单开 `drama_events` 之后，同一件事在后台既是项目又是事件，加事件=加项目，草稿箱与项目管理两个列表立刻对不上。**已改回单表模型，`projects` 就是事件表。**
+
+**结构变更**
+
+```sql
+-- project_kind 扩容
+alter table lmsy_archive.projects drop constraint if exists projects_project_kind_check;
+alter table lmsy_archive.projects add constraint projects_project_kind_check
+  check (project_kind in ('event', 'theme', 'series', 'video'));
+
+-- subtype 白名单：去掉三个剧名，加六个组名
+alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
+alter table lmsy_archive.projects add constraint projects_subtype_check
+  check (subtype is null or subtype in (
+    'fanmeeting','brand_event','birthday',
+    'premiere','awards','fashion','brand_stage','industry','charity',
+    'feature','press','tv_news','duo','solo',
+    'series_body','music','novel','promo','award','footage'
+  ));
+
+-- slug 唯一性：全局 → (所属作品, slug)
+drop index if exists lmsy_archive.projects_slug_key;
+create unique index if not exists projects_slug_scope_key
+  on lmsy_archive.projects (coalesce(work_id, '00000000-0000-0000-0000-000000000000'::uuid), slug)
+  where slug is not null;
+```
+
+**挂载规则**
+
+- 剧行（作品本体）：`category='drama_work' and project_kind='series'`，地址 `/dramas/<slug>`
+- 剧下事件：同一 `work_id`（指向 `works`），`project_kind` 为 `event`/`video`，地址 `/dramas/<剧slug>/<事件slug>`
+- 其他门事件：`work_id` 为空，地址 `/projects/<slug|uuid>`
+- 图片：`gallery_assets.project_id` 直接指向事件行，**不再需要 `event_id`**（该列保留为空，代码不读）
+
+**回滚**
+
+```sql
+-- 数据
+update lmsy_archive.projects p set
+  is_container = s.is_container, curation_status = s.curation_status, portal_visible = s.portal_visible
+from lmsy_archive.projects_snap_m1_20261020 s where p.id = s.id;
+-- 新增的 39 行按 created_at/来源筛出后删除；18 张图按 gallery_assets_snap_m1_20261020 还原 project_id
+```

@@ -47,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getSupabaseAdmin()
         .schema('lmsy_archive')
         .from('projects')
-        .select('id, slug, category, created_at')
+        .select('id, work_id, slug, category, project_kind, created_at')
     );
     projectRoutes = (data || [])
       .filter((project: { category?: string | null }) => project.category !== 'drama_work')
@@ -61,7 +61,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       );
 
     const dramas = (data || []).filter(
-      (project: { category?: string | null }) => project.category === 'drama_work'
+      (project: { category?: string | null; project_kind?: string | null }) =>
+        project.category === 'drama_work' && project.project_kind === 'series'
     );
     dramaRoutes = dramas.map(
       (project: { id: string; slug?: string | null; created_at: string | null }) => ({
@@ -73,23 +74,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     );
 
     if (dramas.length > 0) {
+      // Entries hang off the work, not off the series row, so the map is keyed
+      // by work_id and skips any series row that has none.
       const seriesSlugById = new Map<string, string>(
-        dramas.map((project: { id: string; slug?: string | null }) => [
-          project.id,
-          project.slug || project.id,
-        ])
+        dramas
+          .filter((project: { work_id?: string | null }) => Boolean(project.work_id))
+          .map((project: { work_id?: string | null; id: string; slug?: string | null }) => [
+            project.work_id as string,
+            project.slug || project.id,
+          ])
       );
-      const { data: events } = await getSupabaseAdmin()
-        .schema('lmsy_archive')
-        .from('drama_events')
-        .select('project_id, slug, created_at')
-        .in('project_id', [...seriesSlugById.keys()]);
+      const { data: events } = seriesSlugById.size
+        ? await getSupabaseAdmin()
+            .schema('lmsy_archive')
+            .from('projects')
+            .select('work_id, slug, created_at')
+            .in('work_id', [...seriesSlugById.keys()])
+            .neq('project_kind', 'series')
+        : { data: [] as Array<{ work_id: string | null; slug: string | null; created_at: string | null }> };
 
       dramaEventRoutes = (events ?? [])
         .map((event) => {
-          const row = event as { project_id: string; slug: string; created_at: string | null };
-          const seriesSlug = seriesSlugById.get(row.project_id);
-          if (!seriesSlug) return null;
+          const row = event as { work_id: string; slug: string | null; created_at: string | null };
+          const seriesSlug = seriesSlugById.get(row.work_id);
+          if (!seriesSlug || !row.slug) return null;
           return {
             url: `${SITE_URL}/dramas/${seriesSlug}/${row.slug}`,
             lastModified: row.created_at ? new Date(row.created_at) : now,

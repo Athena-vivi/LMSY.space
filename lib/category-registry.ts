@@ -253,12 +253,16 @@ export interface SubtypeDefinition {
 }
 
 export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefinition[]>> = {
-  // Door 1: one tab per series, in broadcast order. A fourth series is a new
-  // value here plus a row in the database - never a new hall.
+  // Door 1: the six groups every entry in this hall is filed under. A series
+  // is not a subtype - it is project_kind = 'series', addressed by slug - so a
+  // fourth series never changes this list.
   drama_work: [
-    { value: 'affair', labelKey: 'subtype.affair' },
-    { value: 'harmony_secret', labelKey: 'subtype.harmony_secret' },
-    { value: 'hometown_romance', labelKey: 'subtype.hometown_romance' },
+    { value: 'series_body', labelKey: 'drama.group.seriesBody' },
+    { value: 'music', labelKey: 'drama.group.music' },
+    { value: 'novel', labelKey: 'drama.group.novel' },
+    { value: 'promo', labelKey: 'drama.group.promo' },
+    { value: 'award', labelKey: 'drama.group.award' },
+    { value: 'footage', labelKey: 'drama.group.footage' },
   ],
   live_event: [
     { value: 'fanmeeting', labelKey: 'subtype.fanmeeting' },

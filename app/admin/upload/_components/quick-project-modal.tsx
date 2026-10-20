@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
-import type { Project, ProjectCategory } from '@/lib/supabase/types';
+import type { Project, ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
+import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import CategoryDropdown from './category-dropdown';
 
 interface QuickProjectModalProps {
@@ -33,8 +34,45 @@ export default function QuickProjectModal({
 }: QuickProjectModalProps) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ProjectCategory>('drama_work');
+  /** Which class inside the hall the new row lands in. */
+  const [subtype, setSubtype] = useState<ProjectSubtype | null>(null);
+  /** Door 1 only: the series this entry belongs to. */
+  const [workId, setWorkId] = useState('');
+  const [seriesOptions, setSeriesOptions] = useState<{ id: string; work_id: string | null; title: string }[]>([]);
   const [releaseDate, setReleaseDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const subtypeOptions = SUBTYPES_BY_CATEGORY[category] ?? [];
+
+  // A new row created here is an entry of the hall it was filed in: it appears
+  // under that door's class as soon as it exists, so the owner can go straight
+  // from "create project" to "add pictures" without hunting for a publish step.
+  useEffect(() => {
+    if (!isOpen) return;
+    setSubtype(null);
+  }, [category, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || category !== 'drama_work') return;
+    let cancelled = false;
+    supabase
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, work_id, title')
+      .eq('category', 'drama_work')
+      .eq('project_kind', 'series')
+      .order('title')
+      .then(({ data }) => {
+        if (!cancelled) {
+          setSeriesOptions(
+            (data ?? []) as { id: string; work_id: string | null; title: string }[]
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,10 +108,18 @@ export default function QuickProjectModal({
       const insertData = {
         title: title.trim(),
         category,
+        subtype,
+        work_id: workId || null,
+        project_kind: 'event' as const,
         release_date: releaseDate || null,
+        event_date: releaseDate || null,
         description: null,
         cover_url: null,
         watch_url: null,
+        // A row created here is a front-of-house entry, not a private folder:
+        // it goes live under its hall the moment it exists.
+        portal_visible: true,
+        curation_status: 'published' as const,
       };
 
       console.log('[QUICK_PROJECT] Insert data:', insertData);
@@ -216,6 +262,54 @@ export default function QuickProjectModal({
                     Catalog Prefix: {CATEGORY_OPTIONS.find(opt => opt.value === category)?.prefix}
                   </motion.div>
                 </div>
+
+                {/* The class inside the hall - where the row will be listed. */}
+                {subtypeOptions.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
+                      Subtype
+                    </label>
+                    <select
+                      value={subtype ?? ''}
+                      onChange={(e) =>
+                        setSubtype((e.target.value || null) as ProjectSubtype | null)
+                      }
+                      className="w-full px-3 py-2 bg-black/40 text-ink-2 font-mono text-sm focus:outline-none border"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    >
+                      <option value="">— none —</option>
+                      {subtypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Door 1 only: which series this entry belongs to. */}
+                {category === 'drama_work' && (
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
+                      Series
+                    </label>
+                    <select
+                      value={workId}
+                      onChange={(e) => setWorkId(e.target.value)}
+                      className="w-full px-3 py-2 bg-black/40 text-ink-2 font-mono text-sm focus:outline-none border"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    >
+                      <option value="">— not filed under a series —</option>
+                      {seriesOptions
+                        .filter((option) => option.work_id)
+                        .map((option) => (
+                          <option key={option.id} value={option.work_id as string}>
+                            {option.title}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Release Date */}
                 <div className="space-y-2">

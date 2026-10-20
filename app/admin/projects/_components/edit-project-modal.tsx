@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Languages } from 'lucide-react';
 import { supabase, type Project } from '@/lib/supabase';
-import { type ProjectCategory } from '@/lib/supabase/types';
+import { type ProjectCategory, type ProjectSubtype } from '@/lib/supabase/types';
+import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import CategoryDropdown from '@/app/admin/upload/_components/category-dropdown';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
@@ -50,6 +51,11 @@ export default function EditProjectModal({
   const [titleZh, setTitleZh] = useState('');
   const [titleTh, setTitleTh] = useState('');
   const [category, setCategory] = useState<ProjectCategory>('drama_work');
+  /** Which class inside the hall this row belongs to. NULL means the hall is enough. */
+  const [subtype, setSubtype] = useState<ProjectSubtype | null>(null);
+  /** Door 1 only: which series this entry hangs under. Empty for the series row itself. */
+  const [workId, setWorkId] = useState<string>('');
+  const [seriesOptions, setSeriesOptions] = useState<{ id: string; work_id: string | null; title: string }[]>([]);
   const [releaseDate, setReleaseDate] = useState('');
   const [description, setDescription] = useState('');
   const [descriptionZh, setDescriptionZh] = useState('');
@@ -66,12 +72,11 @@ export default function EditProjectModal({
   const [interviewVideoUrl, setInterviewVideoUrl] = useState('');
   const [curationStatus, setCurationStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   /**
-   * event = one dated happening (timeline gets a project point).
-   * theme = a subject that recurs across dates ("Back View"); no project point
-   * on the timeline, and the surfaces show the span of its images instead of
-   * a single date. Defaults to event for every row written before phase 9.
+   * What kind of row this is. series = a work other entries hang under (door 1
+   * only); video = an entry whose payload is a link instead of a picture wall;
+   * theme = a subject across dates; event = one dated happening.
    */
-  const [projectKind, setProjectKind] = useState<'event' | 'theme'>('event');
+  const [projectKind, setProjectKind] = useState<'event' | 'theme' | 'series' | 'video'>('event');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [translatingLang, setTranslatingLang] = useState<AdminTranslateTarget | null>(null);
 
@@ -86,6 +91,8 @@ export default function EditProjectModal({
       setTitleZh(titleI18n.zh || '');
       setTitleTh(titleI18n.th || '');
       setCategory(project.category);
+      setSubtype((project.subtype as ProjectSubtype | null) ?? null);
+      setWorkId(project.work_id ?? '');
       setReleaseDate(project.release_date || '');
       setDescription(project.description || '');
       setDescriptionZh(descriptionI18n.zh || '');
@@ -100,9 +107,43 @@ export default function EditProjectModal({
       setInterviewMd(project.interview_md || '');
       setInterviewVideoUrl(project.interview_video_url || '');
       setCurationStatus(project.curation_status || 'draft');
-      setProjectKind(project.project_kind === 'theme' ? 'theme' : 'event');
+      setProjectKind(
+        project.project_kind === 'theme'
+          ? 'theme'
+          : project.project_kind === 'series'
+            ? 'series'
+            : project.project_kind === 'video'
+              ? 'video'
+              : 'event'
+      );
     }
   }, [project]);
+
+  // Door 1 needs one extra choice no other hall has: which series the entry
+  // hangs under. The list is the live set of series rows, never a constant.
+  useEffect(() => {
+    if (!isOpen || category !== 'drama_work') return;
+    let cancelled = false;
+    supabase
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, work_id, title')
+      .eq('category', 'drama_work')
+      .eq('project_kind', 'series')
+      .order('title')
+      .then(({ data }) => {
+        if (!cancelled) {
+          setSeriesOptions(
+            (data ?? []) as { id: string; work_id: string | null; title: string }[]
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, category]);
+
+  const subtypeOptions = SUBTYPES_BY_CATEGORY[category] ?? [];
 
   const addTag = (tag: string) => {
     if (tag && !tags.includes(tag) && tags.length < MAX_TAGS) {
@@ -152,6 +193,8 @@ export default function EditProjectModal({
           th: titleTh.trim(),
         },
         category,
+        subtype,
+        work_id: workId || null,
         project_kind: projectKind,
         release_date: releaseDate || null,
         description: description || null,
@@ -372,6 +415,61 @@ export default function EditProjectModal({
                   />
                 </div>
 
+                {/* Sub-class inside the hall - the class the visitor clicks
+                    into before reaching this row. Empty means the hall has no
+                    classes, which is the normal case for most doors. */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
+                    SUBTYPE
+                  </label>
+                  {subtypeOptions.length > 0 ? (
+                    <select
+                      value={subtype ?? ''}
+                      onChange={(e) =>
+                        setSubtype((e.target.value || null) as ProjectSubtype | null)
+                      }
+                      className="w-full px-3 py-2 bg-black text-ink-2 font-mono text-sm focus:outline-none border"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    >
+                      <option value="">— none (the hall is enough) —</option>
+                      {subtypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-[11px] text-ink-2/60">
+                      This hall has no classes yet. The row sits directly under the door.
+                    </p>
+                  )}
+                </div>
+
+                {/* Door 1 only: an entry belongs to a series, the series row
+                    itself does not. */}
+                {category === 'drama_work' && projectKind !== 'series' && (
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
+                      SERIES
+                    </label>
+                    <select
+                      value={workId}
+                      onChange={(e) => setWorkId(e.target.value)}
+                      className="w-full px-3 py-2 bg-black text-ink-2 font-mono text-sm focus:outline-none border"
+                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                    >
+                      <option value="">— not filed under a series —</option>
+                      {seriesOptions
+                        .filter((option) => option.work_id)
+                        .map((option) => (
+                          <option key={option.id} value={option.work_id as string}>
+                            {option.title}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Project kind - an event on one date, or a subject that
                     recurs across dates. It decides whether the timeline gets a
                     project point and whether the surfaces show one date or the
@@ -382,12 +480,18 @@ export default function EditProjectModal({
                   </label>
                   <select
                     value={projectKind}
-                    onChange={(e) => setProjectKind(e.target.value as 'event' | 'theme')}
+                    onChange={(e) =>
+                      setProjectKind(
+                        e.target.value as 'event' | 'theme' | 'series' | 'video'
+                      )
+                    }
                     className="w-full px-3 py-2 bg-black text-ink-2 font-mono text-sm focus:outline-none border"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   >
                     <option value="event">event — one dated happening</option>
                     <option value="theme">theme — a subject across dates</option>
+                    <option value="series">series — a work that entries hang under</option>
+                    <option value="video">video — an entry that links out</option>
                   </select>
                   {projectKind === 'theme' && (
                     <p className="text-[11px] text-ink-2/70">
