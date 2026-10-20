@@ -231,7 +231,7 @@ function GroupSection({
       return <EmptyRow />;
     }
     return (
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:gap-6">
         {rows.map((row, index) => (
           <EventCard key={row.id} row={row} seriesSlug={seriesSlug} index={index} />
         ))}
@@ -287,20 +287,25 @@ function EventCard({
       className="group"
     >
       <Link href={`/dramas/${seriesSlug}/${row.slug}`} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-card/40">
+        <div className="relative aspect-[3/2] overflow-hidden rounded-xl border border-border bg-card/40">
           {cover ? (
             <Image
               src={cover}
               alt={title}
               fill
               unoptimized
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes="(max-width: 640px) 100vw, 50vw"
               className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-lmsy-yellow/10 via-card to-lmsy-blue/10">
-              <span className="px-4 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2">
+            // No photograph yet. Rather than a grey hole, the frame holds a
+            // placard: the date this entry happened, set like an exhibit label.
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-lmsy-yellow/[0.07] via-card/60 to-lmsy-blue/[0.07]">
+              <span className="rounded-full border border-border/70 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-2">
                 {t(language, 'drama.noImages')}
+              </span>
+              <span className="font-serif text-3xl font-bold text-ink/25 md:text-4xl">
+                {row.event_date ? row.event_date.slice(0, 7).replace('-', '.') : '—'}
               </span>
             </div>
           )}
@@ -351,7 +356,7 @@ function AwardGrid({ rows, seriesSlug }: { rows: DramaEventCard[]; seriesSlug: s
             <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-2">
               {t(language, section.labelKey)}
             </p>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:gap-6">
               {section.items.map((row, index) => (
                 <EventCard key={row.id} row={row} seriesSlug={seriesSlug} index={index} />
               ))}

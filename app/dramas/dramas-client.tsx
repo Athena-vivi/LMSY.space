@@ -60,6 +60,28 @@ export function DramasClient({ series }: { series: DramaCardRow[] }) {
   );
 }
 
+function SeriesTitle({ title }: { title: string }) {
+  // "Hometown Romance (乡村恋人)" -> two lines. A portrait card is too narrow to
+  // let a Latin name and its CJK gloss fight over one line; splitting at the
+  // bracket keeps both readable and stops CJK breaking mid-word.
+  const match = /^(.+?)\s*[（(](.+?)[)）]\s*$/.exec(title);
+
+  if (!match) {
+    return (
+      <h2 className="font-serif text-2xl font-bold leading-tight text-ink md:text-3xl">
+        {title}
+      </h2>
+    );
+  }
+
+  return (
+    <h2 className="font-serif font-bold leading-tight text-ink">
+      <span className="block text-2xl md:text-3xl">{match[1]}</span>
+      <span className="mt-1 block text-lg text-ink/85 md:text-xl">{match[2]}</span>
+    </h2>
+  );
+}
+
 function SeriesCard({ drama, index }: { drama: DramaCardRow; index: number }) {
   const { language } = useLanguage();
   const title = getLocalizedText(drama.title_i18n, language, drama.title);
@@ -102,12 +124,10 @@ function SeriesCard({ drama, index }: { drama: DramaCardRow; index: number }) {
             </div>
           )}
 
-          <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
-            <h2 className="mb-3 font-serif text-3xl font-bold leading-tight text-ink md:text-4xl">
-              {title}
-            </h2>
+          <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-7">
+            <SeriesTitle title={title} />
 
-            <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-ink/70">
+            <p className="mb-4 mt-3 font-mono text-[11px] uppercase tracking-[0.22em] text-ink/70">
               {year ?? '—'}
               <span className="mx-2">·</span>
               {t(language, 'dramas.eventCount', { count: drama.entryCount })}

@@ -211,23 +211,18 @@ function WallImage({ asset, index }: { asset: DramaEventPageAsset; index: number
 function EmptyWall() {
   const { language } = useLanguage();
 
+  // One large placard instead of a row of grey boxes: it reads as "this exhibit
+  // is still being hung", which is exactly what it is.
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        {[0, 1, 2].map((slot) => (
-          <div
-            key={slot}
-            className="flex aspect-[4/3] items-center justify-center rounded-xl border border-dashed border-border/70 bg-card/20"
-          >
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2/70">
-              {t(language, 'drama.noImages')}
-            </span>
-          </div>
-        ))}
+      <div className="flex aspect-[16/9] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border/70 bg-gradient-to-br from-lmsy-yellow/[0.06] via-card/40 to-lmsy-blue/[0.06]">
+        <span className="rounded-full border border-border/70 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
+          {t(language, 'drama.noImages')}
+        </span>
+        <span className="font-serif text-2xl font-bold text-ink/25 md:text-3xl">
+          {t(language, 'home.collecting')}
+        </span>
       </div>
-      <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-2">
-        {t(language, 'home.collecting')}
-      </p>
     </div>
   );
 }
