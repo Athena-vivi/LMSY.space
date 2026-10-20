@@ -3,7 +3,8 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import {
   SUBTYPES_BY_CATEGORY,
-  homeDoorEntryPath,
+  TALK_CATEGORIES,
+  doorEntryPath,
   subtypeSegment,
 } from '@/lib/category-registry';
 
@@ -49,13 +50,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // entries are submitted alongside the series that own them.
   let dramaEventRoutes: MetadataRoute.Sitemap = [];
   // Second level of doors 3 and 4: one page per shelf (fan meetings, awards,
-  // fashion...). Each is a real page with its own title, not a tab.
+  // fashion...). Each is a real page with its own title, not a tab. /talks
+  // splits on category and /live on who held the phone, so their shelves are
+  // submitted too - every one of them is a landing page, not a filter.
   const shelfRoutes: MetadataRoute.Sitemap = [
     ...(SUBTYPES_BY_CATEGORY.live_event ?? []).map(
       (definition) => `/live-events/${subtypeSegment(definition.value)}`
     ),
     ...(SUBTYPES_BY_CATEGORY.public_appearance ?? []).map(
       (definition) => `/appearances/${subtypeSegment(definition.value)}`
+    ),
+    ...TALK_CATEGORIES.map((category) => `/talks/${category}`),
+    ...(SUBTYPES_BY_CATEGORY.live_stream ?? []).map(
+      (definition) => `/live/${subtypeSegment(definition.value)}`
     ),
   ].map((path) => ({
     url: `${SITE_URL}${path}`,
@@ -83,7 +90,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           // A door entry is submitted where the visitor lands. A row whose
           // hall has no page is not submitted at all - a sitemap must not
           // advertise a 404.
-          const doorUrl = homeDoorEntryPath(project);
+          const doorUrl = doorEntryPath(project);
           if (!doorUrl) return null;
           return {
             url: `${SITE_URL}${doorUrl}`,

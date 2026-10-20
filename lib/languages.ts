@@ -405,6 +405,8 @@ export const translations = {
     'subtype.brand_stage': 'Brand Appearances',
     'subtype.charity': 'Charity',
     'subtype.industry': 'Industry',
+    'subtype.duo': 'Both of Them',
+    'subtype.solo': 'On Their Own',
 
     // Editorial meta
     'editorial.issueCount': '{count} issues curated',
@@ -837,6 +839,8 @@ export const translations = {
     'subtype.brand_stage': '品牌站台',
     'subtype.charity': '公益',
     'subtype.industry': '行业活动',
+    'subtype.duo': '双人',
+    'subtype.solo': '单人',
 
     // Editorial meta
     'editorial.issueCount': '共 {count} 期特辑',
@@ -1271,6 +1275,8 @@ export const translations = {
     'subtype.brand_stage': 'งานแบรนด์',
     'subtype.charity': 'การกุศล',
     'subtype.industry': 'งานอุตสาหกรรม',
+    'subtype.duo': 'สองคน',
+    'subtype.solo': 'คนเดียว',
 
     // Editorial meta
     'editorial.issueCount': 'คัดสรรแล้ว {count} ฉบับ',

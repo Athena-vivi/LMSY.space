@@ -208,46 +208,88 @@ export const HOME_CATEGORY_VALUES: ReadonlySet<string> = new Set(
 );
 
 /**
- * The address of one entry inside a homepage door, outside door 1.
+ * The address of one entry inside a door, outside door 1.
  *
  * Door 1 is excluded because its entries hang off a series slug, which this
  * pure function cannot know; /dramas builds those itself. Everything here is
  * pure so the sitemap and the route handlers compute the same string.
  *
+ * The second level is whatever the door actually splits on (2026-10-21):
+ *
+ *   /talks/<category>/<entry>   interview / variety / radio, because the
+ *                               three are the shelves a visitor picks from
+ *   /live/<sub-class>/<entry>   duo / solo
+ *   /live-events/...            the in-hall sub-classes
+ *   /editorial/<entry>          one issue is the smallest unit
+ *
  * Returns null for a hall without its own door - those rows have no public
  * address at all (see lib/entry-path.ts), so a caller must not print a link.
  */
-export function homeDoorEntryPath(project: {
+export function doorEntryPath(project: {
   category?: string | null;
   subtype?: string | null;
   slug?: string | null;
   id: string;
 }): string | null {
   const category = normalizeCategory(project.category);
-  if (!category || !HOME_CATEGORY_VALUES.has(category) || category === 'drama_work') {
-    return null;
-  }
+  if (!category || category === 'drama_work') return null;
 
   const door = categoryHref(category);
   if (!door) return null;
 
   const key = project.slug || project.id;
-  const definitions = SUBTYPES_BY_CATEGORY[category] ?? [];
 
+  // A shared door whose shelves are whole categories: the category itself is
+  // the second level, so no sub-class is consulted.
+  const categorySegment = doorCategorySegment(category);
+  if (categorySegment) return `${door}/${categorySegment}/${key}`;
+
+  const definitions = SUBTYPES_BY_CATEGORY[category] ?? [];
   if (definitions.length === 0) return `${door}/${key}`;
 
   const filed = definitions.find(
     (definition) => String(definition.value) === String(project.subtype ?? '')
   );
-  const segment = filed
-    ? subtypeSegment(filed.value)
-    : UNFILED_SUBTYPE_SEGMENT;
+  const segment = filed ? subtypeSegment(filed.value) : UNFILED_SUBTYPE_SEGMENT;
 
   return `${door}/${segment}/${key}`;
 }
 
 export const TALK_CATEGORIES = ['interview', 'variety', 'radio'] as const;
 export const STREAM_CATEGORIES = ['live_stream'] as const;
+
+/**
+ * A door that holds several categories instead of several sub-classes.
+ *
+ * `/talks` is the only one: three halls share a front door because they share
+ * a production model (somebody else filmed, cut and released it), but a
+ * visitor still picks a shelf - an interview, a variety spot and a radio hour
+ * are watched for different reasons. So the category itself is the second
+ * level of the address (`/talks/interview/<entry>`), and each one owns a page
+ * of its own rather than a tab.
+ *
+ * Listed in display order; the door renders one card per key even while the
+ * shelf is empty.
+ */
+export const DOOR_CATEGORY_GROUPS: Record<string, readonly ProjectCategory[]> = {
+  '/talks': TALK_CATEGORIES,
+};
+
+/**
+ * The URL segment a category contributes when it IS the second level of its
+ * door, or null when the door splits on sub-classes instead.
+ */
+export function doorCategorySegment(category: ProjectCategory): string | null {
+  for (const categories of Object.values(DOOR_CATEGORY_GROUPS)) {
+    if (categories.includes(category)) return category;
+  }
+  return null;
+}
+
+/** The categories under one door path, in display order. */
+export function doorCategories(door: string): readonly ProjectCategory[] {
+  return DOOR_CATEGORY_GROUPS[door] ?? [];
+}
 
 /**
  * The front-door path per hall that owns one. 2026-10-21: this is now the
@@ -323,8 +365,8 @@ export function subtypeLabelKey(
  * Halls missing from this map have no second level on purpose:
  *   editorial / commercial / behind_the_scenes / personal_travel /
  *   early_archive  - the work itself is the smallest unit
- *   interview / variety / radio / live_stream - these own a landing page
- *   (/talks, /live) that already splits them
+ *   interview / variety / radio - the second level of /talks is the category
+ *   itself (see DOOR_CATEGORY_GROUPS), not a sub-class
  */
 export interface SubtypeDefinition {
   value: ProjectSubtype;
@@ -357,6 +399,13 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
     { value: 'industry', labelKey: 'subtype.industry' },
     { value: 'charity', labelKey: 'subtype.charity' },
     { value: 'premiere', labelKey: 'subtype.premiere' },
+  ],
+  // /live splits by who held the phone, because 45 of the first 55 streams
+  // were one of them alone: laid out flat the shelf reads as a Sonya archive.
+  // These two values are already in the database whitelist, so no migration.
+  live_stream: [
+    { value: 'duo', labelKey: 'subtype.duo' },
+    { value: 'solo', labelKey: 'subtype.solo' },
   ],
 };
 

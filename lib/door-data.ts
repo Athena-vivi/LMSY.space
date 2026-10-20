@@ -3,7 +3,11 @@ import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import {
   SUBTYPES_BY_CATEGORY,
   UNFILED_SUBTYPE_SEGMENT,
+  categoryDefinition,
   categoryHref,
+  doorCategories,
+  doorCategorySegment,
+  doorEntryPath,
   subtypeSegment,
   type SubtypeDefinition,
 } from '@/lib/category-registry';
@@ -12,11 +16,12 @@ import type { LocalizedText } from '@/lib/localized-content';
 import type { ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
 
 /**
- * Reading layer for the doors that own a page (homepage entries 2-5).
+ * Reading layer for every door that owns a page.
  *
- * Door 1 has its own loader inside /dramas because it groups by series; the
- * other halls group by sub-class, which is what this module does. Both read
- * the same table through the same visibility rule - there is no second list.
+ * Door 1 has its own loader inside /dramas because it groups by series. The
+ * other halls group by sub-class - or, for /talks, by category - which is
+ * what this module does. All of them read the same table through the same
+ * visibility rule: there is no second list.
  *
  * A door is three levels, same as door 1:
  *
@@ -24,12 +29,16 @@ import type { ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
  *   /live-events/brand-event         the entries filed under that sub-class
  *   /live-events/brand-event/<slug>  one entry: the picture wall
  *
+ *   /talks                           one card per category (2026-10-21)
+ *   /talks/interview                 the conversations of that kind
+ *   /talks/interview/<slug>          one conversation
+ *
  * Server-rendered on purpose: these pages are the crawl surface for the
  * entries underneath them, so the list cannot sit behind a client fetch.
  */
 
 const ENTRY_COLUMNS =
-  'id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url, watch_url, project_kind';
+  'id, slug, title, title_i18n, description, description_i18n, category, subtype, event_date, release_date, cover_url, watch_url, project_kind';
 
 export interface DoorEntryRow {
   id: string;
@@ -38,6 +47,8 @@ export interface DoorEntryRow {
   title_i18n: LocalizedText | null;
   description: string | null;
   description_i18n: LocalizedText | null;
+  /** The hall the row belongs to; a shared door holds several. */
+  category: ProjectCategory | null;
   subtype: ProjectSubtype | null;
   event_date: string | null;
   release_date: string | null;
@@ -75,11 +86,13 @@ export interface DoorAssetRow {
 }
 
 /** Newest first: a hall reads as a history, so the latest thing is on top. */
-async function loadRows(category: ProjectCategory): Promise<DoorEntryRow[]> {
+async function loadRows(categories: readonly ProjectCategory[]): Promise<DoorEntryRow[]> {
+  if (categories.length === 0) return [];
+
   const { data, error } = await applyPublicProjectFilter(
     getSupabaseAdmin().schema('lmsy_archive').from('projects').select(ENTRY_COLUMNS)
   )
-    .eq('category', category)
+    .in('category', categories as unknown as string[])
     .order('event_date', { ascending: false, nullsFirst: false })
     .order('release_date', { ascending: false, nullsFirst: false });
 
@@ -107,7 +120,7 @@ async function loadRows(category: ProjectCategory): Promise<DoorEntryRow[]> {
   return rows.map((row) => ({
     ...row,
     imageCount: counts[row.id] ?? 0,
-    href: entryPath(category, row),
+    href: doorEntryPath(row) ?? '/gallery',
   }));
 }
 
@@ -128,21 +141,6 @@ function segmentOfSubtype(subtype: ProjectSubtype | null | undefined, category: 
   return UNFILED_SUBTYPE_SEGMENT;
 }
 
-/** The address of one entry: the only address it has. */
-export function entryPath(
-  category: ProjectCategory,
-  entry: { id: string; slug: string | null; subtype: ProjectSubtype | null }
-): string {
-  const slug = entry.slug || entry.id;
-  const door = categoryHref(category);
-  // These loaders only ever run for halls that own a page, so the guard is
-  // theoretical. If a hall without a page ever reaches here, the picture
-  // stream is still a live destination - better than a broken href.
-  if (!door) return '/gallery';
-  if (!doorHasCategories(category)) return `${door}/${slug}`;
-  return `${door}/${segmentOfSubtype(entry.subtype, category)}/${slug}`;
-}
-
 /** The address of a hall's second level. */
 export function categoryPath(category: ProjectCategory, key: string): string {
   const door = categoryHref(category);
@@ -156,7 +154,7 @@ export function categoryPath(category: ProjectCategory, key: string): string {
  * sub-classes - it is a way to reach them, not a permanent empty shelf.
  */
 export async function loadDoorCategories(category: ProjectCategory): Promise<DoorCategoryRow[]> {
-  const rows = await loadRows(category);
+  const rows = await loadRows([category]);
   const definitions = doorSubtypes(category);
 
   const cards: DoorCategoryRow[] = definitions.map((definition) => {
@@ -191,9 +189,41 @@ export async function loadDoorCategories(category: ProjectCategory): Promise<Doo
   return cards;
 }
 
+/**
+ * Level 1 of a door whose shelves are whole categories (/talks).
+ *
+ * Same card, same frame, same "collecting" placeholder: the difference is only
+ * where the count comes from. Every category gets a card even while it is
+ * empty - a door is a promise that the shelf exists, not a report on what has
+ * been filed so far.
+ */
+export async function loadGroupCategories(
+  categories: readonly ProjectCategory[]
+): Promise<DoorCategoryRow[]> {
+  const rows = await loadRows(categories);
+
+  return categories.map((category) => {
+    const own = rows.filter((row) => row.category === category);
+    const covered = own.find((row) => Boolean(row.cover_url));
+    return {
+      key: category,
+      labelKey: categoryDefinition(category)?.labelKey ?? null,
+      count: own.length,
+      cover: covered?.cover_url ?? null,
+      latestDate: own.find((row) => Boolean(row.event_date))?.event_date ?? null,
+      href: categoryPath(category, doorCategorySegment(category) ?? category),
+    };
+  });
+}
+
+/** True when the door has categories as its second level (/talks). */
+export function doorGroupsCategories(door: string): boolean {
+  return doorCategories(door).length > 0;
+}
+
 /** Every visible entry of a hall, newest first. One level down from the door. */
 export async function loadDoorEntries(category: ProjectCategory): Promise<DoorEntryRow[]> {
-  return loadRows(category);
+  return loadRows([category]);
 }
 
 /**
@@ -206,7 +236,7 @@ export async function loadSegmentEntries(
   category: ProjectCategory,
   segment: string
 ): Promise<DoorEntryRow[] | null> {
-  const rows = await loadRows(category);
+  const rows = await loadRows([category]);
   const definitions = doorSubtypes(category);
 
   if (segment === UNFILED_SUBTYPE_SEGMENT) {
@@ -234,7 +264,7 @@ export async function loadEntry(
   key: string,
   segment?: string
 ): Promise<{ entry: DoorEntryRow; assets: DoorAssetRow[] } | null> {
-  const rows = await loadRows(category);
+  const rows = await loadRows([category]);
   const entry = rows.find((row) => (row.slug || row.id) === key);
   if (!entry) return null;
 

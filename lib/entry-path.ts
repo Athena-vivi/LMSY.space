@@ -12,6 +12,8 @@
  *   live event        /live-events/<sub-class>/<entry>
  *   appearance        /appearances/<sub-class>/<entry>
  *   collaboration     /commercial/<entry>
+ *   conversation      /talks/<interview|variety|radio>/<entry>
+ *   live stream       /live/<duo|solo>/<entry>
  *
  * Two consequences worth knowing before editing:
  *
@@ -28,7 +30,7 @@
  * layout modules all compute the same string from the same rules.
  */
 
-import { homeDoorEntryPath, normalizeCategory } from './category-registry.ts';
+import { doorEntryPath, normalizeCategory } from './category-registry.ts';
 
 export interface EntryRef {
   id: string;
@@ -68,7 +70,7 @@ export function entryPath(row: EntryRef, seriesSlugs?: SeriesSlugMap): string | 
     return seriesSlug ? `/dramas/${seriesSlug}/${slug}` : null;
   }
 
-  return homeDoorEntryPath({ category, subtype: row.subtype, slug, id: row.id });
+  return doorEntryPath({ category, subtype: row.subtype, slug, id: row.id });
 }
 
 /**

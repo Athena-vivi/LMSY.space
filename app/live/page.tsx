@@ -1,14 +1,21 @@
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { pageMetadata } from '@/lib/seo';
-import { LiveClient } from './live-client';
+import { loadDoorCategories } from '@/lib/door-data';
+import { DoorCategoriesPage } from '@/components/doors/door-views';
 
 /**
- * /live - the second soul-resonance door.
+ * /live - the door with no third party in the middle.
  *
- * Server shell only; the list is client-rendered like the rest of the archive
- * surfaces so switching language does not reload the page.
+ * Every other hall holds something that was filmed, edited and released by
+ * somebody else. This one holds the streams they opened themselves: no cut, no
+ * running time, no interviewer.
+ *
+ * Three levels since 2026-10-21: who held the phone splits the shelf (the
+ * database already stores `duo` / `solo`), so a stream is read at
+ * /live/<duo|solo>/<entry> instead of having no page at all.
  */
+export const revalidate = 300;
+
 export const metadata: Metadata = pageMetadata({
   title: 'Live',
   description:
@@ -16,16 +23,16 @@ export const metadata: Metadata = pageMetadata({
   path: '/live',
 });
 
-export default function LivePage() {
+export default async function LivePage() {
+  const cards = await loadDoorCategories('live_stream');
+  const total = cards.reduce((sum, card) => sum + card.count, 0);
+
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-muted border-t-foreground" />
-        </div>
-      }
-    >
-      <LiveClient />
-    </Suspense>
+    <DoorCategoriesPage
+      titleKey="live.title"
+      descriptionKey="live.description"
+      cards={cards}
+      total={total}
+    />
   );
 }

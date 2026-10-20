@@ -88,6 +88,18 @@ describe('search contract mapping', () => {
     assert.equal(entryPath({ id: 'abc', category: null }), null);
   });
 
+  test('/talks splits on the category, /live on who held the phone', () => {
+    // 2026-10-21: both halls used to have tabs on one page, so an entry had no
+    // address and no page. The category is the shelf now.
+    assert.equal(entryPath({ id: 'abc', category: 'interview', slug: 'gala-night' }), '/talks/interview/gala-night');
+    assert.equal(entryPath({ id: 'abc', category: 'variety', slug: 'wood-toy' }), '/talks/variety/wood-toy');
+    assert.equal(entryPath({ id: 'abc', category: 'radio', slug: 'efm-90' }), '/talks/radio/efm-90');
+    assert.equal(entryPath({ id: 'abc', category: 'live_stream', subtype: 'duo', slug: 'christmas' }), '/live/duo/christmas');
+    assert.equal(entryPath({ id: 'abc', category: 'live_stream', subtype: 'solo', slug: 'late' }), '/live/solo/late');
+    // A stream that has not been filed yet still has a page of its own.
+    assert.equal(entryPath({ id: 'abc', category: 'live_stream', slug: 'unfiled-one' }), '/live/unfiled/unfiled-one');
+  });
+
   test('project rows map to the full contract', () => {
     const r = mapProjectRow(PROJECT())!;
     assert.equal(r.type, 'project');
@@ -371,7 +383,7 @@ describe('related routing fixes', () => {
   test('sitemap advertises every entry at its own address', () => {
     const sitemapSrc = src('app/sitemap.ts');
     assert.ok(
-      sitemapSrc.includes('homeDoorEntryPath(project)'),
+      sitemapSrc.includes('doorEntryPath(project)'),
       'an entry is submitted at the door that owns it'
     );
     assert.ok(!sitemapSrc.includes('SITE_URL}/projects'), 'no /projects address is submitted');

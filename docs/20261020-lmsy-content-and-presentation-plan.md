@@ -388,3 +388,48 @@ SQL 全文：`docs/architecture/20261020-db-restructure.sql`，说明：同名 `
 ### 11.5 顺带修掉的坑
 
 - `public/sw.js` 的预缓存里同时有 `/profiles` 和 `/projects`。`cache.addAll()` 只要有一个 404 就整体失败，安装会直接挂掉，所以这两个地址与 `/schedule` 一并移除。
+
+---
+
+## 十二、对话门与直播门补齐三层（2026-10-21 执行）
+
+### 12.1 问题
+
+`/talks` 和 `/live` 原来是**一张客户端列表 + 一排 tab**。tab 是客户端状态，没有地址，因此：
+
+- 任何一个访谈、综艺、电台、直播**都没有自己的页面**，点不进、搜不到、没法分享；
+- 整页是 `useEffect` 里拉数据，服务端只有空壳，爬虫拿不到内容；
+- `/talks` 和 `/live` 在导航外，又没有下级地址，等于两个死胡同。
+
+### 12.2 现在的结构
+
+两个门都补齐成和另外四个门完全一样的三层（门 → 分类 → 事件），全部服务端渲染：
+
+| 门 | 门页 | 分类页 | 事件页 |
+|---|---|---|---|
+| 对话 | `/talks` | `/talks/interview`、`/talks/variety`、`/talks/radio` | `/talks/<分类>/<事件 slug>` |
+| 直播 | `/live` | `/live/duo`、`/live/solo` | `/live/<分类>/<事件 slug>` |
+
+- **对话门的第二层是「分类」本身**（访谈 / 综艺 / 电台），因为它们本来就是三个 `category` 值，不是子类。`lib/category-registry.ts` 新增 `DOOR_CATEGORY_GROUPS`（`/talks` → 三个分类）与 `doorCategorySegment()` 表达这件事；`doorEntryPath()` 遇到这类门时把分类当第二段，不再去查 subtype。
+- **直播门的第二层是「谁拿着手机」**：`duo` / `solo`。这两个值数据库 CHECK 早就接受（第二轮扩白名单时为"双人/单人两个 tab"加的），所以只往 `SUBTYPES_BY_CATEGORY.live_stream` 里登记，**不动数据库**。
+- 没有归类的直播落 `/live/unfiled/<事件>`，和线下活动、公开活动的 unfiled 一致。
+
+### 12.3 地址唯一的落点
+
+- `lib/category-registry.ts` 的 `homeDoorEntryPath()` 改名为 `doorEntryPath()`：它不再只管首页五入口，而是**所有有门的分类**共用一个算法；没有门的三个旧分类（幕后 / 个人旅行 / 早期档案）仍返回 `null`。
+- `lib/door-data.ts` 的 `loadRows()` 改为收**一个分类数组**，新增 `loadGroupCategories()` 给「一层门、第二层是分类」的对话门用；条目地址统一由 `doorEntryPath()` 算，模块内原来那个同名的 `entryPath()` 已删除（同名两套算法最容易走岔）。
+- 搜索、sitemap、人物页、相册灯箱、时间线因此**自动**拿到对话/直播事件的地址，不需要各自再判断。
+- sitemap 新增 5 条二层地址：`/talks/interview`、`/talks/variety`、`/talks/radio`、`/live/duo`、`/live/solo`。
+
+### 12.4 删掉的东西
+
+- `app/talks/talks-client.tsx`、`app/live/live-client.tsx`：整页客户端拉取 + tab 的实现，被服务端三层页取代。
+- `lib/languages.ts` 里 `talks.tab*` / `live.tab*` 文案已无人引用，保留不删（不占运行时，等下一轮清理时一起收）。
+
+### 12.5 新增文案
+
+`subtype.duo`（双人 / Both of Them / สองคน）、`subtype.solo`（单人 / On Their Own / คนเดียว）。
+
+### 12.6 当前数据状态
+
+对话门与直播门的库内行数**目前为 0**（`interview` / `variety` / `radio` / `live_stream` 全部 0 行，清单在 `docs/20261019-lmsy-interview-list.md`、`variety-show-list.md`、`live-stream-list.md`，尚未入库）。因此三个分类页和两个分类页现在都显示「收录中」，门本身在、地址在、SEO 在，等内容进来即可填满。

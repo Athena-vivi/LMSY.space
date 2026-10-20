@@ -1,0 +1,57 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { pageMetadata } from '@/lib/seo';
+import { getTranslation } from '@/lib/languages';
+import { loadDoorEntries } from '@/lib/door-data';
+import { DoorEntriesPage } from '@/components/doors/door-views';
+import { TALK_CATEGORIES, categoryDefinition, normalizeCategory } from '@/lib/category-registry';
+
+/**
+ * /talks/[category] - level 2: the conversations of one kind.
+ *
+ * The segment is the category itself (`interview`, `variety`, `radio`), which
+ * is the shelf a visitor picks on the door. Anything else is a 404: the three
+ * categories are the whole vocabulary of this door, so an unknown segment must
+ * not render a filtered copy of the others.
+ */
+export const revalidate = 300;
+
+interface PageProps {
+  params: Promise<{ category: string }>;
+}
+
+function talksCategoryOf(segment: string) {
+  const category = normalizeCategory(segment);
+  if (!category) return null;
+  return (TALK_CATEGORIES as readonly string[]).includes(category) ? category : null;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { category: segment } = await params;
+  const category = talksCategoryOf(segment);
+  const definition = category ? categoryDefinition(category) : null;
+  const name = definition ? getTranslation('en', definition.labelKey) : 'Conversations';
+
+  return pageMetadata({
+    title: `${name} · Conversations`,
+    description: `${name} — every conversation Lookmhee & Sonya had in this shelf, each with its own page.`,
+    path: `/talks/${segment}`,
+  });
+}
+
+export default async function TalksShelfPage({ params }: PageProps) {
+  const { category: segment } = await params;
+  const category = talksCategoryOf(segment);
+  if (!category) notFound();
+
+  const entries = await loadDoorEntries(category);
+
+  return (
+    <DoorEntriesPage
+      titleKey={categoryDefinition(category)?.labelKey ?? null}
+      doorTitleKey="talks.title"
+      doorHref="/talks"
+      entries={entries}
+    />
+  );
+}
