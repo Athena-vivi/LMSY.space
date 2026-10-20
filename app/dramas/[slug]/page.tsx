@@ -1,19 +1,28 @@
 import type { Metadata } from 'next';
-import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { isPublicProject } from '@/lib/project-visibility';
+import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
 import { getLocalizedText } from '@/lib/localized-content';
-import { DramaDetailClient, type DramaDetailEvent, type DramaDetailAsset } from './drama-detail-client';
+import {
+  DramaDetailClient,
+  type DramaAssetRow,
+  type DramaEventCard,
+  type DramaSeriesRow,
+} from './drama-detail-client';
 
 /**
- * /dramas/[slug] - one series, every dated entry under it.
+ * /dramas/[slug] - one series, every entry under it.
  *
  * The SEO surface of door 1: three of these pages exist (one per series), each
- * server-rendered with its own title and description. The old address
- * /projects/[slug] for a drama_work row redirects here, so there is exactly
- * one canonical URL per series.
+ * server-rendered with its own title and canonical. The old address
+ * /projects/[slug] for a drama_work row redirects here, so a series keeps
+ * exactly one URL.
+ *
+ * Every event is handed to the client with the picture it opens on: its own
+ * cover if it has one, otherwise the first image filed under it. An event with
+ * no picture still gets a frame - this is a picture archive, so a blank slot
+ * says "not photographed yet" instead of quietly shrinking the grid.
  */
 export const revalidate = 300;
 
@@ -24,14 +33,15 @@ interface PageProps {
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function resolveDrama(slug: string) {
+const SERIES_COLUMNS =
+  'id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible';
+
+async function resolveSeries(slug: string) {
   const supabaseAdmin = getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('projects')
-    .select(
-      'id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible'
-    )
+    .select(SERIES_COLUMNS)
     .eq('category', 'drama_work')
     .eq('slug', slug)
     .maybeSingle();
@@ -42,9 +52,7 @@ async function resolveDrama(slug: string) {
   const { data: byId } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('projects')
-    .select(
-      'id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible'
-    )
+    .select(SERIES_COLUMNS)
     .eq('category', 'drama_work')
     .eq('id', slug)
     .maybeSingle();
@@ -54,7 +62,7 @@ async function resolveDrama(slug: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const drama = await resolveDrama(slug);
+  const drama = await resolveSeries(slug);
 
   if (!drama || !isPublicProject(drama)) {
     return { title: 'Series Not Found' };
@@ -78,33 +86,61 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function DramaPage({ params }: PageProps) {
   const { slug } = await params;
   const supabaseAdmin = getSupabaseAdmin();
-  const drama = await resolveDrama(slug);
+  const drama = await resolveSeries(slug);
 
   if (!drama || !isPublicProject(drama)) {
     notFound();
   }
 
-  const [{ data: events }, { data: assets }] = await Promise.all([
+  const [{ data: events }, { data: assets }, { data: allSeries }] = await Promise.all([
     supabaseAdmin
       .schema('lmsy_archive')
       .from('drama_events')
       .select(
-        'project_id, group_key, slug, title, event_date, description, source_url, result, sort_order'
+        'id, project_id, group_key, slug, title, title_i18n, event_date, description, description_i18n, source_url, result, sort_order, cover_url'
       )
       .eq('project_id', drama.id),
     supabaseAdmin
       .schema('lmsy_archive')
       .from('gallery_assets')
-      .select('id, image_url, caption, catalog_id, rotation, event_date')
+      .select('id, image_url, caption, catalog_id, rotation, event_id')
       .eq('project_id', drama.id)
       .order('created_at', { ascending: true }),
+    applyPublicProjectFilter(
+      supabaseAdmin
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('id, slug, title, title_i18n, subtype, event_date, release_date, cover_url')
+    )
+      .eq('category', 'drama_work')
+      .order('event_date', { ascending: true, nullsFirst: false }),
   ]);
+
+  const assetsByEvent: Record<string, DramaAssetRow[]> = {};
+  for (const asset of (assets ?? []) as DramaAssetRow[]) {
+    if (!asset.event_id) continue;
+    (assetsByEvent[asset.event_id] ??= []).push(asset);
+  }
+
+  const cards: DramaEventCard[] = ((events ?? []) as Array<
+    Omit<DramaEventCard, 'cover' | 'imageCount'>
+  >).map((event) => {
+    const own = assetsByEvent[event.id] ?? [];
+    return {
+      ...event,
+      imageCount: own.length,
+      cover: event.cover_url || own[0]?.image_url || null,
+    };
+  });
+
+  const siblings = (allSeries ?? []) as unknown as DramaSeriesRow[];
 
   return (
     <DramaDetailClient
-      drama={drama as unknown as ComponentProps<typeof DramaDetailClient>['drama']}
-      events={(events ?? []) as unknown as DramaDetailEvent[]}
-      assets={(assets ?? []) as unknown as DramaDetailAsset[]}
+      drama={drama as unknown as DramaSeriesRow}
+      siblings={siblings}
+      events={cards}
+      assets={(assets ?? []) as unknown as DramaAssetRow[]}
     />
   );
 }

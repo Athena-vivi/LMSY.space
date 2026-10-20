@@ -39,6 +39,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // listed under /dramas/<slug> below and redirect from /projects/<slug>, so
   // advertising them here would submit a URL that only 308s.
   let dramaRoutes: MetadataRoute.Sitemap = [];
+  // Third level of door 1: every dated entry has its own address, so the
+  // entries are submitted alongside the series that own them.
+  let dramaEventRoutes: MetadataRoute.Sitemap = [];
   try {
     const { data } = await applyPublicProjectFilter(
       getSupabaseAdmin()
@@ -56,19 +59,49 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.6,
         })
       );
-    dramaRoutes = (data || [])
-      .filter((project: { category?: string | null }) => project.category === 'drama_work')
-      .map(
-        (project: { id: string; slug?: string | null; created_at: string | null }) => ({
-          url: `${SITE_URL}/dramas/${project.slug || project.id}`,
-          lastModified: project.created_at ? new Date(project.created_at) : now,
-          changeFrequency: 'weekly' as const,
-          priority: 0.8,
-        })
+
+    const dramas = (data || []).filter(
+      (project: { category?: string | null }) => project.category === 'drama_work'
+    );
+    dramaRoutes = dramas.map(
+      (project: { id: string; slug?: string | null; created_at: string | null }) => ({
+        url: `${SITE_URL}/dramas/${project.slug || project.id}`,
+        lastModified: project.created_at ? new Date(project.created_at) : now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+      })
+    );
+
+    if (dramas.length > 0) {
+      const seriesSlugById = new Map<string, string>(
+        dramas.map((project: { id: string; slug?: string | null }) => [
+          project.id,
+          project.slug || project.id,
+        ])
       );
+      const { data: events } = await getSupabaseAdmin()
+        .schema('lmsy_archive')
+        .from('drama_events')
+        .select('project_id, slug, created_at')
+        .in('project_id', [...seriesSlugById.keys()]);
+
+      dramaEventRoutes = (events ?? [])
+        .map((event) => {
+          const row = event as { project_id: string; slug: string; created_at: string | null };
+          const seriesSlug = seriesSlugById.get(row.project_id);
+          if (!seriesSlug) return null;
+          return {
+            url: `${SITE_URL}/dramas/${seriesSlug}/${row.slug}`,
+            lastModified: row.created_at ? new Date(row.created_at) : now,
+            changeFrequency: 'monthly' as const,
+            priority: 0.5,
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+    }
   } catch {
     // A sitemap failure must not break the route; fall back to static entries.
   }
 
-  return [...staticRoutes, ...dramaRoutes, ...projectRoutes];
+  return [...staticRoutes, ...dramaRoutes, ...dramaEventRoutes, ...projectRoutes];
 }

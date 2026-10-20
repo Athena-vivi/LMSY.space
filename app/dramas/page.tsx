@@ -2,14 +2,16 @@ import type { Metadata } from 'next';
 import { pageMetadata } from '@/lib/seo';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
-import { DramasClient, type DramaEventRow, type DramaRow } from './dramas-client';
+import { DramasClient, type DramaCardRow } from './dramas-client';
 
 /**
  * /dramas - door 1: everything they acted in.
  *
  * Server-rendered on purpose. The three series pages and every dated entry
  * under them are the SEO surface of this hall, so the list cannot sit behind a
- * client fetch (the way /talks does): only the tab switching is interactive.
+ * client fetch (the way /talks does): only the pictures and the language switch
+ * are interactive.
+ *
  * One hall, one front door - drama_work left the /projects index when this
  * page opened, so the same three rows no longer live under two addresses.
  */
@@ -23,16 +25,12 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default async function DramasPage() {
-  const { dramas, events, assetCounts } = await loadDoorOne();
+  const series = await loadSeries();
 
-  return <DramasClient dramas={dramas} events={events} assetCounts={assetCounts} />;
+  return <DramasClient series={series} />;
 }
 
-async function loadDoorOne(): Promise<{
-  dramas: DramaRow[];
-  events: DramaEventRow[];
-  assetCounts: Record<string, number>;
-}> {
+async function loadSeries(): Promise<DramaCardRow[]> {
   const supabaseAdmin = getSupabaseAdmin();
 
   const { data } = await applyPublicProjectFilter(
@@ -46,39 +44,25 @@ async function loadDoorOne(): Promise<{
     .eq('category', 'drama_work')
     .order('event_date', { ascending: true, nullsFirst: false });
 
-  const dramas = (data ?? []) as unknown as DramaRow[];
-  if (dramas.length === 0) {
-    return { dramas: [], events: [], assetCounts: {} };
+  const dramas = (data ?? []) as unknown as Omit<DramaCardRow, 'entryCount'>[];
+  if (dramas.length === 0) return [];
+
+  // One query for the counts: the door needs a number per card, not the
+  // entries themselves.
+  const { data: events } = await supabaseAdmin
+    .schema('lmsy_archive')
+    .from('drama_events')
+    .select('project_id')
+    .in(
+      'project_id',
+      dramas.map((drama) => drama.id)
+    );
+
+  const counts: Record<string, number> = {};
+  for (const row of events ?? []) {
+    const id = (row as { project_id: string }).project_id;
+    counts[id] = (counts[id] ?? 0) + 1;
   }
 
-  const ids = dramas.map((drama) => drama.id);
-
-  // The events and the asset counts are two small queries; running them in
-  // parallel keeps the page at one round trip of latency.
-  const [{ data: events }, { data: assets }] = await Promise.all([
-    supabaseAdmin
-      .schema('lmsy_archive')
-      .from('drama_events')
-      .select(
-        'project_id, group_key, slug, title, event_date, description, source_url, result, sort_order'
-      )
-      .in('project_id', ids),
-    supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('project_id')
-      .in('project_id', ids),
-  ]);
-
-  const assetCounts: Record<string, number> = {};
-  for (const asset of assets ?? []) {
-    const row = asset as { project_id: string };
-    assetCounts[row.project_id] = (assetCounts[row.project_id] ?? 0) + 1;
-  }
-
-  return {
-    dramas,
-    events: (events ?? []) as unknown as DramaEventRow[],
-    assetCounts,
-  };
+  return dramas.map((drama) => ({ ...drama, entryCount: counts[drama.id] ?? 0 }));
 }
