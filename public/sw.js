@@ -1,13 +1,15 @@
 // Dynamic cache name with build timestamp
 const CACHE_NAME = `lmsy-v${Date.now()}`;
 
-// Assets to cache immediately on install
+// Assets to cache immediately on install.
+// 2026-10-21: /profiles and /projects are gone - the front end has no
+// /projects namespace and the old profile route was a redirect-only shell.
+// cache.addAll() rejects the whole install if a single URL 404s, so this list
+// may only contain addresses that actually serve a page.
 const urlsToCache = [
   '/',
-  '/profiles',
+  '/timeline',
   '/gallery',
-  '/projects',
-  '/schedule',
   '/manifest.json',
   '/lmsy-logo.png',
   '/lmsy-main-visual.png',

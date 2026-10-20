@@ -1,12 +1,25 @@
 import { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { aggregateProjectSpans } from '@/lib/project-span';
-import { homeDoorEntryPath } from '@/lib/category-registry';
 import type { LocalizedText } from '@/lib/localized-content';
 import ProjectDetailClient from './project-detail-client';
+
+/**
+ * /admin/preview/<id> - the workbench renderer for one row.
+ *
+ * 2026-10-21: this used to be /projects/<id>, the front end's shared detail
+ * route. The public site no longer has a /projects namespace at all (an event
+ * is addressed by the door that owns it), so the route moved behind /admin,
+ * where "project" is still the right word: the workbench creates one folder of
+ * pictures per row and publishes it.
+ *
+ * It is not a second public address. /admin/* is behind the admin layout, is
+ * never linked from a public page and is served with `X-Robots-Tag: noindex`
+ * by next.config.ts.
+ */
 
 interface PageProps {
   params: Promise<{
@@ -58,19 +71,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!project || !isPublicProject(project)) {
     return {
-      title: 'Project Not Found | LMSY',
+      title: 'Preview Not Found | LMSY',
     };
   }
 
-  // Halls 2-5 serve an entry at its own address under the door. This route
-  // still opens - the admin previews rows through it - but the canonical points
-  // at the door so a search engine files the entry once, under one address.
-  const doorUrl = homeDoorEntryPath(project as { category?: string | null; subtype?: string | null; slug?: string | null; id: string });
-
   return {
-    title: `${project.title} | LMSY Official Fan Site`,
-    description: project?.description || `Learn more about ${project.title}`,
-    ...(doorUrl ? { alternates: { canonical: doorUrl } } : {}),
+    title: `${project.title} | LMSY Preview`,
+    description: project?.description || `Preview of ${project.title}`,
+    robots: { index: false, follow: false },
   };
 }
 
@@ -139,43 +147,15 @@ export default async function ProjectPage({ params }: PageProps) {
   // Public visibility (see lib/project-visibility.ts): visitor-facing only
   // when the admin opted the project in via portal_visible, it is not
   // archived, and it is not an ingestion container.
-  // Phase 7: one canonical detail route. Editorial no longer redirects to a
-  // second surface - the same project is rendered here, once.
   const project = await resolveProject(supabaseAdmin, id);
 
   if (!project || !isPublicProject(project)) {
     notFound();
   }
 
-  // Door 1 (drama_work) has had its own front door since 2026-10-21: a series
-  // is read at /dramas/<slug>, and an entry under it one level deeper at
-  // /dramas/<series>/<entry>. Known slugs are redirected in next.config; this
-  // catches the uuid form and any slug the config list has not caught up with,
-  // so a row keeps exactly one URL.
-  if (project.category === 'drama_work') {
-    if (project.project_kind === 'series') {
-      redirect(`/dramas/${project.slug || project.id}`);
-    }
-
-    // An entry carries the work id of its series, not the series row id, so
-    // the series slug has to be looked up before the address can be built.
-    const { data: seriesRow } = project.work_id
-      ? await supabaseAdmin
-          .schema('lmsy_archive')
-          .from('projects')
-          .select('slug')
-          .eq('category', 'drama_work')
-          .eq('project_kind', 'series')
-          .eq('work_id', project.work_id)
-          .maybeSingle()
-      : { data: null };
-
-    const seriesSlug = (seriesRow as { slug?: string | null } | null)?.slug;
-    if (seriesSlug) {
-      redirect(`/dramas/${seriesSlug}/${project.slug || project.id}`);
-    }
-    redirect('/dramas');
-  }
+  // No category-specific redirect any more. Door 1 used to bounce here so a
+  // series kept one URL; that rule belongs to the public doors now, and a
+  // preview that jumps somewhere else is not a preview.
 
   // Fetch gallery images for this project
   const { data: galleryImages } = await supabaseAdmin

@@ -53,7 +53,7 @@ export function ChronicleChrome({ eventCount, imageCount, availableYears, active
               year === activeYear ? (
                 <Link
                   key={year}
-                  href="/chronicle"
+                  href="/timeline"
                   className="rounded-full border border-transparent bg-gradient-to-r from-lmsy-yellow to-lmsy-blue px-3 py-1 text-xs font-medium text-ink"
                 >
                   {year} ✕
@@ -61,7 +61,7 @@ export function ChronicleChrome({ eventCount, imageCount, availableYears, active
               ) : (
                 <Link
                   key={year}
-                  href={`/chronicle?year=${year}`}
+                  href={`/timeline?year=${year}`}
                   className="rounded-full border border-border bg-muted px-3 py-1 text-xs text-ink-2 transition-colors hover:border-lmsy-blue hover:text-lmsy-blue"
                 >
                   {year}

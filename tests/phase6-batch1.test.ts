@@ -131,7 +131,7 @@ describe('shared navigation copy is not hardcoded', () => {
     const surfaces = [
       'components/page-intro.tsx',
       'components/chronicle-chrome.tsx',
-      'app/projects/[id]/project-detail-client.tsx',
+      'app/admin/preview/[id]/project-detail-client.tsx',
       'app/schedule/page.tsx',
       'app/resonance/page.tsx',
       'app/whispers/page.tsx',
@@ -324,41 +324,19 @@ describe('homepage', () => {
   });
 });
 
-describe('projects list', () => {
-  const page = src('app/projects/projects-client.tsx');
-
-  test('cover falls back to the curated database cover', () => {
-    assert.ok(page.includes('covers[project.id] || project.cover_url'));
-    assert.ok(page.includes('cover_url'));
+describe('the event index is gone', () => {
+  // 2026-10-21: /projects left the front end. What a visitor browses is the
+  // doors, and every card there opens the entry at its own address.
+  test('there is no shared index page', () => {
+    assert.ok(!existsSync('app/projects/page.tsx'));
+    assert.ok(!existsSync('app/projects/projects-client.tsx'));
   });
 
-  test('image count comes from the same batched asset query', () => {
-    assert.ok(page.includes('nextCounts[pid] = (nextCounts[pid] ?? 0) + 1'));
-    assert.ok(page.includes("t(language, 'projects.photoCount'"));
-  });
-
-  test('no hard-coded english actions or empty states remain', () => {
-    assert.ok(!page.includes('View Details\n'));
-    assert.ok(!page.includes('>Watch<'));
-    assert.ok(!page.includes('No projects found'));
-    assert.ok(page.includes("t(language, 'common.viewDetails')"));
-    assert.ok(page.includes("t(language, 'projects.emptyAll')"));
-  });
-
-  test('category chips use the shared registry label', () => {
-    assert.ok(page.includes('definition.labelKey'));
-    assert.ok(page.includes('INDEX_CATEGORIES'));
-    assert.ok(!page.includes("'TV_SERIES'"));
-  });
-
-  test('dates use the shared formatter and prefer event_date', () => {
-    assert.ok(page.includes('formatDisplayDate(project.event_date, language)'));
-    assert.ok(!page.includes("toLocaleDateString(language ==="));
-  });
-
-  test('cards use the single canonical detail route', () => {
-    assert.ok(page.includes('`/projects/${project.slug || project.id}`'));
-    assert.ok(!page.includes('/editorial/${project.id}'));
+  test('door cards open the address the loader computed', () => {
+    const doors = src('components/doors/door-views.tsx');
+    assert.ok(doors.includes('href={entry.href}'), 'entry cards use the server address');
+    assert.ok(doors.includes("t(language, 'drama.eventImages'"), 'counts stay localized');
+    assert.ok(!doors.includes("'/projects"), 'no /projects link left');
   });
 });
 
@@ -487,8 +465,8 @@ describe('chronicle', () => {
 });
 
 describe('shared page intro', () => {
-  test('projects and gallery use the same header component', () => {
-    assert.ok(src('app/projects/projects-client.tsx').includes('<PageIntro'));
+  test('the doors and the gallery use the same header component', () => {
+    assert.ok(src('components/doors/door-views.tsx').includes('<PageIntro'));
     assert.ok(src('app/gallery/page.tsx').includes('<PageIntro'));
     const intro = src('components/page-intro.tsx');
     assert.ok(intro.includes('font-serif'));
@@ -501,8 +479,8 @@ describe('shared page intro', () => {
 
 describe('no database writes were introduced', () => {
   const touched = [
-    'app/projects/page.tsx',
-    'app/projects/[id]/project-detail-client.tsx',
+    'app/admin/preview/[id]/page.tsx',
+    'app/admin/preview/[id]/project-detail-client.tsx',
     'app/gallery/page.tsx',
     'app/gallery/lightbox.tsx',
     'app/editorial/page.tsx',

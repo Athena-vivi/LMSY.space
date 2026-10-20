@@ -58,11 +58,15 @@ export type ChronicleEvent =
       images: TimelineImageRef[];
     };
 
-function projectHref(slug: string | null, id: string): string {
-  // One canonical detail route since phase 7. The slug is the stable URL;
-  // rows created before the migration (or via quick-create) fall back to id.
-  return `/projects/${slug || id}`;
-}
+/**
+ * Resolve a row's public address, or drop the event.
+ *
+ * 2026-10-21: there is no /projects namespace any more. An event is read under
+ * the door that owns it (lib/entry-path.ts), and a row whose hall has no page
+ * has no address - a timeline card that cannot be opened reads as broken, so
+ * the row is left out rather than rendered dead. No publicly visible row is in
+ * that situation today.
+ */
 
 export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
   const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
@@ -83,6 +87,10 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
 
   const rows = projects || [];
   const events: ChronicleEvent[] = [];
+  // Door 1 addresses an entry under its series, so the map is resolved once.
+  const { loadSeriesSlugMap } = await import('@/lib/series-slugs');
+  const { entryPath } = await import('@/lib/entry-path');
+  const seriesSlugs = await loadSeriesSlugMap();
 
   for (const p of rows) {
     // A theme project carries no single event date by definition ("Back View"
@@ -97,6 +105,8 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
     const date =
       ((p.event_date as string | null) || (p.release_date as string | null)) ?? '';
     if (!date) continue; // undated projects have no timeline slot
+    const href = entryPath(p as never, seriesSlugs);
+    if (!href) continue; // nowhere to send the visitor
     events.push({
       kind: 'project',
       id: `project-${p.id}`,
@@ -104,7 +114,7 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
       title: p.title as string,
       titleI18n: normalizeLocalizedText(p.title_i18n as LocalizedText | null, p.title as string),
       category: p.category as string,
-      href: projectHref(p.slug as string | null, p.id as string),
+      href,
     });
   }
 
@@ -152,6 +162,8 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
       const [projectId, date] = key.split('|');
       const project = projectById.get(projectId);
       if (!project) continue;
+      const href = entryPath(project as never, seriesSlugs);
+      if (!href) continue; // nowhere to send the visitor
       events.push({
         kind: 'images',
         id: `assets-${projectId}-${date}`,
@@ -159,7 +171,7 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
         projectId,
         projectTitle: project.title as string,
         projectTitleI18n: normalizeLocalizedText(project.title_i18n as LocalizedText | null, project.title as string),
-        href: projectHref(project.slug as string | null, projectId),
+        href,
         images,
       });
     }

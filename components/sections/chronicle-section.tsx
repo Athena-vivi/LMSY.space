@@ -140,14 +140,14 @@ function Milestone({ year, title, index, image, onHover }: MilestoneProps) {
 
   if (isInfinity) {
     return (
-      <Link href="/exhibitions" className="block flex-1">
+      <Link href="/gallery" className="block flex-1">
         {content}
       </Link>
     );
   }
 
   return (
-    <Link href={`/chronicle?year=${year}`} className="block flex-1">
+    <Link href={`/timeline?year=${year}`} className="block flex-1">
       {content}
     </Link>
   );

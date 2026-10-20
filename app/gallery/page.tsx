@@ -15,6 +15,7 @@ import { getImageDimensions, FALLBACK_ASPECT_RATIO } from '@/lib/image-dimension
 import { getLocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
 import { assetTagLabelKey } from '@/lib/category-meta';
+import { entryPath, seriesSlugMapFrom } from '@/lib/entry-path';
 
 const gradients = [
   'from-lmsy-yellow/20 to-lmsy-yellow/5',
@@ -31,7 +32,7 @@ const GALLERY_COLUMNS =
   'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, event_date, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform, project_id';
 const PAGE_SIZE = 60;
 
-// Minimal project info for the "view project" back-link. Fetched in one
+// Minimal project info for the "open the event" back-link. Fetched in one
 // batched query per loaded page; rows the anon client cannot see (hidden
 // admin containers) simply stay absent from the map, which hides the link.
 interface ProjectRef {
@@ -39,6 +40,32 @@ interface ProjectRef {
   title: string;
   title_i18n: Record<string, string | null> | null;
   slug: string | null;
+  category: string | null;
+  subtype: string | null;
+  project_kind: string | null;
+  work_id: string | null;
+  /** The event's public address, resolved below - null when it has none. */
+  href: string | null;
+}
+
+/**
+ * work_id -> series slug, for the drama entries that are addressed under their
+ * series. Three rows, fetched once per page load and shared by every batch.
+ */
+let seriesSlugPromise: Promise<Map<string, string>> | null = null;
+function loadSeriesSlugs(): Promise<Map<string, string>> {
+  if (!seriesSlugPromise) {
+    seriesSlugPromise = (async () => {
+      const { data } = await supabase
+        .schema('lmsy_archive')
+        .from('projects')
+        .select('id, slug, category, project_kind, work_id')
+        .eq('category', 'drama_work')
+        .eq('project_kind', 'series');
+      return seriesSlugMapFrom((data ?? []) as never);
+    })();
+  }
+  return seriesSlugPromise;
 }
 
 // Phase-4 batch 2, Task 1: the gallery now shares the site-wide public
@@ -61,14 +88,19 @@ async function fetchPublicProjectIds(): Promise<string[]> {
 async function fetchProjectRefs(ids: string[]): Promise<Record<string, ProjectRef>> {
   const unique = Array.from(new Set(ids)).filter(Boolean);
   if (unique.length === 0) return {};
-  const { data, error } = await supabase
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('id, title, title_i18n, slug')
-    .in('id', unique);
+  const [{ data, error }, seriesSlugs] = await Promise.all([
+    supabase
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, title, title_i18n, slug, category, subtype, project_kind, work_id')
+      .in('id', unique),
+    loadSeriesSlugs(),
+  ]);
   if (error || !data) return {}; // fail-safe: hide the entry, never crash
   const map: Record<string, ProjectRef> = {};
-  for (const row of data) map[(row as ProjectRef).id] = row as ProjectRef;
+  for (const row of data as unknown as Array<Omit<ProjectRef, 'href'>>) {
+    map[row.id] = { ...row, href: entryPath(row, seriesSlugs) };
+  }
   return map;
 }
 

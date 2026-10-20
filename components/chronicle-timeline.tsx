@@ -225,14 +225,14 @@ export function ChronicleTimeline({
                   {availableYears.map((year) => (
                     <Link
                       key={year}
-                      href={`/chronicle?year=${year}`}
+                      href={`/timeline?year=${year}`}
                       className="rounded-full border border-border bg-muted px-4 py-1.5 text-xs text-ink-2 transition-colors hover:border-lmsy-blue hover:text-lmsy-blue"
                     >
                       {year}
                     </Link>
                   ))}
                   <Link
-                    href="/chronicle"
+                    href="/timeline"
                     className="rounded-full border border-transparent bg-gradient-to-r from-lmsy-yellow to-lmsy-blue px-4 py-1.5 text-xs font-medium text-black"
                   >
                     {t(language, 'chronicle.clearYear')}

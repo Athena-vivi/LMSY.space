@@ -135,13 +135,18 @@ export function entryPath(
 ): string {
   const slug = entry.slug || entry.id;
   const door = categoryHref(category);
+  // These loaders only ever run for halls that own a page, so the guard is
+  // theoretical. If a hall without a page ever reaches here, the picture
+  // stream is still a live destination - better than a broken href.
+  if (!door) return '/gallery';
   if (!doorHasCategories(category)) return `${door}/${slug}`;
   return `${door}/${segmentOfSubtype(entry.subtype, category)}/${slug}`;
 }
 
 /** The address of a hall's second level. */
 export function categoryPath(category: ProjectCategory, key: string): string {
-  return `${categoryHref(category)}/${key}`;
+  const door = categoryHref(category);
+  return door ? `${door}/${key}` : '/gallery';
 }
 
 /**

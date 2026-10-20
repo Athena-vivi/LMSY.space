@@ -20,7 +20,6 @@ import {
   buildSearchResults,
   mapGalleryRow,
   mapProjectRow,
-  projectHref,
   scoreResult,
   compareResults,
   buildCategoryResults,
@@ -32,18 +31,26 @@ import {
   type ProjectRow,
   type SearchResult,
 } from '../lib/search-results.ts';
+import { entryPath } from '../lib/entry-path.ts';
 import { sanitizeSearchTerm } from '../lib/search-term.ts';
 
+// A door-2 row: the address comes from the door plus the sub-class, so the
+// fixture carries both. Door 1 is covered separately because it needs the
+// series slug map.
 const PROJECT = (over: Partial<ProjectRow> = {}): ProjectRow => ({
   id: '11111111-1111-1111-1111-111111111111',
   slug: null,
   title: 'Affair',
-  description: 'A drama series',
-  category: 'drama_work',
+  description: 'A fan meeting',
+  category: 'live_event',
+  subtype: 'fanmeeting',
   event_date: '2025-10-10',
   release_date: '2025-10-10',
   ...over,
 });
+
+/** work_id -> series slug, the extra key door 1 needs. */
+const SERIES = new Map([['work-affair', 'affair']]);
 
 const ASSET = (over: Partial<GalleryRow> = {}): GalleryRow => ({
   id: '22222222-2222-2222-2222-222222222222',
@@ -59,10 +66,26 @@ const ASSET = (over: Partial<GalleryRow> = {}): GalleryRow => ({
 // ---- Contract mapping -------------------------------------------------------
 
 describe('search contract mapping', () => {
-  test('project href: slug wins, uuid is the fallback', () => {
-    assert.equal(projectHref('gaze', 'abc'), '/projects/gaze');
-    assert.equal(projectHref(null, 'abc'), '/projects/abc');
-    assert.equal(projectHref(undefined, 'abc'), '/projects/abc');
+  test('project href: the door that owns the row, slug wins over uuid', () => {
+    assert.equal(entryPath({ id: 'abc', category: 'live_event', subtype: 'fanmeeting', slug: 'gaze' }), '/live-events/fanmeeting/gaze');
+    assert.equal(entryPath({ id: 'abc', category: 'live_event', subtype: 'fanmeeting' }), '/live-events/fanmeeting/abc');
+    assert.equal(entryPath({ id: 'abc', category: 'commercial', slug: 'coffee' }), '/commercial/coffee');
+    assert.equal(entryPath({ id: 'abc', category: 'editorial', slug: 'dream' }), '/editorial/dream');
+  });
+
+  test('door 1 needs the series slug map and never guesses', () => {
+    const row = { id: 'abc', category: 'drama_work', slug: 'ep1', work_id: 'work-affair' };
+    assert.equal(entryPath(row, SERIES), '/dramas/affair/ep1');
+    assert.equal(entryPath(row), null, 'no map, no address');
+    assert.equal(
+      entryPath({ id: 'abc', category: 'drama_work', slug: 'affair', project_kind: 'series' }),
+      '/dramas/affair'
+    );
+  });
+
+  test('a hall without a page has no address at all', () => {
+    assert.equal(entryPath({ id: 'abc', category: 'behind_the_scenes', slug: 'x' }), null);
+    assert.equal(entryPath({ id: 'abc', category: null }), null);
   });
 
   test('project rows map to the full contract', () => {
@@ -70,26 +93,32 @@ describe('search contract mapping', () => {
     assert.equal(r.type, 'project');
     assert.equal(r.id, '11111111-1111-1111-1111-111111111111');
     assert.equal(r.title, 'Affair');
-    assert.equal(r.href, '/projects/11111111-1111-1111-1111-111111111111');
-    assert.equal(r.description, 'A drama series');
+    assert.equal(r.href, '/live-events/fanmeeting/11111111-1111-1111-1111-111111111111');
+    assert.equal(r.description, 'A fan meeting');
     assert.equal(r.date, '2025-10-10');
-    assert.equal(r.category, 'drama_work');
+    assert.equal(r.category, 'live_event');
   });
 
   test('missing optional project fields are omitted, never fabricated', () => {
     const r = mapProjectRow(
-      PROJECT({ description: null, event_date: null, release_date: null, category: null })
+      PROJECT({ description: null, event_date: null, release_date: null })
     )!;
     assert.equal(r.description, undefined);
     assert.equal(r.date, undefined);
-    assert.equal(r.category, undefined);
     assert.ok(!('description' in r && r.description === ''));
+  });
+
+  test('a row with nowhere to land never enters the results', () => {
+    // 2026-10-21: no /projects fallback, so an addressless row is dropped
+    // rather than linked to a 404.
+    assert.equal(mapProjectRow(PROJECT({ category: null })), null);
+    assert.equal(mapProjectRow(PROJECT({ category: 'behind_the_scenes' })), null);
   });
 
   test('event_date wins over release_date, and the slug builds the href', () => {
     const r = mapProjectRow(PROJECT({ slug: 'gaze', event_date: '2024-01-02' }))!;
     assert.equal(r.type, 'project');
-    assert.equal(r.href, '/projects/gaze');
+    assert.equal(r.href, '/live-events/fanmeeting/gaze');
     assert.equal(r.date, '2024-01-02');
   });
 
@@ -326,10 +355,11 @@ describe('search frontend', () => {
   });
 
   test('Quick Access labels and search controls are localized', () => {
+    // 2026-10-21: the bar and Quick Access keep the two reading modes only.
     assert.ok(commandSrc.includes("t(language, 'nav.gallery')"));
-    assert.ok(commandSrc.includes("t(language, 'nav.projects')"));
     assert.ok(commandSrc.includes("t(language, 'nav.timeline')"));
-    assert.ok(commandSrc.includes("t(language, 'nav.people')"));
+    assert.ok(!commandSrc.includes("nav.projects"), 'no /projects entry left');
+    assert.ok(!commandSrc.includes("nav.people"), 'people moved out of the bar');
     assert.ok(commandSrc.includes("aria-label={t(language, 'search.open')}"));
     assert.ok(commandSrc.includes("aria-label={t(language, 'search.clear')}"));
   });
@@ -338,16 +368,14 @@ describe('search frontend', () => {
 // ---- Route hygiene ------------------------------------------------------------
 
 describe('related routing fixes', () => {
-  test('sitemap advertises the one canonical project entry, by slug', () => {
+  test('sitemap advertises every entry at its own address', () => {
     const sitemapSrc = src('app/sitemap.ts');
     assert.ok(
       sitemapSrc.includes('homeDoorEntryPath(project)'),
-      'an entry inside a homepage door is submitted at the door, not at /projects'
+      'an entry is submitted at the door that owns it'
     );
-    assert.ok(
-      sitemapSrc.includes('`/projects/${project.slug || project.id}`'),
-      'halls without a door fall back to /projects/[slug]'
-    );
+    assert.ok(!sitemapSrc.includes('SITE_URL}/projects'), 'no /projects address is submitted');
+    assert.ok(!sitemapSrc.includes('`/projects/'), 'no /projects detail URL is built');
     assert.ok(sitemapSrc.includes('/timeline'), 'timeline is advertised');
     assert.ok(sitemapSrc.includes('/people'), 'people is advertised');
   });

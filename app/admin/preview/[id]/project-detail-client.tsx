@@ -667,9 +667,10 @@ export default function ProjectDetailClient({
                   return (
                     <Link
                       key={related.id}
-                      // Canonical detail entry (phase-4 batch 2): editorial
-                      // works are read through /editorial/[id], not here.
-                      href={`/projects/${related.slug || related.id}`}
+                      // This renderer now lives in the admin preview only, so
+                      // a sibling previews the same way (2026-10-21: the
+                      // public site has no /projects namespace).
+                      href={`/admin/preview/${related.id}`}
                       className="group/related block"
                     >
                       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-white/5">

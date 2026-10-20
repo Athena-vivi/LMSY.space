@@ -19,7 +19,8 @@
 
 // NOTE: the explicit .ts extension keeps this module importable both by the
 // Next.js build (allowImportingTsExtensions) and by node --strip-types tests.
-import { CATEGORY_DEFINITIONS, categoryHref, homeDoorEntryPath } from './category-registry.ts';
+import { CATEGORY_DEFINITIONS, categoryHref } from './category-registry.ts';
+import { entryPath, type SeriesSlugMap } from './entry-path.ts';
 import { t, type Language } from './languages.ts';
 
 // ---- Contract --------------------------------------------------------------
@@ -49,6 +50,10 @@ export interface ProjectRow {
   category?: string | null;
   /** Sub-class inside the hall, needed to address an entry under its door. */
   subtype?: string | null;
+  /** A series row is a shelf, not an entry, and owns /dramas/<series>. */
+  project_kind?: string | null;
+  /** Groups an entry with the series it belongs to (door 1 addresses). */
+  work_id?: string | null;
   /** When the event actually happened. Preferred over release_date. */
   event_date?: string | null;
   release_date?: string | null;
@@ -116,24 +121,28 @@ export function compareResults(
 // ---- Mapping ---------------------------------------------------------------
 
 /**
- * Canonical detail entry since phase 7: one route for every project. The slug
- * is the stable segment; rows without one fall back to the uuid so older
- * links and freshly created rows both resolve.
+ * Canonical entry address since 2026-10-21: whatever door owns the row.
+ *
+ * There is no shared fallback any more - a row whose hall has no page (the
+ * deprecated behind-the-scenes / travel / early-archive values) has no address,
+ * and `mapProjectRow` drops it rather than returning a dead link. None of
+ * those rows is publicly visible today.
  */
-export function projectHref(slug: string | null | undefined, id: string): string {
-  return `/projects/${slug || id}`;
-}
-
-export function mapProjectRow(row: ProjectRow): SearchResult | null {
+export function mapProjectRow(
+  row: ProjectRow,
+  seriesSlugs?: SeriesSlugMap
+): SearchResult | null {
   const title = (row.title ?? '').trim();
   if (!row.id || !title) return null;
+
+  const href = entryPath(row, seriesSlugs);
+  if (!href) return null;
+
   return {
     type: 'project',
     id: row.id,
     title,
-    // Halls with their own door answer at their own address; only the halls
-    // served by /projects fall back to the shared detail route.
-    href: homeDoorEntryPath(row) ?? projectHref(row.slug, row.id),
+    href,
     description: (row.description ?? '').trim() || undefined,
     date: row.event_date || row.release_date || undefined,
     category: row.category || undefined,
@@ -186,11 +195,13 @@ export function buildCategoryResults(
       ...(['en', 'zh', 'th'] as Language[]).map((code) => t(code, definition.labelKey)),
     ].map((value) => value.toLowerCase());
     if (!haystacks.some((value) => value === q || value.includes(q))) continue;
+    const href = categoryHref(definition.value);
+    if (!href) continue;
     results.push({
       type: 'exhibition',
       id: definition.value,
       title: t(lang, definition.labelKey),
-      href: categoryHref(definition.value),
+      href,
       category: definition.value,
     });
   }
@@ -209,6 +220,8 @@ export interface BuildSearchResultsInput {
   /** projects.category (stable value) -> count over ALL publicly visible projects. */
   categoryCounts: Record<string, number>;
   lang: Language;
+  /** work_id -> series slug, so door 1 entries resolve to /dramas/<s>/<entry>. */
+  seriesSlugs?: SeriesSlugMap;
 }
 
 /**
@@ -216,11 +229,11 @@ export interface BuildSearchResultsInput {
  * net (the queries themselves already make duplicates impossible).
  */
 export function buildSearchResults(input: BuildSearchResultsInput): SearchResult[] {
-  const { term, projectRows, galleryRows, categoryCounts, lang } = input;
+  const { term, projectRows, galleryRows, categoryCounts, lang, seriesSlugs } = input;
 
   const mapped: SearchResult[] = [];
   for (const row of projectRows) {
-    const mappedRow = mapProjectRow(row);
+    const mappedRow = mapProjectRow(row, seriesSlugs);
     if (mappedRow) mapped.push(mappedRow);
   }
   for (const row of galleryRows) {

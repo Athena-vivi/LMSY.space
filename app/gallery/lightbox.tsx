@@ -16,10 +16,10 @@ import { assetTagLabelKey } from '@/lib/category-meta';
 interface LightboxProps {
   image: GalleryItem;
   images: GalleryItem[];
-  // Public title/id of the project this asset belongs to. Null/undefined when
-  // the project is missing or not publicly readable - the entry is simply
-  // hidden, the lightbox keeps working (fail-safe per phase-4 Task 2).
-  project?: { id: string; title: string; slug?: string | null } | null;
+  // Public title and address of the event this asset belongs to. Null when
+  // the row is missing, not publicly readable, or has no page of its own - the
+  // entry is simply hidden and the lightbox keeps working.
+  project?: { id: string; title: string; href: string | null } | null;
   onClose: () => void;
 }
 
@@ -86,11 +86,10 @@ export default function Lightbox({ image, images, project, onClose }: LightboxPr
   const localizedCaption = currentImage
     ? getLocalizedText(currentImage.caption_i18n, language, currentImage.caption)
     : '';
-  // Project back-link (phase-4 Task 2, canonicalised in phase 7):
-  // /projects/<slug>, falling back to the uuid for rows created before slugs.
-  const projectLink = project
-    ? `/projects/${project.slug || project.id}`
-    : null;
+  // Event back-link. The address is resolved by the gallery page through
+  // lib/entry-path.ts, because door 1 needs the series slug and this component
+  // only ever sees the picture.
+  const projectLink = project?.href ?? null;
 
   if (!currentImage) return null;
 

@@ -24,7 +24,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: 'daily', priority: 1 },
-    { url: `${SITE_URL}/projects`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/gallery`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${SITE_URL}/timeline`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${SITE_URL}/people`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
@@ -38,14 +37,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/copyright`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-  // Dynamic project detail routes. Only visitor-facing projects are listed
-  // (see lib/project-visibility.ts): ingestion containers must not advertise
-  // their URLs to crawlers. Every project shares one canonical detail route
-  // since phase 7, addressed by slug.
+  // Dynamic entry routes. Only visitor-facing rows are listed (see
+  // lib/project-visibility.ts): ingestion containers must not advertise their
+  // URLs to crawlers. Every entry is submitted at the address its own door
+  // gives it - there is no shared /projects address since 2026-10-21.
   let projectRoutes: MetadataRoute.Sitemap = [];
-  // Door 1 keeps its own address space since 2026-10-21: drama_work rows are
-  // listed under /dramas/<slug> below and redirect from /projects/<slug>, so
-  // advertising them here would submit a URL that only 308s.
+  // Door 1 keeps its own address space: drama_work rows are listed under
+  // /dramas/<slug> below, and an entry under its series further down.
   let dramaRoutes: MetadataRoute.Sitemap = [];
   // Third level of door 1: every dated entry has its own address, so the
   // entries are submitted alongside the series that own them.
@@ -82,18 +80,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           subtype?: string | null;
           created_at: string | null;
         }) => {
-          // A homepage door has its own address space: an entry there is
-          // submitted at the address the visitor actually lands on, never at
-          // the /projects copy that door no longer links to.
+          // A door entry is submitted where the visitor lands. A row whose
+          // hall has no page is not submitted at all - a sitemap must not
+          // advertise a 404.
           const doorUrl = homeDoorEntryPath(project);
+          if (!doorUrl) return null;
           return {
-            url: `${SITE_URL}${doorUrl ?? `/projects/${project.slug || project.id}`}`,
+            url: `${SITE_URL}${doorUrl}`,
             lastModified: project.created_at ? new Date(project.created_at) : now,
             changeFrequency: 'monthly' as const,
-            priority: doorUrl ? 0.6 : 0.5,
+            priority: 0.6,
           };
         }
-      );
+      )
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
     const dramas = (data || []).filter(
       (project: { category?: string | null; project_kind?: string | null }) =>

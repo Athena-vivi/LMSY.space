@@ -1,16 +1,22 @@
 // Single source of truth for front-end navigation (home header + inner pages).
 //
-// Phase 7 converged seven entries to four. The rule behind the split:
-//   Projects  - find a specific issue, event or theme
-//   Timeline  - see what happened in a given year
-//   People    - follow one person across the archive
-//   Gallery   - browse photographs without a destination in mind
+// 2026-10-21: the bar keeps two entries. "Works" left because there is no
+// single index page any more - each homepage door owns its own shelves, and a
+// bar entry pointing at one of them would privilege that door. "People" left
+// because the homepage already ends on the two profiles, so the bar was
+// repeating a section the visitor scrolls past anyway.
+//
+// What is left is the pair that actually differ in reading mode:
+//   Timeline  - the archive read backwards, newest first
+//   Gallery   - photographs without a destination, an endless stream
+//
 // Search sits in the middle of the bar and is the only entry that assumes the
 // visitor already knows what they are looking for.
 //
-// /editorial, /exhibitions, /chronicle, /profiles, /resonance and /schedule
-// keep their routes (legacy links must not 404) but no longer occupy the bar.
-// i18n keys are resolved via t(language, key) from lib/languages.ts.
+// /people, /editorial, /dramas, /live-events, /appearances, /commercial,
+// /talks, /live, /resonance and /schedule keep their routes but no longer
+// occupy the bar. i18n keys are resolved via t(language, key) from
+// lib/languages.ts.
 
 export interface NavItem {
   key: string;
@@ -19,9 +25,7 @@ export interface NavItem {
 }
 
 export const mainNavItems: NavItem[] = [
-  { key: 'nav.projects', href: '/projects' },
   { key: 'nav.timeline', href: '/timeline' },
-  { key: 'nav.people', href: '/people' },
   { key: 'nav.gallery', href: '/gallery' },
 ];
 

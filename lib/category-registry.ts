@@ -214,8 +214,8 @@ export const HOME_CATEGORY_VALUES: ReadonlySet<string> = new Set(
  * pure function cannot know; /dramas builds those itself. Everything here is
  * pure so the sitemap and the route handlers compute the same string.
  *
- * Returns null for a hall without its own door - those rows are served by
- * /projects and have no second address.
+ * Returns null for a hall without its own door - those rows have no public
+ * address at all (see lib/entry-path.ts), so a caller must not print a link.
  */
 export function homeDoorEntryPath(project: {
   category?: string | null;
@@ -229,6 +229,8 @@ export function homeDoorEntryPath(project: {
   }
 
   const door = categoryHref(category);
+  if (!door) return null;
+
   const key = project.slug || project.id;
   const definitions = SUBTYPES_BY_CATEGORY[category] ?? [];
 
@@ -244,36 +246,19 @@ export function homeDoorEntryPath(project: {
   return `${door}/${segment}/${key}`;
 }
 
-/**
- * Categories whose front door is their own page rather than /projects. One
- * hall, one front door: the halls holding them stay out of the /projects index
- * so the same rows never exist under two addresses.
- *
- * Since 2026-10-21 every one of the five homepage entries has its own page -
- * door 1 through door 5 - so the entry cards and the index no longer overlap.
- * The three conversation halls still share /talks, and the two stream halls
- * share /live: one subject, one page.
- */
 export const TALK_CATEGORIES = ['interview', 'variety', 'radio'] as const;
 export const STREAM_CATEGORIES = ['live_stream'] as const;
 
-/** Categories whose front door is a page of its own rather than /projects. */
-export const CATEGORIES_WITH_OWN_DOOR: ReadonlySet<string> = new Set<string>([
-  'drama_work',
-  'editorial',
-  'live_event',
-  'public_appearance',
-  'commercial',
-  ...TALK_CATEGORIES,
-  ...STREAM_CATEGORIES,
-]);
-
 /**
- * The front-door path per hall that owns one. Everything else is served by the
- * /projects index with a `?category=` filter.
+ * The front-door path per hall that owns one. 2026-10-21: this is now the
+ * whole routing table - the five homepage doors plus the two soul-resonance
+ * halls. There is no shared index page, so a hall missing from this map has
+ * nowhere to send a visitor and `categoryHref` says so instead of inventing a
+ * `?category=` filter on a page that no longer exists.
  *
- * Each of the five homepage entries resolves here, which is why the homepage
- * never links to a filtered copy of /projects any more.
+ * The three legacy halls (behind_the_scenes, personal_travel, early_archive)
+ * are deliberately absent: they are deprecated values kept for old rows, none
+ * of which is publicly visible.
  */
 const DOOR_PATHS: Partial<Record<ProjectCategory, string>> = {
   drama_work: '/dramas',
@@ -329,39 +314,17 @@ export function subtypeLabelKey(
 }
 
 /**
- * Halls whose rows stay out of the /projects index. Only the halls whose entry
- * addresses live outside the /projects namespace: door 1 and the two
- * soul-resonance doors.
- *
- * This is narrower than CATEGORIES_WITH_OWN_DOOR on purpose. Doors 2-5 own a
- * page and their entries own an address under it, but /projects is still where
- * a visitor browses the whole archive - so those halls keep an index entry,
- * and the cards there open the entry at its door address. The index is an
- * entrance, not a second address.
- */
-export const HALLS_OUTSIDE_INDEX: ReadonlySet<string> = new Set<string>([
-  'drama_work',
-  ...TALK_CATEGORIES,
-  ...STREAM_CATEGORIES,
-]);
-
-/** Filter chips for the full index: every hall except the ones above. */
-export const INDEX_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter(
-  (definition) => !HALLS_OUTSIDE_INDEX.has(definition.value)
-);
-
-/**
  * Sub-classes, but only for the halls that are big enough to need a second
  * axis. The vocabulary itself is decided by the database CHECK constraint and
  * typed in lib/supabase/types.ts; this table only says **which hall shows which
  * sub-class, in what order, under what label** - the UI must not invent a value
  * the database would reject.
  *
- * Halls missing from this map have no tabs on purpose:
+ * Halls missing from this map have no second level on purpose:
  *   editorial / commercial / behind_the_scenes / personal_travel /
  *   early_archive  - the work itself is the smallest unit
  *   interview / variety / radio / live_stream - these own a landing page
- *   (/talks, /live) that already splits them, so they never reach /projects
+ *   (/talks, /live) that already splits them
  */
 export interface SubtypeDefinition {
   value: ProjectSubtype;
@@ -414,10 +377,12 @@ export function subtypeTabs(
 }
 
 /**
- * URL segment per category for /timeline and /projects filtering. Halls with
- * their own front door resolve to that door, so a homepage entry never sends a
- * visitor to a filtered copy of a page that already exists.
+ * The front door of a hall, or null when the hall has no page.
+ *
+ * Only the halls in DOOR_PATHS have one. A null return is a real answer, not
+ * a fallback point: callers render the row without a link rather than sending
+ * the visitor to a page that does not exist.
  */
-export function categoryHref(value: ProjectCategory): string {
-  return DOOR_PATHS[value] ?? `/projects?category=${value}`;
+export function categoryHref(value: ProjectCategory): string | null {
+  return DOOR_PATHS[value] ?? null;
 }

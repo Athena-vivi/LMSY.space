@@ -8,11 +8,9 @@ import { formatChapterTitle } from '../lib/chapter-title.ts';
 import {
   PROJECT_CATEGORIES,
   HOME_CATEGORIES,
-  INDEX_CATEGORIES,
-  CATEGORIES_WITH_OWN_DOOR,
-  HALLS_OUTSIDE_INDEX,
   normalizeCategory,
   categoryDefinition,
+  categoryHref,
 } from '../lib/category-registry.ts';
 
 // ---------- pickCoverForProject ----------
@@ -102,17 +100,19 @@ test('category registry: exactly the stable values, in registry order', () => {
   ]);
 });
 
-test('index chips skip the halls that own a landing page', () => {
-  // Only the halls whose entries live outside the /projects namespace stay out
-  // of the index: door 1, /talks and /live. Doors 2-5 own a page too, but the
-  // index keeps an entry for them - their cards open at the door address.
-  const indexValues = INDEX_CATEGORIES.map((definition) => definition.value);
-  for (const value of HALLS_OUTSIDE_INDEX) {
-    assert.ok(!indexValues.includes(value as never), `${value} lives outside this index`);
-  }
-  assert.ok(!indexValues.includes('drama_work'), 'door 1 has /dramas, not a chip');
-  assert.ok(indexValues.includes('editorial'), 'the magazine hall keeps an index entry');
-  assert.ok(indexValues.includes('behind_the_scenes'), 'halls without a door keep their chip');
+test('every hall either owns a page or has no public address', () => {
+  // 2026-10-21: there is no shared index page, so the routing table is the
+  // whole answer. The five homepage doors and the two conversation halls
+  // resolve; the deprecated legacy halls deliberately do not.
+  assert.equal(categoryHref('drama_work'), '/dramas');
+  assert.equal(categoryHref('editorial'), '/editorial');
+  assert.equal(categoryHref('live_event'), '/live-events');
+  assert.equal(categoryHref('public_appearance'), '/appearances');
+  assert.equal(categoryHref('commercial'), '/commercial');
+  assert.equal(categoryHref('variety'), '/talks');
+  assert.equal(categoryHref('live_stream'), '/live');
+  assert.equal(categoryHref('behind_the_scenes'), null);
+  assert.equal(categoryHref('early_archive'), null);
 });
 
 test('category registry: five fixed homepage entries', () => {

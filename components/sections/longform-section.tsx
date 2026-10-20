@@ -93,7 +93,7 @@ export function LongformSection() {
 
   const featuredHref = featuredEditorial
     ? `/editorial/${featuredEditorial.slug || featuredEditorial.id}`
-    : '/chronicle';
+    : '/timeline';
   const featuredImageUrl = featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url
     ? getImageUrl(featuredEditorial?.homepage_cover_url || featuredEditorial?.cover_url || '')
     : null;

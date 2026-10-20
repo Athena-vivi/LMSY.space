@@ -75,9 +75,9 @@ function PortalCard({ entry, index }: { entry: PortalEntry; index: number }) {
       transition={{ duration: 0.6, delay: index * 0.1 }}
       className="group relative"
     >
-      {/* Halls with their own front door (/dramas, /talks, /live) send the
-          card there; the rest filter the /projects index. */}
-      <Link href={categoryHref(entry.value)} className="block">
+      {/* Every homepage entry owns a page of its own (2026-10-21); the card
+          opens that page, not a filtered view of some shared index. */}
+      <Link href={categoryHref(entry.value) ?? '/gallery'} className="block">
         <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-card/40">
           {imageUrl ? (
             <Image

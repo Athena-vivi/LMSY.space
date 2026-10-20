@@ -62,8 +62,12 @@ describe('chronicle data source', () => {
     assert.ok(timelineSrc.includes('applyPublicProjectFilter'));
   });
 
-  test('one canonical project href built from the slug', () => {
-    assert.ok(timelineSrc.includes('return `/projects/${slug || id}`;'));
+  test('every event is dated and addressed by its own door', () => {
+    // 2026-10-21: /projects is gone from the front end. An event is opened at
+    // the address its door gives it, and a row without one is not listed.
+    assert.ok(timelineSrc.includes('entryPath('), 'addresses come from lib/entry-path');
+    assert.ok(!timelineSrc.includes('/projects/'), 'no /projects namespace left');
+    assert.ok(timelineSrc.includes('if (!href) continue;'), 'a row with no page is skipped');
   });
 
   test('dates come from event_date, with release_date only as a fallback', () => {
@@ -92,10 +96,12 @@ describe('timeline page year filter', () => {
     assert.ok(yearSrc.includes("notFound()"), 'malformed year is a 404');
   });
 
-  test('/chronicle forwards to /timeline and keeps the year param', () => {
-    const legacy = src('app/chronicle/page.tsx');
-    assert.ok(legacy.includes("redirect(year ? `/timeline?year="), 'year forwarded');
-    assert.ok(legacy.includes("redirect('/timeline')") === false, 'never drops the year silently');
+  test('/chronicle is retired, not forwarded', () => {
+    // 2026-10-21: no redirect table at all - the old name simply 404s, and
+    // nothing on the site links to it.
+    assert.throws(() => src('app/chronicle/page.tsx'), 'the redirect-only route is deleted');
+    const source = src('next.config.ts');
+    assert.ok(!source.includes('async redirects('), 'next.config has no redirect table');
   });
 });
 
@@ -140,11 +146,14 @@ describe('gallery visibility gate', () => {
 });
 
 // ---- One canonical project detail -------------------------------------------
-describe('single project detail route', () => {
-  test('/projects/[id] no longer forwards editorial works elsewhere', () => {
-    const pageSrc = src('app/projects/[id]/page.tsx');
-    assert.ok(!pageSrc.includes("redirect(`/editorial/${project.id}`)"), 'no second detail surface');
+describe('single event detail surface', () => {
+  test('the workbench renderer moved behind /admin', () => {
+    // 2026-10-21: the public site has no /projects namespace. The rich detail
+    // renderer survives as the admin preview; "project" is an admin word.
+    const pageSrc = src('app/admin/preview/[id]/page.tsx');
     assert.ok(pageSrc.includes('resolveProject'), 'slug and uuid both resolve');
+    assert.ok(!pageSrc.includes('redirect('), 'a preview does not jump elsewhere');
+    assert.throws(() => src('app/projects/[id]/page.tsx'), 'the public detail route is deleted');
   });
 
   test('/editorial/<slug> opens the issue itself', () => {
@@ -155,27 +164,22 @@ describe('single project detail route', () => {
     assert.ok(!legacy.includes('redirect('), 'no second address for the same issue');
   });
 
-  test('related-projects cards link to /projects/<slug>', () => {
-    const clientSrc = src('app/projects/[id]/project-detail-client.tsx');
-    assert.ok(clientSrc.includes('`/projects/${related.slug || related.id}`'));
+  test('preview related cards stay inside the preview', () => {
+    const clientSrc = src('app/admin/preview/[id]/project-detail-client.tsx');
+    assert.ok(clientSrc.includes('`/admin/preview/${related.id}`'));
   });
 
-  test('projects list cards open at the address the row actually owns', () => {
-    const listSrc = src('app/projects/projects-client.tsx');
-    assert.ok(
-      listSrc.includes('homeDoorEntryPath(project) ?? `/projects/${project.slug || project.id}`'),
-      'a door row opens under its door; the rest keep /projects/<slug>'
-    );
+  test('there is no public project index any more', () => {
+    assert.throws(() => src('app/projects/page.tsx'), 'the index is deleted');
+    assert.throws(() => src('app/projects/projects-client.tsx'), 'its client is deleted');
   });
 
   test('search results follow the same rule', () => {
     const searchSrc = src('app/api/search/route.ts');
     assert.ok(searchSrc.includes('buildSearchResults'), 'route uses the contract builder');
     const resultsSrc = src('lib/search-results.ts');
-    assert.ok(
-      resultsSrc.includes('homeDoorEntryPath(row)'),
-      'a hall with its own door answers under that door'
-    );
+    assert.ok(resultsSrc.includes('entryPath(row'), 'the door of the row is the address');
+    assert.ok(!resultsSrc.includes('/projects/'), 'no /projects fallback left');
   });
 
   test('no fictional collection numbers on editorial surfaces', () => {
@@ -216,15 +220,21 @@ describe('homepage fixed category entries', () => {
 
 // ---- Legacy exhibition routes -----------------------------------------------
 describe('legacy exhibition routes', () => {
-  test('the index folds into the project index', () => {
-    const pageSrc = src('app/exhibitions/page.tsx');
-    assert.ok(pageSrc.includes("redirect('/projects')"));
+  // 2026-10-21: the site's only inbound traffic is the homepage, so a retired
+  // path is allowed to 404. Keeping a redirect shell for it kept a second
+  // vocabulary alive for no benefit.
+  test('the old exhibition shell is deleted', () => {
+    assert.throws(() => src('app/exhibitions/page.tsx'));
+    assert.throws(() => src('app/exhibitions/category/[type]/page.tsx'));
   });
 
-  test('category routes translate the old type into the hall that owns it', () => {
-    const catSrc = src('app/exhibitions/category/[type]/page.tsx');
-    assert.ok(catSrc.includes('normalizeCategory'), 'goes through the registry aliases');
-    assert.ok(catSrc.includes('categoryHref(category)'), 'lands on the door, not a filtered index');
+  test('nothing keeps a redirect table around', () => {
+    assert.ok(!src('next.config.ts').includes('async redirects('));
+  });
+
+  test('the door of a hall is still resolved through the registry', () => {
+    assert.ok(src('lib/category-registry.ts').includes('DOOR_PATHS'));
+    assert.ok(src('components/sections/portals-section.tsx').includes('categoryHref(entry.value)'));
   });
 });
 

@@ -279,7 +279,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Link
-                      href={`/projects/${p.id}`}
+                      href={`/admin/preview/${p.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 text-ink-2 transition-colors hover:text-lmsy-blue/80"

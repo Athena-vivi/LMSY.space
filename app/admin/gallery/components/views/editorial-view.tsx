@@ -118,7 +118,7 @@ export function EditorialView({ data, loading }: EditorialViewProps) {
                     CURATE
                   </Link>
                   <Link
-                    href={`/projects/${project.id}`}
+                    href={`/admin/preview/${project.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded border border-white/10 px-3 py-2 text-[10px] font-mono tracking-wider text-ink-2 transition-colors hover:border-lmsy-blue/30 hover:text-lmsy-blue/80"

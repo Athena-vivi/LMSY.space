@@ -17,6 +17,8 @@ export interface PersonProject {
   category: string | null;
   event_date: string | null;
   cover: string | null;
+  /** The event's own address under its door, or null when it has no page. */
+  href: string | null;
 }
 
 interface PersonProfile {
@@ -119,52 +121,70 @@ export default function PersonClient({
             <p className="text-ink-2">{t(language, 'people.noProjects')}</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {projects.map((project) => {
-                const meta = categoryMeta(project.category);
-                const title = getLocalizedText(project.title_i18n as never, language, project.title);
-                const cover = project.cover ? getImageUrl(project.cover) : null;
-                return (
-                  <Link
-                    key={project.id}
-                    href={`/projects/${project.slug || project.id}`}
-                    className="group block"
-                  >
-                    <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-border bg-card/40">
-                      {cover && (
-                        <Image
-                          src={cover}
-                          alt={title}
-                          fill
-                          sizes="(max-width: 768px) 50vw, 25vw"
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          unoptimized
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                      <span
-                        className={`absolute top-3 left-3 inline-flex items-center rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur ${meta.accent}`}
-                      >
-                        {t(language, meta.labelKey)}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 font-serif text-base font-semibold text-foreground transition-colors group-hover:text-lmsy-blue">
-                      {title}
-                    </h3>
-                    {project.event_date && (
-                      <time
-                        dateTime={project.event_date}
-                        className="mt-1 block font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2"
-                      >
-                        {formatDisplayDate(project.event_date, language)}
-                      </time>
-                    )}
-                  </Link>
-                );
-              })}
+              {projects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
             </div>
           )}
         </section>
       </div>
     </div>
+  );
+}
+
+/**
+ * One appearance on a person's page.
+ *
+ * 2026-10-21: the address comes from the server (lib/entry-path.ts), because a
+ * drama entry is addressed under its series and this component only knows the
+ * row. A row without an address still renders - the archive keeps the record,
+ * it just has nowhere to send the visitor.
+ */
+function ProjectCard({ project }: { project: PersonProject }) {
+  const { language } = useLanguage();
+  const meta = categoryMeta(project.category);
+  const title = getLocalizedText(project.title_i18n as never, language, project.title);
+  const cover = project.cover ? getImageUrl(project.cover) : null;
+
+  const card = (
+    <>
+    <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-border bg-card/40">
+      {cover && (
+        <Image
+          src={cover}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 50vw, 25vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
+          unoptimized
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+      <span
+        className={`absolute top-3 left-3 inline-flex items-center rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur ${meta.accent}`}
+      >
+        {t(language, meta.labelKey)}
+      </span>
+    </div>
+    <h3 className="mt-3 font-serif text-base font-semibold text-foreground transition-colors group-hover:text-lmsy-blue">
+      {title}
+    </h3>
+    {project.event_date && (
+      <time
+        dateTime={project.event_date}
+        className="mt-1 block font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2"
+      >
+        {formatDisplayDate(project.event_date, language)}
+      </time>
+    )}
+    </>
+  );
+
+  return project.href ? (
+    <Link href={project.href} className="group block">
+      {card}
+    </Link>
+  ) : (
+    <div className="group block">{card}</div>
   );
 }

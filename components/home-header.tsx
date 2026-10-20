@@ -15,10 +15,10 @@ import { t, type TranslationKey } from '@/lib/languages';
 import { mainNavItems } from '@/lib/nav-items';
 
 /**
- * Homepage header. Same four entries as every inner page, but with the softer
- * glass treatment the hero sits behind.
+ * Homepage header. Same entries as every inner page (timeline, gallery), but
+ * with the softer glass treatment the hero sits behind.
  *
- * Layout is identical to SiteHeader by design: search + four entries as one
+ * Layout is identical to SiteHeader by design: search + the entries as one
  * centred cluster with a single uniform gap, pinned to the page axis with
  * `absolute left-1/2 -translate-x-1/2`; logo left, language switcher right.
  * Keep the two headers in sync.

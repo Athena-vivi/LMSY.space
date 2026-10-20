@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ExternalLink, MapPin } from 'lucide-react';
@@ -238,7 +237,8 @@ export function LiveClient() {
                       month: 'short',
                       day: true,
                     });
-                    const href = `/projects/${row.slug || row.id}`;
+                    // Video entries point outward - no page of our own.
+                    const href = row.watch_url || null;
 
                     return (
                       <motion.li
@@ -250,10 +250,10 @@ export function LiveClient() {
                         className="flex items-center gap-4 py-4"
                       >
                         {cover ? (
-                          <Link
+                          <MaybeLink
                             href={href}
                             className="relative hidden h-16 w-12 shrink-0 overflow-hidden rounded bg-muted sm:block"
-                            aria-label={title}
+                            ariaLabel={title}
                           >
                             <Image
                               src={cover}
@@ -263,17 +263,17 @@ export function LiveClient() {
                               className="object-cover object-[50%_35%]"
                               unoptimized
                             />
-                          </Link>
+                          </MaybeLink>
                         ) : null}
 
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                            <Link
+                            <MaybeLink
                               href={href}
                               className="font-serif text-lg font-semibold text-foreground transition-colors hover:text-lmsy-blue md:text-xl"
                             >
                               {title}
-                            </Link>
+                            </MaybeLink>
                             {row.location ? (
                               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-2">
                                 <MapPin className="h-3 w-3" />
@@ -316,5 +316,35 @@ export function LiveClient() {
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * A row that opens the source when there is one, and stays plain text when
+ * there is not. Talks and live rows are video entries - they have no page of
+ * their own, so this is the only affordance they get.
+ */
+function MaybeLink({
+  href,
+  className,
+  ariaLabel,
+  children,
+}: {
+  href: string | null;
+  className: string;
+  ariaLabel?: string;
+  children: React.ReactNode;
+}) {
+  if (!href) return <span className={className}>{children}</span>;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+      aria-label={ariaLabel}
+    >
+      {children}
+    </a>
   );
 }

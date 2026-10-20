@@ -759,7 +759,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
               {t('c.projectInfo')}
             </button>
             <Link
-              href={`/projects/${id}`}
+              href={`/admin/preview/${id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-mono text-ink-2 transition-colors hover:border-lmsy-blue/30 hover:bg-lmsy-blue/5 hover:text-lmsy-blue/80"

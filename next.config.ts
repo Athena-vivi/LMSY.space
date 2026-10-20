@@ -58,42 +58,18 @@ const nextConfig: NextConfig = {
   },
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
   /**
-   * Legacy URL compatibility (phase 7).
+   * No `redirects()` block.
    *
-   * The seven retired entry points stay reachable, but as real 308s from the
-   * edge rather than as prerendered pages that ship a meta-refresh body. The
-   * page-level `redirect()` calls are kept as a fallback; these rules are the
-   * ones visitors and crawlers actually hit.
+   * 2026-10-21: the legacy URL table is gone. Those paths (the old
+   * /exhibitions, /chronicle and /profiles shells, and the /projects namespace
+   * itself) never carried search traffic - the site's only inbound traffic has
+   * ever been the homepage - so a 308 for them bought nothing and kept a
+   * second vocabulary alive in the code. A retired path now simply 404s, and
+   * every route that exists is a route the visitor can be sent to directly.
    *
-   * `/exhibitions/category/:type` forwards the raw old type (`series`,
-   * `magazine`, ...) and lets lib/category-registry.ts normalise it, so one
-   * rule covers every historical spelling and unknown values fall back to the
-   * unfiltered index instead of 404ing.
-   *
-   * Query strings are preserved by Next when the destination has no query of
-   * its own, which is what keeps `/chronicle?year=2024` working.
+   * This also means no page may rely on being rescued by the edge: routes
+   * either serve content or are not linked.
    */
-  async redirects() {
-    return [
-      // /exhibitions/category/<type> is handled by its page, which translates
-      // the legacy type through the registry and sends it to whichever door
-      // owns that hall now. A static rule here could only point at /projects,
-      // which no longer lists the five homepage halls.
-      { source: '/exhibitions', destination: '/projects', permanent: true },
-      { source: '/chronicle', destination: '/timeline', permanent: true },
-      // /editorial/<slug> is a real page again (2026-10-21): the issue is the
-      // entry, and an entry owns an address of its own. The old rule sent every
-      // issue to /projects/<id>, which is no longer where it lives.
-      { source: '/profiles', destination: '/people', permanent: true },
-      { source: '/profiles/:id', destination: '/people/:id', permanent: true },
-      // Door 1 moved to its own front door (2026-10-21). The three series keep
-      // one canonical address each; /projects/<slug> for a drama_work row now
-      // redirects, so no series exists under two URLs.
-      { source: '/projects/affair', destination: '/dramas/affair', permanent: true },
-      { source: '/projects/harmony-secret', destination: '/dramas/harmony-secret', permanent: true },
-      { source: '/projects/hometown-romance', destination: '/dramas/hometown-romance', permanent: true },
-    ];
-  },
 
   async headers() {
     return [

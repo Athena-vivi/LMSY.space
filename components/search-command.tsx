@@ -191,10 +191,10 @@ export function SearchCommand({
     );
   };
 
+  // Mirrors the bar: the two reading modes only. The doors are reached from
+  // the homepage, and a result that belongs to one already links into it.
   const quickAccess = [
-    { label: t(language, 'nav.projects'), url: '/projects', icon: FolderKanban, color: 'text-lmsy-blue' },
     { label: t(language, 'nav.timeline'), url: '/timeline', icon: Hash, color: 'text-lmsy-blue' },
-    { label: t(language, 'nav.people'), url: '/people', icon: Hash, color: 'text-purple-500' },
     { label: t(language, 'nav.gallery'), url: '/gallery', icon: FileImage, color: 'text-lmsy-yellow' },
   ];
 

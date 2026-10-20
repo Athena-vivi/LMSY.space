@@ -651,7 +651,7 @@ export default function AdminProjectsPage() {
                   {/* Actions */}
                   <div className="col-span-1 flex items-center justify-end gap-2">
                     <Link
-                      href={`/projects/${project.id}`}
+                      href={`/admin/preview/${project.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 text-ink-2 hover:text-lmsy-blue/80 hover:bg-lmsy-blue/5 transition-all"

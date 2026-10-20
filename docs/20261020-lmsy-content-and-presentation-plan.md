@@ -9,11 +9,11 @@
 
 ```
 五入口（PortalsSection，固定 5 张卡，空的也留门）
-  1 影视作品    → /projects?category=drama_work
-  2 杂志特辑    → /projects?category=editorial
-  3 线下活动    → /projects?category=live_event
-  4 公开活动    → /projects?category=public_appearance
-  5 商务合作    → /projects?category=commercial
+  1 影视作品    → /dramas
+  2 杂志特辑    → /editorial
+  3 线下活动    → /live-events
+  4 公开活动    → /appearances
+  5 商务合作    → /commercial
 
 灵魂共振（SoulResonanceSection，2 个 16:9 门）
   6 对话        → /talks（新建，内部 Tab）
@@ -328,9 +328,63 @@ SQL 全文：`docs/architecture/20261020-db-restructure.sql`，说明：同名 `
 **规则**
 
 - 分类段用短横线，数据库值用下划线：`brand_event` → `/live-events/brand-event`。转换只在 `subtypeSegment()` 一处。
-- 1 号门与 /talks、/live 从 `/projects` 索引里排除（`HALLS_OUTSIDE_INDEX`），它们的事件地址不在 `/projects` 命名空间下。
-- 2-5 号门**保留 `/projects` 里的入口**（`/projects` 是总索引，抽掉五个门会只剩空页），但列表卡片的链接指向门内地址，所以它只是入口，不是第二个地址。
+- 前台的地址只有这一张表。`lib/category-registry.ts` 的 `categoryHref()` 是唯一入口，没有第二套映射，也没有 `/projects?category=` 这种筛选 URL。
 - 没归类的行落在 `<门>/unfiled`，任何一行都有入口，不会因为没填 subtype 就消失。
 - 门页与分类页都是服务端渲染。事件页各有 title / description / canonical，全部进 sitemap。
-- 2/3/4/5 号门不再走 `/projects/<slug>`，也不发重定向：旧地址没有搜索量，留着只会让同一内容占两个 URL。`/projects/<id>` 仍能打开（后台预览在用），但 canonical 指向门内地址。
-- `/editorial` 恢复成旧版的大图封面墙（catalog 编号 + 展签），不再被 308 到 `/projects`。
+- `/editorial` 恢复成旧版的大图封面墙（catalog 编号 + 展签）。
+- `/projects` 命名空间**不在前台存在**（2026-10-21 删除，见第十一节）。
+
+---
+
+## 十一、导航收口与 `/projects` 下线（2026-10-21 执行）
+
+### 11.1 导航只剩两项
+
+`lib/nav-items.ts` 现在是：
+
+```
+时间线  /timeline   倒着读，最新的在最前面
+相册    /gallery    没有目的地的图片流
+```
+
+- **作品（Projects）撤下**：没有总索引页了，五个门各管各的门面，导航里留一个入口等于给某个门加权。英文名 `Projects` 也随之消失——`project` 只是后台的文件夹概念，前台不出现这个词。
+- **人物撤下**：首页最后一段已经是两个人，导航再放一次是重复。
+- 搜索框仍在中间；搜索面板的 Quick Access 同步只留时间线、相册。
+- `/people`、`/dramas`、`/editorial`、`/live-events`、`/appearances`、`/commercial`、`/talks`、`/live` 路由全部照旧，只是不再占导航。
+
+### 11.2 不再有任何重定向
+
+`next.config.ts` 的 `redirects()` 整块删除。首页之外本来没有搜索量，为旧地址保留 308 只是让一套旧词汇继续活在代码里。
+
+同时删掉只做跳转的空壳路由（它们除了 `redirect()` 没有任何内容）：
+
+| 路由 | 原行为 | 现在 |
+|---|---|---|
+| `/exhibitions` | 308 到 `/projects` | 不存在（404） |
+| `/exhibitions/category/<type>` | 翻译旧 type 后跳门页 | 不存在 |
+| `/chronicle` | 308 到 `/timeline`（带年份） | 不存在 |
+| `/profiles`、`/profiles/<slug>` | 308 到 `/people` | 不存在 |
+
+时间线组件里原来指向 `/chronicle` 的年份筛选链接已改为 `/timeline?year=`。
+
+### 11.3 `/projects` 从前台删除
+
+- 删除 `app/projects/`（索引页、列表客户端、详情页）。
+- 后台「线上预览」用的富详情渲染器**没有丢**，整体移到 `app/admin/preview/<id>/`，四个后台入口（工作台、项目管理、策展页、杂志视图）都指向它，`/admin/*` 本来就带 `X-Robots-Tag: noindex`。
+- 事件地址统一由 `lib/entry-path.ts` 的 `entryPath()` 计算：
+  - `drama_work` 剧行 → `/dramas/<剧 slug>`
+  - `drama_work` 事件 → `/dramas/<剧 slug>/<事件 slug>`（需要 `work_id → 剧 slug` 映射，见 `lib/series-slugs.ts`）
+  - 其余门 → `homeDoorEntryPath()`（门 + 分类段 + 事件 slug）
+  - 没有门的三个旧分类（幕后、个人旅行、早期档案）返回 `null`，调用方不得打印链接
+- 受影响并已改造的取数点：人物页、相册灯箱、时间线、搜索接口/sitemap、门内卡片。
+- `/talks`、`/live` 的行是视频条目，没有自己的内页，卡片改为直接外链 `watch_url`；没有链接的行就是纯文字。
+
+### 11.4 分类注册表的变化
+
+- `categoryHref()` 返回值改为 `string | null`：只有 7 个有页面的门会返回路径。没有门的分类返回 `null`，不再拼 `/projects?category=`。
+- 删除 `HALLS_OUTSIDE_INDEX` / `INDEX_CATEGORIES` / `CATEGORIES_WITH_OWN_DOOR`（它们只为总索引服务，索引已不存在）。
+- category / subtype 的取值集合**未变**，`docs/architecture/20261020-db-restructure.{md,sql}` 无需改。
+
+### 11.5 顺带修掉的坑
+
+- `public/sw.js` 的预缓存里同时有 `/profiles` 和 `/projects`。`cache.addAll()` 只要有一个 404 就整体失败，安装会直接挂掉，所以这两个地址与 `/schedule` 一并移除。

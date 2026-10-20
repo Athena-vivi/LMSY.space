@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
+import { entryPath } from '@/lib/entry-path';
+import { loadSeriesSlugMap } from '@/lib/series-slugs';
 import PersonClient, { type PersonProject } from './person-client';
 
 export const revalidate = 300;
@@ -55,7 +57,7 @@ export default async function PersonPage({
       supabase
         .schema('lmsy_archive')
         .from('projects')
-        .select('id, slug, title, title_i18n, category, event_date, cover_url')
+        .select('id, slug, title, title_i18n, category, subtype, project_kind, work_id, event_date, cover_url')
         .in('id', linkedIds)
     )
       .order('event_date', { ascending: false, nullsFirst: false });
@@ -66,6 +68,9 @@ export default async function PersonPage({
       title: string;
       title_i18n: unknown;
       category: string | null;
+      subtype: string | null;
+      project_kind: string | null;
+      work_id: string | null;
       event_date: string | null;
       cover_url: string | null;
     }>;
@@ -79,10 +84,14 @@ export default async function PersonPage({
       .order('created_at', { ascending: true, nullsFirst: false });
 
     const covers = pickCoversByProject(assets ?? []);
+    // A drama entry is addressed under its series, so the map is resolved
+    // here, once, and every card receives its own address.
+    const seriesSlugs = await loadSeriesSlugMap();
 
     projects = rows.map((project) => ({
       ...project,
       cover: covers[project.id] || project.cover_url || null,
+      href: entryPath(project, seriesSlugs),
     }));
   }
 

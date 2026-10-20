@@ -19,16 +19,16 @@ import { mainNavItems } from '@/lib/nav-items';
  * Global inner-page header. Mounted in the root layout; hidden on the
  * homepage (home header owns that) and on /admin (admin has its own shell).
  *
- * Layout: the search bar and the four entries form ONE cluster. All five
- * items are siblings of a single flex row with a single gap, so the spacing
- * between the search and "Projects" is the same as the spacing between any
- * two entries. The cluster itself is pinned to the horizontal centre of the
- * bar with `absolute left-1/2 -translate-x-1/2`, which keeps the GROUP on the
- * page axis regardless of how wide the logo or the language switcher is.
+ * Layout: the search bar and the entries form ONE cluster. All items are
+ * siblings of a single flex row with a single gap, so the spacing between the
+ * search and "Timeline" is the same as the spacing between any two entries.
+ * The cluster itself is pinned to the horizontal centre of the bar with
+ * `absolute left-1/2 -translate-x-1/2`, which keeps the GROUP on the page
+ * axis regardless of how wide the logo or the language switcher is.
  *
  * Do not split the entries around the search, do not park the entries in the
- * right column, and do not centre only the search - the five items move
- * together as one centred cluster.
+ * right column, and do not centre only the search - the items move together
+ * as one centred cluster.
  */
 
 export function SiteHeader() {
@@ -92,7 +92,7 @@ export function SiteHeader() {
           </Link>
 
           {/*
-            The centred cluster: search + four entries.
+            The centred cluster: search + the two reading modes.
             One flex row, one gap, so every spacing in the group is identical.
             Absolutely pinned to the page axis so the group stays centred
             whatever the logo and the switcher measure.
