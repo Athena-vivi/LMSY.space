@@ -121,7 +121,9 @@
 
 ### 4 公开活动 — 46 场，按类型分
 
-首映与记者会、颁奖礼、时装周与品牌发布、Fan Day 与平台活动。判据见 1.1：第三方发邀请。
+颁奖礼、时装周与走秀、品牌站台与商演、公司推介会与行业展会、公益与社群、剧集祭拜与首映。判据见 1.1：第三方发邀请。
+
+六个子类直接对齐 `20261019-lmsy-public-appearance-list.md` 的类型 A–F，一活动一类型，可以逐条核对。原稿这里只写了四个（首映与记者会 / 颁奖礼 / 时装周与品牌发布 / Fan Day 与平台活动），2026-10-20 建库时发现装不下清单里的 C、E 两类共 16 场，遂按清单扩成六个；「Fan Day」这个说法属于见面会一侧，本门没有对应内容，已取消。
 
 ### 5 商务合作 — 品牌墙，不是列表
 
@@ -179,7 +181,7 @@
 | 门 | subtype 取值 |
 |---|---|
 | 3 线下活动 | `fanmeeting` / `brand_event` / `birthday` |
-| 4 公开活动 | `premiere` / `awards` / `fashion` / `fanday` |
+| 4 公开活动 | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `premiere` |
 | 6 访谈 | `feature` / `press` / `tv_news` |
 
 **不拆 category 来区分子类**。`live_event` 如果拆成三个 category，3 号门就要改成多分类查询，CHECK 约束和筛选器全要跟着动；一个 subtype 字段解决全部。

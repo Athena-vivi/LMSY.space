@@ -250,13 +250,14 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
     { value: 'birthday', labelKey: 'subtype.birthday' },
   ],
   public_appearance: [
-    { value: 'premiere', labelKey: 'subtype.premiere' },
+    // Order and names mirror list types A-F in
+    // docs/20261019-lmsy-public-appearance-list.md, one tab per type.
     { value: 'awards', labelKey: 'subtype.awards' },
     { value: 'fashion', labelKey: 'subtype.fashion' },
-    { value: 'fanday', labelKey: 'subtype.fanday' },
     { value: 'brand_stage', labelKey: 'subtype.brand_stage' },
-    { value: 'charity', labelKey: 'subtype.charity' },
     { value: 'industry', labelKey: 'subtype.industry' },
+    { value: 'charity', labelKey: 'subtype.charity' },
+    { value: 'premiere', labelKey: 'subtype.premiere' },
   ],
 };
 

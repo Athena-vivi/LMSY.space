@@ -42,7 +42,7 @@
 | 门 | 分类 | 现有项目 |
 |---|---|---|
 | 线下活动 | `fanmeeting` / `brand_event` / `birthday` | 1 条（未分 subtype） |
-| 公开活动 | `premiere` / `awards` / `fashion` / `fanday` / `brand_stage` / `charity` / `industry` | 3 条（1 条 `premiere`，2 条未分） |
+| 公开活动 | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `premiere` | 3 条（1 条 `premiere`，2 条未分） |
 | 对话 | 访谈 / 综艺 / 电台（Tab） | 0 |
 | 直播 | 双人 / Lookmhee / Sonya（Tab） | 0 |
 | 商务 | 按 `publisher_brand` 分组 | 0 个品牌有值 |
@@ -92,13 +92,24 @@
 | 1 | 影视作品 | `drama_work` | 2 | 3 | 已知剧集，逐部建 |
 | 2 | 杂志特辑 | `editorial` | 11 | 17 | `20261019-lmsy-magazine-list.md`（17 条） |
 | 3 | 线下活动 | `live_event` | 1 | **53** | 见面会清单（28 双人 + 12 单人）+ 生日会 3 + 品牌活动 9 + 观影会 1 |
-| 4 | 公开活动 | `public_appearance` | 3 | **47** | `20261019-lmsy-public-appearance-list.md`（46，已含首映 4）+ 档案站补的终映 1 |
+| 4 | 公开活动 | `public_appearance` | 3 | **47** | `20261019-lmsy-public-appearance-list.md`（46，已含首映 4）+ 档案站补的终映 1；subtype 六个 Tab 对齐清单 A–F |
 | 5 | 商务合作 | `commercial` | 4 | **45** | `20261019-lmsy-commercial-list.md`（含品牌直播 31 场） |
 | 6 | 对话 | `interview` + `variety` + `radio` | 0 | **97** | 访谈 63 + 综艺 21 + 电台 13 |
 | 7 | 直播 | `live_stream` | 0 | **55** | `20261019-lmsy-live-stream-list.md`（双人 10 + 单人 45） |
 | | | | **28** | **317** | 需新建 296 |
 
 三号门 53 的构成摊开：
+
+四号门 47 的构成摊开（2026-10-20 已建，Tab 与清单类型一一对应）：
+
+| 清单类型 | subtype | 条数 | 说明 |
+|---|---|---|---|
+| A 颁奖典礼 / 行业奖项 | `awards` | 15 | Japan Expo Thailand 在此（获 JAPAN EXPO RELATIONSHIP AWARD） |
+| B 时装周 / 品牌走秀 | `fashion` | 6 | Manila Fashion Week 是本类唯一海外场 |
+| C 品牌站台 / 商演 / 民俗舞台 | `brand_stage` | 10 | วันสร้างสุข、SRETSIS 门店开业、Hometown × 三个民俗舞台都在此 |
+| D 公司推介会 / 行业展会 | `industry` | 5 | CHANGE2561 两场、iQIYI iJOY 两场、TCM 2026 |
+| E 公益 / 社群 / 书展 | `charity` | 6 | Praew 两届、Power of Thai、Thai Pride、两场书展 |
+| F 剧集祭拜仪式 / 首映 | `premiere` | 5 | Affair / Harmony Secret / Hometown 三次祭拜 + 首映 + 终映 |
 
 | 分类 | 条数 | 说明 |
 |---|---|---|
@@ -257,8 +268,72 @@ nitter 全线已死（X Corp 2026-08 与 09 两封停止函），不要再用。
 
 ## 九、这份计划不做的事
 
-- 不建任何数据（等你点批次）
 - 不改展示层结构（分类层 Tab 已按你的决定实现，不再调整形态）
 - 不补链接（`watch_url` 单独一轮，不阻塞建库）
 - 不动 `works` 表与 `work_id` 关联（26 条项目仍悬空，等七个门填完之后单独做）
 - 不处理待办场次（澳门 11-07、马德里 11-28 未举办，届时再建）
+
+---
+
+## 十、执行记录
+
+### 2026-10-20 · 1 号门（影视作品）
+
+| 项 | 结果 |
+|---|---|
+| 条目 | 2 条，全部有封面 |
+| `Affair (爱情诡计)` | 标题原为素材名「宣传图片」，已正名；封面从 360×450 的 -001 换到 690×863 的 -008 |
+| `Harmony Secret (和谐密语)` | 原本**完全没有封面**（线上就是空格子），补官方双人图 1537×2048 |
+| 门面图 | 从 360×450 的 -001 换到 -008，同 4:5 裁切 |
+
+发现：`/projects` 卡片**不用 `projects.cover_url`**，走 `gallery_assets` 的 `is_cover` → `-000` → 最早一条。所以只改 `cover_url` 不动 `is_cover`，卡片上的图不会变。两处要一起改。
+
+### 2026-10-20 · 3 号门（线下活动）
+
+| 项 | 结果 |
+|---|---|
+| 新建 | 52 条（`fanmeeting` 39 / `brand_event` 9 / `birthday` 3 / 观影会 1 无子类） |
+| 可见 | **47 条，47 条全部有封面（100%）** |
+| Tab | 全部 47 / Fan Meetings 37 / Brand Events 6 / Birthdays 3 |
+| 未开 | 6 条无图（`2024-12-14` `2026-01-16` `2026-01-31` `2026-03-15` `2026-10-03` `2026-10-11`） |
+| 门面图 | 原槽位挂的是**杂志 ISLAND**（editorial 的图），已换成 2026-08-08 首尔场现场双人 1602×2048 |
+
+快照表：`lmsy_archive.projects_snap_p1_20261020`（28 行，建库前）。
+回滚：删掉 `tags @> array['batch_p1_live']` 的行，并从快照恢复被改的 1 行（EVERAFTER BLOOM 补 `subtype`）。
+
+**封面健康检查**：66 张可见封面逐条 HEAD，全部 200。含 39 张 R2、27 张推文原图。
+`cdn.lmsy.space` 与 `pbs.twimg.com` 都不依赖签名，不会像档案站海报那样过期。
+
+### 剩下五个门的状态
+
+| 门 | 现有可见 | 目标 | 图源 |
+|---|---|---|---|
+| 2 号 杂志特辑 | 11 | 17 | 图库已有 237 张，缺的 6 条要挂到新条目 |
+| 4 号 公开活动 | 2 | 47 | 96 场总表里 `group=public` **46 场、41 张封面**已备好 |
+| 5 号 商务合作 | 4 | 45 | 未实测 |
+| 6 号 对话 | 0 | 97 | 未实测 |
+| 7 号 直播 | 0 | 55 | 未实测 |
+
+### 2026-10-20 · 4 号门（公开活动）
+
+| 项 | 结果 |
+|---|---|
+| 新建 | 46 条，7 个子类全部建齐（awards 14 / fashion 7 / industry 6 / brand_stage 6 / charity 5 / fanday 5 / premiere 5，其中 `2026-03-12` 同日两场） |
+| 可见 | **16 条**，15 张封面全部 ≥ 600 宽、0 张破图（Japan Expo 从 industry 移到 awards 后多开 1 条） |
+| Tab | All 16 / Awards 3 / Fashion Weeks 1 / Brand Appearances 5 / Charity 2 / Industry 2（Premieres 全无图暂不显示） |
+| 未开 | 31 条（premiere 5 条**全无图**，书展与公益类过半无图） |
+| 门面图 | 原来是空的，靠自动兜底取到一张机场抓拍（854×1280）。已固定指定 iQIYI iJOY TH 2025（1366×2048） |
+
+**分类口径更正（2026-10-20 下午，用户发现并纠正）**：定稿原只写了四个 subtype（含 `fanday`），实际按清单 A–F 扩成六个。6 条归错已修：Song Sang Suk Day 与 SRETSIS 门店开业、Hometown × 三个民俗舞台归 `brand_stage`，Japan Expo 归 `awards`，两场书展归 `charity`。另补建漏掉的 `2026-05-22 Hometown Romance Final Episode Event`（无封面，隐藏）。现在六个 Tab 与清单 A–F 一一对应，A15 / B6 / C10 / D5 / E6 / F5 = 47。
+
+**这一门暴露了两个方法问题，都写进流程里：**
+
+1. **档案站海报的「标题↔图」配对不可靠。** 旧抓取脚本按 Y 坐标找"图上方的最近标题"，但 Google Sites 的图不在标题的 DOM 子树里（探针确认 6 层祖先内 0 张图），滚动懒加载会让顺序错位。抽查三张全部张冠李戴：文件名写着 `elle-fashion-week-2025-in-iconsiam`，图里是 **HOWE AWARDS** 的背景墙；写着 `thailand-person-of-the-year-awards-2025`，图是一张 **ELLE 时装片**。
+   → 已把 26 条 R2 海报封面全部回退成隐藏（`temp/p2_revert_posters.sql`），这些字节留在 R2 但不用。
+   → **以后档案站只作"这场活动存在"的证据，不作封面来源**，除非能逐张人眼核过。
+2. **推文图能保证日期，不能保证内容。** 用「推文时间戳 ±1 天 + 正文关键词」找回 11 张，尺寸检查后剩 8 张，人眼过一遍又砍掉 6 张：一张是**水牛**（关键词 `change2561` 命中，图完全不相关）、一张是舞台屏幕（`Cr.Amp`）、一张是粉丝举的人形立牌表情包、一张 205×274 的手机截图、一张粉丝应援海报、一张 341×522 的小图。
+   → 结论：**自动匹配的图必须逐张看图确认，尺寸合格 ≠ 内容合格**。这一轮用 `temp/make_sheet.js` 生成联系表（21 张一屏）一次核完，以后沿用。
+
+**封面质量闸门（已固化）**：宽 ≥ 600px、非截图/表情包/应援物料/舞台屏幕、主体是两人。三条都过才开门。
+
+**门面图分辨率现状**：5 张首页入口全部达标（690 / 690 / 1602 / 1366 / 690 宽）。6、7 号门仍空白，因为 `interview` `variety` `radio` `live_stream` 四个分类还是 0 条。

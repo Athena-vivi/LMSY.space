@@ -29,14 +29,16 @@ alter table lmsy_archive.works add constraint works_kind_check
 
 -- 3. one shared subtype column for the in-hall tabs.
 --    fanmeeting / brand_event / birthday   -> live_event
---    premiere / awards / fashion / fanday  -> public_appearance
+--    awards / fashion / brand_stage / industry / charity / premiere
+--      -> public_appearance (mirrors list types A-F of
+--         docs/20261019-lmsy-public-appearance-list.md)
 --    feature / press / tv_news             -> interview
 alter table lmsy_archive.projects add column if not exists subtype text;
 alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
 alter table lmsy_archive.projects add constraint projects_subtype_check
   check (subtype is null or subtype in (
     'fanmeeting','brand_event','birthday',
-    'premiere','awards','fashion','fanday',
+    'premiere','awards','fashion','brand_stage','industry','charity',
     'feature','press','tv_news'
   ));
 
@@ -121,8 +123,7 @@ alter table lmsy_archive.projects drop constraint if exists projects_subtype_che
 alter table lmsy_archive.projects add constraint projects_subtype_check
   check (subtype is null or subtype in (
     'fanmeeting','brand_event','birthday',
-    'premiere','awards','fashion','fanday',
-    'brand_stage','charity','industry',
+    'premiere','awards','fashion','brand_stage','industry','charity',
     'feature','press','tv_news',
     'duo','solo'
   ));
@@ -131,7 +132,7 @@ alter table lmsy_archive.projects add constraint projects_subtype_check
 -- alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
 -- alter table lmsy_archive.projects add constraint projects_subtype_check
 --   check (subtype is null or subtype in (
---     'fanmeeting','brand_event','birthday','premiere','awards','fashion','fanday',
+--     'fanmeeting','brand_event','birthday','premiere','awards','fashion','brand_stage','industry','charity',
 --     'feature','press','tv_news'));
 
 select pg_get_constraintdef(oid) as subtype_check

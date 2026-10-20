@@ -42,8 +42,8 @@ export type ProjectCategory =
 /**
  * Sub-class inside a hall, shared by every hall that needs one:
  *   live_event        fanmeeting / brand_event / birthday
- *   public_appearance premiere / awards / fashion / fanday /
- *                     brand_stage / charity / industry
+ *   public_appearance awards / fashion / brand_stage / industry /
+ *                     charity / premiere
  *   interview         feature / press / tv_news
  *   live_stream       duo / solo
  * NULL means "the hall itself is enough" - most rows need no sub-class.
@@ -57,7 +57,6 @@ export type ProjectSubtype =
   | 'premiere'
   | 'awards'
   | 'fashion'
-  | 'fanday'
   | 'brand_stage'
   | 'charity'
   | 'industry'

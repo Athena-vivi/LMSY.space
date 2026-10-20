@@ -74,8 +74,10 @@ alter table lmsy_archive.projects add constraint projects_category_check
 | 归属 | 取值 |
 |---|---|
 | `live_event` | `fanmeeting` / `brand_event` / `birthday` |
-| `public_appearance` | `premiere` / `awards` / `fashion` / `fanday` |
+| `public_appearance` | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `premiere` |
 | `interview` | `feature` / `press` / `tv_news` |
+
+2026-10-20 更正：4 号门最终是六个值，与 `docs/20261019-lmsy-public-appearance-list.md` 的类型 A–F 一一对应。原表只列了四个（含 `fanday`），建库时发现「Fan Day 与平台活动」装不下清单里的 C（品牌站台 / 商演 / 民俗舞台，10 场）和 E（公益 / 社群 / 书展，6 场）两类，`fanday` 在这一门也没有对应内容，遂取消。定稿第五节同步改过。
 
 配索引 `idx_projects_category_subtype (category, subtype)`。
 
