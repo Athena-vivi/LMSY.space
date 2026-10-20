@@ -3,6 +3,8 @@ import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject } from '@/lib/project-visibility';
+import { pageMetadata } from '@/lib/seo';
+import { getLocalizedText } from '@/lib/localized-content';
 import { DramaDetailClient, type DramaDetailEvent, type DramaDetailAsset } from './drama-detail-client';
 
 /**
@@ -55,14 +57,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const drama = await resolveDrama(slug);
 
   if (!drama || !isPublicProject(drama)) {
-    return { title: 'Series Not Found | LMSY' };
+    return { title: 'Series Not Found' };
   }
 
-  const title = drama.title_i18n?.en || drama.title;
-  return {
-    title: `${title} | LMSY Official Fan Site`,
-    description: drama.description || `Everything archived under ${title}.`,
-  };
+  // The layout already appends "| LMSY Official Fan Site"; pageMetadata sets
+  // the bare name plus the canonical path, so a series never carries the site
+  // name twice and never competes with its own redirect target.
+  const title = getLocalizedText(drama.title_i18n, 'en', drama.title);
+  const description =
+    getLocalizedText(drama.description_i18n, 'en', drama.description) ||
+    `Everything archived under ${title}.`;
+
+  return pageMetadata({
+    title,
+    description,
+    path: `/dramas/${drama.slug || drama.id}`,
+  });
 }
 
 export default async function DramaPage({ params }: PageProps) {
