@@ -9,9 +9,9 @@ import { subtypeLabelKey } from '@/lib/category-registry';
 /**
  * /live/[subtype] - level 2: the streams one person held, or both.
  *
- * `duo` / `solo` are the two values the database already accepts for this
- * hall; `unfiled` appears only when a stream has not been filed yet. Any other
- * segment is a 404, never a filtered copy of the other shelf.
+ * `duo` / `lookmhee` / `sonya` are the shelves of this hall; `unfiled` appears
+ * only when a stream has not been filed yet. Any other segment is a 404, never
+ * a filtered copy of another shelf.
  */
 export const revalidate = 300;
 

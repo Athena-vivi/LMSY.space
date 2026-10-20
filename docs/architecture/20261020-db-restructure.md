@@ -171,7 +171,7 @@ alter table lmsy_archive.projects add constraint projects_subtype_check
   check (subtype is null or subtype in (
     'fanmeeting','brand_event','birthday',
     'premiere','awards','fashion','brand_stage','industry','charity',
-    'feature','press','tv_news','duo','solo',
+    'feature','press','tv_news','duo','lookmhee','sonya',
     'series_body','music','novel','promo','award','footage'
   ));
 

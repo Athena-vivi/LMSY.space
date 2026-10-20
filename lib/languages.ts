@@ -406,7 +406,9 @@ export const translations = {
     'subtype.charity': 'Charity',
     'subtype.industry': 'Industry',
     'subtype.duo': 'Both of Them',
-    'subtype.solo': 'On Their Own',
+    // One name, one shelf: a stream by one of them is hers, not "solo".
+    'subtype.lookmhee': 'Lookmhee',
+    'subtype.sonya': 'Sonya',
 
     // Editorial meta
     'editorial.issueCount': '{count} issues curated',
@@ -840,7 +842,8 @@ export const translations = {
     'subtype.charity': '公益',
     'subtype.industry': '行业活动',
     'subtype.duo': '双人',
-    'subtype.solo': '单人',
+    'subtype.lookmhee': 'Lookmhee',
+    'subtype.sonya': 'Sonya',
 
     // Editorial meta
     'editorial.issueCount': '共 {count} 期特辑',
@@ -1276,7 +1279,8 @@ export const translations = {
     'subtype.charity': 'การกุศล',
     'subtype.industry': 'งานอุตสาหกรรม',
     'subtype.duo': 'สองคน',
-    'subtype.solo': 'คนเดียว',
+    'subtype.lookmhee': 'Lookmhee',
+    'subtype.sonya': 'Sonya',
 
     // Editorial meta
     'editorial.issueCount': 'คัดสรรแล้ว {count} ฉบับ',

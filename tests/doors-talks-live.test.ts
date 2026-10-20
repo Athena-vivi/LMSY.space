@@ -83,9 +83,12 @@ describe('the second level is decided by the registry', () => {
     assert.equal(doorCategorySegment('editorial'), null);
   });
 
-  test('/live shelves are the two values the database already accepts', () => {
+  test('/live shelves are both of them, then each of them by name', () => {
+    // 2026-10-21: the third shelf used to be the category "single". A stream
+    // held by one of them is hers, so the shelf is the name.
     const values = (SUBTYPES_BY_CATEGORY.live_stream ?? []).map((definition) => definition.value);
-    assert.deepEqual(values, ['duo', 'solo']);
+    assert.deepEqual(values, ['duo', 'lookmhee', 'sonya']);
+    assert.ok(!values.includes('solo' as never), 'a stream is never "solo"');
   });
 
   test('addresses follow the second level of each door', () => {
@@ -94,8 +97,12 @@ describe('the second level is decided by the registry', () => {
       '/talks/interview/gala'
     );
     assert.equal(
-      entryPath({ id: 'x', category: 'live_stream', subtype: 'solo', slug: 'late' }),
-      '/live/solo/late'
+      entryPath({ id: 'x', category: 'live_stream', subtype: 'lookmhee', slug: 'late' }),
+      '/live/lookmhee/late'
+    );
+    assert.equal(
+      entryPath({ id: 'x', category: 'live_stream', subtype: 'sonya', slug: 'night' }),
+      '/live/sonya/night'
     );
   });
 });

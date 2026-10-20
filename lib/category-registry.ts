@@ -218,7 +218,7 @@ export const HOME_CATEGORY_VALUES: ReadonlySet<string> = new Set(
  *
  *   /talks/<category>/<entry>   interview / variety / radio, because the
  *                               three are the shelves a visitor picks from
- *   /live/<sub-class>/<entry>   duo / solo
+ *   /live/<sub-class>/<entry>   duo / lookmhee / sonya
  *   /live-events/...            the in-hall sub-classes
  *   /editorial/<entry>          one issue is the smallest unit
  *
@@ -400,12 +400,15 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
     { value: 'charity', labelKey: 'subtype.charity' },
     { value: 'premiere', labelKey: 'subtype.premiere' },
   ],
-  // /live splits by who held the phone, because 45 of the first 55 streams
-  // were one of them alone: laid out flat the shelf reads as a Sonya archive.
-  // These two values are already in the database whitelist, so no migration.
+  // /live splits by who held the phone. 2026-10-21: the second level is
+  // "both of them" or one of the two names - a stream by one person belongs to
+  // that person, so a fan browsing the shelf is looking for someone, not for
+  // the category "single". `solo` was dropped from the whitelist in
+  // docs/architecture/20261021-live-subtype-split.sql.
   live_stream: [
     { value: 'duo', labelKey: 'subtype.duo' },
-    { value: 'solo', labelKey: 'subtype.solo' },
+    { value: 'lookmhee', labelKey: 'subtype.lookmhee' },
+    { value: 'sonya', labelKey: 'subtype.sonya' },
   ],
 };
 

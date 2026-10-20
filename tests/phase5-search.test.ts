@@ -95,7 +95,7 @@ describe('search contract mapping', () => {
     assert.equal(entryPath({ id: 'abc', category: 'variety', slug: 'wood-toy' }), '/talks/variety/wood-toy');
     assert.equal(entryPath({ id: 'abc', category: 'radio', slug: 'efm-90' }), '/talks/radio/efm-90');
     assert.equal(entryPath({ id: 'abc', category: 'live_stream', subtype: 'duo', slug: 'christmas' }), '/live/duo/christmas');
-    assert.equal(entryPath({ id: 'abc', category: 'live_stream', subtype: 'solo', slug: 'late' }), '/live/solo/late');
+    assert.equal(entryPath({ id: 'abc', category: 'live_stream', subtype: 'lookmhee', slug: 'late' }), '/live/lookmhee/late');
     // A stream that has not been filed yet still has a page of its own.
     assert.equal(entryPath({ id: 'abc', category: 'live_stream', slug: 'unfiled-one' }), '/live/unfiled/unfiled-one');
   });

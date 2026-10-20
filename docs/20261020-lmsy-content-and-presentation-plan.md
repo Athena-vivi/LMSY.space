@@ -408,10 +408,10 @@ SQL 全文：`docs/architecture/20261020-db-restructure.sql`，说明：同名 `
 | 门 | 门页 | 分类页 | 事件页 |
 |---|---|---|---|
 | 对话 | `/talks` | `/talks/interview`、`/talks/variety`、`/talks/radio` | `/talks/<分类>/<事件 slug>` |
-| 直播 | `/live` | `/live/duo`、`/live/solo` | `/live/<分类>/<事件 slug>` |
+| 直播 | `/live` | `/live/duo`、`/live/lookmhee`、`/live/sonya` | `/live/<分类>/<事件 slug>` |
 
 - **对话门的第二层是「分类」本身**（访谈 / 综艺 / 电台），因为它们本来就是三个 `category` 值，不是子类。`lib/category-registry.ts` 新增 `DOOR_CATEGORY_GROUPS`（`/talks` → 三个分类）与 `doorCategorySegment()` 表达这件事；`doorEntryPath()` 遇到这类门时把分类当第二段，不再去查 subtype。
-- **直播门的第二层是「谁拿着手机」**：`duo` / `solo`。这两个值数据库 CHECK 早就接受（第二轮扩白名单时为"双人/单人两个 tab"加的），所以只往 `SUBTYPES_BY_CATEGORY.live_stream` 里登记，**不动数据库**。
+- **直播门的第二层是「谁拿着手机」**：`duo` / `lookmhee` / `sonya`。双人一场是一类；一个人开的播不属于「单人」这个类别，她是谁就归谁（见 12.7）。
 - 没有归类的直播落 `/live/unfiled/<事件>`，和线下活动、公开活动的 unfiled 一致。
 
 ### 12.3 地址唯一的落点
@@ -419,7 +419,7 @@ SQL 全文：`docs/architecture/20261020-db-restructure.sql`，说明：同名 `
 - `lib/category-registry.ts` 的 `homeDoorEntryPath()` 改名为 `doorEntryPath()`：它不再只管首页五入口，而是**所有有门的分类**共用一个算法；没有门的三个旧分类（幕后 / 个人旅行 / 早期档案）仍返回 `null`。
 - `lib/door-data.ts` 的 `loadRows()` 改为收**一个分类数组**，新增 `loadGroupCategories()` 给「一层门、第二层是分类」的对话门用；条目地址统一由 `doorEntryPath()` 算，模块内原来那个同名的 `entryPath()` 已删除（同名两套算法最容易走岔）。
 - 搜索、sitemap、人物页、相册灯箱、时间线因此**自动**拿到对话/直播事件的地址，不需要各自再判断。
-- sitemap 新增 5 条二层地址：`/talks/interview`、`/talks/variety`、`/talks/radio`、`/live/duo`、`/live/solo`。
+- sitemap 新增 6 条二层地址：`/talks/interview`、`/talks/variety`、`/talks/radio`、`/live/duo`、`/live/lookmhee`、`/live/sonya`。
 
 ### 12.4 删掉的东西
 
@@ -428,8 +428,17 @@ SQL 全文：`docs/architecture/20261020-db-restructure.sql`，说明：同名 `
 
 ### 12.5 新增文案
 
-`subtype.duo`（双人 / Both of Them / สองคน）、`subtype.solo`（单人 / On Their Own / คนเดียว）。
+`subtype.duo`（双人 / Both of Them / สองคน）、`subtype.lookmhee`（Lookmhee，三语同名）、`subtype.sonya`（Sonya，三语同名）。人名不音译，与全站一致。
 
 ### 12.6 当前数据状态
 
-对话门与直播门的库内行数**目前为 0**（`interview` / `variety` / `radio` / `live_stream` 全部 0 行，清单在 `docs/20261019-lmsy-interview-list.md`、`variety-show-list.md`、`live-stream-list.md`，尚未入库）。因此三个分类页和两个分类页现在都显示「收录中」，门本身在、地址在、SEO 在，等内容进来即可填满。
+对话门与直播门的库内行数**目前为 0**（`interview` / `variety` / `radio` / `live_stream` 全部 0 行，清单在 `docs/20261019-lmsy-interview-list.md`、`variety-show-list.md`、`live-stream-list.md`，尚未入库）。因此六个分类页（对话 3 + 直播 3）现在都显示「收录中」，门本身在、地址在、SEO 在，等内容进来即可填满。
+
+### 12.7 直播分类的修正（同日）
+
+第一版把直播分成 `duo` / `solo`（双人 / 单人），用户否掉：**单人不是一个类别**——一个人开的播归到她那一个人名下。
+
+- 白名单改为 `duo` / `lookmhee` / `sonya`，`solo` 从 CHECK 里删除而不是留着并存，这样不会有一行落在已经没有卡片的架子上。迁移：`docs/architecture/20261021-live-subtype-split.sql`（执行时该分类 0 行、全库 `subtype='solo'` 0 行，无数据搬迁）。
+- `lib/supabase/types.ts` 的 `ProjectSubtype` 同步；`SUBTYPES_BY_CATEGORY.live_stream` 三项，顺序＝双人 → Lookmhee → Sonya。
+- 文案 `subtype.solo` 删除，换成 `subtype.lookmhee` / `subtype.sonya`（三语都写英文名，不音译——与 `lib/ai-translator.ts` 的命名约定一致）。
+- 地址：`/live/duo/<事件>`、`/live/lookmhee/<事件>`、`/live/sonya/<事件>`；未归类仍是 `/live/unfiled/<事件>`。

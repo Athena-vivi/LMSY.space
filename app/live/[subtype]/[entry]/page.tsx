@@ -8,7 +8,7 @@ import { DoorEntryPage } from '@/components/doors/door-views';
 import { subtypeLabelKey } from '@/lib/category-registry';
 
 /**
- * /live/<duo|solo>/<entry> - level 3: one stream.
+ * /live/<duo|lookmhee|sonya>/<entry> - level 3: one stream.
  *
  * The archive does not host video, so the page is the record plus the way out
  * to the platform that does. A stream with no link yet keeps the page: it is

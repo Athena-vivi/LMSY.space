@@ -10,9 +10,9 @@ import { DoorCategoriesPage } from '@/components/doors/door-views';
  * somebody else. This one holds the streams they opened themselves: no cut, no
  * running time, no interviewer.
  *
- * Three levels since 2026-10-21: who held the phone splits the shelf (the
- * database already stores `duo` / `solo`), so a stream is read at
- * /live/<duo|solo>/<entry> instead of having no page at all.
+ * Three levels since 2026-10-21: who held the phone splits the shelf - both of
+ * them, or one of the two by name - so a stream is read at
+ * /live/<duo|lookmhee|sonya>/<entry> instead of having no page at all.
  */
 export const revalidate = 300;
 

@@ -45,7 +45,7 @@ export type ProjectCategory =
  *   public_appearance awards / fashion / brand_stage / industry /
  *                     charity / premiere
  *   interview         feature / press / tv_news
- *   live_stream       duo / solo
+ *   live_stream       duo / lookmhee / sonya
  *   drama_work        series_body / music / novel / promo / award / footage
  *                     (the six groups every entry is filed under)
  * NULL means "the hall itself is enough" - most rows need no sub-class.
@@ -66,7 +66,10 @@ export type ProjectSubtype =
   | 'press'
   | 'tv_news'
   | 'duo'
-  | 'solo'
+  // A stream held by one of them belongs to that person, not to a category
+  // called "single" (2026-10-21: `solo` was split into the two names).
+  | 'lookmhee'
+  | 'sonya'
   | 'series_body'
   | 'music'
   | 'novel'

@@ -137,3 +137,30 @@ alter table lmsy_archive.projects add constraint projects_subtype_check
 
 select pg_get_constraintdef(oid) as subtype_check
 from pg_constraint where conname = 'projects_subtype_check';
+
+-- ============================================================
+-- Round 3 - 2026-10-21 - live_stream: solo -> the two names
+--
+-- Owner's decision: a stream held by one of them is not the category
+-- "single". It is Lookmhee's, or it is Sonya's. The second level of
+-- /live is duo / lookmhee / sonya.
+--
+-- `solo` is dropped, not kept alongside: a shelf that no longer has a
+-- card must not be able to receive a row.
+--
+-- No data moves. At run time lmsy_archive.projects held 0 rows with
+-- category = 'live_stream' and 0 rows with subtype = 'solo' anywhere.
+-- Full statement + rollback: docs/architecture/20261021-live-subtype-split.sql
+-- ============================================================
+alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
+alter table lmsy_archive.projects add constraint projects_subtype_check
+  check (subtype is null or subtype in (
+    'fanmeeting','brand_event','birthday',
+    'premiere','awards','fashion','brand_stage','industry','charity',
+    'feature','press','tv_news',
+    'duo','lookmhee','sonya',
+    'series_body','music','novel','promo','award','footage'
+  ));
+
+select pg_get_constraintdef(oid) as subtype_check
+from pg_constraint where conname = 'projects_subtype_check';

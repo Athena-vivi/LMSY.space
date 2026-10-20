@@ -13,7 +13,7 @@
  *   appearance        /appearances/<sub-class>/<entry>
  *   collaboration     /commercial/<entry>
  *   conversation      /talks/<interview|variety|radio>/<entry>
- *   live stream       /live/<duo|solo>/<entry>
+ *   live stream       /live/<duo|lookmhee|sonya>/<entry>
  *
  * Two consequences worth knowing before editing:
  *
