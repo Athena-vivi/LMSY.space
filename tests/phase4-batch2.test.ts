@@ -221,10 +221,10 @@ describe('legacy exhibition routes', () => {
     assert.ok(pageSrc.includes("redirect('/projects')"));
   });
 
-  test('category routes translate the old type into a registry filter', () => {
+  test('category routes translate the old type into the hall that owns it', () => {
     const catSrc = src('app/exhibitions/category/[type]/page.tsx');
     assert.ok(catSrc.includes('normalizeCategory'), 'goes through the registry aliases');
-    assert.ok(catSrc.includes('/projects?category='), 'lands on the filtered index');
+    assert.ok(catSrc.includes('categoryHref(category)'), 'lands on the door, not a filtered index');
   });
 });
 
