@@ -69,13 +69,16 @@ export interface DramaAssetRow {
   event_id: string | null;
 }
 
+// Reading order the owner fixed: the series itself, then everything that was
+// released around it, then what it won, and footage last - a still is what you
+// look at after you already know what it is a still of.
 const GROUP_ORDER: Array<{ key: string; labelKey: TranslationKey }> = [
   { key: 'series_body', labelKey: 'drama.group.seriesBody' },
   { key: 'music', labelKey: 'drama.group.music' },
   { key: 'novel', labelKey: 'drama.group.novel' },
   { key: 'promo', labelKey: 'drama.group.promo' },
-  { key: 'footage', labelKey: 'drama.group.footage' },
   { key: 'award', labelKey: 'drama.group.award' },
+  { key: 'footage', labelKey: 'drama.group.footage' },
 ];
 
 export function DramaDetailClient({
