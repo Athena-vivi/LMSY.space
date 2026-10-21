@@ -301,7 +301,7 @@ export const translations = {
 
     // /talks and /live - the two soul-resonance landing pages
     'talks.title': 'Conversations',
-    'talks.description': 'The questions come from outside.',
+    'talks.description': 'Interviews, variety and radio.',
     'talks.tabAll': 'All',
     'talks.tabInterview': 'Interviews',
     'talks.tabVariety': 'Variety',
@@ -309,14 +309,14 @@ export const translations = {
 
     // /dramas - the door for everything they acted in
     'dramas.title': 'Series',
-    'dramas.description': 'Every story they have told, kept here. The story ends; the meeting does not.',
+    'dramas.description': 'Series and related footage.',
     'dramas.eventCount': '{count} entries',
     'dramas.viewSeries': 'Open the series',
 
     // Doors 2-5 (homepage entries with a page of their own)
-    'door.description.liveEvents': 'The nights when everyone gathered.',
-    'door.description.appearances': 'The moments they were seen.',
-    'door.description.commercial': 'What they made for the brands.',
+    'door.description.liveEvents': 'Fan meetings, birthday parties and brand events.',
+    'door.description.appearances': 'Award shows, fashion weeks and premieres.',
+    'door.description.commercial': 'Endorsements and ads.',
     'door.viewCategory': 'Open the shelf',
     'door.unfiled': 'Not filed yet',
     'door.video': 'Video',
@@ -341,7 +341,7 @@ export const translations = {
     'drama.awardWon': 'Won',
     'drama.awardNominated': 'Nominated',
     'live.title': 'Live',
-    'live.description': 'They hold the camera themselves.',
+    'live.description': 'Duo streams and individual streams.',
     'live.tabAll': 'All',
     'live.tabDuo': 'Both',
 
@@ -740,7 +740,7 @@ export const translations = {
 
     // /talks 与 /live - 灵魂共振的两个落地页
     'talks.title': '对话',
-    'talks.description': '问题从外面来。',
+    'talks.description': '采访、综艺与电台。',
     'talks.tabAll': '全部',
     'talks.tabInterview': '访谈',
     'talks.tabVariety': '综艺',
@@ -748,14 +748,14 @@ export const translations = {
 
     // /dramas - 一号门的落地页
     'dramas.title': '影视作品',
-    'dramas.description': '她们演过的故事，都收在这里。故事结束了，相遇还没有。',
+    'dramas.description': '剧集与相关影像。',
     'dramas.eventCount': '{count} 条',
     'dramas.viewSeries': '进入这一部',
 
     // Doors 2-5
-    'door.description.liveEvents': '人聚在一起的那些晚上。',
-    'door.description.appearances': '被看见的那些时刻。',
-    'door.description.commercial': '她们替品牌留下的画面。',
+    'door.description.liveEvents': '见面会、生日会与品牌活动。',
+    'door.description.appearances': '颁奖礼、时装周与首映。',
+    'door.description.commercial': '代言与广告。',
     'door.viewCategory': '进入这一类',
     'door.unfiled': '未归类',
     'door.video': '视频',
@@ -780,7 +780,7 @@ export const translations = {
     'drama.awardWon': '获奖',
     'drama.awardNominated': '提名',
     'live.title': '直播',
-    'live.description': '镜头是她们自己拿的。',
+    'live.description': '双人直播与各自直播。',
     'live.tabAll': '全部',
     'live.tabDuo': '双人',
 
@@ -1175,7 +1175,7 @@ export const translations = {
 
     // /talks และ /live - หน้าปลายทางของสองประตู
     'talks.title': 'บทสนทนา',
-    'talks.description': 'คำถามมาจากข้างนอก',
+    'talks.description': 'บทสัมภาษณ์ วาไรตี้ และวิทยุ',
     'talks.tabAll': 'ทั้งหมด',
     'talks.tabInterview': 'บทสัมภาษณ์',
     'talks.tabVariety': 'วาไรตี้',
@@ -1183,14 +1183,14 @@ export const translations = {
 
     // /dramas - ประตูแรกของคลัง
     'dramas.title': 'ซีรีส์',
-    'dramas.description': 'เรื่องจบไปแล้ว แต่การพบกันยังไม่จบ',
+    'dramas.description': 'ซีรีส์และภาพที่เกี่ยวข้อง',
     'dramas.eventCount': '{count} รายการ',
     'dramas.viewSeries': 'เปิดซีรีส์',
 
     // Doors 2-5
-    'door.description.liveEvents': 'คืนที่ทุกคนมารวมกัน',
-    'door.description.appearances': 'ช่วงเวลาที่ถูกมองเห็น',
-    'door.description.commercial': 'สิ่งที่พวกเธอทำไว้ให้แบรนด์',
+    'door.description.liveEvents': 'งานแฟนมีตติ้ง วันเกิด และกิจกรรมของแบรนด์',
+    'door.description.appearances': 'งานประกาศรางวัล สัปดาห์แฟชั่น และรอบปฐมทัศน์',
+    'door.description.commercial': 'งานพรีเซ็นเตอร์และโฆษณา',
     'door.viewCategory': 'เปิดหมวดนี้',
     'door.unfiled': 'ยังไม่จัดหมวด',
     'door.video': 'วิดีโอ',
@@ -1215,7 +1215,7 @@ export const translations = {
     'drama.awardWon': 'ได้รางวัล',
     'drama.awardNominated': 'เข้าชิง',
     'live.title': 'ไลฟ์',
-    'live.description': 'พวกเธอถือกล้องเอง',
+    'live.description': 'ไลฟ์คู่และไลฟ์เดี่ยว',
     'live.tabAll': 'ทั้งหมด',
     'live.tabDuo': 'คู่',
 
