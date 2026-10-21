@@ -95,11 +95,13 @@ export function DramaDetailClient({
     drama.event_date?.slice(0, 4) ?? drama.release_date?.slice(0, 4) ?? null;
   const seriesSlug = drama.slug || drama.id;
 
+  // Newest entry first inside every group. Undated entries sink to the bottom
+  // instead of being guessed into a year they may not belong to.
   const sorted = useMemo(
     () =>
       [...events].sort((a, b) => {
         if (a.event_date && b.event_date && a.event_date !== b.event_date) {
-          return a.event_date < b.event_date ? -1 : 1;
+          return a.event_date < b.event_date ? 1 : -1;
         }
         if (a.event_date && !b.event_date) return -1;
         if (!a.event_date && b.event_date) return 1;

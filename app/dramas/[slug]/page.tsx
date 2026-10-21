@@ -157,6 +157,8 @@ export default async function DramaPage({ params }: PageProps) {
       .select(ENTRY_COLUMNS)
       .eq('work_id', seriesWorkId ?? drama.id)
       .neq('project_kind', 'series')
+      .order('event_date', { ascending: false, nullsFirst: false })
+      .order('release_date', { ascending: false, nullsFirst: false })
       .order('portal_priority', { ascending: true }),
     applyPublicProjectFilter(
       supabaseAdmin
@@ -166,7 +168,7 @@ export default async function DramaPage({ params }: PageProps) {
     )
       .eq('category', 'drama_work')
       .eq('project_kind', 'series')
-      .order('event_date', { ascending: true, nullsFirst: false }),
+      .order('event_date', { ascending: false, nullsFirst: false }),
   ]);
 
   const entryRows = ((events ?? []) as unknown as EntryRow[]).map(toCard);

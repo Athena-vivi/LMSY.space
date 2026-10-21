@@ -46,7 +46,11 @@ async function loadSeries(): Promise<DramaCardRow[]> {
   )
     .eq('category', 'drama_work')
     .eq('project_kind', 'series')
-    .order('event_date', { ascending: true, nullsFirst: false });
+    // Newest series first: a new work appears at the top of the door the day
+    // it is added, which is how every other door is read too.
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
 
   const dramas = (data ?? []) as unknown as Array<
     Omit<DramaCardRow, 'entryCount'> & { work_id: string | null }

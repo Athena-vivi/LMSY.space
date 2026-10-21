@@ -73,6 +73,24 @@ function discoverCoverFromGallery(
   return sorted.length > 0 ? getCdnUrl(sorted[0].image_url ?? null) : null;
 }
 
+/**
+ * Pages of one issue, in page order. The embedded select cannot carry an
+ * ORDER BY, and PostgREST gives no ordering guarantee without one - so the
+ * sort happens here, on the catalog plate, which is the page number.
+ */
+function sortPages<T extends { catalog_id?: string | null; created_at?: string | null }>(
+  rows: T[]
+): T[] {
+  return [...rows].sort((a, b) => {
+    if (a.catalog_id && b.catalog_id && a.catalog_id !== b.catalog_id) {
+      return a.catalog_id.localeCompare(b.catalog_id);
+    }
+    if (a.catalog_id && !b.catalog_id) return -1;
+    if (!a.catalog_id && b.catalog_id) return 1;
+    return (a.created_at ?? '').localeCompare(b.created_at ?? '');
+  });
+}
+
 const ISSUE_COLUMNS = `
   id,
   slug,
@@ -112,7 +130,7 @@ type IssueRow = {
 };
 
 function toIssue(row: IssueRow): EditorialIssue {
-  const galleryImages = row.gallery_assets ?? [];
+  const galleryImages = sortPages(row.gallery_assets ?? []);
   const artifactCount = countIssueArtifacts(galleryImages, row.cover_url);
 
   let coverUrl: string | null = null;
@@ -152,7 +170,12 @@ export async function loadEditorialIssues(): Promise<EditorialIssue[]> {
       .from('projects')
       .select(ISSUE_COLUMNS)
       .eq('category', 'editorial')
-  ).order('release_date', { ascending: false });
+  )
+    // Newest issue first. Issues whose date is still unknown sink to the end
+    // instead of floating to the top on a NULL sort key.
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
 
   if (error || !data) return [];
 

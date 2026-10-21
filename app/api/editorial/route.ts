@@ -86,7 +86,7 @@ export async function GET() {
         )
       `)
         .eq('category', 'editorial')
-    ).order('release_date', { ascending: false });
+    ).order('release_date', { ascending: false, nullsFirst: false });
 
     if (error) {
       console.error('[EDITORIAL_API] query failed:', error.message);
