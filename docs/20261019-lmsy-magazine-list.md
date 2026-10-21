@@ -83,7 +83,7 @@
 | 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SY` | 2025-09-10 | 9 |
 | 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
 | 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 8 |
-| 7 | KAZZ 211 2025-10 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-10-01 | 25 |
+| 7 | KAZZ 211 2025-10 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-10-01 | 28 |
 | 8 | KAZZ 2025-02 | KAZZ 2025-02 | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 1 |
 | 9 | GAZE | GAZE · The Dream Unfolds | `MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
 | 10 | ISLAND JOY | ISLAND JOY · All of my Life | `MAG-ISLAND-ALLOFMYLIFE` | 2025-01-01 | 21 |
@@ -112,7 +112,7 @@ Lookmhee 条的 18 张原样保留。
 ### 3 个数据问题
 1. **`U!` 只有 1 张图**，其余有图的刊都是 18–37 张，明显没导完。
 2. **`KAZZ 2025-02` 只有 1 张**（数字封面），`KAZZ 2024-10` 只有 2 张 —— 档案站对应段落素材本身就很薄，
-   公开渠道也找不到更多成套图。`KAZZ 211` 已从 5 张补到 25 张（2026-10-21：并入 `Untamed` 18 张 + 微博官方 ISSUE 211 内页 2 张）；
+   公开渠道也找不到更多成套图。`KAZZ 211` 已从 5 张补到 28 张（2026-10-21：并入 `Untamed` 18 张 + 微博官方 ISSUE 211 内页 2 张 + 微博专栏官方内页 3 张）；
    `THE R`（8 张）同理，是档案站段落里实际有的数量。
 
 3. **`20241217【天津Fan sign PB】` 不是杂志**，它被放在 `editorial` 分类里。它是签名会的写真小册，归 `public_appearance` 更合适。
