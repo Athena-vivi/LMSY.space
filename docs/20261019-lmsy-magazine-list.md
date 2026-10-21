@@ -18,15 +18,15 @@
 | 6 | 2024-12 | OAT | — | — | **单人 Lookmhee** | — | 已有 `Oat-Lookmhee`（23 图） |
 | 7 | 2025-01 | U! | — | Brilliant Match | 双人 | A/B/C | 已有 `U!`（**仅 1 图**） |
 | 8 | 2025-01 | ISLAND JOY | 新年首刊 | All of my Life | 双人 | A/B 各 2 | 已有 `ISLAND`（21 图） |
-| 9 | 2025-02 | KAZZ | 待补 | — | 双人 | 单版 | **缺** |
+| 9 | 2025-02 | KAZZ | 待补 | — | 双人 | 单版 | 已入库（1 图，数字封面） |
 | 10 | 2025-02 | GAZE | Feb 2025 | The Dream Unfolds | 双人 | A/B/C | 已有 `GAZE`（37 图） |
-| 11 | 2025-08 | THE R | — | Heartbeat for You | 双人 | — | **缺**（可能对应库内 `Untamed`，待确认） |
-| 12 | 2025-08 | KAZZ | **211** | Harmony Secret | 双人 | A/B | **缺**（可能对应库内 `Untamed`，待确认） |
+| 11 | 2025-08 | THE R | — | Heartbeat for You | 双人 | — | 已入库（8 图） |
+| 12 | 2025-08 | KAZZ | **211** | Harmony Secret | 双人 | A/B | 已入库（5 图） |
 | 13 | 2025-09 | PERLA | — | Dream | **单人 Lookmhee** | A/B | 已有 `perla杂志`（18 图，未标注是谁） |
-| 14 | 2025-09 | PERLA | — | Dream | **单人 Sonya** | A/B | **缺** |
+| 14 | 2025-09 | PERLA | — | Dream | **单人 Sonya** | A/B | 已入库（9 图） |
 | 15 | 2026-04~06 | FIVEME | — | —（Hometown Romance 后专访） | 双人 | — | **缺** |
-| 16 | 2026-07 | KAZZ | **217** | Youth Choice | **单人 Lookmhee** | 独立封面 | **缺** |
-| 17 | 2026-07 | KAZZ | **217** | Youth Choice | **单人 Sonya** | 独立封面 | **缺** |
+| 16 | 2026-07 | KAZZ | **217** | Youth Choice | **单人 Lookmhee** | 独立封面 | 已入库（8 图） |
+| 17 | 2026-07 | KAZZ | **217** | Youth Choice | **单人 Sonya** | 独立封面 | 已入库（8 图） |
 
 **合计 17 条：双人 12 条、单人 5 条，覆盖 12 家刊物。**
 
@@ -77,15 +77,15 @@
 
 | # | 期 | 库内项目 | `catalog_id` | `release_date` | 图数 |
 |---|---|---|---|---|---|
-| 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SY` | 2026-07-01* | 0 |
-| 2 | KAZZ 217（Lookmhee） | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ-217-LM` | 2026-07-01* | 0 |
+| 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SY` | 2026-07-31 | 8 |
+| 2 | KAZZ 217（Lookmhee） | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ-217-LM` | 2026-07-31 | 8 |
 | 3 | FIVEME 2026 | FIVEME · 2026 | `LMSY-MAG-FIVEME-2026` | 2026-04-01* | 0 |
-| 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SY` | 2025-09-10 | 0 |
+| 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SY` | 2025-09-10 | 9 |
 | 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
-| 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 0 |
-| 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-01 | 0 |
+| 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 8 |
+| 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-01 | 5 |
 | — | 未识别 | Untamed | `MAG-UNTAMED` | 2025-08-01 | 18 |
-| 8 | KAZZ 2025-02 | KAZZ 2025-02 | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 0 |
+| 8 | KAZZ 2025-02 | KAZZ 2025-02 | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 1 |
 | 9 | GAZE | GAZE · The Dream Unfolds | `MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
 | 10 | ISLAND JOY | ISLAND JOY · All of my Life | `MAG-ISLAND-ALLOFMYLIFE` | 2025-01-01 | 21 |
 | 11 | RETRO | RETRO · Soulmate | `MAG-RETRO-SOULMATE` | 2024-12-18 | 21 |
@@ -95,23 +95,26 @@
 | 14 | UNIQUE | UNIQUE · Amor Fati | `MAG-UNIQUE-AMORFATI` | 2024-11-25 | 21 |
 | 15 | STARRY 21 | STARRY 21 · Deep in the Eye | `MAG-STARRY21-DEEPINTHEEYE` | 2024-11-04 | 18 |
 | 16 | BEAT'XL 2024-10 | BEAT'XL · Smoldering Embrace | `MAG-BEATXL-SMOLDERING` | 2024-10-23 | 21 |
-| 17 | KAZZ 2024-10 | KAZZ 2024-10 | `LMSY-MAG-KAZZ-2410` | 2024-10-01* | 0 |
+| 17 | KAZZ 2024-10 | KAZZ 2024-10 | `LMSY-MAG-KAZZ-2410` | 2024-10-01* | 2 |
 
 \* 清单只记到月份，这 5 条取当月 1 日，不是已核实的出版日；知道确切日期后改这一列即可（只影响排序位置）。
 门内顺序 = `release_date` 倒序（最新在上），日期相同按建行时间倒序；没有日期的行排在最后，不会顶到最前。
 
-**未决项**：#11 与 #12 同属 2025-08，`Untamed` 占其中一本但认不出来，因此两本都按正式名建了行，
-`Untamed` 原样挂在旁边，不动、不合并、不删。日期一律落 `2025-08-01`（档案站月份），未编具体日。
+**未决项**：#11（THE R）与 #12（KAZZ 211）同属 2025-08，两本都已按正式名建行并各自入库图片。
+`Untamed` 经比对**不是** THE R（THE R 是黑金 THE R 封面主题），是另一本，原样挂在旁边，不动、不合并、不删。
+日期一律落 `2025-08-01`（档案站月份），未编具体日。
 
-**PERLA 的 18 张图全部挂在 Lookmhee 条下**：PERLA 官方微博两条幕后备注都写着 Lookmhee
+**PERLA 原本 18 张图全部挂在 Lookmhee 条下**：PERLA 官方微博两条幕后备注都写着 Lookmhee
 （「城央魅致」「甜澈灵犀」两版），且其中一条描述的蓝色花束、复古电脑、蓝色马提尼分散在好几个页面里，
-无法按页面切分给两个人。Sonya 条先空着，等图。
+无法按页面切分给两个人。Sonya 条已单独补齐 9 张（PERLA 官方微博 2025-09-17 的 9 张官方大片），
+Lookmhee 条的 18 张原样保留。
 
 命名规范见 `docs/architecture/20261021-asset-naming.md`。
 
 ### 3 个数据问题
 1. **`U!` 只有 1 张图**，其余有图的刊都是 18–37 张，明显没导完。
-2. **`PERLA · Dream (Sonya)` 暂无图**，需要补整本；`perla杂志` 已按刊名规范命名。
+2. **`KAZZ 2025-02` 只有 1 张**（数字封面），`KAZZ 2024-10` 只有 2 张 —— 档案站对应段落素材本身就很薄，
+   公开渠道也找不到更多成套图；`KAZZ 211`（5 张）、`THE R`（8 张）同理，是档案站段落里实际有的数量。
 
 3. **`20241217【天津Fan sign PB】` 不是杂志**，它被放在 `editorial` 分类里。它是签名会的写真小册，归 `public_appearance` 更合适。
 
@@ -136,7 +139,7 @@
 | 项 | 情况 |
 |---|---|
 | KAZZ 2024-10 / 2025-02 的期号 | KAZZ 期号不是严格按月递增（211 是 2025-09、217 是 2026-07），无法回推，需查当期封面 |
-| `Untamed` 是哪一本 | 库内 2025-08-01，可能是 THE R《Heartbeat for You》，也可能是 KAZZ 211《Harmony Secret》 |
+| `Untamed` 是哪一本 | **已排除**：与 THE R《Heartbeat for You》（黑金 THE R 封面）不是同一本，`Untamed` 是另一本（灰水泥背景黑纱造型），原样保留 |
 | OAT 是否有 Sonya 单人版 | 现有资料只见到 Lookmhee 版 |
 | FIVEME 具体出刊月 | 只知道在《Hometown Romance》2026-05 收官之后 |
 | 2025-03~07 是否真无刊 | 三个独立来源（粉丝档案站、代购站、KAZZ 官方商城）都无记录，判断为真空窗 |
