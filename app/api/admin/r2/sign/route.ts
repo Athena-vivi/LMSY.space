@@ -4,10 +4,13 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getAdminEmail } from '@/lib/security/api-auth';
 import { validateObjectKey, isAllowedMimeType, UPLOAD_POLICY } from '@/lib/security/upload-guard';
+import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId } from '@/lib/catalog-id';
 import { apiServerError } from '@/lib/security/http';
 
-// All presigned keys must live under the prefix this route writes to.
-const ALLOWED_R2_PREFIXES = ['magazines/'];
+// Canonical layout is <person>/<door>/<year>/ (see docs/architecture/20261021-asset-naming.md).
+// 'magazines/' is the pre-2026-10-21 layout and is still listed so the 316
+// legacy objects remain reachable until they are retired.
+const ALLOWED_R2_PREFIXES = ['lmsy/', 'lm/', 'sy/', 'magazines/', 'draft/', 'gallery/'];
 
 /**
  * POST - Generate R2 Presigned URL for direct client-to-R2 upload
@@ -106,18 +109,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generate R2 path from catalog ID
-    // Parse catalog ID to extract year: LMSY-MAG-20241023-001
-    const catalogMatch = catalogId.match(/^LMSY-[A-Z]+-(\d{4})\d{4}-\d{3}$/);
-    if (!catalogMatch) {
+    // R2 path comes from the shared helper so the layout stays
+    // <person>/<door>/<year>/ everywhere (canonical naming spec section 7).
+    if (!isValidCatalogId(catalogId)) {
       return NextResponse.json(
-        { error: 'Invalid catalog ID format', catalogId },
+        {
+          error: 'Invalid catalog ID format',
+          expected: '<PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>',
+          example: 'LMSY-MAG-THER-HEARTBEATFORYOU-20250801-001',
+          catalogId,
+        },
         { status: 400 }
       );
     }
 
-    const year = catalogMatch[1];
-    const r2Path = `magazines/${year}/${catalogId}.webp`;
+    const parsed = parseCatalogId(catalogId);
+    const year = parsed?.date ? parsed.date.substring(0, 4) : new Date().getFullYear().toString();
+    const r2Path = getR2PathForCatalogId(catalogId);
 
     // The key must stay inside the expected upload prefix.
     const keyValidation = validateObjectKey(r2Path, ALLOWED_R2_PREFIXES);

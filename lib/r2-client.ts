@@ -161,7 +161,7 @@ export function getRelativePath(url: string): string {
 
 /**
  * List objects in R2 bucket with optional prefix filter
- * @param prefix - Optional prefix to filter objects (e.g., 'magazines/2024/')
+ * @param prefix - Optional prefix to filter objects (e.g., 'lmsy/mag/2025/')
  * @returns Array of R2 object metadata
  */
 export async function listR2Objects(prefix?: string): Promise<{

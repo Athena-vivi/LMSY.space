@@ -221,21 +221,37 @@ export function useIngestion() {
           const compactDate = eventDate.replace(/-/g, '');
           const selectedProjectObj = getProjectById(selectedProject || '');
 
-          const prefixMap: Record<string, string> = {
-            series: 'STILL',
+          // Door codes come from the canonical naming spec
+          // (docs/architecture/20261021-asset-naming.md section 3).
+          const doorMap: Record<string, string> = {
+            drama_work: 'DRAMA',
             editorial: 'MAG',
-            appearance: 'STAGE',
-            daily: 'DAILY',
-            travel: 'TRV',
-            commercial: 'AD',
+            live_event: 'EVENT',
+            public_appearance: 'APPEAR',
+            commercial: 'BRAND',
+            talks: 'TALK',
+            live: 'LIVE',
+            behind_the_scenes: 'BTS',
+            early_archive: 'EARLY',
           };
 
-          const prefix = selectedProjectObj?.category
-            ? prefixMap[selectedProjectObj.category] || 'G'
-            : 'G';
+          const door = selectedProjectObj?.category
+            ? doorMap[selectedProjectObj.category] || 'MAG'
+            : 'MAG';
+
+          // Subject is the project's own archive number minus its door segment
+          // (projects.catalog_id is <DOOR>-<SUBJECT>[-<THEME>]), so an asset
+          // reads <PERSON>-<DOOR>-<SUBJECT>-<DATE>-<NNN>.
+          const projectNumber = (selectedProjectObj as any)?.catalog_id as string | undefined;
+          const subject =
+            projectNumber && projectNumber.startsWith(`${door}-`)
+              ? projectNumber.slice(door.length + 1)
+              : '';
 
           const sequence = String(i + 1).padStart(3, '0');
-          catalogId = `LMSY-${prefix}-${compactDate}-${sequence}`;
+          catalogId = subject
+            ? `LMSY-${door}-${subject}-${compactDate}-${sequence}`
+            : `LMSY-${door}-${compactDate}-${sequence}`;
         }
 
         try {

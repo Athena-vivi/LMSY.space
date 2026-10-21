@@ -103,32 +103,36 @@ async function fetchDbImages(): Promise<DbImage[]> {
  * - magazines/2024/LMSY-MAG-20241023-000.webp
  */
 function extractCatalogFromPath(path: string): string | null {
-  const match = path.match(/LMSY-(G|MAG)-\d{8}-\d{3}/);
+  const match = path.match(
+    /(LMSY|LM|SY)-(DRAMA|MAG|EVENT|APPEAR|BRAND|TALK|LIVE|BTS|EARLY)-[A-Z0-9-]+?(?:-\d{8})?-\d{3}/
+  );
   return match ? match[0] : null;
 }
 
 /**
- * Normalize catalog ID to current standard
- * G format should become MAG format
+ * Normalize catalog ID to the canonical standard.
+ * The old G bucket (LMSY-G-YYYYMMDD-NNN) maps onto the MAG door.
  */
 function normalizeCatalogId(catalogId: string): string {
-  // If it's G format, convert to MAG
-  if (catalogId.startsWith('LMSY-G-')) {
+  if (/^LMSY-G-\d{8}-\d{3}$/.test(catalogId)) {
     return catalogId.replace('LMSY-G-', 'LMSY-MAG-');
   }
   return catalogId;
 }
 
 /**
- * Generate correct path from catalog ID
+ * Generate correct path from catalog ID.
+ * Layout is <person>/<door>/<year>/ per naming spec section 7.
  */
 function generatePathFromCatalog(catalogId: string): string {
-  const dateMatch = catalogId.match(/(\d{8})/);
+  const dateMatch = catalogId.match(/-(\d{8})-/);
   if (!dateMatch) return `gallery/${catalogId}.webp`;
 
-  const date = dateMatch[1];
-  const year = date.substring(0, 4);
-  return `magazines/${year}/${catalogId}.webp`;
+  const year = dateMatch[1].substring(0, 4);
+  const person = catalogId.startsWith('LM-') ? 'lm' : catalogId.startsWith('SY-') ? 'sy' : 'lmsy';
+  const doorMatch = catalogId.match(/^(?:LMSY|LM|SY)-([A-Z]+)-/);
+  const door = doorMatch ? doorMatch[1].toLowerCase() : 'mag';
+  return `${person}/${door}/${year}/${catalogId}.webp`;
 }
 
 /**

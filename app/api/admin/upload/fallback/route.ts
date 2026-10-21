@@ -7,6 +7,7 @@ import { getAdminEmail } from '@/lib/security/api-auth';
 import { validateUploadFile } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
 import { buildManualDraftRecord } from '@/lib/manual-draft';
+import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId } from '@/lib/catalog-id';
 
 export async function POST(request: NextRequest) {
   const authResult = await getAuthenticatedUser(request);
@@ -53,17 +54,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const catalogMatch = catalogId.match(/^LMSY-[A-Z]+-(\d{4})(\d{2})(\d{2})-(\d{3})$/);
-    if (!catalogMatch) {
+    if (!isValidCatalogId(catalogId)) {
       return NextResponse.json(
-        { error: 'Invalid catalog ID format' },
+        {
+          error: 'Invalid catalog ID format',
+          expected: '<PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>',
+          example: 'LMSY-MAG-THER-HEARTBEATFORYOU-20250801-001',
+          catalogId,
+        },
         { status: 400 }
       );
     }
 
-    const [, year] = catalogMatch;
-    const eventYear = eventDate.substring(0, 4);
-    if (year !== eventYear) {
+    const parsed = parseCatalogId(catalogId);
+    const idYear = parsed?.date ? parsed.date.substring(0, 4) : null;
+    if (idYear && eventDate && idYear !== eventDate.substring(0, 4)) {
       return NextResponse.json(
         { error: 'Year mismatch between catalog ID and event date' },
         { status: 400 }
@@ -77,7 +82,7 @@ export async function POST(request: NextRequest) {
       throw new Error(`WebP conversion failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    const r2Path = `magazines/${year}/${catalogId}.webp`;
+    const r2Path = getR2PathForCatalogId(catalogId);
     const r2Result = await uploadToR2(webpResult.buffer, r2Path, 'image/webp');
     if (!r2Result.success || !r2Result.url) {
       throw new Error(`R2 upload failed: ${r2Result.error || 'Unknown error'}`);

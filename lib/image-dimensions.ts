@@ -5,9 +5,10 @@
  * so the browser downloaded the full-size original (some are several MB) and
  * the column height was unknown until load, causing layout shift.
  *
- * The map is keyed by R2 object key (e.g. "magazines/2025/LMSY-MAG-...webp").
- * Regenerate it with `node scripts/extract-image-dimensions.mjs` after adding
- * new assets. Unknown images fall back to a neutral 2:3 box (the median ratio
+ * The map is keyed by R2 object key (e.g. "lmsy/mag/2025/LMSY-MAG-THER-...webp").
+ * Keys under the legacy "magazines/<year>/" layout are still present; retire
+ * them together with the old objects. Regenerate with
+ * `node scripts/extract-image-dimensions.mjs` after adding new assets. Unknown images fall back to a neutral 2:3 box (the median ratio
  * of the archive).
  */
 

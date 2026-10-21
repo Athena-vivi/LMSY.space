@@ -77,28 +77,49 @@ test('allocateNextCatalogId is scoped to the category prefix', async () => {
 });
 
 test('CATEGORY_TO_CATALOG_PREFIX keeps the existing production mapping', () => {
-  // Guard: these prefixes already exist in real catalog_id data; changing
-  // them would fork the numbering scheme (ADR-001 D5).
+  // Door codes come from the canonical naming spec
+  // (docs/architecture/20261021-asset-naming.md section 3). The previous
+  // STILL/STAGE/DAILY/TRV/AD mapping was a different scheme that produced IDs
+  // no page could read, so it is intentionally gone.
   assert.deepEqual(CATEGORY_TO_CATALOG_PREFIX, {
-    series: 'STILL',
+    drama_work: 'DRAMA',
     editorial: 'MAG',
-    appearance: 'STAGE',
-    daily: 'DAILY',
-    travel: 'TRV',
-    commercial: 'AD',
+    live_event: 'EVENT',
+    public_appearance: 'APPEAR',
+    commercial: 'BRAND',
+    talks: 'TALK',
+    live: 'LIVE',
+    behind_the_scenes: 'BTS',
+    early_archive: 'EARLY',
   });
 });
 
 test('allocated ids satisfy the catalog-id format and round-trip parsing', async () => {
-  const id = await allocateNextCatalogId(mkSupabase('LMSY-MAG-20241023-004'), 'MAG', '2024-10-23');
-  assert.ok(/^LMSY-[A-Z]+-\d{8}-\d{3}$/.test(id));
+  const id = await allocateNextCatalogId(
+    mkSupabase('LMSY-MAG-THER-HEARTBEATFORYOU-20241023-004'),
+    'MAG',
+    '2024-10-23',
+    { subject: 'THER-HEARTBEATFORYOU' }
+  );
+  assert.equal(id, 'LMSY-MAG-THER-HEARTBEATFORYOU-20241023-005');
   const parsed = parseCatalogId(id);
   assert.equal(parsed?.sequence, 5);
+  assert.equal(parsed?.door, 'MAG');
+  assert.equal(parsed?.subject, 'THER-HEARTBEATFORYOU');
 });
 
-test('generateCatalogId keeps the standard format (cover = 000)', () => {
-  assert.equal(generateCatalogId({ category: 'MAG', eventDate: '2024-10-23', sequence: 0 }), 'LMSY-MAG-20241023-000');
-  assert.equal(generateCatalogId({ category: 'G', eventDate: '2024-10-23', sequence: 1 }), 'LMSY-G-20241023-001');
+test('buildCatalogId produces the canonical shape and omits empty segments', () => {
+  assert.equal(
+    generateCatalogId({ person: 'LMSY', door: 'MAG', subject: 'THER-HEARTBEATFORYOU', date: '2024-10-23', sequence: 1 }),
+    'LMSY-MAG-THER-HEARTBEATFORYOU-20241023-001'
+  );
+  // Date unknown -> the whole segment is dropped, never a placeholder.
+  assert.equal(
+    generateCatalogId({ person: 'LM', door: 'MAG', subject: 'OAT', sequence: 12 }),
+    'LM-MAG-OAT-012'
+  );
+  // There is no -000 cover: sequence 001 is the first file of a batch.
+  assert.equal(parseCatalogId('LMSY-MAG-20241023-000'), null);
 });
 
 // ---------------------------------------------------------------------------

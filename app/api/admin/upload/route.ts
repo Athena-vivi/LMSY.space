@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-client';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
-import { getR2PathForCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS, allocateNextCatalogId as allocateSharedCatalogId, CATEGORY_TO_CATALOG_PREFIX } from '@/lib/catalog-id';
+import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS, allocateNextCatalogId as allocateSharedCatalogId, CATEGORY_TO_DOOR_CODE } from '@/lib/catalog-id';
 import { getAdminEmail } from '@/lib/security/api-auth';
 import { validateUploadFile } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
@@ -79,19 +79,33 @@ export async function POST(request: NextRequest) {
 
   // Map project category to catalog prefix (shared with draft promotion,
   // see lib/catalog-id.ts — ADR-001 D5). Default to 'G' if no project.
-  const categoryPrefix = projectCategory && CATEGORY_TO_CATALOG_PREFIX[projectCategory]
-    ? CATEGORY_TO_CATALOG_PREFIX[projectCategory]
-    : 'G';
+  const categoryPrefix = projectCategory && CATEGORY_TO_DOOR_CODE[projectCategory]
+    ? CATEGORY_TO_DOOR_CODE[projectCategory]
+    : 'MAG';
 
   if (manualCatalogId && manualCatalogId.trim()) {
     catalogId = manualCatalogId.trim();
 
-    const match = catalogId.match(/^LMSY-[A-Z]+-(\d{8})-\d{3}$/);
-    if (match) {
-      const compactDate = match[1];
-      uploadDate = `${compactDate.substring(0, 4)}-${compactDate.substring(4, 6)}-${compactDate.substring(6, 8)}`;
+    // Accept the canonical shape <PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-[<YYYYMMDD>]-<NNN>.
+    // The date segment is optional, so pull it back out of the parsed result
+    // instead of assuming a fixed segment count.
+    if (isValidCatalogId(catalogId)) {
+      const parsed = parseCatalogId(catalogId);
+      if (parsed?.date) {
+        uploadDate = parsed.date;
+      } else {
+        uploadDate = eventDate || new Date().toISOString().split('T')[0];
+      }
     } else {
-      uploadDate = eventDate || new Date().toISOString().split('T')[0];
+      return NextResponse.json(
+        {
+          error: 'Invalid catalog ID format',
+          expected: '<PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>',
+          example: 'LMSY-MAG-THER-HEARTBEATFORYOU-20250801-001',
+          catalogId,
+        },
+        { status: 400 }
+      );
     }
   } else {
     if (eventDate) {

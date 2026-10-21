@@ -1,23 +1,123 @@
 /**
- * Catalog ID generation utilities - Astra 馆长档案标准
+ * Asset catalog ID utilities - LMSY archive naming standard.
  *
- * Format: LMSY-[CATEGORY]-[YYYYMMDD]-[XXX]
+ * CANONICAL SPEC: docs/architecture/20261021-asset-naming.md
+ * Unification tracker: docs/architecture/20261022-naming-unification.md
  *
- * Examples:
- *   - Magazine Cover: LMSY-MAG-20241023-000
- *   - Magazine Page 1: LMSY-MAG-20241023-001
- *   - Magazine Page 2: LMSY-MAG-20241023-002
- *   - Gallery Image: LMSY-G-20241023-001
+ *   <PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>
  *
- * Rules:
- *   - Cover image is always sequence 000
- *   - Additional images start from 001
- *   - Date is extracted from event_date (YYYY-MM-DD format)
- *   - Sequence resets daily (starts from 001 for each new date)
- *   - Timezone-safe: uses local date interpretation
+ *   LMSY-MAG-THER-HEARTBEATFORYOU-20250801-001
+ *   LM-MAG-OAT-20241211-012
+ *   SY-MAG-KAZZ217-YOUTHCHOICE-20260731-001
+ *   LMSY-DRAMA-AFFAIR-PROMO-20240815-003
+ *
+ * Rules (from the spec, do not invent new ones):
+ *   - Uppercase ASCII, single '-' separator. No spaces, dots, underscores.
+ *   - PERSON and DOOR and the trailing NNN are always present; SUBJECT/THEME
+ *     segments vary in count, so the ID is read right-to-left.
+ *   - A missing segment is omitted entirely - never write NA / 0000 placeholders.
+ *   - YYYYMMDD is 8 digits; omitted as a whole when unknown.
+ *   - NNN starts at 001. There is NO -000 cover segment: a cover is a POINTER
+ *     (projects.cover_url / homepage_cover_url) to an existing asset in the
+ *     same batch, never a separate numbered file.
+ *
+ * The old format `LMSY-<CATEGORY>-<YYYYMMDD>-<NNN>` with a -000 cover is dead.
+ * It is still recognised by isLegacyCatalogId() for back-compat only; nothing
+ * in this file produces it any more.
  */
 
-export type CatalogCategory = 'MAG' | 'G' | 'P'; // Magazine, Gallery, Project
+// ---------------------------------------------------------------------------
+// Vocabulary
+// ---------------------------------------------------------------------------
+
+/** First segment: who is in the picture. */
+export const PERSON_CODES = ['LMSY', 'LM', 'SY'] as const;
+export type PersonCode = (typeof PERSON_CODES)[number];
+
+/** Second segment: which door the asset belongs to. */
+export const DOOR_CODES = [
+  'DRAMA',
+  'MAG',
+  'EVENT',
+  'APPEAR',
+  'BRAND',
+  'TALK',
+  'LIVE',
+  'BTS',
+  'EARLY',
+] as const;
+export type DoorCode = (typeof DOOR_CODES)[number];
+
+/** person segment -> R2 directory segment. */
+export const PERSON_DIR: Record<PersonCode, string> = {
+  LMSY: 'lmsy',
+  LM: 'lm',
+  SY: 'sy',
+};
+
+/** door segment -> R2 directory segment. */
+export const DOOR_DIR: Record<DoorCode, string> = {
+  DRAMA: 'drama',
+  MAG: 'mag',
+  EVENT: 'event',
+  APPEAR: 'appear',
+  BRAND: 'brand',
+  TALK: 'talk',
+  LIVE: 'live',
+  BTS: 'bts',
+  EARLY: 'early',
+};
+
+/**
+ * Project category -> door code.
+ * Values come from the canonical spec section 3; the previous mapping
+ * (STILL / MAG / STAGE / DAILY / TRV / AD) was a different, older scheme and
+ * produced IDs that no page could read.
+ */
+export const CATEGORY_TO_DOOR_CODE: Record<string, DoorCode> = {
+  drama_work: 'DRAMA',
+  editorial: 'MAG',
+  live_event: 'EVENT',
+  public_appearance: 'APPEAR',
+  commercial: 'BRAND',
+  talks: 'TALK',
+  live: 'LIVE',
+  behind_the_scenes: 'BTS',
+  early_archive: 'EARLY',
+};
+
+/**
+ * Kept as an alias so existing imports keep compiling. Prefer
+ * CATEGORY_TO_DOOR_CODE in new code - it now returns a door code, not a prefix.
+ */
+export const CATEGORY_TO_CATALOG_PREFIX = CATEGORY_TO_DOOR_CODE;
+
+// ---------------------------------------------------------------------------
+// Shape
+// ---------------------------------------------------------------------------
+
+const SEG = '[A-Z0-9]+(?:-[A-Z0-9]+)*';
+const ID_WITH_DATE = new RegExp(`^(LMSY|LM|SY)-(${DOOR_CODES.join('|')})-(${SEG})-(\\d{8})-(\\d{3})$`);
+const ID_NO_DATE = new RegExp(`^(LMSY|LM|SY)-(${DOOR_CODES.join('|')})-(${SEG})-(\\d{3})$`);
+
+export interface ParsedCatalogId {
+  person: PersonCode;
+  door: DoorCode;
+  /** SUBJECT plus optional THEME, e.g. "KAZZ217-YOUTHCHOICE". */
+  subject: string;
+  /** YYYY-MM-DD, or null when the date segment was omitted. */
+  date: string | null;
+  sequence: number;
+}
+
+export interface CatalogIdParts {
+  person: PersonCode;
+  door: DoorCode;
+  subject: string;
+  /** YYYY-MM-DD or YYYYMMDD; omit entirely when unknown. */
+  date?: string | null;
+  sequence: number;
+}
 
 /**
  * Minimal structural type for the Supabase client used by these helpers.
@@ -27,257 +127,206 @@ export type CatalogCategory = 'MAG' | 'G' | 'P'; // Magazine, Gallery, Project
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type CatalogIdClient = any;
 
-export interface CatalogIdOptions {
-  category: CatalogCategory;
-  eventDate: string; // YYYY-MM-DD format (local date)
-  sequence?: number; // 000 for cover, 001+ for other images
-}
+// ---------------------------------------------------------------------------
+// Date helpers
+// ---------------------------------------------------------------------------
 
-export interface ParsedCatalogId {
-  prefix: string;
-  category: CatalogCategory;
-  date: string; // YYYY-MM-DD
-  sequence: number; // 0-999
-  isCover: boolean;
-}
-
-/**
- * Convert YYYY-MM-DD to YYYYMMDD format
- * Timezone-safe: uses local date interpretation
- */
+/** YYYY-MM-DD -> YYYYMMDD. Timezone-safe (string split, no Date parsing). */
 export function formatDateToCompact(dateString: string): string {
-  // Remove hyphens: 2024-10-23 → 20241023
   const parts = dateString.split('-');
   if (parts.length !== 3) {
     throw new Error(`Invalid date format: ${dateString}. Expected YYYY-MM-DD`);
   }
-
   const [year, month, day] = parts;
   if (year.length !== 4 || month.length !== 2 || day.length !== 2) {
     throw new Error(`Invalid date components: ${dateString}. Expected YYYY-MM-DD`);
   }
-
-  return `${year}${month}${day}`; // Returns: 20241023
+  return `${year}${month}${day}`;
 }
 
-/**
- * Convert YYYYMMDD to YYYY-MM-DD format
- */
+/** YYYYMMDD -> YYYY-MM-DD. */
 export function formatCompactToDate(compactDate: string): string {
   if (compactDate.length !== 8) {
     throw new Error(`Invalid compact date format: ${compactDate}. Expected YYYYMMDD`);
   }
-
-  const year = compactDate.substring(0, 4);
-  const month = compactDate.substring(4, 6);
-  const day = compactDate.substring(6, 8);
-
-  return `${year}-${month}-${day}`;
+  return `${compactDate.substring(0, 4)}-${compactDate.substring(4, 6)}-${compactDate.substring(6, 8)}`;
 }
 
+// ---------------------------------------------------------------------------
+// Parse / build / validate
+// ---------------------------------------------------------------------------
+
 /**
- * Parse a catalog ID into its components
- * @param catalogId - Catalog ID string (e.g., "LMSY-MAG-20241023-000")
- * @returns Parsed components or null if invalid
+ * Parse an asset catalog ID. Returns null when it does not match the spec.
+ * Tries the dated shape first, then the date-less shape.
  */
 export function parseCatalogId(catalogId: string): ParsedCatalogId | null {
-  // Match new format: LMSY-XXX-YYYYMMDD-NNN
-  const match = catalogId.match(/^LMSY-([A-Z]+)-(\d{8})-(\d{3})$/);
-  if (!match) return null;
-
-  const category = match[1] as CatalogCategory;
-  const compactDate = match[2];
-  const sequence = parseInt(match[3], 10);
-
-  try {
-    const dateStr = formatCompactToDate(compactDate);
-
+  const full = ID_WITH_DATE.exec(catalogId);
+  if (full) {
+    const sequence = parseInt(full[5], 10);
+    // Sequence starts at 001; -000 was the old "cover" segment and is dead.
+    if (sequence < 1) return null;
     return {
-      prefix: 'LMSY',
-      category,
-      date: dateStr,
+      person: full[1] as PersonCode,
+      door: full[2] as DoorCode,
+      subject: full[3],
+      date: formatCompactToDate(full[4]),
       sequence,
-      isCover: sequence === 0,
     };
-  } catch {
-    return null;
   }
+
+  const short = ID_NO_DATE.exec(catalogId);
+  if (short) {
+    const sequence = parseInt(short[4], 10);
+    if (sequence < 1) return null;
+    return {
+      person: short[1] as PersonCode,
+      door: short[2] as DoorCode,
+      subject: short[3],
+      date: null,
+      sequence,
+    };
+  }
+
+  return null;
+}
+
+/** True when the ID matches the canonical spec (dated or date-less). */
+export function isValidCatalogId(catalogId: string): boolean {
+  return parseCatalogId(catalogId) !== null;
 }
 
 /**
- * Generate a catalog ID with the specified components
- * @param options - Catalog ID options
- * @returns Formatted catalog ID string
+ * Build an ID from parts. A missing subject or date is omitted entirely -
+ * never replaced with a placeholder.
  */
-export function generateCatalogId(options: CatalogIdOptions): string {
-  const compactDate = formatDateToCompact(options.eventDate);
-  const sequence = options.sequence !== undefined ? options.sequence : 0;
-  const paddedSequence = sequence.toString().padStart(3, '0');
-
-  return `LMSY-${options.category}-${compactDate}-${paddedSequence}`;
+export function buildCatalogId(parts: CatalogIdParts): string {
+  const sequence = String(parts.sequence).padStart(3, '0');
+  const head = `${parts.person}-${parts.door}-${parts.subject}`;
+  if (!parts.date) return `${head}-${sequence}`;
+  const compact = parts.date.includes('-') ? formatDateToCompact(parts.date) : parts.date;
+  return `${head}-${compact}-${sequence}`;
 }
 
 /**
- * Get the next sequence number for a given category and date
- * This queries the database to find the highest existing sequence number for the specific date
- * @param supabase - Supabase admin client
- * @param category - Catalog category
- * @param eventDate - Event date in YYYY-MM-DD format
- * @param tableName - Table to query (default: 'gallery')
- * @returns Next sequence number (starts from 0 for cover, or increments from existing)
+ * Alias kept for older call sites. Produces the canonical shape; note there is
+ * no cover sequence any more - sequence 001 is the first file of a batch.
  */
-export async function getNextCatalogSequence(
+export function generateCatalogId(parts: CatalogIdParts): string {
+  return buildCatalogId(parts);
+}
+
+/** R2 object key for an asset: <person>/<door>/<year>/<id>.webp */
+export function r2KeyForCatalogId(catalogId: string): string {
+  const parsed = parseCatalogId(catalogId);
+  if (!parsed) {
+    throw new Error(
+      `Invalid catalog ID: ${catalogId}. Expected <PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>`
+    );
+  }
+  const year = parsed.date ? parsed.date.substring(0, 4) : 'unknown';
+  return `${PERSON_DIR[parsed.person]}/${DOOR_DIR[parsed.door]}/${year}/${catalogId}.webp`;
+}
+
+/**
+ * R2 storage path for an asset.
+ * Kept under the historical name so existing call sites keep working; the
+ * layout is now <person>/<door>/<year>/ instead of magazines/<year>/.
+ */
+export function getR2PathForCatalogId(catalogId: string): string {
+  return r2KeyForCatalogId(catalogId);
+}
+
+// ---------------------------------------------------------------------------
+// Allocation
+// ---------------------------------------------------------------------------
+
+/**
+ * Highest existing sequence + 1 for a given prefix, starting at 001.
+ * Not atomic by itself - the unique index on gallery_assets.catalog_id is the
+ * final authority; callers must treat a 23505 conflict as retryable.
+ */
+export async function allocateNextCatalogId(
   supabase: CatalogIdClient,
-  category: CatalogCategory,
+  doorCode: string,
   eventDate: string,
-  tableName: string = 'gallery'
-): Promise<number> {
+  options: { person?: PersonCode; subject?: string; tableName?: string } = {}
+): Promise<string> {
+  const person = options.person ?? 'LMSY';
+  const subject = options.subject;
+  const tableName = options.tableName ?? 'gallery_assets';
   const compactDate = formatDateToCompact(eventDate);
-  const prefix = `LMSY-${category}-${compactDate}`;
 
-  // Query for the highest sequence number for this category and date
+  const head = subject
+    ? `${person}-${doorCode}-${subject}-${compactDate}`
+    : `${person}-${doorCode}-${compactDate}`;
+
   const { data, error } = await supabase
+    .schema('lmsy_archive')
     .from(tableName)
     .select('catalog_id')
-    .like('catalog_id', `${prefix}-%`)
+    .like('catalog_id', `${head}-%`)
     .order('catalog_id', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (error || !data?.catalog_id) {
-    // No existing entries for this date, start from 0 (cover)
-    return 0;
+  let nextSequence = 1;
+  if (!error && data?.catalog_id) {
+    const match = /-(\d{3})$/.exec(data.catalog_id);
+    if (match) nextSequence = parseInt(match[1], 10) + 1;
   }
 
-  // Parse the highest catalog ID and increment
-  const parsed = parseCatalogId(data.catalog_id);
-  if (!parsed) {
-    return 0;
-  }
-
-  return parsed.sequence + 1;
+  return `${head}-${String(nextSequence).padStart(3, '0')}`;
 }
 
 /**
- * Generate the next catalog ID for a magazine cover
- * Cover is always sequence 000
- * @param supabase - Supabase admin client
- * @param eventDate - Event date in YYYY-MM-DD format
- * @returns New catalog ID for cover (sequence 000)
- */
-export async function generateMagazineCoverCatalogId(
-  supabase: CatalogIdClient,
-  eventDate: string
-): Promise<string> {
-  // Cover is always 000, no need to query
-  return generateCatalogId({
-    category: 'MAG',
-    eventDate,
-    sequence: 0,
-  });
-}
-
-/**
- * Generate the next catalog ID for a magazine page
- * Automatically finds the next available sequence number
- * @param supabase - Supabase admin client
- * @param eventDate - Event date in YYYY-MM-DD format
- * @returns New catalog ID for page (sequence 001+)
+ * Allocate an ID for a magazine page. Sequence starts at 001 - a cover is a
+ * pointer, not a -000 file, so the very first uploaded file of a batch is 001
+ * and the cover_url points at one of these IDs.
  */
 export async function generateMagazinePageCatalogId(
   supabase: CatalogIdClient,
   eventDate: string,
-  tableName: string = 'gallery'
+  tableName: string = 'gallery_assets',
+  options: { person?: PersonCode; subject?: string } = {}
 ): Promise<string> {
-  const nextSequence = await getNextCatalogSequence(supabase, 'MAG', eventDate, tableName);
-
-  // If nextSequence is 0, it means no entries exist yet, start from 001 (cover is separate)
-  // If nextSequence > 0, it means we have entries, use the next number
-  const sequence = nextSequence === 0 ? 1 : nextSequence;
-
-  return generateCatalogId({
-    category: 'MAG',
-    eventDate,
-    sequence,
+  return allocateNextCatalogId(supabase, 'MAG', eventDate, {
+    ...options,
+    tableName,
   });
 }
 
-/**
- * Generate the next catalog ID for a gallery item
- * @param supabase - Supabase admin client
- * @param eventDate - Event date in YYYY-MM-DD format
- * @returns New catalog ID
- */
+/** Allocate an ID for a non-magazine asset. Sequence starts at 001. */
 export async function generateNextGalleryCatalogId(
   supabase: CatalogIdClient,
-  eventDate: string
+  eventDate: string,
+  options: { person?: PersonCode; subject?: string; door?: DoorCode } = {}
 ): Promise<string> {
-  const nextSequence = await getNextCatalogSequence(supabase, 'G', eventDate, 'gallery');
-  const sequence = nextSequence === 0 ? 1 : nextSequence;
-
-  return generateCatalogId({
-    category: 'G',
-    eventDate,
-    sequence,
+  return allocateNextCatalogId(supabase, options.door ?? 'BTS', eventDate, {
+    person: options.person,
+    subject: options.subject,
   });
 }
 
-/**
- * Validate a catalog ID format
- * @param catalogId - Catalog ID string to validate
- * @returns True if valid format
- */
-export function isValidCatalogId(catalogId: string): boolean {
-  return /^LMSY-[A-Z]+-\d{8}-\d{3}$/.test(catalogId);
-}
-
-/**
- * Check if a catalog ID represents a cover image
- * @param catalogId - Catalog ID string
- * @returns True if cover (sequence 000)
- */
-export function isCoverCatalogId(catalogId: string): boolean {
-  const parsed = parseCatalogId(catalogId);
-  return parsed?.isCover ?? false;
-}
-
-/**
- * Get R2 storage path for a magazine image
- * @param catalogId - Catalog ID string
- * @returns R2 path (e.g., "magazines/2024/LMSY-MAG-20241023-000.webp")
- */
-export function getR2PathForCatalogId(catalogId: string): string {
-  const parsed = parseCatalogId(catalogId);
-  if (!parsed) {
-    throw new Error(`Invalid catalog ID: ${catalogId}`);
-  }
-
-  const year = parsed.date.substring(0, 4); // Extract year from YYYY-MM-DD
-  return `magazines/${year}/${catalogId}.webp`;
-}
-
-/**
- * Legacy format support (for backward compatibility)
- * Old format: LMSY-G-2024-001
- * New format: LMSY-G-20241023-001
- */
+// ---------------------------------------------------------------------------
+// Legacy (old format, recognised but never produced)
+// ---------------------------------------------------------------------------
 
 export interface LegacyParsedCatalogId {
   prefix: string;
-  type: string; // G, P, ED, etc.
+  type: string;
   year: number;
   sequence: number;
 }
 
-/**
- * Parse legacy catalog ID format
- * @param catalogId - Legacy catalog ID string (e.g., "LMSY-G-2024-001")
- * @returns Parsed components or null if invalid
- */
-export function parseLegacyCatalogId(catalogId: string): LegacyParsedCatalogId | null {
-  const match = catalogId.match(/^LMSY-([A-Z]+)-(\d{4})-(\d{3})$/);
-  if (!match) return null;
+/** Old shape LMSY-<CATEGORY>-<YYYYMMDD>-<NNN> (and the even older 4-digit year form). */
+export function isLegacyCatalogId(catalogId: string): boolean {
+  return /^LMSY-[A-Z]+-\d{8}-\d{3}$/.test(catalogId) || /^LMSY-[A-Z]+-\d{4}-\d{3}$/.test(catalogId);
+}
 
+export function parseLegacyCatalogId(catalogId: string): LegacyParsedCatalogId | null {
+  const match = /^LMSY-([A-Z]+)-(\d{4})-(\d{3})$/.exec(catalogId);
+  if (!match) return null;
   return {
     prefix: 'LMSY',
     type: match[1],
@@ -286,86 +335,9 @@ export function parseLegacyCatalogId(catalogId: string): LegacyParsedCatalogId |
   };
 }
 
-/**
- * Check if a catalog ID is in legacy format
- */
-export function isLegacyCatalogId(catalogId: string): boolean {
-  return /^LMSY-[A-Z]+-\d{4}-\d{3}$/.test(catalogId);
-}
-
-// ============================================================================
-// Concurrent allocation support (phase 1 hardening)
-// ============================================================================
-// Catalog IDs are allocated with a read-max-then-add-one query, which is not
-// atomic: two uploads of the same category and date can pick the same sequence.
-// A partial unique index on catalog_id (see
-// supabase/migrations/20261015_phase1_data_integrity.sql) makes the database
-// the final authority; callers must treat the resulting conflict as retryable
-// instead of a hard failure.
-// ============================================================================
-
-// ============================================================================
-// Shared allocation used by BOTH manual upload and draft promotion
-// (phase 2 content-model refactor, ADR-001 D5)
-// ============================================================================
-// Previously this read-max-then-add-one logic lived inline in
-// app/api/admin/upload/route.ts only, so assets promoted from draft_items
-// never received a catalog_id. The logic below is extracted verbatim from
-// that verified implementation so both write paths share one code path.
-// Uniqueness is ultimately enforced by the database (unique indexes on
-// gallery_assets.catalog_id); callers must treat a 23505 conflict as
-// retryable (see isCatalogIdConflict + CATALOG_ID_MAX_ATTEMPTS).
-
-/**
- * Project category -> catalog prefix mapping shared by manual upload and
- * draft promotion. Values are the existing production mapping (AD / STAGE /
- * STILL / DAILY / TRV prefixes already occur in real data); do not change
- * them without a data-model decision.
- */
-export const CATEGORY_TO_CATALOG_PREFIX: Record<string, string> = {
-  series: 'STILL',      // TV/Drama
-  editorial: 'MAG',     // Magazine
-  appearance: 'STAGE',  // Event/Stage
-  daily: 'DAILY',       // Daily (日常)
-  travel: 'TRV',        // Travel (旅途)
-  commercial: 'AD',     // Ad/Brand
-};
-
-/**
- * Allocate the next catalog_id for a category prefix and date.
- * Mirrors the manual-upload logic exactly: highest existing sequence + 1,
- * starting at 001 when no entry exists for that prefix/date.
- * Not atomic by itself — the unique index on catalog_id is the final
- * authority; retry on conflict via isCatalogIdConflict.
- */
-export async function allocateNextCatalogId(
-  supabase: CatalogIdClient,
-  categoryPrefix: string,
-  eventDate: string,
-  tableName: string = 'gallery_assets'
-): Promise<string> {
-  const compactDate = formatDateToCompact(eventDate);
-  const prefix = `LMSY-${categoryPrefix}-${compactDate}`;
-
-  const { data, error } = await supabase
-    .schema('lmsy_archive')
-    .from(tableName)
-    .select('catalog_id')
-    .like('catalog_id', `${prefix}-%`)
-    .order('catalog_id', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextSequence = 1;
-  if (!error && data?.catalog_id) {
-    const match = data.catalog_id.match(/-(\d{3})$/);
-    if (match) {
-      nextSequence = parseInt(match[1], 10) + 1;
-    }
-  }
-
-  return `LMSY-${categoryPrefix}-${compactDate}-${String(nextSequence).padStart(3, '0')}`;
-}
+// ---------------------------------------------------------------------------
+// Conflict detection (unchanged)
+// ---------------------------------------------------------------------------
 
 /** How many times a caller should re-allocate an id before giving up. */
 export const CATALOG_ID_MAX_ATTEMPTS = 5;

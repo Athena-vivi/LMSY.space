@@ -6,6 +6,26 @@ import { generateBlurData } from '@/lib/image-processing';
 import { getAdminEmail } from '@/lib/security/api-auth';
 
 /**
+ * R2 prefixes that hold archive assets.
+ * Canonical layout is <person>/<door>/<year>/ (naming spec section 7);
+ * 'magazines/' is the legacy layout kept until the old objects are retired.
+ * Scanning only one of them used to report every file in the other as orphaned.
+ */
+const ASSET_R2_PREFIXES = ['lmsy/', 'lm/', 'sy/', 'magazines/'];
+
+async function listAllAssetObjects() {
+  const merged = new Map<string, { key: string; size: number; lastModified: Date; etag: string }>();
+  for (const prefix of ASSET_R2_PREFIXES) {
+    const result = await listR2Objects(prefix);
+    if (!result.success || !result.objects) {
+      return { success: false as const, error: `${prefix}: ${result.error}` };
+    }
+    for (const obj of result.objects) merged.set(obj.key, obj);
+  }
+  return { success: true as const, objects: [...merged.values()] };
+}
+
+/**
  * Manual Reconciliation API
  *
  * POST /api/admin/reconcile - Scan R2 and backfill missing database records
@@ -73,8 +93,8 @@ export async function POST(request: NextRequest) {
 
     console.log('[RECONCILE] Found', existingCatalogIds.size, 'existing records in database');
 
-    // Step 2: List all objects in R2 under magazines/ path
-    const r2ListResult = await listR2Objects('magazines/');
+    // Step 2: List all archive objects (canonical + legacy directories)
+    const r2ListResult = await listAllAssetObjects();
 
     if (!r2ListResult.success || !r2ListResult.objects) {
       console.error('[RECONCILE] ❌ Failed to list R2 objects:', r2ListResult.error);
@@ -251,8 +271,8 @@ export async function GET(request: NextRequest) {
       (existingRecords || []).map(r => r.catalog_id)
     );
 
-    // List R2 objects
-    const r2ListResult = await listR2Objects('magazines/');
+    // List R2 objects (canonical + legacy directories)
+    const r2ListResult = await listAllAssetObjects();
 
     if (!r2ListResult.success || !r2ListResult.objects) {
       return NextResponse.json(

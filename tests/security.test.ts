@@ -353,8 +353,14 @@ describe('catalog id concurrency', () => {
   });
 
   test('catalog ids follow the documented format', () => {
-    assert.equal(generateCatalogId({ category: 'MAG', eventDate: '2025-01-17', sequence: 0 }), 'LMSY-MAG-20250117-000');
-    assert.equal(generateCatalogId({ category: 'G', eventDate: '2025-01-17', sequence: 14 }), 'LMSY-G-20250117-014');
+    assert.equal(
+      generateCatalogId({ person: 'LMSY', door: 'MAG', subject: 'GAZE-THEDREAMUNFOLDS', date: '2025-01-17', sequence: 1 }),
+      'LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001'
+    );
+    assert.equal(
+      generateCatalogId({ person: 'LMSY', door: 'MAG', subject: 'GAZE-THEDREAMUNFOLDS', date: '2025-01-17', sequence: 14 }),
+      'LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-014'
+    );
   });
 
   test('retry budget is bounded', () => {

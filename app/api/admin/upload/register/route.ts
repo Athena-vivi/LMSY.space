@@ -6,9 +6,12 @@ import { getAdminEmail } from '@/lib/security/api-auth';
 import { validateObjectKey } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
 import { buildManualDraftRecord } from '@/lib/manual-draft';
+import { isValidCatalogId, parseCatalogId } from '@/lib/catalog-id';
 
 // Object-key prefixes this route is allowed to register.
-const ALLOWED_R2_PREFIXES = ['draft/', 'magazines/', 'gallery/'];
+// Canonical layout is <person>/<door>/<year>/ (naming spec section 7);
+// 'magazines/' is the legacy layout, kept until the old objects are retired.
+const ALLOWED_R2_PREFIXES = ['lmsy/', 'lm/', 'sy/', 'draft/', 'magazines/', 'gallery/'];
 
 const r2Client = new S3Client({
   region: 'auto',
@@ -116,15 +119,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const catalogMatch = catalogId.match(/^LMSY-[A-Z]+-(\d{4})(\d{4})-(\d{3})$/);
-    if (!catalogMatch) {
+    if (!isValidCatalogId(catalogId)) {
       return NextResponse.json(
-        { error: 'Invalid catalog ID format', expected: 'LMSY-XXX-YYYYMMDD-###' },
+        {
+          error: 'Invalid catalog ID format',
+          expected: '<PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>',
+          example: 'LMSY-MAG-THER-HEARTBEATFORYOU-20250801-001',
+          catalogId,
+        },
         { status: 400 }
       );
     }
 
-    const catalogYear = catalogMatch[1];
+    const catalogYear = parseCatalogId(catalogId)?.date?.substring(0, 4) ?? null;
     const eventYear = new Date(eventDate).getFullYear().toString();
     if (catalogYear !== eventYear) {
       return NextResponse.json(

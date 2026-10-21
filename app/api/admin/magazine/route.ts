@@ -4,7 +4,6 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { uploadToR2 } from '@/lib/r2-client';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
 import {
-  generateMagazineCoverCatalogId,
   generateMagazinePageCatalogId,
   getR2PathForCatalogId,
 } from '@/lib/catalog-id';
@@ -122,8 +121,9 @@ export async function POST(request: NextRequest) {
 
     console.log('[MAGAZINE] Event date (local):', eventDate);
 
-    // Generate catalog ID for the magazine cover (always sequence 000)
-    const coverCatalogId = await generateMagazineCoverCatalogId(supabaseAdmin, eventDate);
+    // There is no -000 cover segment any more (naming spec section 6.1):
+    // the cover is the first file of the batch and cover_url points at it.
+    const coverCatalogId = await generateMagazinePageCatalogId(supabaseAdmin, eventDate);
     console.log('[MAGAZINE] Generated cover catalog_id:', coverCatalogId);
 
     // Process cover image
@@ -198,7 +198,9 @@ export async function POST(request: NextRequest) {
           const imageBlur = await generateBlurData(image);
 
           // Generate catalog ID for this page (auto-increment sequence)
-          const pageCatalogId = await generateMagazinePageCatalogId(supabaseAdmin, eventDate, 'gallery');
+          // Sequence continues from the cover; gallery_assets is the table the
+          // site actually reads (the old 'gallery' table holds 0 rows).
+          const pageCatalogId = await generateMagazinePageCatalogId(supabaseAdmin, eventDate);
           console.log(`[MAGAZINE] Page ${i + 1} catalog_id: ${pageCatalogId}`);
 
           // Upload to R2 with catalog_id as filename

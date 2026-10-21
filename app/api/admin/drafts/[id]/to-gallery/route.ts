@@ -6,7 +6,7 @@ import { resolveAssetTagFromDraft } from '@/lib/asset-tag';
 import {
   allocateNextCatalogId,
   isCatalogIdConflict,
-  CATEGORY_TO_CATALOG_PREFIX,
+  CATEGORY_TO_DOOR_CODE,
   CATALOG_ID_MAX_ATTEMPTS,
 } from '@/lib/catalog-id';
 import { requireAdmin } from '@/lib/security/api-auth';
@@ -119,7 +119,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    const categoryPrefix = CATEGORY_TO_CATALOG_PREFIX[projectRow.category] || 'G';
+    const categoryPrefix = CATEGORY_TO_DOOR_CODE[projectRow.category] || 'MAG';
     const eventDate =
       typeof draft.event_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(draft.event_date)
         ? draft.event_date
