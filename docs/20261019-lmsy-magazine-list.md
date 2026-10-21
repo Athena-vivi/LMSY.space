@@ -77,10 +77,10 @@
 
 | # | 期 | 库内项目 | `catalog_id` | `release_date` | 图数 |
 |---|---|---|---|---|---|
-| 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SN` | 2026-07-01* | 0 |
+| 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SY` | 2026-07-01* | 0 |
 | 2 | KAZZ 217（Lookmhee） | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ-217-LM` | 2026-07-01* | 0 |
 | 3 | FIVEME 2026 | FIVEME · 2026 | `LMSY-MAG-FIVEME-2026` | 2026-04-01* | 0 |
-| 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SN` | 2025-09-10 | 0 |
+| 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SY` | 2025-09-10 | 0 |
 | 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
 | 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 0 |
 | 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-01 | 0 |

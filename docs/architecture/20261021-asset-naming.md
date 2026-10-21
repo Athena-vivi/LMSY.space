@@ -218,12 +218,12 @@ SY-LIVE-TIKTOK-20250412-001.webp
 | PERLA Lookmhee | `MAG-PERLA-DREAM-LM` | `LM-MAG-PERLA-DREAM-20250910-001` |
 | Affair 宣传 | `DRAMA-AFFAIR-PROMO` | `LMSY-DRAMA-AFFAIR-PROMO-20240815-001` |
 
-单人刊是独立事件，主体位后加 `-LM` / `-SN` 以便两条事件不撞号；双人事件不加。
+单人刊是独立事件，主体位后加 `-LM` / `-SY` 以便两条事件不撞号；双人事件不加。
 
 **关系式**：`文件名 = 人物 + "-" + 事件编号 + ["-" + 日期] + "-" + 序号`。
 `gallery_assets.catalog_id` 存文件名主干（不含扩展名），与 R2 对象名逐字一致。
 
-**一个例外**：事件编号末尾的 `-LM` / `-SN` 只是为了把两条单人事件在数据库里分开，人物段已经表达了是谁，
+**一个例外**：事件编号末尾的 `-LM` / `-SY` 只是为了把两条单人事件在数据库里分开，人物段已经表达了是谁，
 所以**文件名里不重复这一段**：事件 `MAG-PERLA-DREAM-LM` 的页是 `LM-MAG-PERLA-DREAM-20250910-001.webp`。
 只有同一刊物确实出了两人两个版本时才加这个后缀（PERLA、KAZZ 217）；OAT 只有单人版，事件编号就是 `MAG-OAT`。
 
