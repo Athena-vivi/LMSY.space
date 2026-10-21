@@ -81,7 +81,7 @@ async function main() {
     const blur = await generateBlurData(raw).catch(() => null);
 
     const up = await uploadToR2(processed.buffer, r2Path, 'image/webp');
-    if (!up.success) throw new Error(`R2 upload failed for ${r2Path}: ${up.error}`);
+    if (!up.success || !up.url) throw new Error(`R2 upload failed for ${r2Path}: ${up.error ?? 'no url returned'}`);
 
     const caption = img.caption ?? `${spec.project_title} p.${n}`;
     const insert: Record<string, unknown> = {
