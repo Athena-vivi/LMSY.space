@@ -81,6 +81,8 @@
 | 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SY` | 2026-07-31 | 8 |
 | 2 | KAZZ 217（Lookmhee） | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ-217-LM` | 2026-07-31 | 8 |
 | 4 | PERLA（Sonya） | PERLA · 浪漫之诗 (Sonya) | `SY-MAG-PERLA-DREAM-20250914` | 2025-09-14（官方微博首发日） | 13 |
+
+> 地址：`/editorial/perla-romantic-poem-sonya`（旧地址 `perla-dream-sonya` 已作废，全站零重定向）
 | 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
 | 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 24 |
 | 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-28（开卖日，官方 X 8/28 公布封面并开放预售；拍摄日 2025-08-11；10 月发货） | 28 |
