@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('project_id');
+    const projectIds = searchParams.get('project_ids');
 
     // Build query
     let query = supabaseAdmin
@@ -45,6 +46,16 @@ export async function GET(request: NextRequest) {
     // Filter by project_id if provided (for curation view)
     if (projectId) {
       query = query.eq('project_id', projectId);
+    }
+
+    // A shelf or a door holds several batches; the picker needs them in one
+    // read rather than one request per event.
+    if (projectIds) {
+      const ids = projectIds
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (ids.length > 0) query = query.in('project_id', ids);
     }
 
     const { data, error } = await query;

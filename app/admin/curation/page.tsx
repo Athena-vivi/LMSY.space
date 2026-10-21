@@ -1,0 +1,598 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ChevronRight, ExternalLink, ImagePlus, Images, Loader2, Star, X } from 'lucide-react';
+import { useAdminHeaders } from '@/app/admin/gallery/hooks/use-admin-headers';
+import { VaultImagePicker } from '@/app/admin/gallery/components/vault-image-picker';
+import { getCdnUrl } from '@/app/admin/gallery/utils';
+import { useAdminLang } from '@/lib/admin-i18n';
+import { t as translate, type Language } from '@/lib/languages';
+import type { GalleryItem } from '@/lib/supabase';
+import type { CurationDoor, CurationEvent, CurationShelf } from '@/lib/curation';
+
+/**
+ * /admin/curation - 门 -> 分类 -> 事件，一棵树
+ *
+ * The three cover levels used to live on three screens: the five homepage doors
+ * in Asset Vault, the two soul-resonance halls next to them, an event's cover
+ * on its own curation page. Nothing showed the archive the way a visitor walks
+ * it, so a curator could not answer "which shelf still has no picture".
+ *
+ * This page is the archive's own shape. Picking a node shows the cover it
+ * currently shows, whether that cover is pinned or derived, and the one button
+ * that changes it. The write goes to whichever column owns that level:
+ *   door      portal_slot / interview_slot
+ *   category  category_slot (keyed by path)
+ *   event     projects.cover_url
+ */
+
+type NodeRef =
+  | { kind: 'door'; doorKey: string }
+  | { kind: 'shelf'; doorKey: string; shelfKey: string }
+  | { kind: 'event'; doorKey: string; shelfKey: string | null; eventId: string };
+
+interface Panel {
+  title: string;
+  subtitle: string;
+  cover: string | null;
+  pinned: boolean;
+  /** empty-state hint when the node cannot hold a cover */
+  canHoldCover: boolean;
+  galleryHref: string | null;
+  eventCount: number;
+  size: string;
+}
+
+export default function CurationPage() {
+  const { lang } = useAdminLang();
+  const authHeaders = useAdminHeaders();
+
+  const [doors, setDoors] = useState<CurationDoor[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<NodeRef | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerImages, setPickerImages] = useState<GalleryItem[] | null>(null);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  /** id of the row that currently holds the slot, needed to clear it */
+  const [currentAssetId, setCurrentAssetId] = useState<string>('');
+
+  const language = lang as Language;
+
+  const load = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/curation', {
+        headers: await authHeaders(),
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      setDoors(payload.data ?? []);
+      setSelected((current) => current ?? { kind: 'door', doorKey: payload.data?.[0]?.key ?? '' });
+    } catch (err) {
+      console.error('[CURATION] load failed', err);
+      setError('加载失败，请刷新');
+    }
+  }, [authHeaders]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const door = useMemo(
+    () => (selected ? doors?.find((item) => item.key === selected.doorKey) ?? null : null),
+    [doors, selected]
+  );
+
+  const shelf = useMemo(() => {
+    if (!door || !selected || selected.kind === 'door') return null;
+    if (selected.kind === 'shelf') {
+      return door.shelves.find((item) => item.key === selected.shelfKey) ?? null;
+    }
+    return selected.shelfKey
+      ? door.shelves.find((item) => item.key === selected.shelfKey) ?? null
+      : null;
+  }, [door, selected]);
+
+  const event = useMemo(() => {
+    if (!door || !selected || selected.kind !== 'event') return null;
+    if (shelf) return shelf.events.find((item) => item.id === selected.eventId) ?? null;
+    return door.events.find((item) => item.id === selected.eventId) ?? null;
+  }, [door, selected, shelf]);
+
+  const shelfTitle = shelf ? (shelf.labelKey ? translate(language, shelf.labelKey) : shelf.label) : null;
+
+  const panel: Panel | null = useMemo(() => {
+    if (!door || !selected) return null;
+
+    if (selected.kind === 'event' && event) {
+      return {
+        title: event.title,
+        subtitle: [translate(language, door.labelKey), shelfTitle].filter(Boolean).join(' · '),
+        cover: event.cover,
+        pinned: event.pinned,
+        canHoldCover: true,
+        galleryHref: event.galleryHref,
+        eventCount: event.imageCount,
+        size: 'aspect-[3/2]',
+      };
+    }
+
+    if (selected.kind === 'shelf' && shelf) {
+      return {
+        title: shelfTitle ?? shelf.label,
+        subtitle: shelf.path ?? '剧集',
+        cover: shelf.cover,
+        pinned: shelf.pinned,
+        canHoldCover: Boolean(shelf.path),
+        galleryHref: null,
+        eventCount: shelf.count,
+        size: 'aspect-[4/5]',
+      };
+    }
+
+    return {
+      title: translate(language, door.labelKey),
+      subtitle: door.href,
+      cover: door.cover,
+      pinned: door.pinned,
+      canHoldCover: true,
+      galleryHref: null,
+      eventCount: door.events.length + door.shelves.reduce((sum, item) => sum + item.count, 0),
+      size: door.key === 'talks' || door.key === 'live_stream' ? 'aspect-[16/9]' : 'aspect-[4/5]',
+    };
+  }, [door, event, language, selected, shelf]);
+
+  const projectIdsForPicker = useMemo(() => {
+    if (!door || !selected) return [];
+    if (selected.kind === 'event' && event) return [event.id];
+    if (selected.kind === 'shelf' && shelf) return shelf.events.map((item) => item.id);
+    return [
+      ...door.events.map((item) => item.id),
+      ...door.shelves.flatMap((item) => item.events.map((entry) => entry.id)),
+    ];
+  }, [door, event, selected, shelf]);
+
+  const openPicker = async (all = showAll) => {
+    setPickerOpen(true);
+    setPickerImages(null);
+    setPickerLoading(true);
+    try {
+      const query = all
+        ? ''
+        : projectIdsForPicker.length
+          ? `?project_ids=${projectIdsForPicker.join(',')}`
+          : '';
+      const response = await fetch(`/api/admin/gallery${query}`, {
+        headers: await authHeaders(),
+        credentials: 'include',
+      });
+      const payload = await response.json();
+      setPickerImages((payload.data ?? []) as GalleryItem[]);
+    } catch (err) {
+      console.error('[CURATION] picker failed', err);
+      setPickerImages([]);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const writeSlot = async (
+    body: Record<string, unknown>,
+    method: 'PATCH' | 'DELETE',
+    url: string
+  ) => {
+    setBusy(true);
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: await authHeaders(),
+        credentials: 'include',
+        body: method === 'DELETE' ? undefined : JSON.stringify(body),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || `HTTP ${response.status}`);
+      }
+      setNote('已保存');
+      setTimeout(() => setNote(null), 2500);
+      setPickerOpen(false);
+      await load();
+    } catch (err) {
+      console.error('[CURATION] write failed', err);
+      setNote('保存失败');
+      setTimeout(() => setNote(null), 3000);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveCover = async (item: GalleryItem | null) => {
+    if (!door || !selected) return;
+
+    if (selected.kind === 'event' && event) {
+      if (!item) {
+        await writeSlot({}, 'DELETE', `/api/admin/projects/${event.id}/cover`);
+        return;
+      }
+      await writeSlot({ imageId: item.id }, 'PATCH', `/api/admin/projects/${event.id}/cover`);
+      return;
+    }
+
+    if (selected.kind === 'shelf' && shelf) {
+      if (shelf.path) {
+        await writeSlot(
+          { imageId: item?.id ?? currentAssetId, categoryPath: item ? shelf.path : null },
+          'PATCH',
+          '/api/admin/gallery/portal'
+        );
+        return;
+      }
+      // A series is a project row: its cover is its own cover_url.
+      if (!item) {
+        await writeSlot({}, 'DELETE', `/api/admin/projects/${shelf.key}/cover`);
+        return;
+      }
+      await writeSlot({ imageId: item.id }, 'PATCH', `/api/admin/projects/${shelf.key}/cover`);
+      return;
+    }
+
+    const slot = door.coverSlot;
+    if (!slot) return;
+    const body =
+      slot.kind === 'portal'
+        ? { imageId: item?.id ?? currentAssetId, category: item ? slot.value : null }
+        : { imageId: item?.id ?? currentAssetId, interview: item ? slot.value : null };
+    await writeSlot(body, 'PATCH', '/api/admin/gallery/portal');
+  };
+
+  // The portal route needs the id of the row that currently holds the slot even
+  // when clearing; the tree carries URLs, so resolve the id against the slot
+  // list once per selection.
+  useEffect(() => {
+    if (!panel?.cover) {
+      setCurrentAssetId('');
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch('/api/admin/gallery/portal', {
+          headers: await authHeaders(),
+          credentials: 'include',
+        });
+        const payload = await response.json();
+        const all = [
+          ...(payload?.data?.portals ?? []).map((row: { id: string; imageUrl: string }) => ({
+            id: row.id,
+            url: row.imageUrl,
+          })),
+          ...(payload?.data?.interviews ?? []).map((row: { id: string; imageUrl: string }) => ({
+            id: row.id,
+            url: row.imageUrl,
+          })),
+          ...(payload?.data?.categories ?? []).map((row: { id: string; imageUrl: string }) => ({
+            id: row.id,
+            url: row.imageUrl,
+          })),
+        ];
+        const match = all.find((row) => getCdnUrl(row.url) === getCdnUrl(panel.cover!));
+        if (!cancelled) setCurrentAssetId(match?.id ?? '');
+      } catch {
+        if (!cancelled) setCurrentAssetId('');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authHeaders, panel?.cover]);
+
+  if (error) {
+    return <div className="p-8 font-mono text-sm text-red-300">{error}</div>;
+  }
+
+  if (!doors) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-5 w-5 animate-spin text-ink-2" />
+      </div>
+    );
+  }
+
+  const toggle = (key: string) =>
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  return (
+    <div className="min-h-screen px-4 py-6 md:px-8">
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-2xl text-ink">策展</h1>
+          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-2">
+            Door → shelf → event
+          </p>
+        </div>
+        <div className="flex items-center gap-3 font-mono text-[11px] text-ink-2">
+          {note && <span className="text-emerald-300/90">{note}</span>}
+          <span>只列前台可见的内容</span>
+        </div>
+      </header>
+
+      <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <nav className="rounded-lg border border-white/10 bg-white/[0.02] p-2">
+          {doors.map((item) => {
+            const active = selected?.kind === 'door' && selected.doorKey === item.key;
+            const open = expanded[item.key] ?? false;
+            return (
+              <div key={item.key}>
+                <button
+                  onClick={() => {
+                    setSelected({ kind: 'door', doorKey: item.key });
+                    toggle(item.key);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
+                    active ? 'bg-lmsy-yellow/10 text-lmsy-yellow' : 'text-ink hover:bg-white/5'
+                  }`}
+                >
+                  <ChevronRight
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+                  />
+                  <span className="truncate">{translate(language, item.labelKey)}</span>
+                  <span className="ml-auto font-mono text-[10px] text-ink-2">
+                    {item.events.length + item.shelves.reduce((sum, sub) => sum + sub.count, 0)}
+                  </span>
+                </button>
+
+                {open && (
+                  <div className="ml-4 border-l border-white/10 pl-2">
+                    {item.events.map((entry) => (
+                      <EventRow
+                        key={entry.id}
+                        entry={entry}
+                        active={
+                          selected?.kind === 'event' && selected.eventId === entry.id
+                        }
+                        onSelect={() =>
+                          setSelected({ kind: 'event', doorKey: item.key, shelfKey: null, eventId: entry.id })
+                        }
+                      />
+                    ))}
+
+                    {item.shelves.map((sub) => (
+                      <div key={sub.key}>
+                        <button
+                          onClick={() => {
+                            setSelected({ kind: 'shelf', doorKey: item.key, shelfKey: sub.key });
+                            toggle(`${item.key}:${sub.key}`);
+                          }}
+                          className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] ${
+                            selected?.kind === 'shelf' && selected.shelfKey === sub.key
+                              ? 'bg-lmsy-blue/10 text-lmsy-blue'
+                              : 'text-ink-2 hover:bg-white/5'
+                          }`}
+                        >
+                          <ChevronRight
+                            className={`h-3 w-3 shrink-0 transition-transform ${
+                              expanded[`${item.key}:${sub.key}`] ? 'rotate-90' : ''
+                            }`}
+                          />
+                          <span className="truncate">{sub.label}</span>
+                          <span className="ml-auto font-mono text-[10px] text-ink-2/70">
+                            {sub.count}
+                          </span>
+                        </button>
+
+                        {expanded[`${item.key}:${sub.key}`] && (
+                          <div className="ml-4 border-l border-white/10 pl-2">
+                            {sub.events.length === 0 && (
+                              <p className="px-2 py-1 font-mono text-[10px] text-ink-2/60">
+                                收录中
+                              </p>
+                            )}
+                            {sub.events.map((entry) => (
+                              <EventRow
+                                key={entry.id}
+                                entry={entry}
+                                active={
+                                  selected?.kind === 'event' && selected.eventId === entry.id
+                                }
+                                onSelect={() =>
+                                  setSelected({
+                                    kind: 'event',
+                                    doorKey: item.key,
+                                    shelfKey: sub.key,
+                                    eventId: entry.id,
+                                  })
+                                }
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        <section className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+          {panel ? (
+            <div className="grid gap-5 md:grid-cols-[190px_minmax(0,1fr)]">
+              <div>
+                <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2">
+                  <span>封面</span>
+                  <span>{panel.pinned ? '已指定' : '自动'}</span>
+                </div>
+                <div
+                  className={`relative ${panel.size} overflow-hidden rounded border border-white/10 bg-black/40`}
+                >
+                  {panel.cover ? (
+                    <Image
+                      src={getCdnUrl(panel.cover) ?? panel.cover}
+                      alt={panel.title}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                      sizes="220px"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center px-3 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2/70">
+                      还没有图
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <h2 className="truncate font-serif text-xl text-ink">{panel.title}</h2>
+                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-2">
+                  {panel.subtitle} · {panel.eventCount} 图
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => openPicker()}
+                    disabled={!panel.canHoldCover}
+                    className="inline-flex items-center gap-2 rounded border border-lmsy-yellow/30 bg-lmsy-yellow/10 px-3 py-1.5 text-xs text-lmsy-yellow hover:bg-lmsy-yellow/15 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                    换封面
+                  </button>
+                  {panel.pinned && (
+                    <button
+                      onClick={() => saveCover(null)}
+                      disabled={busy}
+                      className="inline-flex items-center gap-2 rounded border border-white/15 px-3 py-1.5 text-xs text-ink-2 hover:border-red-400/40 hover:text-red-300 disabled:opacity-40"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      恢复自动
+                    </button>
+                  )}
+                  {panel.galleryHref && (
+                    <Link
+                      href={panel.galleryHref}
+                      className="inline-flex items-center gap-2 rounded border border-white/15 px-3 py-1.5 text-xs text-ink-2 hover:border-lmsy-blue/40 hover:text-lmsy-blue"
+                    >
+                      <ImagePlus className="h-3.5 w-3.5" />
+                      补图
+                    </Link>
+                  )}
+                  {selected?.kind === 'door' && door && (
+                    <Link
+                      href={door.href}
+                      target="_blank"
+                      className="inline-flex items-center gap-2 rounded border border-white/15 px-3 py-1.5 text-xs text-ink-2 hover:border-white/30"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      看前台
+                    </Link>
+                  )}
+                </div>
+
+                {!panel.canHoldCover && (
+                  <p className="mt-4 font-mono text-[11px] leading-relaxed text-ink-2/70">
+                    这一类没有可指定的封面，它按「未归类」还是「剧集」走，封面从底下的事件来。
+                  </p>
+                )}
+
+                {selected?.kind === 'shelf' && shelf && shelf.events.length > 0 && (
+                  <div className="mt-5">
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2/70">
+                      子事件 · 新到旧
+                    </p>
+                    <div className="divide-y divide-white/5 rounded border border-white/10">
+                      {shelf.events.map((entry) => (
+                        <EventRow
+                          key={entry.id}
+                          entry={entry}
+                          active={false}
+                          flat
+                          onSelect={() =>
+                            setSelected({
+                              kind: 'event',
+                              doorKey: door!.key,
+                              shelfKey: shelf.key,
+                              eventId: entry.id,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="font-mono text-sm text-ink-2">左边选一个门或事件</p>
+          )}
+        </section>
+      </div>
+
+      <VaultImagePicker
+        key={`${selected?.kind}-${selected?.doorKey}-${pickerOpen ? 'open' : 'closed'}-${showAll}`}
+        open={pickerOpen}
+        title="SET_COVER"
+        subtitle={showAll ? 'ALL_IMAGES' : 'THIS_NODE_ONLY'}
+        images={pickerImages ?? []}
+        currentImageUrl={panel?.cover ?? null}
+        busy={busy || pickerLoading}
+        onPick={(item) => saveCover(item)}
+        onClose={() => setPickerOpen(false)}
+        onClear={panel?.pinned ? () => saveCover(null) : undefined}
+      />
+
+      {pickerOpen && (
+        <div className="fixed bottom-6 left-1/2 z-[60] -translate-x-1/2">
+          <button
+            onClick={() => {
+              const next = !showAll;
+              setShowAll(next);
+              void openPicker(next);
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/80 px-4 py-2 text-xs text-ink-2 backdrop-blur hover:text-ink"
+          >
+            <Images className="h-3.5 w-3.5" />
+            {showAll ? '只看本节点' : '切换：全部图片'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EventRow({
+  entry,
+  active,
+  flat = false,
+  onSelect,
+}: {
+  entry: CurationEvent;
+  active: boolean;
+  flat?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      onClick={onSelect}
+      className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] ${
+        active ? 'bg-white/10 text-ink' : 'text-ink-2 hover:bg-white/5'
+      } ${flat ? 'rounded-none' : ''}`}
+    >
+      <span className="truncate">{entry.title}</span>
+      <span className="ml-auto shrink-0 font-mono text-[10px] text-ink-2/60">
+        {entry.imageCount === 0 ? '0 图' : entry.imageCount}
+        {!entry.pinned && entry.imageCount > 0 ? ' · 自动' : ''}
+      </span>
+      <span className="w-[74px] shrink-0 text-right font-mono text-[10px] text-ink-2/60">
+        {entry.date ?? '无日期'}
+      </span>
+    </button>
+  );
+}

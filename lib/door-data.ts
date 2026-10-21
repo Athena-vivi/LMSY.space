@@ -12,6 +12,7 @@ import {
   type SubtypeDefinition,
 } from '@/lib/category-registry';
 import type { TranslationKey } from '@/lib/languages';
+import { loadCategoryCovers, secondLevelsFor } from '@/lib/cover-slots';
 import type { LocalizedText } from '@/lib/localized-content';
 import type { ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
 
@@ -156,6 +157,15 @@ export function categoryPath(category: ProjectCategory, key: string): string {
 export async function loadDoorCategories(category: ProjectCategory): Promise<DoorCategoryRow[]> {
   const rows = await loadRows([category]);
   const definitions = doorSubtypes(category);
+  const door = categoryHref(category);
+
+  // A shelf's cover can be pinned from the curation page. Pinned wins; the
+  // first covered entry is only the fallback it always was.
+  const pinnedByPath = await loadCategoryCovers(
+    secondLevelsFor(category).map((level) => level.path)
+  );
+  const pinnedCover = (segment: string) =>
+    (door ? pinnedByPath.get(`${door}/${segment}`)?.imageUrl : null) ?? null;
 
   const cards: DoorCategoryRow[] = definitions.map((definition) => {
     const own = rows.filter((row) => row.subtype === definition.value);
@@ -164,7 +174,7 @@ export async function loadDoorCategories(category: ProjectCategory): Promise<Doo
       key: definition.value,
       labelKey: definition.labelKey,
       count: own.length,
-      cover: covered?.cover_url ?? null,
+      cover: pinnedCover(subtypeSegment(definition.value)) ?? covered?.cover_url ?? null,
       latestDate: own.find((row) => Boolean(row.event_date))?.event_date ?? null,
       href: categoryPath(category, subtypeSegment(definition.value)),
     };
@@ -201,15 +211,20 @@ export async function loadGroupCategories(
   categories: readonly ProjectCategory[]
 ): Promise<DoorCategoryRow[]> {
   const rows = await loadRows(categories);
+  const pinnedByPath = await loadCategoryCovers(
+    categories.flatMap((category) => secondLevelsFor(category).map((level) => level.path))
+  );
 
   return categories.map((category) => {
     const own = rows.filter((row) => row.category === category);
     const covered = own.find((row) => Boolean(row.cover_url));
+    const door = categoryHref(category);
+    const pinned = door ? pinnedByPath.get(`${door}/${category}`)?.imageUrl ?? null : null;
     return {
       key: category,
       labelKey: categoryDefinition(category)?.labelKey ?? null,
       count: own.length,
-      cover: covered?.cover_url ?? null,
+      cover: pinned ?? covered?.cover_url ?? null,
       latestDate: own.find((row) => Boolean(row.event_date))?.event_date ?? null,
       href: categoryPath(category, doorCategorySegment(category) ?? category),
     };

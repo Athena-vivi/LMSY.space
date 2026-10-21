@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
 import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
+import { isSecondLevelPath } from '@/lib/cover-slots';
 
 /**
  * Homepage door covers.
@@ -24,9 +25,13 @@ import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
  *
  * PATCH { imageId, category: ProjectCategory | null }   -> portal_slot
  * PATCH { imageId, interview: 'talk' | 'live' | null }  -> interview_slot
+ * PATCH { imageId, categoryPath: '/live-events/fanmeeting' | null } -> category_slot
  *
- * Exactly one of `category` / `interview` must be present. A null value clears
- * the door and it falls back to the derived cover it used before.
+ * Exactly one of `category` / `interview` / `categoryPath` must be present. A
+ * null value clears the slot and the door falls back to the derived cover it
+ * used before. `categoryPath` is the second level of a door (see
+ * lib/cover-slots.ts) - the value is a path so the slot and the visitor's
+ * address are the same string.
  *
  * One row per door: the previous holder is released before the new one is set,
  * so the partial unique index on either column never sees two rows.
@@ -36,7 +41,7 @@ const INTERVIEW_SLOTS = ['talk', 'live'] as const;
 type InterviewSlot = (typeof INTERVIEW_SLOTS)[number];
 
 interface SlotTarget {
-  column: 'portal_slot' | 'interview_slot';
+  column: 'portal_slot' | 'interview_slot' | 'category_slot';
   /** null clears the door */
   value: string | null;
 }
@@ -44,9 +49,20 @@ interface SlotTarget {
 function resolveTarget(body: Record<string, unknown>): SlotTarget | { error: string } {
   const hasCategory = Object.prototype.hasOwnProperty.call(body, 'category');
   const hasInterview = Object.prototype.hasOwnProperty.call(body, 'interview');
+  const hasPath = Object.prototype.hasOwnProperty.call(body, 'categoryPath');
 
-  if (hasCategory === hasInterview) {
-    return { error: 'Exactly one of `category` or `interview` is required' };
+  const present = [hasCategory, hasInterview, hasPath].filter(Boolean).length;
+  if (present !== 1) {
+    return { error: 'Exactly one of `category`, `interview` or `categoryPath` is required' };
+  }
+
+  if (hasPath) {
+    const raw = body.categoryPath;
+    if (raw === null) return { column: 'category_slot', value: null };
+    if (typeof raw !== 'string' || !isSecondLevelPath(raw)) {
+      return { error: 'Invalid categoryPath. Must be the path of a door second level, or null' };
+    }
+    return { column: 'category_slot', value: raw };
   }
 
   if (hasCategory) {
@@ -150,12 +166,13 @@ export async function GET(request: NextRequest) {
 
     // Two queries instead of one OR filter: `not.is.null` inside `.or()` is
     // easy to get wrong, and this runs on an admin page, not a hot path.
-    const [portalResult, interviewResult] = await Promise.all([
+    const [portalResult, interviewResult, categoryResult] = await Promise.all([
       table().select('id, image_url, blur_data, portal_slot').not('portal_slot', 'is', null),
       table().select('id, image_url, blur_data, interview_slot').not('interview_slot', 'is', null),
+      table().select('id, image_url, blur_data, category_slot').not('category_slot', 'is', null),
     ]);
 
-    const error = portalResult.error ?? interviewResult.error;
+    const error = portalResult.error ?? interviewResult.error ?? categoryResult.error;
     if (error) {
       console.error('[HOME_DOOR_API] Failed to fetch slots:', error);
       return apiServerError('admin/gallery/portal GET', error);
@@ -173,6 +190,12 @@ export async function GET(request: NextRequest) {
       blur_data: string | null;
       interview_slot: string | null;
     }>;
+    const categoryRows = (categoryResult.data ?? []) as unknown as Array<{
+      id: string;
+      image_url: string;
+      blur_data: string | null;
+      category_slot: string | null;
+    }>;
 
     return NextResponse.json({
       success: true,
@@ -188,6 +211,12 @@ export async function GET(request: NextRequest) {
           imageUrl: row.image_url,
           blurData: row.blur_data ?? null,
           door: row.interview_slot,
+        })),
+        categories: categoryRows.map((row) => ({
+          id: row.id,
+          imageUrl: row.image_url,
+          blurData: row.blur_data ?? null,
+          path: row.category_slot,
         })),
       },
     });

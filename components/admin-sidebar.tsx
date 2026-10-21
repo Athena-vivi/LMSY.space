@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Inbox,
   Settings,
+  GalleryVerticalEnd,
   type LucideIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,6 +55,7 @@ const navSections: NavSection[] = [
     title: 'nav.projects',
     items: [
       { icon: FolderKanban, label: 'nav.projects', href: '/admin/projects' },
+      { icon: GalleryVerticalEnd, label: 'nav.curation', href: '/admin/curation' },
     ],
   },
   {

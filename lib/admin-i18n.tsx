@@ -14,6 +14,7 @@ const DICT: Record<string, [string, string]> = {
   // --- Sidebar / mobile nav ---
   'nav.workbench': ['项目工作台', 'Workbench'],
   'nav.projects': ['项目管理', 'Projects'],
+  'nav.curation': ['策展', 'Curation'],
   'nav.drafts': ['草稿箱', 'Draft Inbox'],
   'nav.vault': ['图库资产', 'Asset Vault'],
   'nav.batches': ['批次记录', 'Batches'],

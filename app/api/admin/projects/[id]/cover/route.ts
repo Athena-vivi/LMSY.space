@@ -43,7 +43,6 @@ export async function PATCH(
       .from('gallery_assets')
       .select('id, image_url, project_id')
       .eq('id', imageId)
-      .eq('project_id', id)
       .maybeSingle();
 
     if (assetError) {
@@ -55,35 +54,43 @@ export async function PATCH(
 
     if (!asset) {
       return NextResponse.json(
-        { success: false, error: 'Image not found in this project' },
+        { success: false, error: 'Image not found' },
         { status: 404 }
       );
     }
 
-    const { error: clearCoverError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .update({ is_cover: false })
-      .eq('project_id', id);
+    // A cover may point at a page from another batch: a series row owns no
+    // pictures of its own, and an event without photos can borrow one from a
+    // sibling. `is_cover` stays a per-batch flag, so only a picture that really
+    // belongs to this row is marked as its cover.
+    const sameBatch = asset.project_id === id;
 
-    if (clearCoverError) {
-      return NextResponse.json(
-        { success: false, error: clearCoverError.message },
-        { status: 500 }
-      );
-    }
+    if (sameBatch) {
+      const { error: clearCoverError } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery_assets')
+        .update({ is_cover: false })
+        .eq('project_id', id);
 
-    const { error: setAssetError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .update({ is_cover: true })
-      .eq('id', imageId);
+      if (clearCoverError) {
+        return NextResponse.json(
+          { success: false, error: clearCoverError.message },
+          { status: 500 }
+        );
+      }
 
-    if (setAssetError) {
-      return NextResponse.json(
-        { success: false, error: setAssetError.message },
-        { status: 500 }
-      );
+      const { error: setAssetError } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery_assets')
+        .update({ is_cover: true })
+        .eq('id', imageId);
+
+      if (setAssetError) {
+        return NextResponse.json(
+          { success: false, error: setAssetError.message },
+          { status: 500 }
+        );
+      }
     }
 
     const { error: updateProjectError } = await supabaseAdmin
@@ -107,6 +114,71 @@ export async function PATCH(
         cover_url: asset.image_url,
       },
     });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE - drop the chosen cover and go back to the automatic one.
+ *
+ * A cover is a pointer (see docs/architecture/20261021-asset-naming.md §6.1),
+ * so clearing it is one null on the row; no file is touched.
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const authResult = await getAuthenticatedUser(request);
+    if (!authResult.user || authResult.error) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized', details: authResult.error },
+        { status: 401 }
+      );
+    }
+
+    const adminEmail = getAdminEmail();
+    if (authResult.user.email?.toLowerCase() !== adminEmail) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+    const supabaseAdmin = getSupabaseAdmin();
+
+    const { error: clearFlagError } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .update({ is_cover: false })
+      .eq('project_id', id);
+
+    if (clearFlagError) {
+      return NextResponse.json(
+        { success: false, error: clearFlagError.message },
+        { status: 500 }
+      );
+    }
+
+    const { error } = await supabaseAdmin
+      .schema('lmsy_archive')
+      .from('projects')
+      .update({ cover_url: null })
+      .eq('id', id);
+
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data: { projectId: id, cover_url: null } });
   } catch (error) {
     return NextResponse.json(
       {
