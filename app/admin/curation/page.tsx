@@ -125,12 +125,17 @@ export default function CurationPage() {
     }
 
     if (selected.kind === 'shelf' && shelf) {
+      // A series shelf has no path because it is a project row, not a URL
+      // segment - its cover is its own cover_url, so it is still assignable.
+      const isProjectShelf = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        shelf.key
+      );
       return {
         title: shelfTitle ?? shelf.label,
         subtitle: shelf.path ?? '剧集',
         cover: shelf.cover,
         pinned: shelf.pinned,
-        canHoldCover: Boolean(shelf.path),
+        canHoldCover: Boolean(shelf.path) || isProjectShelf,
         galleryHref: null,
         eventCount: shelf.count,
         size: 'aspect-[4/5]',
