@@ -22,7 +22,7 @@
 | 10 | 2025-02 | GAZE | Feb 2025 | The Dream Unfolds | 双人 | A/B/C | 已有 `GAZE`（37 图） |
 | 11 | 2025-08 | THE R | — | Heartbeat for You | 双人 | — | 已入库（24 图：合体天台/窗边组 8 + 灰蓝油画墙单人组 16） |
 | 12 | 2025-10 | KAZZ | **211** | Harmony Secret | 双人 | A/B | 已入库（25 图） |
-| 13 | 2025-09 | PERLA | — | Dream | **单人 Lookmhee** | A/B | 已有 `perla杂志`（18 图，未标注是谁） |
+| 13 | 2025-09 | PERLA | — | 摩登秀场（城央魅致 / 甜澈灵犀） | **单人 Lookmhee** | A/B | 已入库（13 图：原有 9 + 官方 9/14 帖 4） |
 | 14 | 2025-09 | PERLA | — | 浪漫之诗（旧潮新绎 / 风格独白） | **单人 Sonya** | A/B | 已入库（13 图：官方 9/14 帖 9 + 9/17 帖 4） |
 | 15 | 2026-04~06 | ~~FIVEME~~ | — | —（Hometown Romance 后专访） | 双人 | — | **不是杂志**（视频访谈节目），2026-10-21 已从杂志门移除 |
 | 16 | 2026-07 | KAZZ | **217** | Youth Choice | **单人 Lookmhee** | 独立封面 | 已入库（8 图） |
@@ -83,7 +83,7 @@
 | 4 | PERLA（Sonya） | PERLA · 浪漫之诗 (Sonya) | `SY-MAG-PERLA-DREAM-20250914` | 2025-09-14（官方微博首发日） | 13 |
 
 > 地址：`/editorial/perla-romantic-poem-sonya`（旧地址 `perla-dream-sonya` 已作废，全站零重定向）
-| 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
+| 5 | PERLA（Lookmhee） | PERLA · 摩登秀场 (Lookmhee) | `LM-MAG-PERLA-DREAM-20250914` | 2025-09-14（官方微博首发日） | 13 |
 | 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 24 |
 | 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-28（开卖日，官方 X 8/28 公布封面并开放预售；拍摄日 2025-08-11；10 月发货） | 28 |
 | 8 | KAZZ 2025-02 | KAZZ 2025-02（实为 KAZZ 206 期，待改名） | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 8 |
@@ -104,7 +104,7 @@
 **未决项**：THE R 与 KAZZ 211 已各按正式名建行并各自入库图片。
 `Untamed` 已于 2026-10-21 查明并入 KAZZ 211 —— 微博官方发布、角标写明「KAZZ ISSUE 211」的官方内页图与 `Untamed` 那 18 张是同一场拍摄（灰蓝水泥墙背景、同款造型），`Untamed` 原是这套图在库内挂的未识别名。合并后 `Untamed` 项目行已删除（快照 `projects_snap_del_8255cf96_20261021`）。
 
-**PERLA 原本 18 张图全部挂在 Lookmhee 条下**：PERLA 官方微博两条幕后备注都写着 Lookmhee
+**PERLA 原本 18 张图全部挂在 Lookmhee 条下（其中 9 张实为 Sonya 的图，已查明：与 Sonya 条 aHash 距离 0-1 完全相同，仅上传在了 `lm/mag/2025/` 前缀下；用户在 DB 中未登记这 9 张）**：PERLA 官方微博两条幕后备注都写着 Lookmhee
 （「城央魅致」「甜澈灵犀」两版），且其中一条描述的蓝色花束、复古电脑、蓝色马提尼分散在好几个页面里，
 无法按页面切分给两个人。Sonya 条已单独补齐 9 张（PERLA 官方微博 2025-09-17 的 9 张官方大片），
 Lookmhee 条的 18 张原样保留。
