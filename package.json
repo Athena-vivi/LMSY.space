@@ -17,7 +17,8 @@
     "restore:drill": "node --experimental-sqlite scripts/restore-drill.mjs",
     "images:dims": "node scripts/extract-image-dimensions.mjs",
     "audit:r2": "node scripts/audit-r2-references.mjs",
-    "backfill:magazine": "node --experimental-strip-types scripts/backfill-magazine-pages.ts"
+    "backfill:magazine": "node --experimental-strip-types scripts/backfill-magazine-pages.ts",
+    "ingest:magazine": "node --experimental-strip-types scripts/ingest-magazine-issue.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.964.0",
