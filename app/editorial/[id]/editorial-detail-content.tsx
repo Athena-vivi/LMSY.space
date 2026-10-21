@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { GalleryImageWithLightbox } from './gallery-image';
 import { getImageUrl } from '@/lib/image-url';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
@@ -62,7 +64,15 @@ export function EditorialDetailContent({
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="relative z-10 px-6 py-8 md:px-12 md:py-12 border-b border-border">
-        <div className="flex items-start justify-end max-w-7xl mx-auto">
+        <div className="flex items-start justify-between gap-6 max-w-7xl mx-auto">
+          {/* Back to the rack. Sits opposite the title, which stays on the right. */}
+          <Link
+            href="/editorial"
+            className="mt-1 inline-flex shrink-0 items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-2 transition-colors hover:text-lmsy-blue"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {t(language, 'nf.back')}
+          </Link>
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
