@@ -83,7 +83,7 @@
 | 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SY` | 2025-09-10 | 9 |
 | 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
 | 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 24 |
-| 7 | KAZZ 211 2025-10 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-10-01（发售日；拍摄日 2025-08-11） | 28 |
+| 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-28（开卖日，官方 X 8/28 公布封面并开放预售；拍摄日 2025-08-11；10 月发货） | 28 |
 | 8 | KAZZ 2025-02 | KAZZ 2025-02（实为 KAZZ 206 期，待改名） | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 8 |
 | 9 | GAZE | GAZE · The Dream Unfolds | `MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
 | 10 | ISLAND JOY | ISLAND JOY · All of my Life | `MAG-ISLAND-ALLOFMYLIFE` | 2025-01-01 | 21 |
@@ -112,7 +112,7 @@ Lookmhee 条的 18 张原样保留。
 ### 3 个数据问题
 1. **`U!` 只有 1 张图**，其余有图的刊都是 18–37 张，明显没导完。
 2. 2026-10-21 复核：`KAZZ 2025-02` 实为 KAZZ 206 期（微博 @Q统计量 2025-01-15 官方 KAZZ 刊头正片 8 张，已补齐至 8 图，catalog 仍用 `KAZZ-2502` 旧号）；`THE R` 从 R2 旧目录 `magazines/2025/LMSY-MAG-20250801-*` 找回 16 张灰蓝油画墙单人组（另 2 张商品拼贴排除），补至 24 图。`KAZZ 2024-10`（粉蝴蝶结组）只有 2 张，期号待查，
-   公开渠道也找不到更多成套图。`KAZZ 211` 已从 5 张补到 28 张（2026-10-21：并入 `Untamed` 18 张 + 微博官方 ISSUE 211 内页 2 张 + 微博专栏官方内页 3 张）；
+   公开渠道也找不到更多成套图。`KAZZ 211` 已从 5 张补到 28 张（2026-10-21：并入 `Untamed` 18 张 + 微博官方 ISSUE 211 内页 2 张 + 微博专栏官方内页 3 张）；R2/DB/catalog 日期段已于 2026-10-22 从 `20251001`（发货月）统一改为 `20250828`（开卖日）；
    `THE R`（8 张）同理，是档案站段落里实际有的数量。
 
 3. **`20241217【天津Fan sign PB】` 不是杂志**，它被放在 `editorial` 分类里。它是签名会的写真小册，归 `public_appearance` 更合适。
