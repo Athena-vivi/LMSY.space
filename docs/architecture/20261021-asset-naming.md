@@ -240,6 +240,18 @@ SY-LIVE-TIKTOK-20250412-001.webp
 后台入口（已存在）：`/admin/projects/<id>/curate` 点某张图设为封面 → `PATCH /api/admin/projects/<id>/cover`，
 一次写两处：`gallery_assets.is_cover`（把旧封面清掉、新的置 true）和 `projects.cover_url`。
 
+三层封面各存一处，别混：
+
+| 层 | 存在哪里 | 后台在哪改 |
+|---|---|---|
+| 门 | `gallery_assets.portal_slot`（首页五入口）/ `interview_slot`（对话、直播） | `/admin/curation` 或素材库 PORTALS |
+| 分类 | `gallery_assets.category_slot`，值是二层路径 `/live-events/fanmeeting` | `/admin/curation` |
+| 事件 | `projects.cover_url`（影视门第二层的剧集也是这一层） | `/admin/curation` 或项目 → 策展 |
+
+`/admin/curation` 就是按「门 → 分类 → 事件」摆的一棵树，三层的封面都在那里指定，
+走同一个选图弹窗（默认只看本节点的图，可切「全部图片」）。分类封面的列定义见
+`docs/architecture/20261021-category-slot.sql`。
+
 老代码里的 `-000` 判断（`lib/editorial-issues.ts` 的 `discoverCoverFromGallery`、后台 curate 的 `isCover`）
 作为历史兜底保留：库里若还有 `-000` 结尾的旧图仍然认它，但新规则不再产出这种编号。
 
