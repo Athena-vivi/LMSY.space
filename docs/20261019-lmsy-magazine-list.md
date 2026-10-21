@@ -83,7 +83,7 @@
 | 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SY` | 2025-09-10 | 9 |
 | 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
 | 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 24 |
-| 7 | KAZZ 211 2025-10 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-10-01 | 28 |
+| 7 | KAZZ 211 2025-10 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-10-01（发售日；拍摄日 2025-08-11） | 28 |
 | 8 | KAZZ 2025-02 | KAZZ 2025-02（实为 KAZZ 206 期，待改名） | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 8 |
 | 9 | GAZE | GAZE · The Dream Unfolds | `MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
 | 10 | ISLAND JOY | ISLAND JOY · All of my Life | `MAG-ISLAND-ALLOFMYLIFE` | 2025-01-01 | 21 |
