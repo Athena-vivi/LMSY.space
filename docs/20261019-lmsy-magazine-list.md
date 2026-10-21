@@ -64,17 +64,55 @@
 
 ---
 
-## 四、库内项目与清单的差
+## 四、库内现状（2026-10-21 定稿）
 
-### 已经能对上（10 条）
-`Smoldering Embrace`、`20241104-Stars Twinking`、`20241125-UNIQUE`、`Retro Soul: December Edition`、`Oat-Lookmhee`、`U!`、`ISLAND`、`GAZE`、`perla杂志`、`Untamed`（对应 #11 或 #12，需你确认是哪一本）
+**计数口径必须先说清，不然每次算出来都不一样：**
 
-### 缺 7 条
-KAZZ 2024-10、KAZZ 2025-02、THE R 或 KAZZ 211（剩下一本）、PERLA Sonya 版、FIVEME、KAZZ 217 两版
+- **期** = 清单里的一行（17）。同一本刊两人各出单人封面，算两期。
+- **项目** = `projects` 表里的一行。PERLA 已按用户要求拆成两条（Lookmhee / Sonya）。
+
+`category = 'editorial'` 现有 19 行 = **18 个杂志项目** + 1 条 `20241217【天津Fan sign PB】`（不是杂志，仍在此门内未移出）。
+18 个杂志项目里，**17 期已全部建档**，另加 1 条无法识别的 `Untamed`（按用户要求保留原样、不再追查）。
+**清单 17 期 → 库内 17 期，齐。**
+
+| # | 期 | 库内项目 | `catalog_id` | `release_date` | 图数 |
+|---|---|---|---|---|---|
+| 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SN` | 2026-07-01* | 0 |
+| 2 | KAZZ 217（Lookmhee） | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ-217-LM` | 2026-07-01* | 0 |
+| 3 | FIVEME 2026 | FIVEME · 2026 | `LMSY-MAG-FIVEME-2026` | 2026-04-01* | 0 |
+| 4 | PERLA（Sonya） | PERLA · Dream (Sonya) | `LMSY-MAG-PERLA-2509-SN` | 2025-09-10 | 0 |
+| 5 | PERLA（Lookmhee） | PERLA · Dream (Lookmhee) | `MAG-PERLA-DREAM-LM` | 2025-09-10 | 18 |
+| 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 0 |
+| 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-01 | 0 |
+| — | 未识别 | Untamed | `MAG-UNTAMED` | 2025-08-01 | 18 |
+| 8 | KAZZ 2025-02 | KAZZ 2025-02 | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 0 |
+| 9 | GAZE | GAZE · The Dream Unfolds | `MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
+| 10 | ISLAND JOY | ISLAND JOY · All of my Life | `MAG-ISLAND-ALLOFMYLIFE` | 2025-01-01 | 21 |
+| 11 | RETRO | RETRO · Soulmate | `MAG-RETRO-SOULMATE` | 2024-12-18 | 21 |
+| — | 非杂志 | 20241217【天津Fan sign PB】 | `MAG-TIANJINPB` | 2024-12-17 | 38 |
+| 12 | OAT（Lookmhee） | OAT · Lookmhee | `MAG-OAT` | 2024-12-11 | 23 |
+| 13 | U! | U! · Brilliant Match | `MAG-UMAG-BRILLIANTMATCH` | 2024-12-03 | **1**（未导完） |
+| 14 | UNIQUE | UNIQUE · Amor Fati | `MAG-UNIQUE-AMORFATI` | 2024-11-25 | 21 |
+| 15 | STARRY 21 | STARRY 21 · Deep in the Eye | `MAG-STARRY21-DEEPINTHEEYE` | 2024-11-04 | 18 |
+| 16 | BEAT'XL 2024-10 | BEAT'XL · Smoldering Embrace | `MAG-BEATXL-SMOLDERING` | 2024-10-23 | 21 |
+| 17 | KAZZ 2024-10 | KAZZ 2024-10 | `LMSY-MAG-KAZZ-2410` | 2024-10-01* | 0 |
+
+\* 清单只记到月份，这 5 条取当月 1 日，不是已核实的出版日；知道确切日期后改这一列即可（只影响排序位置）。
+门内顺序 = `release_date` 倒序（最新在上），日期相同按建行时间倒序；没有日期的行排在最后，不会顶到最前。
+
+**未决项**：#11 与 #12 同属 2025-08，`Untamed` 占其中一本但认不出来，因此两本都按正式名建了行，
+`Untamed` 原样挂在旁边，不动、不合并、不删。日期一律落 `2025-08-01`（档案站月份），未编具体日。
+
+**PERLA 的 18 张图全部挂在 Lookmhee 条下**：PERLA 官方微博两条幕后备注都写着 Lookmhee
+（「城央魅致」「甜澈灵犀」两版），且其中一条描述的蓝色花束、复古电脑、蓝色马提尼分散在好几个页面里，
+无法按页面切分给两个人。Sonya 条先空着，等图。
+
+命名规范见 `docs/architecture/20261021-asset-naming.md`。
 
 ### 3 个数据问题
-1. **`U!` 只有 1 张图**，其余 9 刊都是 18–37 张，明显没导完。
-2. **`perla杂志` 没标是谁的封面**。PERLA 实际是 Lookmhee、Sonya 各自单人刊，现在合成一个项目，等于把两个人的拍摄混在一个时间点上。
+1. **`U!` 只有 1 张图**，其余有图的刊都是 18–37 张，明显没导完。
+2. **`PERLA · Dream (Sonya)` 暂无图**，需要补整本；`perla杂志` 已按刊名规范命名。
+
 3. **`20241217【天津Fan sign PB】` 不是杂志**，它被放在 `editorial` 分类里。它是签名会的写真小册，归 `public_appearance` 更合适。
 
 ---
@@ -88,7 +126,7 @@ KAZZ 2024-10、KAZZ 2025-02、THE R 或 KAZZ 211（剩下一本）、PERLA Sonya
 刊物 · 主题 (Lookmhee)     例：KAZZ 217 · Youth Choice (Lookmhee)
 ```
 
-这样 `/projects?category=editorial` 一眼能按刊物排序，搜索「KAZZ」也能一次出 4 条。
+这样 `/editorial` 一眼能按刊物排序，搜索「KAZZ」也能一次出 4 条。
 `catalog_id` 现有格式 `LMSY-MAG-YYYYMMDD-NNN` 已经够用，不用改。
 
 ---
