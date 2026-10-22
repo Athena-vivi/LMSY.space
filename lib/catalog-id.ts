@@ -250,6 +250,22 @@ export function getR2PathForCatalogId(catalogId: string): string {
   return r2KeyForCatalogId(catalogId);
 }
 
+/**
+ * Parse a project catalog HEAD (`<PERSON>-<DOOR>-<SUBJECT>`, no date or
+ * sequence - projects.catalog_id stores exactly that shape, e.g.
+ * LMSY-EVENT-BEINLOVE). Full asset ids go through parseCatalogId instead.
+ */
+export function parseCatalogHead(head: string | null | undefined): string | null {
+  if (!head) return null;
+  const parts = head.split('-');
+  if (parts.length < 3) return null;
+  const [person, door] = parts;
+  if (!(PERSON_CODES as readonly string[]).includes(person)) return null;
+  if (!(DOOR_CODES as readonly string[]).includes(door)) return null;
+  const subject = parts.slice(2).join('-');
+  return subject || null;
+}
+
 // ---------------------------------------------------------------------------
 // Allocation
 // ---------------------------------------------------------------------------

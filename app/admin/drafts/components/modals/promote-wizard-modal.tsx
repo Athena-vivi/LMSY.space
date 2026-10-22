@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminLang } from '@/lib/admin-i18n';
-import { parseCatalogId, PERSON_CODES } from '@/lib/catalog-id';
+import { parseCatalogHead, PERSON_CODES } from '@/lib/catalog-id';
 
 /**
  * Self-serve promotion wizard (phase 1: live-event door).
@@ -42,6 +42,13 @@ interface PreviewInfo {
   projectCatalogId: string | null;
 }
 
+interface SubjectOptions {
+  fromProject: string | null;
+  fromTitle: string;
+  existing: string[];
+  peers: string[];
+}
+
 interface PromoteWizardModalProps {
   isOpen: boolean;
   draftIds: string[];
@@ -49,10 +56,10 @@ interface PromoteWizardModalProps {
   onDone: (message: string) => void;
 }
 
-/** Derive the SUBJECT segment: project catalog head first, else title. */
+/** Derive the SUBJECT segment: catalog head first, else a normalised title. */
 function deriveSubject(project: ProjectRow): string {
-  const parsed = project.catalog_id ? parseCatalogId(project.catalog_id) : null;
-  if (parsed?.subject) return parsed.subject;
+  const headSubject = parseCatalogHead(project.catalog_id);
+  if (headSubject) return headSubject;
   const cut = project.title.replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
   return (
     cut
@@ -81,6 +88,8 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
 
   const [preview, setPreview] = useState<PreviewInfo | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [subjectOptions, setSubjectOptions] = useState<SubjectOptions | null>(null);
+  const [subjectTouched, setSubjectTouched] = useState(false);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [errors, setErrors] = useState<string[]>([]);
@@ -123,15 +132,48 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     };
   }, [isOpen]);
 
-  // Re-derive subject / class / cover defaults when the project changes.
+  // Re-derive subject / class / cover defaults when the project changes, and
+  // load subject candidates so the segment is picked from references instead
+  // of invented.
   useEffect(() => {
     if (!project) return;
+    setSubjectTouched(false);
     setSubject(deriveSubject(project));
     const groups = project.asset_groups || [];
     setAssetGroup(groups[0] || '');
     setWriteCover(!project.cover_url);
     setPreview(null);
   }, [project]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    setSubjectOptions(null);
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/admin/drafts/promote/subject-options?projectId=${projectId}`,
+          { cache: 'no-store' }
+        );
+        const result = await response.json();
+        if (cancelled || !result?.success || !result?.options) return;
+        const options = result.options as SubjectOptions;
+        setSubjectOptions(options);
+        // The catalog head is authoritative; refine the local title guess
+        // with it (and with the title candidate) unless already edited.
+        setSubject((prev) => {
+          if (subjectTouched && prev) return prev;
+          return options.fromProject || options.fromTitle || prev;
+        });
+      } catch {
+        // Candidates are a convenience; the editable input still works.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   const filteredProjects = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -396,11 +438,74 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                         type="text"
                         value={subject}
                         onChange={(e) => {
+                          setSubjectTouched(true);
                           setSubject(e.target.value);
                           setPreview(null);
                         }}
                         className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none focus:border-lmsy-yellow/40"
                       />
+                      <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
+                        {t('d.promote.subjectHint')}
+                      </span>
+                      {subjectOptions && (
+                        <span className="flex flex-wrap gap-1 pt-0.5">
+                          {subjectOptions.fromProject && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSubjectTouched(true);
+                                setSubject(subjectOptions.fromProject!);
+                                setPreview(null);
+                              }}
+                              className="border border-lmsy-yellow/40 bg-lmsy-yellow/10 px-2 py-0.5 font-mono text-[10px] text-lmsy-yellow/90 hover:bg-lmsy-yellow/20"
+                            >
+                              {subjectOptions.fromProject} · {t('d.promote.optProject')}
+                            </button>
+                          )}
+                          {subjectOptions.existing.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => {
+                                setSubjectTouched(true);
+                                setSubject(s);
+                                setPreview(null);
+                              }}
+                              className="border border-white/15 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-ink-2 hover:border-white/30 hover:text-ink"
+                            >
+                              {s} · {t('d.promote.optExisting')}
+                            </button>
+                          ))}
+                          {subjectOptions.fromTitle &&
+                            subjectOptions.fromTitle !== subjectOptions.fromProject && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSubjectTouched(true);
+                                  setSubject(subjectOptions.fromTitle);
+                                  setPreview(null);
+                                }}
+                                className="border border-white/15 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-ink-2 hover:border-white/30 hover:text-ink"
+                              >
+                                {subjectOptions.fromTitle} · {t('d.promote.optTitle')}
+                              </button>
+                            )}
+                          {subjectOptions.peers.slice(0, 8).map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => {
+                                setSubjectTouched(true);
+                                setSubject(s);
+                                setPreview(null);
+                              }}
+                              className="border border-white/10 bg-transparent px-2 py-0.5 font-mono text-[10px] text-ink-2/70 hover:border-white/25 hover:text-ink-2"
+                            >
+                              {s} · {t('d.promote.optPeers')}
+                            </button>
+                          ))}
+                        </span>
+                      )}
                     </label>
 
                     <label className="block space-y-1.5">

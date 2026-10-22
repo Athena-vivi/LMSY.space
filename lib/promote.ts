@@ -5,6 +5,7 @@ import {
   allocateNextCatalogId,
   r2KeyForCatalogId,
   parseCatalogId,
+  parseCatalogHead,
   isCatalogIdConflict,
   CATALOG_ID_MAX_ATTEMPTS,
   CATEGORY_TO_DOOR_CODE,
@@ -101,6 +102,116 @@ function normalizeSubject(raw: string): string {
     .replace(/[^A-Z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+/**
+ * Derive the SUBJECT segment for a project: the catalog head's subject when
+ * the project already has one, else a normalised guess from the title
+ * (truncated at "in/at/@ ..." location phrases). A guess, never an
+ * authority - the wizard shows it as one clickable candidate among others.
+ */
+export function deriveSubjectSegment(project: {
+  catalog_id?: string | null;
+  title?: string | null;
+}): string {
+  const headSubject = parseCatalogHead(project.catalog_id);
+  if (headSubject) return headSubject;
+  const cut = (project.title || '').replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
+  return (
+    cut
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || ''
+  );
+}
+
+export interface SubjectOptions {
+  /** From the project's own catalog_id head (the authoritative choice). */
+  fromProject: string | null;
+  /** Guessed from the title (clickable reference, not authoritative). */
+  fromTitle: string;
+  /** Subjects already used by this project's own assets. */
+  existing: string[];
+  /** Subjects used elsewhere in the same category, as reference. */
+  peers: string[];
+}
+
+export async function loadSubjectOptions(projectId: string): Promise<SubjectOptions | null> {
+  const { data: project } = await supabaseAdmin
+    .from('projects')
+    .select('id, title, category, catalog_id')
+    .eq('id', projectId)
+    .maybeSingle();
+  if (!project) return null;
+
+  // "From project" is only the stamped catalog head - a title guess must not
+  // masquerade as the project's authoritative code.
+  const fromProject = parseCatalogHead(project.catalog_id);
+  // deriveSubjectSegment prefers the catalog head, so recompute a pure title
+  // guess for the reference chip.
+  const titleGuess =
+    (project.title || '')
+      .replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || '';
+
+  const collectSubjects = (ids: string[]) => {
+    const found = new Set<string>();
+    for (const id of ids) {
+      const parsed = parseCatalogId(id);
+      if (parsed?.subject) found.add(parsed.subject);
+    }
+    return [...found];
+  };
+
+  // Subjects already stamped on this project's own assets.
+  const { data: ownAssets } = await supabaseAdmin
+    .from('gallery_assets')
+    .select('catalog_id')
+    .eq('project_id', projectId)
+    .not('catalog_id', 'is', null)
+    .limit(500);
+  const existing = collectSubjects((ownAssets || []).map((r) => r.catalog_id as string));
+
+  // Reference: subjects used anywhere in the same category (project heads +
+  // sibling project assets), so a curator picks a consistent style.
+  const peers = new Set<string>();
+  if (project.category) {
+    const { data: siblings } = await supabaseAdmin
+      .from('projects')
+      .select('id, catalog_id')
+      .eq('category', project.category)
+      .neq('id', projectId)
+      .not('catalog_id', 'is', null)
+      .limit(200);
+    for (const s of collectSubjects((siblings || []).map((r) => r.catalog_id as string))) {
+      if (!existing.includes(s)) peers.add(s);
+    }
+    const siblingIds = (siblings || []).map((r) => r.id as string);
+    if (siblingIds.length > 0) {
+      const { data: siblingAssets } = await supabaseAdmin
+        .from('gallery_assets')
+        .select('catalog_id, project_id')
+        .in('project_id', siblingIds)
+        .not('catalog_id', 'is', null)
+        .limit(1000);
+      for (const s of collectSubjects(
+        (siblingAssets || []).map((r) => r.catalog_id as string)
+      )) {
+        if (!existing.includes(s)) peers.add(s);
+      }
+    }
+  }
+
+  return {
+    fromProject: fromProject || null,
+    fromTitle: titleGuess,
+    existing,
+    peers: [...peers].slice(0, 24),
+  };
 }
 
 function pickLocalizedText(value: unknown): string {
