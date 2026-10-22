@@ -251,6 +251,15 @@ export async function PATCH(
     if (body.asset_group_covers !== undefined) {
       updateData.asset_group_covers = body.asset_group_covers || null;
     }
+    // Talk door resource-box covers ({ bilibili|youtube|photos|transcript:
+    // assetCatalogId }), picked per box from the curation page. Null clears
+    // the whole map (boxes fall back to the first-picture default).
+    if (body.talk_resource_covers !== undefined) {
+      updateData.talk_resource_covers =
+        body.talk_resource_covers && typeof body.talk_resource_covers === 'object'
+          ? body.talk_resource_covers
+          : null;
+    }
     // 'event' (one dated happening) or 'theme' (a subject across dates).
     // Anything else falls back to 'event' - the historical behaviour - rather
     // than letting a typo reach the check constraint and fail the whole save.

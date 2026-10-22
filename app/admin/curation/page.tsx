@@ -71,6 +71,13 @@ export default function CurationPage() {
     groups: Array<{ key: string; assets: GalleryItem[] }>;
   } | null>(null);
 
+  // Talk resource-box covers (Bilibili / YouTube / photos / transcript): the
+  // four timeline boxes of a talk event, each pinned to one of its pictures.
+  const [talkCovers, setTalkCovers] = useState<{
+    covers: Record<string, string>;
+    assets: Array<GalleryItem & { catalog_id?: string | null }>;
+  } | null>(null);
+
   const language = lang as Language;
 
   const load = useCallback(async () => {
@@ -231,6 +238,7 @@ export default function CurationPage() {
   useEffect(() => {
     if (!selected || selected.kind !== 'event') {
       setGroupCovers(null);
+      setTalkCovers(null);
       return;
     }
     let cancelled = false;
@@ -278,6 +286,20 @@ export default function CurationPage() {
           covers,
           groups: keys.map((key) => ({ key, assets: byGroup.get(key) ?? [] })),
         });
+
+        // Talk events get the four resource-box slots instead of class rows.
+        const talkCategories = ['interview', 'variety', 'radio'];
+        if (talkCategories.includes(proj?.data?.category ?? '')) {
+          setTalkCovers({
+            covers:
+              proj?.data?.talk_resource_covers && typeof proj.data.talk_resource_covers === 'object'
+                ? proj.data.talk_resource_covers
+                : {},
+            assets: assets.filter((asset) => Boolean(asset.catalog_id)),
+          });
+        } else {
+          setTalkCovers(null);
+        }
       } catch {
         if (!cancelled) setGroupCovers({ loading: false, covers: {}, groups: [] });
       }
@@ -293,6 +315,22 @@ export default function CurationPage() {
     setGroupCovers({ ...groupCovers, covers: next });
     await writeSlot(
       { asset_group_covers: next },
+      'PATCH',
+      `/api/admin/projects/${event.id}`
+    );
+  };
+
+  // Pin one of the event's pictures to a talk resource box. Clicking the
+  // currently pinned picture clears the slot (back to the first-picture
+  // default) - the four boxes have no "unfiled" notion of their own.
+  const pickTalkCover = async (slot: string, catalogId: string) => {
+    if (!event || !talkCovers) return;
+    const next = { ...talkCovers.covers };
+    if (next[slot] === catalogId) delete next[slot];
+    else next[slot] = catalogId;
+    setTalkCovers({ ...talkCovers, covers: next });
+    await writeSlot(
+      { talk_resource_covers: next },
       'PATCH',
       `/api/admin/projects/${event.id}`
     );
@@ -585,6 +623,62 @@ export default function CurationPage() {
                   <p className="mt-4 font-mono text-[11px] leading-relaxed text-ink-2/70">
                     这一类没有可指定的封面，它按「未归类」还是「剧集」走，封面从底下的事件来。
                   </p>
+                )}
+
+                {selected?.kind === 'event' && talkCovers && talkCovers.assets.length > 0 && (
+                  <div className="mt-5 border-t border-white/10 pt-4">
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2/70">
+                      访谈资源封面 · 点图即设
+                    </p>
+                    <div className="space-y-3">
+                      {(
+                        [
+                          ['bilibili', 'Bilibili 视频'],
+                          ['youtube', 'YouTube 视频'],
+                          ['photos', '图片'],
+                          ['transcript', '文字实录'],
+                        ] as const
+                      ).map(([slot, slotLabel]) => (
+                        <div key={slot}>
+                          <p className="mb-1 font-mono text-[11px] text-ink-2">
+                            {slotLabel}
+                            {talkCovers.covers[slot] ? ' · 已指定' : ' · 默认第一张'}
+                          </p>
+                          <div className="flex gap-1.5 overflow-x-auto pb-1">
+                            {talkCovers.assets.map((asset) => {
+                              const active = talkCovers.covers[slot] === asset.catalog_id;
+                              return (
+                                <button
+                                  key={asset.id}
+                                  type="button"
+                                  onClick={() => void pickTalkCover(slot, asset.catalog_id!)}
+                                  disabled={busy}
+                                  title={asset.catalog_id ?? ''}
+                                  className={`relative h-16 w-14 shrink-0 overflow-hidden rounded border transition-colors ${
+                                    active
+                                      ? 'border-lmsy-yellow ring-1 ring-lmsy-yellow/60'
+                                      : 'border-white/10 hover:border-white/40'
+                                  } ${busy ? 'opacity-50' : ''}`}
+                                >
+                                  <Image
+                                    src={getCdnUrl(asset.image_url) ?? asset.image_url}
+                                    alt={asset.catalog_id ?? slotLabel}
+                                    fill
+                                    unoptimized
+                                    className="object-cover"
+                                    sizes="60px"
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      <p className="font-mono text-[10px] leading-relaxed text-ink-2/60">
+                        黄框为当前封面；每个框不指定时用第一张，再点一次黄框图可取消指定。
+                      </p>
+                    </div>
+                  </div>
                 )}
 
                 {selected?.kind === 'event' && groupCovers && groupCovers.groups.length > 0 && (

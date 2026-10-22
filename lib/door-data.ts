@@ -349,6 +349,82 @@ export async function loadCategoryEntryGroups(
   return buildEntryGroups(entries);
 }
 
+/** The four talk resource boxes a curator can pin a picture to. */
+export type TalkResourceSlot = 'bilibili' | 'youtube' | 'photos' | 'transcript';
+/** entry id -> resolved image URL per resource box (only pinned slots set). */
+export type TalkResourceCovers = Partial<Record<TalkResourceSlot, string>>;
+
+/**
+ * Resolved resource-box covers for every talk entry of one category, in one
+ * pair of queries - the talks timeline pins each box (Bilibili / YouTube /
+ * photos / transcript) to a curator-picked picture via
+ * projects.talk_resource_covers ({ slot: assetCatalogId }). An entry with no
+ * picks maps to an empty object; the timeline then falls back to its
+ * first-picture default per box.
+ */
+export async function loadTalkResourceCovers(
+  category: ProjectCategory
+): Promise<Map<string, TalkResourceCovers>> {
+  const map = new Map<string, TalkResourceCovers>();
+  const entries = await loadRows([category]);
+  if (entries.length === 0) return map;
+
+  const ids = entries.map((entry) => entry.id);
+  const { data: projectRows } = await getSupabaseAdmin()
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('id, talk_resource_covers')
+    .in('id', ids);
+
+  // slot -> picked catalog id, per entry.
+  const picks = new Map<string, Map<TalkResourceSlot, string>>();
+  for (const row of (projectRows ?? []) as Array<{
+    id: string;
+    talk_resource_covers: unknown;
+  }>) {
+    if (!row.talk_resource_covers || typeof row.talk_resource_covers !== 'object') continue;
+    const slotMap = new Map<TalkResourceSlot, string>();
+    for (const [slot, value] of Object.entries(
+      row.talk_resource_covers as Record<string, unknown>
+    )) {
+      if (
+        slot === 'bilibili' ||
+        slot === 'youtube' ||
+        slot === 'photos' ||
+        slot === 'transcript'
+      ) {
+        if (typeof value === 'string' && value.length > 0) slotMap.set(slot, value);
+      }
+    }
+    if (slotMap.size > 0) picks.set(row.id, slotMap);
+  }
+  if (picks.size === 0) return map;
+
+  // Resolve every picked catalog id to its image URL for its project.
+  const { data: assets } = await getSupabaseAdmin()
+    .schema('lmsy_archive')
+    .from('gallery_assets')
+    .select('project_id, catalog_id, image_url')
+    .in('project_id', [...picks.keys()]);
+
+  for (const asset of (assets ?? []) as Array<{
+    project_id: string | null;
+    catalog_id: string | null;
+    image_url: string | null;
+  }>) {
+    if (!asset.project_id || !asset.catalog_id || !asset.image_url) continue;
+    const slotMap = picks.get(asset.project_id);
+    if (!slotMap) continue;
+    for (const [slot, catalogId] of slotMap) {
+      if (asset.catalog_id === catalogId) {
+        map.set(asset.project_id, { ...map.get(asset.project_id), [slot]: asset.image_url });
+      }
+    }
+  }
+
+  return map;
+}
+
 async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, DoorEntryGroup[]>> {
   const map = new Map<string, DoorEntryGroup[]>();
   if (entries.length === 0) return map;

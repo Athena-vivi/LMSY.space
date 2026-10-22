@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
-import { loadCategoryEntryGroups, loadRows } from '@/lib/door-data';
+import { loadCategoryEntryGroups, loadRows, loadTalkResourceCovers } from '@/lib/door-data';
 import { TalksTimelinePage } from '@/components/doors/talks-timeline';
 import { TALK_CATEGORIES, categoryDefinition, normalizeCategory } from '@/lib/category-registry';
 
@@ -50,6 +50,7 @@ export default async function TalksShelfPage({ params }: PageProps) {
   // The shelf IS the category, so there is no sub-class segment to filter by.
   const entries = await loadRows([category]);
   const groups = await loadCategoryEntryGroups(category);
+  const resourceCovers = await loadTalkResourceCovers(category);
 
   return (
     <TalksTimelinePage
@@ -58,6 +59,7 @@ export default async function TalksShelfPage({ params }: PageProps) {
       doorHref="/talks"
       entries={entries}
       groups={groups}
+      resourceCovers={resourceCovers}
     />
   );
 }

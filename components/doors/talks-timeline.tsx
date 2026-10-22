@@ -8,7 +8,7 @@ import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { formatDisplayDate } from '@/lib/display-date';
 import { getLocalizedText } from '@/lib/localized-content';
-import type { DoorEntryGroup, DoorEntryRow } from '@/lib/door-data';
+import type { DoorEntryGroup, DoorEntryRow, TalkResourceCovers } from '@/lib/door-data';
 import { ArrowLeft, Play, FileText, Images } from 'lucide-react';
 
 /**
@@ -23,7 +23,9 @@ import { ArrowLeft, Play, FileText, Images } from 'lucide-react';
  *
  * A box whose resource does not exist (no link pasted yet, no transcript,
  * no pictures) is simply not rendered - an interview grows boxes as the
- * curator fills them in.
+ * curator fills them in. Each box's cover can be pinned to a specific
+ * picture (projects.talk_resource_covers, picked from the curation page);
+ * unpinned boxes fall back to the entry's first picture.
  */
 export function TalksTimelinePage({
   titleKey,
@@ -31,6 +33,7 @@ export function TalksTimelinePage({
   doorHref,
   entries,
   groups,
+  resourceCovers,
 }: {
   titleKey: TranslationKey | null;
   doorTitleKey: TranslationKey;
@@ -38,6 +41,8 @@ export function TalksTimelinePage({
   entries: DoorEntryRow[];
   /** entry id -> its picture bucket (talks keeps one unfiled bucket). */
   groups: Map<string, DoorEntryGroup[]>;
+  /** entry id -> curator-pinned cover per resource box (optional). */
+  resourceCovers?: Map<string, TalkResourceCovers>;
 }) {
   const { language } = useLanguage();
   const title = titleKey ? t(language, titleKey) : t(language, 'door.unfiled');
@@ -86,7 +91,8 @@ export function TalksTimelinePage({
                     key={entry.id}
                     entry={entry}
                     index={index}
-                    cover={firstCover(entry, groups)}
+                    defaultCover={firstCover(entry, groups)}
+                    pinned={resourceCovers?.get(entry.id) ?? undefined}
                   />
                 ))}
               </div>
@@ -112,11 +118,13 @@ function firstCover(entry: DoorEntryRow, groups: Map<string, DoorEntryGroup[]>) 
 function TalkNode({
   entry,
   index,
-  cover,
+  defaultCover,
+  pinned,
 }: {
   entry: DoorEntryRow;
   index: number;
-  cover: string | null;
+  defaultCover: string | null;
+  pinned?: TalkResourceCovers;
 }) {
   const { language } = useLanguage();
   const title = getLocalizedText(entry.title_i18n, language, entry.title);
@@ -124,6 +132,8 @@ function TalkNode({
     month: 'long',
     day: true,
   });
+  // A pinned cover wins per box; everything else shares the first picture.
+  const coverOf = (slot: keyof TalkResourceCovers) => pinned?.[slot] ?? defaultCover;
 
   const boxes: React.ReactNode[] = [];
   if (entry.video_url_bilibili) {
@@ -132,7 +142,7 @@ function TalkNode({
         key="bilibili"
         href={entry.video_url_bilibili}
         external
-        cover={cover}
+        cover={coverOf('bilibili')}
         label={t(language, 'talks.bilibili')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}
@@ -145,7 +155,7 @@ function TalkNode({
         key="youtube"
         href={entry.video_url_youtube}
         external
-        cover={cover}
+        cover={coverOf('youtube')}
         label={t(language, 'talks.youtube')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}
@@ -157,7 +167,7 @@ function TalkNode({
       <ResourceBox
         key="photos"
         href={entry.href}
-        cover={cover}
+        cover={coverOf('photos')}
         label={t(language, 'talks.photos')}
         hint={t(language, 'drama.eventImages', { count: entry.imageCount })}
         icon={<Images className="h-3.5 w-3.5" />}
@@ -169,7 +179,7 @@ function TalkNode({
       <ResourceBox
         key="transcript"
         href={`${entry.href}#transcript`}
-        cover={cover}
+        cover={coverOf('transcript')}
         label={t(language, 'talks.transcript')}
         hint={t(language, 'talks.read')}
         icon={<FileText className="h-3.5 w-3.5" />}
