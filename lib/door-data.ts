@@ -338,19 +338,23 @@ export async function loadSegmentEntryGroups(
   // ordered jsonb array of names). Declared classes get their box even before
   // any picture is filed into them, in the curator's order; classes found on
   // actual assets but not declared are appended after.
+  // asset_group_covers: curator-picked cover per class ({ class: catalogId });
+  // a picked cover wins over the "first picture" default.
   const { data: projectRows } = await getSupabaseAdmin()
     .schema('lmsy_archive')
     .from('projects')
-    .select('id, asset_groups')
+    .select('id, asset_groups, asset_group_covers')
     .in(
       'id',
       entries.map((entry) => entry.id)
     );
 
   const declared = new Map<string, string[]>();
+  const pickedCovers = new Map<string, Map<string, string>>();
   for (const row of (projectRows ?? []) as Array<{
     id: string;
     asset_groups: unknown;
+    asset_group_covers: unknown;
   }>) {
     const list = Array.isArray(row.asset_groups)
       ? (row.asset_groups as unknown[]).filter(
@@ -358,6 +362,13 @@ export async function loadSegmentEntryGroups(
         )
       : [];
     if (list.length > 0) declared.set(row.id, list);
+    if (row.asset_group_covers && typeof row.asset_group_covers === 'object') {
+      const covers = new Map<string, string>();
+      for (const [name, value] of Object.entries(row.asset_group_covers as Record<string, unknown>)) {
+        if (typeof value === 'string' && value.length > 0) covers.set(name, value);
+      }
+      if (covers.size > 0) pickedCovers.set(row.id, covers);
+    }
     for (const name of list) {
       map.set(row.id, [
         ...(map.get(row.id) ?? []),
@@ -370,7 +381,7 @@ export async function loadSegmentEntryGroups(
   const { data: assets } = await getSupabaseAdmin()
     .schema('lmsy_archive')
     .from('gallery_assets')
-    .select('project_id, asset_group, image_url, created_at')
+    .select('project_id, asset_group, image_url, catalog_id, created_at')
     .in('project_id', ids)
     .order('created_at', { ascending: true });
 
@@ -378,6 +389,7 @@ export async function loadSegmentEntryGroups(
     project_id: string | null;
     asset_group: string | null;
     image_url: string | null;
+    catalog_id: string | null;
   }>) {
     if (!asset.project_id || !map.has(asset.project_id)) continue;
     const groups = map.get(asset.project_id)!;
@@ -388,6 +400,12 @@ export async function loadSegmentEntryGroups(
     }
     group.count += 1;
     if (!group.cover && asset.image_url) group.cover = asset.image_url;
+    // A curator-picked cover (by catalog_id) replaces the first-picture
+    // default as soon as that picture is seen.
+    const pick = pickedCovers.get(asset.project_id)?.get(asset.asset_group ?? '');
+    if (pick && asset.catalog_id === pick && asset.image_url) {
+      group.cover = asset.image_url;
+    }
   }
 
   // An entry whose classes are all declared and none of which has pictures

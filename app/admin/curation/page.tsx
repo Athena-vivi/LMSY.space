@@ -63,6 +63,14 @@ export default function CurationPage() {
   /** id of the row that currently holds the slot, needed to clear it */
   const [currentAssetId, setCurrentAssetId] = useState<string>('');
 
+  // Per-class cover editing (live-events timeline boxes): the picked event's
+  // declared classes, each with its own pictures to click-cover from.
+  const [groupCovers, setGroupCovers] = useState<{
+    loading: boolean;
+    covers: Record<string, string>;
+    groups: Array<{ key: string; assets: GalleryItem[] }>;
+  } | null>(null);
+
   const language = lang as Language;
 
   const load = useCallback(async () => {
@@ -216,6 +224,78 @@ export default function CurationPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // Load the picked event's classes and their pictures so a curator can
+  // click-cover each class (the timeline box covers), not just the event.
+  useEffect(() => {
+    if (!selected || selected.kind !== 'event') {
+      setGroupCovers(null);
+      return;
+    }
+    let cancelled = false;
+    setGroupCovers({ loading: true, covers: {}, groups: [] });
+    (async () => {
+      try {
+        const [projRes, galRes] = await Promise.all([
+          fetch(`/api/admin/projects/${selected.eventId}`, {
+            headers: await authHeaders(),
+            credentials: 'include',
+          }),
+          fetch(`/api/admin/gallery?project_id=${selected.eventId}`, {
+            headers: await authHeaders(),
+            credentials: 'include',
+          }),
+        ]);
+        const proj = await projRes.json();
+        const gal = await galRes.json();
+        if (cancelled) return;
+        const assetGroups: string[] = Array.isArray(proj?.data?.asset_groups)
+          ? proj.data.asset_groups
+          : [];
+        const covers: Record<string, string> =
+          proj?.data?.asset_group_covers && typeof proj.data.asset_group_covers === 'object'
+            ? proj.data.asset_group_covers
+            : {};
+        const assets: Array<GalleryItem & { asset_group?: string | null; catalog_id?: string | null }> =
+          gal?.data ?? [];
+        const byGroup = new Map<string, typeof assets>();
+        for (const asset of assets) {
+          const key = asset.asset_group ?? '';
+          // Class covers are addressed by catalog_id; legacy rows without one
+          // cannot be picked.
+          if (!key || !asset.catalog_id) continue;
+          const list = byGroup.get(key) ?? [];
+          list.push(asset);
+          byGroup.set(key, list);
+        }
+        const keys = [
+          ...assetGroups.filter((key) => byGroup.has(key)),
+          ...[...byGroup.keys()].filter((key) => !assetGroups.includes(key)),
+        ];
+        setGroupCovers({
+          loading: false,
+          covers,
+          groups: keys.map((key) => ({ key, assets: byGroup.get(key) ?? [] })),
+        });
+      } catch {
+        if (!cancelled) setGroupCovers({ loading: false, covers: {}, groups: [] });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authHeaders, selected]);
+
+  const pickGroupCover = async (groupKey: string, catalogId: string) => {
+    if (!event || !groupCovers) return;
+    const next = { ...groupCovers.covers, [groupKey]: catalogId };
+    setGroupCovers({ ...groupCovers, covers: next });
+    await writeSlot(
+      { asset_group_covers: next },
+      'PATCH',
+      `/api/admin/projects/${event.id}`
+    );
   };
 
   const saveCover = async (item: GalleryItem | null) => {
@@ -505,6 +585,59 @@ export default function CurationPage() {
                   <p className="mt-4 font-mono text-[11px] leading-relaxed text-ink-2/70">
                     这一类没有可指定的封面，它按「未归类」还是「剧集」走，封面从底下的事件来。
                   </p>
+                )}
+
+                {selected?.kind === 'event' && groupCovers && groupCovers.groups.length > 0 && (
+                  <div className="mt-5 border-t border-white/10 pt-4">
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2/70">
+                      分类封面 · 点图即设
+                    </p>
+                    {groupCovers.loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-ink-2" />
+                    ) : (
+                      <div className="space-y-3">
+                        {groupCovers.groups.map((group) => (
+                          <div key={group.key}>
+                            <p className="mb-1 font-mono text-[11px] text-ink-2">
+                              {group.key} · {group.assets.length} 图
+                            </p>
+                            <div className="flex gap-1.5 overflow-x-auto pb-1">
+                              {group.assets.map((asset) => {
+                                const active =
+                                  groupCovers.covers[group.key] === asset.catalog_id;
+                                return (
+                                  <button
+                                    key={asset.id}
+                                    type="button"
+                                    onClick={() => void pickGroupCover(group.key, asset.catalog_id!)}
+                                    disabled={busy}
+                                    title={asset.catalog_id ?? ''}
+                                    className={`relative h-16 w-14 shrink-0 overflow-hidden rounded border transition-colors ${
+                                      active
+                                        ? 'border-lmsy-yellow ring-1 ring-lmsy-yellow/60'
+                                        : 'border-white/10 hover:border-white/40'
+                                    } ${busy ? 'opacity-50' : ''}`}
+                                  >
+                                    <Image
+                                      src={getCdnUrl(asset.image_url) ?? asset.image_url}
+                                      alt={asset.catalog_id ?? group.key}
+                                      fill
+                                      unoptimized
+                                      className="object-cover"
+                                      sizes="60px"
+                                    />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                        <p className="font-mono text-[10px] leading-relaxed text-ink-2/60">
+                          黄框为当前封面；不选则默认用每组第一张。
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {selected?.kind === 'shelf' && shelf && shelf.events.length > 0 && (

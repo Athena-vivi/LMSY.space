@@ -201,20 +201,22 @@ export async function PATCH(
     // Parse request body
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.title || !body.title.trim()) {
-      console.error('[PROJECTS_PATCH] ❌ Missing title');
+    // Validate fields. Title is only enforced when actually provided - small
+    // partial updates (e.g. asset_group_covers from the curation page) must
+    // not be forced to resend the whole form.
+    if (body.title !== undefined && !body.title?.trim()) {
+      console.error('[PROJECTS_PATCH] ❌ Empty title');
       return NextResponse.json(
-        { error: 'Title is required' },
+        { error: 'Title cannot be empty' },
         { status: 400 }
       );
     }
 
     // Prepare update data
     const updateData: Record<string, any> = {
-      title: body.title.trim(),
       category: body.category,
     };
+    if (body.title !== undefined) updateData.title = body.title.trim();
 
     // Optional fields
     if (body.release_date !== undefined) updateData.release_date = body.release_date || null;
@@ -235,6 +237,12 @@ export async function PATCH(
       updateData.interview_video_url = body.interview_video_url || null;
     }
     if (body.curation_status !== undefined) updateData.curation_status = body.curation_status || 'draft';
+    // Curator-picked cover per picture class ({ className: catalogId }), read
+    // by the live-events timeline boxes. Null clears the whole map (falls
+    // back to first-picture-per-class).
+    if (body.asset_group_covers !== undefined) {
+      updateData.asset_group_covers = body.asset_group_covers || null;
+    }
     // 'event' (one dated happening) or 'theme' (a subject across dates).
     // Anything else falls back to 'event' - the historical behaviour - rather
     // than letting a typo reach the check constraint and fail the whole save.
