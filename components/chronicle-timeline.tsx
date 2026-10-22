@@ -10,7 +10,7 @@ import { formatChronicleDate } from '@/lib/timeline';
 import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText } from '@/lib/localized-content';
 import { getImageUrl } from '@/lib/image-url';
-import { getImageDimensions } from '@/lib/image-dimensions';
+import { getAssetDimensions } from '@/lib/image-dimensions';
 import { t } from '@/lib/languages';
 import { categoryMeta } from '@/lib/category-meta';
 
@@ -328,7 +328,7 @@ function TimelineItem({ event, language, isHovered, onHover, onHoverEnd, onOpenI
               square crop keeps groups of 1 and 38 images equally scannable. */}
           <div className="grid grid-cols-2 gap-1.5 p-4 pt-3">
             {event.images.slice(0, GROUP_THUMBNAILS).map((img, i) => {
-              const dimensions = getImageDimensions(img.image_url);
+              const dimensions = getAssetDimensions(img);
               const captionText = getLocalizedText(img.caption_i18n, language, img.caption);
               return (
                 <div

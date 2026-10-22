@@ -11,7 +11,7 @@ import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import Lightbox from './lightbox';
 import { PageIntro } from '@/components/page-intro';
 import { getImageUrl } from '@/lib/image-url';
-import { getImageDimensions, FALLBACK_ASPECT_RATIO } from '@/lib/image-dimensions';
+import { getAssetDimensions, FALLBACK_ASPECT_RATIO } from '@/lib/image-dimensions';
 import { getLocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
 import { assetTagLabelKey } from '@/lib/category-meta';
@@ -29,7 +29,7 @@ const gradients = [
 // `select('*')` also pulled every long text column (excerpt, title, credits,
 // i18n blobs) for all 330 rows.
 const GALLERY_COLUMNS =
-  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, event_date, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform, project_id';
+  'id, image_url, caption, caption_i18n, tag, catalog_id, created_at, event_date, is_cover, is_editorial, curator_note, rotation, sequence, source_url, source_platform, project_id, width, height';
 const PAGE_SIZE = 60;
 
 // Minimal project info for the "open the event" back-link. Fetched in one
@@ -348,8 +348,12 @@ export default function GalleryPage() {
                 {filteredImages.map((item, index) => {
                   const imageUrl = getImageUrl(item.image_url);
                   // The gallery does not apply a CSS rotation, so use the stored
-                  // orientation as-is (no w/h swap).
-                  const dimensions = getImageDimensions(item.image_url);
+                  // orientation as-is (no w/h swap) - rotation is not passed.
+                  const dimensions = getAssetDimensions({
+                    image_url: item.image_url,
+                    width: item.width,
+                    height: item.height,
+                  });
                   // Cap the stagger: with the full set this expression used to
                   // grow to ~16s (index * 0.05 for 330 items).
                   const revealDelay = Math.min(index, 12) * 0.03;

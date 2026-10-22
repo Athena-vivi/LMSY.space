@@ -10,7 +10,7 @@ import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
-import { getImageDimensions } from '@/lib/image-dimensions';
+import { getAssetDimensions } from '@/lib/image-dimensions';
 import type { DoorAssetRow, DoorCategoryRow, DoorEntryRow } from '@/lib/door-data';
 
 /**
@@ -540,7 +540,7 @@ export function DoorEntryPage({
 
 function WallImage({ asset, index }: { asset: DoorAssetRow; index: number }) {
   const imageUrl = getImageUrl(asset.image_url);
-  const dimensions = getImageDimensions(asset.image_url);
+  const dimensions = getAssetDimensions(asset);
 
   return (
     <motion.div

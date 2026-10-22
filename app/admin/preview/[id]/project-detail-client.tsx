@@ -6,7 +6,7 @@ import { Calendar, ExternalLink, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/image-url';
-import { getImageDimensions } from '@/lib/image-dimensions';
+import { getAssetDimensions } from '@/lib/image-dimensions';
 import { formatChapterTitle } from '@/lib/chapter-title';
 import { t, type Language, type TranslationKey } from '@/lib/languages';
 import { NebulaBackground } from '@/components/nebula-background';
@@ -537,7 +537,7 @@ export default function ProjectDetailClient({
                   <div className={`${restColClass} gap-4 md:gap-6`}>
                     {restImages.map((image, index) => {
                       const imageUrl = getImageUrl(image.image_url);
-                      const dimensions = getImageDimensions(image.image_url, image.rotation ?? 0);
+                      const dimensions = getAssetDimensions(image);
 
                       return (
                         <motion.div

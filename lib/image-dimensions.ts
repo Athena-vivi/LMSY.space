@@ -54,3 +54,30 @@ export function getImageAspectRatio(imageUrl: string | null | undefined, rotatio
   const dim = getImageDimensions(imageUrl, rotation);
   return dim ? dim.width / dim.height : FALLBACK_ASPECT_RATIO;
 }
+
+/**
+ * Intrinsic size for an asset row. Newly promoted assets (self-serve wizard)
+ * carry their width/height inline in gallery_assets, which is authoritative;
+ * the generated JSON map stays as the fallback for historical rows.
+ */
+export function getAssetDimensions(
+  asset:
+    | {
+        image_url: string;
+        width?: number | null;
+        height?: number | null;
+        rotation?: number | null;
+      }
+    | null
+    | undefined
+): { width: number; height: number } | null {
+  if (!asset) return null;
+  const rotation = asset.rotation ?? 0;
+  const w = typeof asset.width === 'number' ? asset.width : null;
+  const h = typeof asset.height === 'number' ? asset.height : null;
+  if (w && h) {
+    const swapped = rotation === 90 || rotation === 270;
+    return swapped ? { width: h, height: w } : { width: w, height: h };
+  }
+  return getImageDimensions(asset.image_url, rotation);
+}

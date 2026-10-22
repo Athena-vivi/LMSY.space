@@ -134,6 +134,9 @@ export type MilestonePriority = 1 | 2 | 3 | 4 | 5 | null;
 export interface GalleryItem {
   id: string;
   image_url: string;
+  /** Intrinsic size stamped at promotion time; null on historical rows. */
+  width?: number | null;
+  height?: number | null;
   /** When the pictured event happened. Null when unconfirmed. */
   event_date?: string | null;
   title?: string | null;

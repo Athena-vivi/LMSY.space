@@ -80,7 +80,7 @@ async function resolve(slug: string, eventSlug: string) {
   const { data: assets } = await supabaseAdmin
     .schema('lmsy_archive')
     .from('gallery_assets')
-    .select('id, image_url, caption, catalog_id, rotation')
+    .select('id, image_url, caption, catalog_id, rotation, width, height')
     .eq('project_id', entry.id)
     .order('created_at', { ascending: true });
 

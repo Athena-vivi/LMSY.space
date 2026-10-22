@@ -33,6 +33,8 @@ export interface TimelineImageRef {
   caption: string | null;
   caption_i18n: LocalizedText | null;
   catalog_id: string | null;
+  width?: number | null;
+  height?: number | null;
 }
 
 export type ChronicleEvent =
@@ -124,7 +126,7 @@ export async function getChronicleEvents(): Promise<ChronicleEvent[]> {
     const { data: assets, error: assetsError } = await supabase
       .schema('lmsy_archive')
       .from('gallery_assets')
-      .select('id, image_url, event_date, caption, caption_i18n, catalog_id, project_id')
+      .select('id, image_url, event_date, caption, caption_i18n, catalog_id, project_id, width, height')
       .in(
         'project_id',
         rows.map((r) => r.id)

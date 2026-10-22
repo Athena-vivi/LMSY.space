@@ -7,7 +7,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
-import { getImageDimensions } from '@/lib/image-dimensions';
+import { getAssetDimensions } from '@/lib/image-dimensions';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
@@ -52,6 +52,8 @@ export interface DramaEventPageAsset {
   caption: string | null;
   catalog_id: string | null;
   rotation: number | null;
+  width?: number | null;
+  height?: number | null;
 }
 
 // Group names come from the hall registry, never from a local list.
@@ -190,7 +192,7 @@ export function DramaEventPageClient({
 
 function WallImage({ asset, index }: { asset: DramaEventPageAsset; index: number }) {
   const imageUrl = getImageUrl(asset.image_url);
-  const dimensions = getImageDimensions(asset.image_url);
+  const dimensions = getAssetDimensions(asset);
 
   return (
     <motion.div

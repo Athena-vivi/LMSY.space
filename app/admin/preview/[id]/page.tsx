@@ -50,7 +50,7 @@ export const revalidate = 300;
 // Only the columns the detail view renders (the previous select('*') pulled
 // excerpt/credits/i18n blobs the gallery grid never shows).
 const PROJECT_GALLERY_COLUMNS =
-  'id, image_url, caption, caption_i18n, catalog_id, category_tag, curator_note, is_featured, event_date, created_at, is_cover, rotation, sequence';
+  'id, image_url, caption, caption_i18n, catalog_id, category_tag, curator_note, is_featured, event_date, created_at, is_cover, rotation, sequence, width, height';
 
 // Tab categories configuration
 export const CATEGORIES = [

@@ -84,6 +84,9 @@ export interface DoorAssetRow {
   caption: string | null;
   catalog_id: string | null;
   rotation: number | null;
+  /** Intrinsic size stamped at promotion time; null on historical rows. */
+  width: number | null;
+  height: number | null;
   /**
    * Curated picture class inside one entry (airport official / airport fan /
    * rehearsal / show ...). Null means unfiled, which the timeline shows as the
@@ -306,7 +309,7 @@ export async function loadEntry(
   const { data: assets } = await getSupabaseAdmin()
     .schema('lmsy_archive')
     .from('gallery_assets')
-    .select('id, image_url, caption, catalog_id, rotation, asset_group')
+    .select('id, image_url, caption, catalog_id, rotation, asset_group, width, height')
     .eq('project_id', entry.id)
     .order('created_at', { ascending: true });
 
