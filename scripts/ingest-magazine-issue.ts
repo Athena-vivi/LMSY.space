@@ -47,6 +47,8 @@ interface Spec {
   file_stem: string;
   event_date: string;
   tag?: string;
+  /** Optional picture class stamped on every asset of this batch. */
+  asset_group?: string | null;
   base_dir: string;
   images: ImageSpec[];
 }
@@ -59,6 +61,9 @@ if (!specPath) {
 
 const spec: Spec = JSON.parse(readFileSync(specPath, 'utf-8'));
 const tag = spec.tag ?? 'Magazine';
+// Optional picture class (机场-官方 / 彩排 / 演出 ...). Stored per asset so the
+// live-events timeline can box the entry's pictures by class.
+const assetGroup = spec.asset_group ?? null;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -89,6 +94,7 @@ async function main() {
       caption,
       title: caption,
       tag,
+      asset_group: assetGroup,
       is_featured: false,
       catalog_id: stem,
       is_editorial: false,

@@ -331,6 +331,38 @@ export async function loadSegmentEntryGroups(
 
   for (const entry of entries) map.set(entry.id, []);
 
+  // A curated entry can pre-declare its classes (projects.asset_groups, an
+  // ordered jsonb array of names). Declared classes get their box even before
+  // any picture is filed into them, in the curator's order; classes found on
+  // actual assets but not declared are appended after.
+  const { data: projectRows } = await getSupabaseAdmin()
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('id, asset_groups')
+    .in(
+      'id',
+      entries.map((entry) => entry.id)
+    );
+
+  const declared = new Map<string, string[]>();
+  for (const row of (projectRows ?? []) as Array<{
+    id: string;
+    asset_groups: unknown;
+  }>) {
+    const list = Array.isArray(row.asset_groups)
+      ? (row.asset_groups as unknown[]).filter(
+          (name): name is string => typeof name === 'string' && name.length > 0
+        )
+      : [];
+    if (list.length > 0) declared.set(row.id, list);
+    for (const name of list) {
+      map.set(row.id, [
+        ...(map.get(row.id) ?? []),
+        { key: name, count: 0, cover: null },
+      ]);
+    }
+  }
+
   const ids = entries.map((entry) => entry.id);
   const { data: assets } = await getSupabaseAdmin()
     .schema('lmsy_archive')
@@ -355,7 +387,8 @@ export async function loadSegmentEntryGroups(
     if (!group.cover && asset.image_url) group.cover = asset.image_url;
   }
 
-  // Unfiled first would bury the curated classes; keep insertion order (the
-  // order pictures were uploaded), which puts the oldest class on top.
+  // An entry whose classes are all declared and none of which has pictures
+  // keeps its declared (empty) boxes; a declared class that also holds the
+  // unfiled null bucket only shows once the null bucket has pictures.
   return map;
 }
