@@ -19,6 +19,7 @@ import {
   EditModal,
   BatchEditModal,
   LinkProjectModal,
+  RenameProjectModal,
   type DraftFolder,
 } from './components';
 import { useDrafts } from './hooks/use-drafts';
@@ -35,13 +36,18 @@ function thumbOf(drafts: DraftItem[]): string | null {
 /**
  * Which folder the rail should open on.
  *
- * The list order already encodes the priority (unassigned, then projects from
- * smallest to largest, then the read-only "all" view), so the landing folder
- * is simply the first entry that is not that view. An empty inbox has nothing
- * else to offer and falls back to "all".
+ * Prefer a folder that actually holds work (unassigned bucket or a project
+ * with drafts); empty project folders are listed for filing new images but
+ * should not grab the landing spot. Falls back to the first non-"all" entry,
+ * then "all".
  */
 function landingFolderId(folders: DraftFolder[]): string {
-  return (folders.find((folder) => folder.tone !== 'all') ?? folders[0])?.id ?? '';
+  return (
+    folders.find((folder) => folder.tone !== 'all' && folder.count > 0)?.id ??
+    folders.find((folder) => folder.tone !== 'all')?.id ??
+    folders[0]?.id ??
+    ''
+  );
 }
 
 export default function DraftsPage() {
@@ -61,6 +67,16 @@ export default function DraftsPage() {
   });
 
   const [linkProjectDraftId, setLinkProjectDraftId] = useState<string | null>(null);
+  // Quick rename straight from the folder rail - project management is where
+  // the full form lives, but a name fix should not require hunting for it.
+  const [renamingProject, setRenamingProject] = useState<{ id: string; title: string } | null>(null);
+
+  const handleProjectRenamed = (id: string, title: string) => {
+    setProjectTitles((prev) => ({ ...prev, [id]: title }));
+    draftsState.showToast(
+      lang === 'en' ? `Project renamed to ${title}` : `已重命名为「${title}」`
+    );
+  };
 
   // Folder pane (layout B). Purely a way of looking at the inbox: selecting a
   // folder never writes anything, and drafts keep whatever project they had.
@@ -71,6 +87,7 @@ export default function DraftsPage() {
   // Empty until the first load settles - see the effect below.
   const [activeFolder, setActiveFolder] = useState('');
   const [projectTitles, setProjectTitles] = useState<Record<string, string>>({});
+  const [projectOrder, setProjectOrder] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,10 +97,13 @@ export default function DraftsPage() {
         const result = await response.json();
         if (cancelled || !result?.projects) return;
         const map: Record<string, string> = {};
+        const order: string[] = [];
         for (const project of result.projects as Array<{ id: string; title?: string; slug?: string }>) {
           map[project.id] = project.title || project.slug || project.id;
+          order.push(project.id);
         }
         setProjectTitles(map);
+        setProjectOrder(order);
       } catch {
         // A missing project name only costs a label; the grouping still works
         // on project_id, so there is nothing to recover from here.
@@ -118,9 +138,25 @@ export default function DraftsPage() {
       }))
       .sort((a, b) => a.count - b.count || a.title.localeCompare(b.title));
 
+    // Every project from project management gets a folder, even when it holds
+    // no drafts yet - an empty folder is where new images get filed, so it
+    // must be visible and clickable. They sit after the projects that have
+    // drafts (work first), ordered by name.
+    const knownEmpty: DraftFolder[] = projectOrder
+      .filter((id) => !groups.has(id))
+      .map((id) => ({
+        id,
+        title: projectTitles[id] || '…',
+        count: 0,
+        thumb: null,
+        tone: 'project' as const,
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title));
+
     // Order reflects what the rail is for: this is a work list, so the bucket
-    // that still needs a decision sits on top, the projects below it, and the
-    // read-only "everything" view last where it is out of the way.
+    // that still needs a decision sits on top, the projects with drafts below
+    // it, then the empty project folders, and the read-only "everything" view
+    // last where it is out of the way.
     const list: DraftFolder[] = [];
 
     if (orphans.length > 0) {
@@ -133,7 +169,7 @@ export default function DraftsPage() {
       });
     }
 
-    list.push(...projectFolders, {
+    list.push(...projectFolders, ...knownEmpty, {
       id: 'all',
       title: t('d.folders.all'),
       count: draftsState.drafts.length,
@@ -142,7 +178,7 @@ export default function DraftsPage() {
     });
 
     return list;
-  }, [draftsState.drafts, projectTitles, t]);
+  }, [draftsState.drafts, projectTitles, projectOrder, t]);
 
   // One rule covers two cases: the initial pick (activeFolder starts empty,
   // because the right folder is only knowable once the drafts are in) and a
@@ -258,6 +294,7 @@ export default function DraftsPage() {
             onSelect={setActiveFolder}
             loading={draftsState.loading}
             onDropOnFolder={handleDropOnFolder}
+            onRenameFolder={(folder) => setRenamingProject({ id: folder.id, title: folder.title })}
           />
         </aside>
 
@@ -370,6 +407,13 @@ export default function DraftsPage() {
         isOpen={linkProjectDraftId !== null}
         onClose={() => setLinkProjectDraftId(null)}
         onSelect={actions.handleLinkExistingProject}
+      />
+
+      <RenameProjectModal
+        project={renamingProject}
+        isOpen={renamingProject !== null}
+        onClose={() => setRenamingProject(null)}
+        onSaved={handleProjectRenamed}
       />
 
       {/* Delete Confirmation Modal */}

@@ -3,19 +3,23 @@
  *
  * The inbox is grouped by project, the way a folder pane works. The order is
  * not alphabetical: this is a work list, so the unassigned bucket sits on top
- * (it is the one that still needs a decision), projects follow from the
- * smallest to the largest - a project with hundreds of drafts is usually done -
- * and the read-only "all drafts" view is pinned to the bottom, separated by a
- * rule so it does not read as another folder.
+ * (it is the one that still needs a decision), projects with drafts follow
+ * from the smallest to the largest - a project with hundreds of drafts is
+ * usually done - then empty project folders (they exist so new images have
+ * somewhere to be filed), and the read-only "all drafts" view is pinned to
+ * the bottom, separated by a rule so it does not read as another folder.
  *
  * Selecting a folder only narrows the grid on the right - it never changes a
  * draft's ownership. Dropping a thumbnail on a folder is the one gesture that
- * does write, and it goes through the existing batch-link endpoint.
+ * does write, and it goes through the existing batch-link endpoint. Project
+ * folders also carry a hover rename affordance, because a name fix should not
+ * require a detour to project management.
  */
 
 'use client';
 
 import { useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { useAdminLang } from '@/lib/admin-i18n';
 
 export interface DraftFolder {
@@ -32,6 +36,7 @@ interface DraftsFolderRailProps {
   onSelect: (id: string) => void;
   loading?: boolean;
   onDropOnFolder?: (folderId: string, payload: string) => void;
+  onRenameFolder?: (folder: DraftFolder) => void;
 }
 
 export function DraftsFolderRail({
@@ -40,6 +45,7 @@ export function DraftsFolderRail({
   onSelect,
   loading,
   onDropOnFolder,
+  onRenameFolder,
 }: DraftsFolderRailProps) {
   const { t } = useAdminLang();
   const [overId, setOverId] = useState<string | null>(null);
@@ -89,10 +95,8 @@ export function DraftsFolderRail({
               }}
               className={
                 folder.tone === 'all'
-                  ? 'mt-1 border-t border-white/10 pt-1'
-                  : isOver
-                    ? 'ring-2 ring-inset ring-lmsy-yellow'
-                    : undefined
+                  ? 'group mt-1 border-t border-white/10 pt-1'
+                  : 'group relative' + (isOver ? ' ring-2 ring-inset ring-lmsy-yellow' : '')
               }
             >
               <button
@@ -150,6 +154,24 @@ export function DraftsFolderRail({
                   {folder.count}
                 </span>
               </button>
+
+              {/* Rename affordance: only real projects, revealed on hover so
+                  the rail stays quiet until it is needed. Sits on top of the
+                  main button as a sibling, never nested inside it. */}
+              {folder.tone === 'project' && onRenameFolder && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRenameFolder(folder);
+                  }}
+                  title={t('d.folders.rename')}
+                  aria-label={`${t('d.folders.rename')}: ${folder.title}`}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-ink-2 opacity-0 transition-opacity hover:text-lmsy-yellow focus:opacity-100 group-hover:opacity-100"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
             </li>
           );
         })}
