@@ -10,17 +10,11 @@ import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-transl
 import {
   DEFAULT_HERO_SECTION_IMAGE,
   DEFAULT_HERO_CONTENT,
-  DEFAULT_LONGFORM_CONTENT,
-  DEFAULT_MILESTONES_CONTENT,
   DEFAULT_PREFACE_CONTENT,
   getHeroSectionImageUrl,
   normalizeHeroContent,
-  normalizeLongformContent,
-  normalizeMilestonesContent,
   normalizePrefaceContent,
   toHeroPayload,
-  toLongformPayload,
-  toMilestonesPayload,
   toPrefacePayload,
 } from './content-blocks';
 import type {
@@ -28,16 +22,13 @@ import type {
   HeroContent,
   HeroFields,
   Lang,
-  LongformContent,
-  LongformFields,
-  MilestonesContent,
-  MilestonesFields,
   PrefaceContent,
   PrefaceFields,
 } from './types';
 import { TabButton } from './components/tab-button';
 import { SectionIntro } from './components/section-intro';
-import { HeroPanel, LongformPanel, MilestonesPanel, PrefacePanel } from './components/settings-panels';
+import { HeroPanel, PrefacePanel } from './components/settings-panels';
+import { TalkSettingsPanel } from './components/talk-settings';
 
 type SiteContentBlock = {
   block_key: string;
@@ -81,8 +72,6 @@ async function getAuthHeaders() {
 
 export default function AdminSettingsPage() {
   const [prefaceContent, setPrefaceContent] = useState<PrefaceContent>(DEFAULT_PREFACE_CONTENT);
-  const [longformContent, setLongformContent] = useState<LongformContent>(DEFAULT_LONGFORM_CONTENT);
-  const [milestonesContent, setMilestonesContent] = useState<MilestonesContent>(DEFAULT_MILESTONES_CONTENT);
   const [heroContent, setHeroContent] = useState<HeroContent>(DEFAULT_HERO_CONTENT);
   const [heroSplashImageUrl, setHeroSplashImageUrl] = useState('');
   const [heroSectionImageUrl, setHeroSectionImageUrl] = useState(DEFAULT_HERO_SECTION_IMAGE);
@@ -134,18 +123,10 @@ export default function AdminSettingsPage() {
 
         const blocks: SiteContentBlock[] = Array.isArray(result.blocks) ? result.blocks : [];
         const prefaceBlock = blocks.find((block) => block.block_key === 'homepage_preface');
-        const longformBlock = blocks.find((block) => block.block_key === 'homepage_longform');
-        const milestonesBlock = blocks.find((block) => block.block_key === 'homepage_milestones');
         const heroBlock = blocks.find((block) => block.block_key === 'homepage_hero');
 
         if (prefaceBlock?.content_i18n) {
           setPrefaceContent(normalizePrefaceContent(prefaceBlock.content_i18n));
-        }
-        if (longformBlock?.content_i18n) {
-          setLongformContent(normalizeLongformContent(longformBlock.content_i18n));
-        }
-        if (milestonesBlock?.content_i18n) {
-          setMilestonesContent(normalizeMilestonesContent(milestonesBlock.content_i18n));
         }
         if (heroBlock?.content_i18n) {
           setHeroContent(normalizeHeroContent(heroBlock.content_i18n));
@@ -166,26 +147,6 @@ export default function AdminSettingsPage() {
 
   const updatePrefaceField = (lang: Lang, field: keyof PrefaceFields, value: string) => {
     setPrefaceContent((prev) => ({
-      ...prev,
-      [lang]: {
-        ...prev[lang],
-        [field]: value,
-      },
-    }));
-  };
-
-  const updateLongformField = (lang: Lang, field: keyof LongformFields, value: string) => {
-    setLongformContent((prev) => ({
-      ...prev,
-      [lang]: {
-        ...prev[lang],
-        [field]: value,
-      },
-    }));
-  };
-
-  const updateMilestonesField = (lang: Lang, field: keyof MilestonesFields, value: string) => {
-    setMilestonesContent((prev) => ({
       ...prev,
       [lang]: {
         ...prev[lang],
@@ -226,30 +187,6 @@ export default function AdminSettingsPage() {
           date: 'description',
         });
         setPrefaceContent((prev) => ({ ...prev, [targetLang]: translated }));
-      }
-
-      if (activeTab === 'longform') {
-        const translated = await translateFieldMap(longformContent.en, targetLang, {
-          eyebrow: 'title',
-          fallbackTitle: 'title',
-          fallbackExcerpt: 'description',
-          source: 'description',
-          readMoreLabel: 'title',
-        });
-        setLongformContent((prev) => ({ ...prev, [targetLang]: translated }));
-      }
-
-      if (activeTab === 'milestones') {
-        const translated = await translateFieldMap(milestonesContent.en, targetLang, {
-          sectionTitle: 'title',
-          year2022: 'title',
-          year2023: 'title',
-          year2024: 'title',
-          year2025: 'title',
-          ongoing: 'title',
-          bottomNote: 'description',
-        });
-        setMilestonesContent((prev) => ({ ...prev, [targetLang]: translated }));
       }
 
       if (activeTab === 'hero') {
@@ -309,8 +246,6 @@ export default function AdminSettingsPage() {
 
       await saveBlock('homepage_hero', toHeroPayload(heroContent, heroSectionImageUrl));
       await saveBlock('homepage_preface', toPrefacePayload(prefaceContent));
-      await saveBlock('homepage_longform', toLongformPayload(longformContent));
-      await saveBlock('homepage_milestones', toMilestonesPayload(milestonesContent));
 
       setSavedAt(new Date().toLocaleString());
     } catch (err) {
@@ -325,7 +260,8 @@ export default function AdminSettingsPage() {
       <div className="mb-8">
         <h1 className="mb-2 font-serif text-4xl font-bold text-foreground">Settings</h1>
         <p className="text-ink-2">
-          Edit homepage-level content blocks. Use tabs to switch between Hero, Preface, Longform, and Milestones.
+          Tabs 1-2 edit homepage content blocks. Tabs 3-4 edit a specific talk program&apos;s video
+          links and transcript.
         </p>
       </div>
 
@@ -355,11 +291,11 @@ export default function AdminSettingsPage() {
               <TabButton active={activeTab === 'preface'} color="yellow" onClick={() => setActiveTab('preface')}>
                 Homepage Preface
               </TabButton>
-              <TabButton active={activeTab === 'longform'} color="blue" onClick={() => setActiveTab('longform')}>
-                Homepage Longform
+              <TabButton active={activeTab === 'talk-videos'} color="blue" onClick={() => setActiveTab('talk-videos')}>
+                Talk Video Links
               </TabButton>
-              <TabButton active={activeTab === 'milestones'} color="blue" onClick={() => setActiveTab('milestones')}>
-                Homepage Milestones
+              <TabButton active={activeTab === 'talk-transcript'} color="blue" onClick={() => setActiveTab('talk-transcript')}>
+                Talk Transcript
               </TabButton>
             </div>
           </div>
@@ -510,87 +446,53 @@ export default function AdminSettingsPage() {
             </>
           )}
 
-          {activeTab === 'longform' && (
+          {activeTab === 'talk-videos' && (
             <>
               <SectionIntro
                 iconColor="text-lmsy-blue"
-                title="Homepage Longform"
-                description="Controls the outer copy around the Featured Interview block on the homepage."
-                blockKey="site_content_blocks.homepage_longform"
+                title="Talk Video Links"
+                description="Pick a talk program and set its Bilibili / YouTube video URLs. Saved to"
+                blockKey="projects.video_url_bilibili / video_url_youtube"
               />
-              <div className="flex gap-2">
-                {(['zh', 'th'] as const).map((lang) => (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => handleTranslateCurrentTab(lang)}
-                    disabled={translatingLang !== null}
-                    className="inline-flex items-center gap-2 rounded border border-lmsy-blue/30 bg-lmsy-blue/10 px-3 py-1.5 text-[10px] font-mono tracking-wider text-lmsy-blue transition-all hover:bg-lmsy-blue/20 disabled:opacity-50"
-                  >
-                    {translatingLang === lang ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
-                    AUTO_{lang.toUpperCase()}_FROM_EN
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                <LongformPanel lang="en" label="English" content={longformContent.en} onChange={updateLongformField} />
-                <LongformPanel lang="zh" label="中文" content={longformContent.zh} onChange={updateLongformField} />
-                <LongformPanel lang="th" label="ไทย" content={longformContent.th} onChange={updateLongformField} />
-              </div>
+              <TalkSettingsPanel mode="videos" />
             </>
           )}
 
-          {activeTab === 'milestones' && (
+          {activeTab === 'talk-transcript' && (
             <>
               <SectionIntro
                 iconColor="text-lmsy-blue"
-                title="Homepage Milestones"
-                description="Controls the localized year labels and note in the homepage milestone section."
-                blockKey="site_content_blocks.homepage_milestones"
+                title="Talk Transcript"
+                description="Pick a talk program and edit its markdown transcript shown on the detail page. Saved to"
+                blockKey="projects.interview_md"
               />
-              <div className="flex gap-2">
-                {(['zh', 'th'] as const).map((lang) => (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => handleTranslateCurrentTab(lang)}
-                    disabled={translatingLang !== null}
-                    className="inline-flex items-center gap-2 rounded border border-lmsy-blue/30 bg-lmsy-blue/10 px-3 py-1.5 text-[10px] font-mono tracking-wider text-lmsy-blue transition-all hover:bg-lmsy-blue/20 disabled:opacity-50"
-                  >
-                    {translatingLang === lang ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
-                    AUTO_{lang.toUpperCase()}_FROM_EN
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                <MilestonesPanel lang="en" label="English" content={milestonesContent.en} onChange={updateMilestonesField} />
-                <MilestonesPanel lang="zh" label="中文" content={milestonesContent.zh} onChange={updateMilestonesField} />
-                <MilestonesPanel lang="th" label="ไทย" content={milestonesContent.th} onChange={updateMilestonesField} />
-              </div>
+              <TalkSettingsPanel mode="transcript" />
             </>
           )}
         </div>
       )}
 
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving || loading}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-lmsy-yellow to-lmsy-blue px-8 py-3 text-black transition-opacity disabled:opacity-60"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />
-              Save Homepage Content
-            </>
-          )}
-        </button>
-      </div>
+      {(activeTab === 'hero' || activeTab === 'preface') && (
+        <div className="mt-8 flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-lmsy-yellow to-lmsy-blue px-8 py-3 text-black transition-opacity disabled:opacity-60"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Homepage Content
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {isHeroPickerOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">

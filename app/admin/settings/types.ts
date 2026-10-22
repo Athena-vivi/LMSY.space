@@ -1,5 +1,8 @@
 export type Lang = 'en' | 'zh' | 'th';
-export type ContentTab = 'preface' | 'longform' | 'milestones' | 'hero';
+// Tabs 3/4 were repurposed (2026-10-22): the homepage longform/milestones
+// content blocks are no longer rendered anywhere, so the tabs now edit talk
+// program resources instead - video links and the markdown transcript.
+export type ContentTab = 'preface' | 'talk-videos' | 'talk-transcript' | 'hero';
 
 export type PrefaceFields = {
   title: string;

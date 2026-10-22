@@ -28,10 +28,14 @@ export function TextArea({
   label,
   value,
   onChange,
+  rows = 4,
+  monospace = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  rows?: number;
+  monospace?: boolean;
 }) {
   return (
     <div className="space-y-2">
@@ -41,8 +45,10 @@ export function TextArea({
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        rows={4}
-        className="custom-scrollbar w-full rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-ink focus:border-lmsy-yellow/40 focus:outline-none"
+        rows={rows}
+        className={`custom-scrollbar w-full rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-ink focus:border-lmsy-yellow/40 focus:outline-none ${
+          monospace ? 'font-mono text-[13px] leading-relaxed' : ''
+        }`}
       />
     </div>
   );

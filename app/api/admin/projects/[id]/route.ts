@@ -212,10 +212,11 @@ export async function PATCH(
       );
     }
 
-    // Prepare update data
-    const updateData: Record<string, any> = {
-      category: body.category,
-    };
+    // Prepare update data. category is optional so partial updates (e.g. the
+    // settings talk tabs saving just video links or the transcript) cannot
+    // wipe it with undefined.
+    const updateData: Record<string, any> = {};
+    if (body.category !== undefined) updateData.category = body.category;
     if (body.title !== undefined) updateData.title = body.title.trim();
 
     // Optional fields
@@ -235,6 +236,13 @@ export async function PATCH(
     if (body.interview_md !== undefined) updateData.interview_md = body.interview_md || null;
     if (body.interview_video_url !== undefined) {
       updateData.interview_video_url = body.interview_video_url || null;
+    }
+    // Talk door video links, edited from the settings page tabs 3.
+    if (body.video_url_bilibili !== undefined) {
+      updateData.video_url_bilibili = body.video_url_bilibili || null;
+    }
+    if (body.video_url_youtube !== undefined) {
+      updateData.video_url_youtube = body.video_url_youtube || null;
     }
     if (body.curation_status !== undefined) updateData.curation_status = body.curation_status || 'draft';
     // Curator-picked cover per picture class ({ className: catalogId }), read
