@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, Trash2, Plus, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw, ImagePlus } from 'lucide-react';
 import Image from 'next/image';
 import { supabase, type Project } from '@/lib/supabase';
+import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import EditProjectModal from './_components/edit-project-modal';
 import { useAdminLang } from '@/lib/admin-i18n';
 import { getImageUrl } from '@/lib/image-url';
@@ -289,39 +290,49 @@ export default function AdminProjectsPage() {
     setDeleteConfirm({ show: false, projectId: '', projectTitle: '' });
   };
 
-  const categoryConfig: Record<string, {
-    label: string;
-    className: string;
-  }> = {
-    series: {
-      label: 'cat.TV_SERIES',
+  // Badge colours per real door (drama_work / live_event / ...). The old map
+  // keyed on retired category values and every row fell into the series
+  // fallback, showing "剧集" for all doors - data was always correct.
+  const categoryConfig: Record<string, { label: string; className: string }> = {
+    drama_work: {
+      label: 'category.dramaWork',
       className: 'text-lmsy-yellow border-lmsy-yellow/30 bg-lmsy-yellow/5 backdrop-blur-sm',
     },
     editorial: {
-      label: 'cat.EDITORIAL',
+      label: 'category.editorial',
       className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
     },
-    appearance: {
-      label: 'cat.APPEARANCE',
-      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
+    live_event: {
+      label: 'category.liveEvent',
+      className: 'text-emerald-300/80 border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm',
     },
-    journal: {
-      label: 'cat.JOURNAL',
-      className: 'text-ink-2 border-white/10 bg-transparent backdrop-blur-sm',
+    public_appearance: {
+      label: 'category.publicAppearance',
+      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
     },
     commercial: {
-      label: 'cat.COMMERCIAL',
+      label: 'category.commercial',
       className: 'text-amber-200/70 border-amber-500/20 bg-amber-500/5 backdrop-blur-sm',
     },
-    // Legacy support
-    music: {
-      label: 'cat.MUSIC_VIDEO',
-      className: 'text-white border-white/20 bg-white/5 backdrop-blur-sm',
+    behind_the_scenes: {
+      label: 'category.behindTheScenes',
+      className: 'text-cyan-300/70 border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm',
     },
-    magazine: {
-      label: 'cat.MAGAZINE',
-      className: 'text-lmsy-blue border-lmsy-blue/30 bg-lmsy-blue/5 backdrop-blur-sm',
+    personal_travel: {
+      label: 'category.personalTravel',
+      className: 'text-rose-300/70 border-rose-500/20 bg-rose-500/5 backdrop-blur-sm',
     },
+    early_archive: {
+      label: 'category.earlyArchive',
+      className: 'text-ink-2 border-white/10 bg-transparent backdrop-blur-sm',
+    },
+  };
+
+  /** Badge label: the registry sub-type when the door has one, else the door. */
+  const badgeLabelKey = (project: Project): string => {
+    const subtypes = SUBTYPES_BY_CATEGORY[project.category as keyof typeof SUBTYPES_BY_CATEGORY];
+    const hit = subtypes?.find((s) => s.value === project.subtype);
+    return hit?.labelKey ?? categoryConfig[project.category]?.label ?? 'category.earlyArchive';
   };
 
   const categoryOptions = useMemo(
@@ -492,7 +503,7 @@ export default function AdminProjectsPage() {
 
               {filteredProjects.map((project) => {
                 const selected = project.id === selectedProjectId;
-                const config = categoryConfig[project.category] || categoryConfig.series;
+                const config = categoryConfig[project.category] || categoryConfig.early_archive;
                 const coverUrl = getImageUrl(project.cover_url);
                 return (
                   <button
@@ -527,7 +538,7 @@ export default function AdminProjectsPage() {
                       </span>
                       <span className="mt-1 flex flex-wrap items-center gap-2">
                         <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono tracking-[0.1em] uppercase border ${config.className}`}>
-                          {t(config.label)}
+                          {t(badgeLabelKey(project))}
                         </span>
                         {project.event_date || project.release_date ? (
                           <span className="inline-flex items-center gap-1 font-mono text-[10px] tracking-wide text-ink-2">
@@ -600,8 +611,8 @@ export default function AdminProjectsPage() {
                   <div className="space-y-1.5">
                     <h3 className="font-serif text-lg leading-snug text-ink">{activeProject.title}</h3>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono tracking-[0.1em] uppercase border ${(categoryConfig[activeProject.category] || categoryConfig.series).className}`}>
-                        {t((categoryConfig[activeProject.category] || categoryConfig.series).label)}
+                      <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono tracking-[0.1em] uppercase border ${(categoryConfig[activeProject.category] || categoryConfig.early_archive).className}`}>
+                        {t(badgeLabelKey(activeProject))}
                       </span>
                       {(activeProject.event_date || activeProject.release_date) && (
                         <span className="inline-flex items-center gap-1 font-mono text-[10px] text-ink-2">
