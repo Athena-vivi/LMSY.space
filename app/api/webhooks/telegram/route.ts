@@ -50,6 +50,10 @@ interface TelegramMessage {
   date: number;
   text?: string;
   caption?: string;
+  // Albums (media groups) arrive as one message per photo. The caption typed
+  // on the album is attached to the FIRST message only, so the remaining
+  // photos carry media_group_id but no caption.
+  media_group_id?: string;
   photo?: TelegramPhotoSize[];
 }
 
@@ -156,6 +160,37 @@ function normalizeUrl(url: string): string {
 }
 
 /**
+ * Find the caption typed on an album by looking at sibling drafts.
+ *
+ * Telegram delivers an album as one update per photo, and the caption is only
+ * on the first message. The first photo is inserted (with its caption stored
+ * in media_metadata.tg_caption) before the siblings arrive, so they can look
+ * it up instead of falling back to the "Photo from ..." placeholder.
+ */
+async function findAlbumCaption(mediaGroupId: string): Promise<string | null> {
+  const { data, error } = await supabaseAdmin
+    .from('draft_items')
+    .select('media_metadata')
+    .eq('source_platform', 'telegram')
+    .contains('media_metadata', { tg_media_group_id: mediaGroupId })
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('[TELEGRAM_WEBHOOK] album caption lookup failed:', error.message);
+    return null;
+  }
+
+  for (const row of data || []) {
+    const caption = row?.media_metadata?.tg_caption;
+    if (typeof caption === 'string' && caption.trim()) {
+      return caption.trim();
+    }
+  }
+  return null;
+}
+
+/**
  * Check if file already exists by file_hash
  */
 async function checkDuplicateByFileHash(
@@ -255,7 +290,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Extract text content (optional - use default if missing)
-        let text = extractMessageText(message);
+        const rawCaption = extractMessageText(message);
+        let text = rawCaption;
+        if (!text && message.media_group_id) {
+          // Album photo without its own caption: reuse the caption typed on
+          // the album (it lives on the first message of the group).
+          const albumCaption = await findAlbumCaption(message.media_group_id);
+          if (albumCaption) {
+            text = albumCaption;
+            console.log(`[TELEGRAM_WEBHOOK] Reused album caption from sibling: "${text}"`);
+          }
+        }
         if (!text) {
           // Use default text for images without caption
           const date = new Date(message.date * 1000);
@@ -366,12 +411,18 @@ export async function POST(request: NextRequest) {
             r2_media_url: r2Url,
             r2_key: r2Key,
             file_hash: fileHash,
-            media_metadata: download.metadata || {
-              width: largestPhoto.width,
-              height: largestPhoto.height,
-              duration: null,
-              size: largestPhoto.file_size || null,
-              format: null,
+            media_metadata: {
+              ...(download.metadata || {
+                width: largestPhoto.width,
+                height: largestPhoto.height,
+                duration: null,
+                size: largestPhoto.file_size || null,
+                format: null,
+              }),
+              // Album bookkeeping: tg_caption keeps the raw user caption
+              // (pre-AI-translation) so siblings can reuse it as their title.
+              tg_media_group_id: message.media_group_id || null,
+              tg_caption: rawCaption || null,
             },
           })
           .select('id')
