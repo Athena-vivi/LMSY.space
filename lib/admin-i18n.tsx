@@ -292,6 +292,7 @@ const DICT: Record<string, [string, string]> = {
   'p.merge': ['合并项目', 'Merge Project'],
   'p.split': ['拆分项目', 'Split Project'],
   'p.panelHint': ['点击左侧任意事件，在这里查看预览与管理操作', 'Click an event on the left to see its preview and actions here'],
+  'p.noPictures': ['该事件还没有图片', 'No pictures filed under this event yet'],
   'p.curateAssets': ['整理图片', 'Curate Pictures'],
   'p.editProject': ['编辑信息', 'Edit Details'],
   'p.deleteProject': ['删除此事件', 'Delete Event'],

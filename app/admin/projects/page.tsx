@@ -24,7 +24,6 @@ export default function AdminProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | Project['category']>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
-  const [projectAssets, setProjectAssets] = useState<Record<string, ProjectPreviewAsset[]>>({});
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
     show: false,
     message: '',
@@ -51,40 +50,52 @@ export default function AdminProjectsPage() {
   });
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
+  // Pictures of the event currently picked in the list. Loaded per event on
+  // selection - the old page prefetched the whole gallery into one map, which
+  // silently breaks past the 1000-row API cap.
+  const [panelAssets, setPanelAssets] = useState<ProjectPreviewAsset[]>([]);
+  const [panelAssetsLoading, setPanelAssetsLoading] = useState(false);
+
   useEffect(() => {
     fetchProjects();
   }, []);
 
   const fetchProjects = async () => {
     setLoading(true);
-    const [
-      { data: projectData, error: projectError },
-      { data: assetData, error: assetError },
-    ] = await Promise.all([
-      supabase
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('*')
-        .order('release_date', { ascending: false }),
-      supabase
+    const { data: projectData, error: projectError } = await supabase
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('*')
+      .order('release_date', { ascending: false });
+
+    if (!projectError && projectData) setProjects(projectData);
+    setLoading(false);
+  };
+
+  // Load the picked event's own pictures whenever the selection changes.
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setPanelAssets([]);
+      return;
+    }
+    let cancelled = false;
+    setPanelAssetsLoading(true);
+    (async () => {
+      const { data, error } = await supabase
         .schema('lmsy_archive')
         .from('gallery_assets')
         .select('id, image_url, project_id, catalog_id, rotation')
-        .order('created_at', { ascending: true }),
-    ]);
-
-    if (!projectError && projectData) setProjects(projectData);
-    if (!assetError && assetData) {
-      const grouped = assetData.reduce<Record<string, ProjectPreviewAsset[]>>((acc, asset) => {
-        if (!asset.project_id) return acc;
-        if (!acc[asset.project_id]) acc[asset.project_id] = [];
-        acc[asset.project_id].push(asset);
-        return acc;
-      }, {});
-      setProjectAssets(grouped);
-    }
-    setLoading(false);
-  };
+        .eq('project_id', selectedProjectId)
+        .order('created_at', { ascending: true });
+      if (!cancelled) {
+        setPanelAssets(error ? [] : (data as ProjectPreviewAsset[]) || []);
+        setPanelAssetsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProjectId]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ show: true, message, type });
@@ -209,14 +220,11 @@ export default function AdminProjectsPage() {
         throw new Error(result.error || 'ROTATE_FAILED');
       }
 
-      setProjectAssets((prev) => {
-        const next = { ...prev };
-        const items = next[asset.project_id || ''] || [];
-        next[asset.project_id || ''] = items.map((item) =>
+      setPanelAssets((prev) =>
+        prev.map((item) =>
           item.id === asset.id ? { ...item, rotation: nextRotation } : item
-        );
-        return next;
-      });
+        )
+      );
       showToast('ASSET_ROTATION_UPDATED');
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'ROTATE_FAILED', 'error');
@@ -486,7 +494,6 @@ export default function AdminProjectsPage() {
                 const selected = project.id === selectedProjectId;
                 const config = categoryConfig[project.category] || categoryConfig.series;
                 const coverUrl = getImageUrl(project.cover_url);
-                const assetCount = (projectAssets[project.id] || []).length;
                 return (
                   <button
                     key={project.id}
@@ -528,12 +535,6 @@ export default function AdminProjectsPage() {
                             {(project.event_date || project.release_date)!.slice(0, 10)}
                           </span>
                         ) : null}
-                        {assetCount > 0 && (
-                          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-ink-2">
-                            <Images className="h-2.5 w-2.5" strokeWidth={1.5} />
-                            {assetCount}
-                          </span>
-                        )}
                         <span className="font-mono text-[10px] text-ink-2">
                           {project.curation_status === 'published'
                             ? t('status.published')
@@ -579,7 +580,7 @@ export default function AdminProjectsPage() {
                   {/* Cover preview */}
                   <div className="relative aspect-[3/2] w-full overflow-hidden border bg-black/40" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
                     {(() => {
-                      const coverUrl = getImageUrl(activeProject.cover_url) || getImageUrl((projectAssets[activeProject.id] || [])[0]?.image_url);
+                      const coverUrl = getImageUrl(activeProject.cover_url) || getImageUrl(panelAssets[0]?.image_url);
                       return coverUrl ? (
                         <Image
                           src={coverUrl}
@@ -618,10 +619,15 @@ export default function AdminProjectsPage() {
                     </div>
                   </div>
 
-                  {/* Picture strip with rotation controls */}
-                  {(projectAssets[activeProject.id] || []).length > 0 && (
+                  {/* Picture strip with rotation controls: the event's own
+                      pictures, loaded on selection. */}
+                  {panelAssetsLoading ? (
+                    <div className="flex h-24 items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-ink-2" />
+                    </div>
+                  ) : panelAssets.length > 0 ? (
                     <div className="flex gap-2 overflow-x-auto pb-1">
-                      {(projectAssets[activeProject.id] || []).map((asset) => {
+                      {panelAssets.map((asset) => {
                         const imageUrl = getImageUrl(asset.image_url);
                         return (
                           <div
@@ -659,6 +665,10 @@ export default function AdminProjectsPage() {
                         );
                       })}
                     </div>
+                  ) : (
+                    <p className="font-mono text-[10px] tracking-wider text-ink-2/70">
+                      {t('p.noPictures')}
+                    </p>
                   )}
 
                   {/* Actions */}
