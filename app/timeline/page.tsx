@@ -1,6 +1,6 @@
 import { ChronicleTimeline } from '@/components/chronicle-timeline';
 import { ChronicleChrome } from '@/components/chronicle-chrome';
-import { getChronicleEvents, extractYears } from '@/lib/timeline';
+import { getChronicleEvents, getChronicleYears } from '@/lib/timeline';
 
 export const metadata = {
   title: 'Timeline | LMSY Archive',
@@ -10,7 +10,7 @@ export const metadata = {
 
 export const revalidate = 300;
 
-/** Only a clean 4-digit year is accepted; anything else means "all years". */
+/** Only a clean 4-digit year is accepted; anything else means "newest year". */
 function parseYearParam(raw: string | undefined): string | null {
   if (!raw || !/^\d{4}$/.test(raw)) return null;
   return raw;
@@ -20,6 +20,13 @@ function parseYearParam(raw: string | undefined): string | null {
  * Timeline. The same derived view the Chronicle used to own, now under the
  * name the navigation uses. Records come from projects.event_date and
  * gallery_assets.event_date - never from created_at or the collection date.
+ *
+ * One year is rendered per request. The archive is past the point where every
+ * year can be sent to the browser at once (a single unbounded query was being
+ * cut off at PostgREST's 1000-row ceiling, silently dropping the newest
+ * months), so this page opens on the newest year that has records and the
+ * sidebar switches between them. No redirect: /timeline keeps its own URL and
+ * stays the canonical entry point.
  */
 export default async function TimelinePage({
   searchParams,
@@ -27,13 +34,14 @@ export default async function TimelinePage({
   searchParams: Promise<{ year?: string }>;
 }) {
   const { year: yearParam } = await searchParams;
-  const activeYear = parseYearParam(yearParam);
+  const availableYears = await getChronicleYears();
 
-  const allEvents = await getChronicleEvents();
-  const availableYears = extractYears(allEvents);
-  const events = activeYear
-    ? allEvents.filter((event) => event.date.slice(0, 4) === activeYear)
-    : allEvents;
+  const requested = parseYearParam(yearParam);
+  // An explicit year wins even when it holds no records - asking for 2019
+  // should show the empty state for 2019, not silently jump to 2026.
+  const activeYear = requested ?? availableYears[0] ?? null;
+
+  const events = await getChronicleEvents(activeYear ?? undefined);
 
   return (
     <div className="min-h-screen">

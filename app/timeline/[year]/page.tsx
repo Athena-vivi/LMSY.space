@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { ChronicleTimeline } from '@/components/chronicle-timeline';
 import { ChronicleChrome } from '@/components/chronicle-chrome';
-import { getChronicleEvents, extractYears } from '@/lib/timeline';
+import { getChronicleEvents, getChronicleYears } from '@/lib/timeline';
 
 export const revalidate = 300;
 
@@ -11,6 +11,14 @@ export function generateStaticParams() {
   return [];
 }
 
+/**
+ * One year of the timeline.
+ *
+ * This route reads a single year, so its query carries an event_date range and
+ * cannot run into PostgREST's 1000-row ceiling on a busy year. It stays the
+ * addressable form of the archive - /timeline?year=YYYY renders the same view
+ * dynamically for the sidebar links.
+ */
 export default async function TimelineYearPage({
   params,
 }: {
@@ -20,9 +28,8 @@ export default async function TimelineYearPage({
   // A malformed year is a bad URL, not an empty year.
   if (!/^\d{4}$/.test(year)) notFound();
 
-  const allEvents = await getChronicleEvents();
-  const availableYears = extractYears(allEvents);
-  const events = allEvents.filter((event) => event.date.slice(0, 4) === year);
+  const availableYears = await getChronicleYears();
+  const events = await getChronicleEvents(year);
 
   return (
     <div className="min-h-screen">
