@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Languages } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { supabase, type Project } from '@/lib/supabase';
 import { type ProjectCategory, type ProjectSubtype } from '@/lib/supabase/types';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import CategoryDropdown from '@/app/admin/upload/_components/category-dropdown';
-import { normalizeLocalizedText } from '@/lib/localized-content';
-import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
 
 // The eight stable values from lib/category-registry.ts. The label is the
 // admin-facing shorthand, the prefix feeds catalog_id allocation.
@@ -34,6 +32,41 @@ const CURATOR_FAVORITE_TAGS = [
 
 const MAX_TAGS = 8;
 
+/** The four values allowed by projects_project_kind_check. */
+const PROJECT_KINDS = ['event', 'theme', 'series', 'video'] as const;
+type ProjectKind = (typeof PROJECT_KINDS)[number];
+
+/**
+ * Which column a date edit lands in.
+ *
+ * The public surfaces read `event_date` first and fall back to `release_date`
+ * (lib/door-data.ts, lib/timeline.ts, lib/project-span.ts), so `event_date` is
+ * the one a visitor actually sees. Magazines are the exception: the editorial
+ * page prints `release_date` itself, and the naming spec requires the issue
+ * date, the image filename date and both project columns to agree - so an
+ * editorial row gets both columns written.
+ */
+interface DateTarget {
+  column: 'event_date' | 'release_date';
+  mirrorsReleaseDate: boolean;
+  hint: string;
+}
+
+function dateTargetFor(category: ProjectCategory): DateTarget {
+  if (category === 'editorial') {
+    return {
+      column: 'release_date',
+      mirrorsReleaseDate: true,
+      hint: 'Writes release_date (issue day) + event_date · image filenames are not renamed',
+    };
+  }
+  return {
+    column: 'event_date',
+    mirrorsReleaseDate: false,
+    hint: 'Writes event_date - the date the public pages print',
+  };
+}
+
 interface EditProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,73 +81,50 @@ export default function EditProjectModal({
   onUpdate,
 }: EditProjectModalProps) {
   const [title, setTitle] = useState('');
-  const [titleZh, setTitleZh] = useState('');
-  const [titleTh, setTitleTh] = useState('');
+  /**
+   * Per-language title strings as they already are in the database. This panel
+   * only edits the base title, so zh/th are kept verbatim and written back -
+   * dropping them here would silently delete existing translations.
+   */
+  const [titleI18n, setTitleI18n] = useState<Record<string, unknown>>({});
   const [category, setCategory] = useState<ProjectCategory>('drama_work');
   /** Which class inside the hall this row belongs to. NULL means the hall is enough. */
   const [subtype, setSubtype] = useState<ProjectSubtype | null>(null);
   /** Door 1 only: which series this entry hangs under. Empty for the series row itself. */
   const [workId, setWorkId] = useState<string>('');
   const [seriesOptions, setSeriesOptions] = useState<{ id: string; work_id: string | null; title: string }[]>([]);
-  const [releaseDate, setReleaseDate] = useState('');
-  const [description, setDescription] = useState('');
-  const [descriptionZh, setDescriptionZh] = useState('');
-  const [descriptionTh, setDescriptionTh] = useState('');
-  const [referenceUrl, setReferenceUrl] = useState('');
+  const [eventDate, setEventDate] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [portalVisible, setPortalVisible] = useState(false);
-  const [portalPriority, setPortalPriority] = useState(0);
-  const [themeStatement, setThemeStatement] = useState('');
-  const [themeStatementZh, setThemeStatementZh] = useState('');
-  const [themeStatementTh, setThemeStatementTh] = useState('');
-  const [interviewMd, setInterviewMd] = useState('');
-  const [interviewVideoUrl, setInterviewVideoUrl] = useState('');
   const [curationStatus, setCurationStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   /**
    * What kind of row this is. series = a work other entries hang under (door 1
    * only); video = an entry whose payload is a link instead of a picture wall;
    * theme = a subject across dates; event = one dated happening.
    */
-  const [projectKind, setProjectKind] = useState<'event' | 'theme' | 'series' | 'video'>('event');
+  const [projectKind, setProjectKind] = useState<ProjectKind>('event');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [translatingLang, setTranslatingLang] = useState<AdminTranslateTarget | null>(null);
+  /** Value the date input opened with, so an untouched field is never rewritten. */
+  const initialDate = useRef('');
 
   // Load project data when modal opens
   useEffect(() => {
     if (project) {
-      const titleI18n = normalizeLocalizedText(project.title_i18n, project.title);
-      const descriptionI18n = normalizeLocalizedText(project.description_i18n, project.description || '');
-      const themeStatementI18n = normalizeLocalizedText(project.theme_statement_i18n, project.theme_statement || '');
+      const shownDate = project.event_date || project.release_date || '';
 
       setTitle(project.title);
-      setTitleZh(titleI18n.zh || '');
-      setTitleTh(titleI18n.th || '');
+      setTitleI18n((project.title_i18n as Record<string, unknown> | null | undefined) ?? {});
       setCategory(project.category);
       setSubtype((project.subtype as ProjectSubtype | null) ?? null);
       setWorkId(project.work_id ?? '');
-      setReleaseDate(project.release_date || '');
-      setDescription(project.description || '');
-      setDescriptionZh(descriptionI18n.zh || '');
-      setDescriptionTh(descriptionI18n.th || '');
-      setReferenceUrl(project.watch_url || '');
+      setEventDate(shownDate);
+      initialDate.current = shownDate;
       setTags(project.tags || []);
-      setPortalVisible(!!project.portal_visible);
-      setPortalPriority(project.portal_priority || 0);
-      setThemeStatement(project.theme_statement || '');
-      setThemeStatementZh(themeStatementI18n.zh || '');
-      setThemeStatementTh(themeStatementI18n.th || '');
-      setInterviewMd(project.interview_md || '');
-      setInterviewVideoUrl(project.interview_video_url || '');
       setCurationStatus(project.curation_status || 'draft');
       setProjectKind(
-        project.project_kind === 'theme'
-          ? 'theme'
-          : project.project_kind === 'series'
-            ? 'series'
-            : project.project_kind === 'video'
-              ? 'video'
-              : 'event'
+        PROJECT_KINDS.includes(project.project_kind as ProjectKind)
+          ? (project.project_kind as ProjectKind)
+          : 'event'
       );
     }
   }, [project]);
@@ -144,6 +154,7 @@ export default function EditProjectModal({
   }, [isOpen, category]);
 
   const subtypeOptions = SUBTYPES_BY_CATEGORY[category] ?? [];
+  const dateTarget = dateTargetFor(category);
 
   const addTag = (tag: string) => {
     if (tag && !tags.includes(tag) && tags.length < MAX_TAGS) {
@@ -184,39 +195,30 @@ export default function EditProjectModal({
         return;
       }
 
-      // Prepare update data
-      const updateData = {
+      // Only the fields this panel actually shows are sent. Everything else
+      // (description, theme statement, portal flags, interview body, links)
+      // is left untouched by simply not appearing in the payload.
+      const updateData: Record<string, unknown> = {
         title: title.trim(),
-        title_i18n: {
-          en: title.trim(),
-          zh: titleZh.trim(),
-          th: titleTh.trim(),
-        },
+        // Keep en in step with the base title, otherwise getLocalizedText()
+        // keeps serving the old English string and the rename looks ignored.
+        title_i18n: { ...titleI18n, en: title.trim() },
         category,
         subtype,
         work_id: workId || null,
         project_kind: projectKind,
-        release_date: releaseDate || null,
-        description: description || null,
-        description_i18n: {
-          en: description || '',
-          zh: descriptionZh || '',
-          th: descriptionTh || '',
-        },
-        watch_url: referenceUrl || null,
         tags: tags.length > 0 ? tags : null,
-        portal_visible: portalVisible,
-        portal_priority: portalPriority,
-        theme_statement: themeStatement || null,
-        theme_statement_i18n: {
-          en: themeStatement || '',
-          zh: themeStatementZh || '',
-          th: themeStatementTh || '',
-        },
         curation_status: curationStatus,
-        interview_md: interviewMd.trim() ? interviewMd : null,
-        interview_video_url: interviewVideoUrl.trim() || null,
       };
+
+      // Never rewrite an untouched date: rows whose event_date is empty but
+      // whose release_date holds a source date would otherwise inherit it.
+      if (eventDate !== initialDate.current) {
+        updateData.event_date = eventDate || null;
+        if (dateTarget.mirrorsReleaseDate) {
+          updateData.release_date = eventDate || null;
+        }
+      }
 
       // Update via API
       const headers: Record<string, string> = {
@@ -240,6 +242,7 @@ export default function EditProjectModal({
       }
 
       // Success - trigger refresh
+      initialDate.current = eventDate;
       onUpdate();
       onClose();
     } catch (error) {
@@ -247,44 +250,6 @@ export default function EditProjectModal({
       alert(`Error: ${error instanceof Error ? error.message : 'Update failed'}`);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleAutoTranslate = async (targetLang: AdminTranslateTarget) => {
-    if (!title.trim() && !description.trim() && !themeStatement.trim()) {
-      alert('Please enter English content first.');
-      return;
-    }
-
-    setTranslatingLang(targetLang);
-    try {
-      const translated = await translateFieldMap(
-        {
-          title,
-          description,
-          themeStatement,
-        },
-        targetLang,
-        {
-          title: 'title',
-          description: 'description',
-          themeStatement: 'description',
-        }
-      );
-
-      if (targetLang === 'zh') {
-        setTitleZh(translated.title);
-        setDescriptionZh(translated.description);
-        setThemeStatementZh(translated.themeStatement);
-      } else {
-        setTitleTh(translated.title);
-        setDescriptionTh(translated.description);
-        setThemeStatementTh(translated.themeStatement);
-      }
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Translation failed');
-    } finally {
-      setTranslatingLang(null);
     }
   };
 
@@ -336,10 +301,10 @@ export default function EditProjectModal({
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-5 custom-scrollbar">
-                {/* Title */}
+                {/* Title - the base title every language falls back to */}
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                    TITLE_EN *
+                    TITLE *
                   </label>
                   <input
                     type="text"
@@ -354,53 +319,6 @@ export default function EditProjectModal({
                     }}
                     required
                   />
-                  <div className="flex gap-2 pt-2">
-                    {(['zh', 'th'] as const).map((lang) => (
-                      <button
-                        key={lang}
-                        type="button"
-                        onClick={() => handleAutoTranslate(lang)}
-                        disabled={translatingLang !== null}
-                        className="inline-flex items-center gap-2 rounded border border-lmsy-blue/30 bg-lmsy-blue/10 px-3 py-1.5 text-[10px] font-mono tracking-wider text-lmsy-blue transition-all hover:bg-lmsy-blue/20 disabled:opacity-50"
-                      >
-                        {translatingLang === lang ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Languages className="h-3.5 w-3.5" />
-                        )}
-                        AUTO_{lang.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      TITLE_ZH
-                    </label>
-                    <input
-                      type="text"
-                      value={titleZh}
-                      onChange={(e) => setTitleZh(e.target.value)}
-                      placeholder="Chinese title..."
-                      className="w-full px-0 py-2 bg-transparent text-ink focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      TITLE_TH
-                    </label>
-                    <input
-                      type="text"
-                      value={titleTh}
-                      onChange={(e) => setTitleTh(e.target.value)}
-                      placeholder="Thai title..."
-                      className="w-full px-0 py-2 bg-transparent text-ink focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  </div>
                 </div>
 
                 {/* Category */}
@@ -480,11 +398,7 @@ export default function EditProjectModal({
                   </label>
                   <select
                     value={projectKind}
-                    onChange={(e) =>
-                      setProjectKind(
-                        e.target.value as 'event' | 'theme' | 'series' | 'video'
-                      )
-                    }
+                    onChange={(e) => setProjectKind(e.target.value as ProjectKind)}
                     className="w-full px-3 py-2 bg-black text-ink-2 font-mono text-sm focus:outline-none border"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   >
@@ -501,92 +415,22 @@ export default function EditProjectModal({
                   )}
                 </div>
 
-                {/* Release Date */}
+                {/* Date. This is the only date a visitor can see, so it edits
+                    the column the public pages read - not release_date. */}
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                    RELEASE_DATE
+                    DATE
                   </label>
                   <input
                     type="date"
-                    value={releaseDate}
-                    onChange={(e) => setReleaseDate(e.target.value)}
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
                     className="w-full px-0 py-2 bg-transparent text-ink-2 font-mono text-sm focus:outline-none border-b focus:border-lmsy-yellow/40 transition-colors [color-scheme:dark]"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   />
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                    DESCRIPTION_EN
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Project description..."
-                    rows={3}
-                    className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2 resize-none"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      DESCRIPTION_ZH
-                    </label>
-                    <textarea
-                      value={descriptionZh}
-                      onChange={(e) => setDescriptionZh(e.target.value)}
-                      placeholder="Project description in Chinese..."
-                      rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2 resize-none"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      DESCRIPTION_TH
-                    </label>
-                    <textarea
-                      value={descriptionTh}
-                      onChange={(e) => setDescriptionTh(e.target.value)}
-                      placeholder="Project description in Thai..."
-                      rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2 resize-none"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Portal Controls */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      PORTAL_VISIBLE
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-ink-2">
-                      <input
-                        type="checkbox"
-                        checked={portalVisible}
-                        onChange={(e) => setPortalVisible(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      Use for homepage portal
-                    </label>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      PORTAL_PRIORITY
-                    </label>
-                    <input
-                      type="number"
-                      value={portalPriority}
-                      onChange={(e) => setPortalPriority(Number(e.target.value) || 0)}
-                      className="w-full px-3 py-2 bg-transparent text-ink-2 font-mono text-sm focus:outline-none border"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  </div>
+                  <p className="text-[10px] font-mono text-ink-2/50">
+                    {dateTarget.hint.toUpperCase()}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -603,49 +447,6 @@ export default function EditProjectModal({
                     <option value="published">published</option>
                     <option value="archived">archived</option>
                   </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                    THEME_STATEMENT_EN
-                  </label>
-                  <textarea
-                    value={themeStatement}
-                    onChange={(e) => setThemeStatement(e.target.value)}
-                    placeholder="Curatorial theme statement for exhibitions and themed presentation..."
-                    rows={3}
-                    className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2 resize-none"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      THEME_STATEMENT_ZH
-                    </label>
-                    <textarea
-                      value={themeStatementZh}
-                      onChange={(e) => setThemeStatementZh(e.target.value)}
-                      placeholder="Curatorial theme statement in Chinese..."
-                      rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2 resize-none"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      THEME_STATEMENT_TH
-                    </label>
-                    <textarea
-                      value={themeStatementTh}
-                      onChange={(e) => setThemeStatementTh(e.target.value)}
-                      placeholder="Curatorial theme statement in Thai..."
-                      rows={3}
-                      className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm focus:outline-none border focus:border-lmsy-yellow/40 transition-colors placeholder:text-ink-2 resize-none"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                    />
-                  </div>
                 </div>
 
                 {/* Tags */}
@@ -739,60 +540,6 @@ export default function EditProjectModal({
                       })}
                     </div>
                   </div>
-                </div>
-
-                {/* Interview. Markdown, rendered with a reading measure on the
-                    detail page. Empty means no interview section at all. */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                      INTERVIEW_MARKDOWN
-                    </label>
-                    <span className="text-[10px] font-mono text-ink-2/50">
-                      {interviewMd.length} CHARS
-                    </span>
-                  </div>
-                  <textarea
-                    value={interviewMd}
-                    onChange={(e) => setInterviewMd(e.target.value)}
-                    placeholder={'Interview body in Markdown.\n\n## Question\nAnswer...\n\n> A pull quote stays in the yellow rule.'}
-                    rows={14}
-                    spellCheck={false}
-                    className="w-full px-3 py-2 bg-transparent text-ink-2 text-sm leading-6 focus:outline-none border focus:border-lmsy-blue/40 transition-colors placeholder:text-ink-2/40 resize-y font-mono"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                  />
-                  <p className="text-[10px] font-mono text-ink-2/50">
-                    SUPPORTS # HEADINGS · **BOLD** · &gt; QUOTE · - LIST · [LINK](URL)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                    INTERVIEW_VIDEO_URL
-                  </label>
-                  <input
-                    type="url"
-                    value={interviewVideoUrl}
-                    onChange={(e) => setInterviewVideoUrl(e.target.value)}
-                    placeholder="https://... (external video, optional)"
-                    className="w-full px-0 py-2 bg-transparent text-ink-2 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-ink-2"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                  />
-                </div>
-
-                {/* Reference Link */}
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                    REFERENCE_LINK
-                  </label>
-                  <input
-                    type="url"
-                    value={referenceUrl}
-                    onChange={(e) => setReferenceUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full px-0 py-2 bg-transparent text-ink-2 font-mono text-sm focus:outline-none border-b focus:border-lmsy-blue/40 transition-colors placeholder:text-ink-2"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                  />
                 </div>
 
                 {/* Actions */}

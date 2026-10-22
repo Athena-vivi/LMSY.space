@@ -11,6 +11,13 @@ import { getAdminEmail } from '@/lib/security/api-auth';
  * PATCH /api/admin/projects/[id] - Update a project
  */
 
+/**
+ * The four values allowed by lmsy_archive.projects_project_kind_check.
+ * Kept here so the route rejects a typo instead of letting Postgres fail the
+ * whole update with a constraint error.
+ */
+const PROJECT_KINDS = ['event', 'theme', 'series', 'video'] as const;
+
 // ========================================
 // GET - Fetch Project
 // ========================================
@@ -215,12 +222,20 @@ export async function PATCH(
     // Prepare update data. category is optional so partial updates (e.g. the
     // settings talk tabs saving just video links or the transcript) cannot
     // wipe it with undefined.
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, string | number | boolean | string[] | null> = {};
     if (body.category !== undefined) updateData.category = body.category;
     if (body.title !== undefined) updateData.title = body.title.trim();
 
     // Optional fields
+    // event_date is the column the public surfaces print (door lists, timeline,
+    // search, drama pages all read event_date first). release_date is the
+    // magazine issue date and the fallback for rows written before event_date
+    // existed, so both stay writable.
+    if (body.event_date !== undefined) updateData.event_date = body.event_date || null;
     if (body.release_date !== undefined) updateData.release_date = body.release_date || null;
+    // Where the row sits in its hall, and (door 1) which series it hangs under.
+    if (body.subtype !== undefined) updateData.subtype = body.subtype || null;
+    if (body.work_id !== undefined) updateData.work_id = body.work_id || null;
     if (body.description !== undefined) updateData.description = body.description || null;
     if (body.title_i18n !== undefined) updateData.title_i18n = body.title_i18n || null;
     if (body.description_i18n !== undefined) updateData.description_i18n = body.description_i18n || null;
@@ -260,11 +275,17 @@ export async function PATCH(
           ? body.talk_resource_covers
           : null;
     }
-    // 'event' (one dated happening) or 'theme' (a subject across dates).
-    // Anything else falls back to 'event' - the historical behaviour - rather
-    // than letting a typo reach the check constraint and fail the whole save.
+    // 'event' (one dated happening), 'theme' (a subject across dates),
+    // 'series' (a work other rows hang under) or 'video' (links out).
+    // The four values are what projects_project_kind_check allows; anything
+    // else is left alone instead of being flattened to 'event', which used to
+    // silently demote a series row on save.
     if (body.project_kind !== undefined) {
-      updateData.project_kind = body.project_kind === 'theme' ? 'theme' : 'event';
+      if (PROJECT_KINDS.includes(body.project_kind)) {
+        updateData.project_kind = body.project_kind;
+      } else {
+        console.warn('[PROJECTS_PATCH] Ignoring unknown project_kind:', body.project_kind);
+      }
     }
 
     console.log('[PROJECTS_PATCH] Update data:', updateData);
