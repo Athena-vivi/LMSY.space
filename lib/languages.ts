@@ -440,6 +440,10 @@ export const translations = {
     'features.insideIssue': 'Inside this topic',
     'features.pagesPreserved': '{count} images preserved',
 
+    // Live-events timeline (level 2 shelf)
+    'live.allPhotos': 'All Photos',
+    'live.viewAll': 'View all',
+
     // Chronicle empty state helper
     'chronicle.tryAnotherYear': 'Try another year:',
 
@@ -890,6 +894,9 @@ export const translations = {
     'features.pagesEmptyHint': '完成整理后，图片会出现在这里。',
     'features.insideIssue': '专题内容',
     'features.pagesPreserved': '已保存 {count} 张',
+
+    'live.allPhotos': '全部图片',
+    'live.viewAll': '查看全部',
 
     // Chronicle empty state helper
     'chronicle.tryAnotherYear': '查看其他年份：',
@@ -1343,6 +1350,9 @@ export const translations = {
     'features.pagesEmptyHint': 'ภาพจะปรากฏที่นี่เมื่อได้รับการคัดสรร',
     'features.insideIssue': 'ภายในหัวข้อนี้',
     'features.pagesPreserved': 'เก็บรักษาไว้ {count} ภาพ',
+
+    'live.allPhotos': 'รูปภาพทั้งหมด',
+    'live.viewAll': 'ดูทั้งหมด',
 
     // Chronicle empty state helper
     'chronicle.tryAnotherYear': 'ลองดูปีอื่น:',

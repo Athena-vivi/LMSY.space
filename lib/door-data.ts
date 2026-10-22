@@ -84,6 +84,21 @@ export interface DoorAssetRow {
   caption: string | null;
   catalog_id: string | null;
   rotation: number | null;
+  /**
+   * Curated picture class inside one entry (airport official / airport fan /
+   * rehearsal / show ...). Null means unfiled, which the timeline shows as the
+   * entry's single "all photos" box.
+   */
+  asset_group: string | null;
+}
+
+/** One picture class inside an entry, for the level-2 timeline boxes. */
+export interface DoorEntryGroup {
+  /** The stored asset_group value; null is the unfiled bucket. */
+  key: string | null;
+  count: number;
+  /** First picture of the class (upload order) as the box cover. */
+  cover: string | null;
 }
 
 /** Newest first: a hall reads as a history, so the latest thing is on top. */
@@ -291,9 +306,56 @@ export async function loadEntry(
   const { data: assets } = await getSupabaseAdmin()
     .schema('lmsy_archive')
     .from('gallery_assets')
-    .select('id, image_url, caption, catalog_id, rotation')
+    .select('id, image_url, caption, catalog_id, rotation, asset_group')
     .eq('project_id', entry.id)
     .order('created_at', { ascending: true });
 
   return { entry, assets: (assets ?? []) as unknown as DoorAssetRow[] };
+}
+
+/**
+ * Picture classes for every entry of one second-level segment, in one query.
+ *
+ * The level-2 timeline renders each entry's pictures as class boxes (airport
+ * official / airport fan / rehearsal / show ...), so the shelf needs every
+ * class with a count and a cover - not the full asset list. Returns a map
+ * keyed by entry id; an entry with no pictures maps to an empty array.
+ */
+export async function loadSegmentEntryGroups(
+  category: ProjectCategory,
+  segment: string
+): Promise<Map<string, DoorEntryGroup[]>> {
+  const entries = await loadSegmentEntries(category, segment);
+  const map = new Map<string, DoorEntryGroup[]>();
+  if (!entries || entries.length === 0) return map;
+
+  for (const entry of entries) map.set(entry.id, []);
+
+  const ids = entries.map((entry) => entry.id);
+  const { data: assets } = await getSupabaseAdmin()
+    .schema('lmsy_archive')
+    .from('gallery_assets')
+    .select('project_id, asset_group, image_url, created_at')
+    .in('project_id', ids)
+    .order('created_at', { ascending: true });
+
+  for (const asset of (assets ?? []) as Array<{
+    project_id: string | null;
+    asset_group: string | null;
+    image_url: string | null;
+  }>) {
+    if (!asset.project_id || !map.has(asset.project_id)) continue;
+    const groups = map.get(asset.project_id)!;
+    let group = groups.find((item) => item.key === asset.asset_group);
+    if (!group) {
+      group = { key: asset.asset_group, count: 0, cover: null };
+      groups.push(group);
+    }
+    group.count += 1;
+    if (!group.cover && asset.image_url) group.cover = asset.image_url;
+  }
+
+  // Unfiled first would bury the curated classes; keep insertion order (the
+  // order pictures were uploaded), which puts the oldest class on top.
+  return map;
 }

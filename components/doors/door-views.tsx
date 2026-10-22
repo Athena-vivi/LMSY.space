@@ -414,6 +414,7 @@ export function DoorEntryPage({
   doorHref,
   shelfTitleKey,
   shelfHref,
+  filterLabel,
 }: {
   entry: DoorEntryRow;
   assets: DoorAssetRow[];
@@ -421,6 +422,11 @@ export function DoorEntryPage({
   doorHref: string;
   shelfTitleKey: TranslationKey | null;
   shelfHref: string | null;
+  /**
+   * Set when the page answers a ?group=<class> filter: a chip naming the
+   * class, linking back to the unfiltered entry. Null renders nothing.
+   */
+  filterLabel?: string | null;
 }) {
   const { language } = useLanguage();
   const title = getLocalizedText(entry.title_i18n, language, entry.title);
@@ -465,6 +471,18 @@ export function DoorEntryPage({
             <h1 className="max-w-3xl font-serif text-4xl font-bold leading-tight tracking-tight text-ink md:text-5xl lg:text-6xl">
               {title}
             </h1>
+
+            {filterLabel ? (
+              <Link
+                href={entry.href}
+                className="mt-5 inline-flex items-center gap-2 rounded-full border border-lmsy-yellow/40 bg-lmsy-yellow/[0.08] px-4 py-1.5 text-sm text-lmsy-yellow transition-colors hover:border-lmsy-yellow"
+              >
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em]">
+                  {filterLabel}
+                </span>
+                <span aria-hidden>×</span>
+              </Link>
+            ) : null}
 
             {description ? (
               <p className="mt-5 max-w-2xl text-lg text-ink-2">{description}</p>
