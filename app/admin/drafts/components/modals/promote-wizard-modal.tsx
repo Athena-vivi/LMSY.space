@@ -29,6 +29,8 @@ interface ProjectRow {
   title: string;
   category: string;
   subtype: string | null;
+  project_kind: string | null;
+  work_id: string | null;
   event_date: string | null;
   catalog_id: string | null;
   asset_groups: string[] | null;
@@ -133,6 +135,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   // Talks door only: which shelf (interview / variety / radio) the event and
   // its pictures belong to. Empty until picked explicitly.
   const [shelf, setShelf] = useState('');
+  // Drama door only: which work (series row) the event belongs to. The drama
+  // hall files events under works FIRST, then sub-types - same shape as the
+  // front door, so a premiere lands on the right series without hunting.
+  const [dramaSeries, setDramaSeries] = useState('');
   const [subtypeFilter, setSubtypeFilter] = useState('all');
   // Inline event creation state.
   const [creatingEvent, setCreatingEvent] = useState(false);
@@ -242,12 +248,42 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   // event list and blocks inline creation.
   const activeCategory = doorKey === 'talks' ? shelf : doorKey;
 
+  // The drama hall's second level: the series rows themselves. Events hang
+  // off a work through work_id, so the pick gates the event list the same way
+  // the talks shelf does.
+  const dramaSeriesRows = useMemo(
+    () =>
+      projects
+        .filter((p) => p.category === 'drama_work' && p.project_kind === 'series')
+        .sort((a, b) => (b.event_date ?? '').localeCompare(a.event_date ?? '')),
+    [projects]
+  );
+  const dramaSeriesRow = useMemo(
+    () => dramaSeriesRows.find((row) => row.id === dramaSeries) ?? null,
+    [dramaSeriesRows, dramaSeries]
+  );
+
   const filteredProjects = useMemo(() => {
     if (!activeCategory) return [];
     const q = search.trim().toLowerCase();
-    let list = projects.filter((p) => p.category === activeCategory);
+    let list: ProjectRow[];
+    if (doorKey === 'drama_work') {
+      // Work first: no work picked, no list - and the series rows themselves
+      // are works, not events, so they never appear as promotable targets.
+      if (!dramaSeriesRow) return [];
+      list = projects.filter(
+        (p) =>
+          p.category === 'drama_work' &&
+          p.project_kind !== 'series' &&
+          p.work_id === dramaSeriesRow.work_id
+      );
+    } else {
+      list = projects.filter((p) => p.category === activeCategory);
+    }
     const subtypes = SUBTYPES_BY_CATEGORY[activeCategory as keyof typeof SUBTYPES_BY_CATEGORY];
-    if (subtypeFilter !== 'all' && subtypes?.length) {
+    // The drama hall filters by WORK only - picking a work already narrows the
+    // list to that show, so it has no sub-type filter of its own.
+    if (doorKey !== 'drama_work' && subtypeFilter !== 'all' && subtypes?.length) {
       list = list.filter((p) => p.subtype === subtypeFilter);
     }
     if (!q) return list;
@@ -256,7 +292,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         .filter((v): v is string => Boolean(v))
         .some((v) => v.toLowerCase().includes(q))
     );
-  }, [projects, activeCategory, subtypeFilter, search]);
+  }, [projects, activeCategory, doorKey, dramaSeriesRow, subtypeFilter, search]);
 
   const subtypesForCategory = useMemo(
     () => SUBTYPES_BY_CATEGORY[activeCategory as keyof typeof SUBTYPES_BY_CATEGORY] ?? [],
@@ -278,6 +314,9 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     // A sub-type must be chosen explicitly - never fall back to the first
     // option of the list, which is how an event lands in the wrong shelf.
     if (subtypesForCategory.length > 0 && !newEvent.subtype) return;
+    // A drama event must hang off the picked work, or the curation tree
+    // (which files events under series via work_id) would never show it.
+    if (doorKey === 'drama_work' && !dramaSeriesRow) return;
     setCreatingEventNow(true);
     setCreateError(null);
     try {
@@ -290,6 +329,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           subtype: subtypesForCategory.length > 0 ? newEvent.subtype : undefined,
           event_date: newEvent.eventDate,
           portal_visible: newEvent.portalVisible,
+          work_id: doorKey === 'drama_work' ? dramaSeriesRow?.work_id ?? null : undefined,
         }),
       });
       const result = await response.json();
@@ -467,6 +507,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                     onChange={(e) => {
                       setDoorKey(e.target.value);
                       setShelf('');
+                      setDramaSeries('');
                       setSubtypeFilter('all');
                       setProjectId(null);
                       setNewEvent((prev) => ({
@@ -501,6 +542,28 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       {TALK_SHELVES.map((s) => (
                         <option key={s.value} value={s.value}>
                           {t(s.labelKey)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : doorKey === 'drama_work' ? (
+                    // The drama door files events under WORKS first - the
+                    // three series. Picking a work is enough to narrow the
+                    // list; there is no sub-type filter on this door.
+                    <select
+                      value={dramaSeries}
+                      onChange={(e) => {
+                        setDramaSeries(e.target.value);
+                        setSubtypeFilter('all');
+                        setProjectId(null);
+                      }}
+                      className={`w-full border bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40 ${
+                        dramaSeries ? 'border-white/10' : 'border-lmsy-yellow/40'
+                      }`}
+                    >
+                      <option value="">{t('d.promote.pickWork')}</option>
+                      {dramaSeriesRows.map((row) => (
+                        <option key={row.id} value={row.id}>
+                          {row.title}
                         </option>
                       ))}
                     </select>
@@ -630,6 +693,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                             !newEvent.title.trim() ||
                             !newEvent.eventDate ||
                             (subtypesForCategory.length > 0 && !newEvent.subtype) ||
+                            (doorKey === 'drama_work' && !dramaSeriesRow) ||
                             creatingEventNow
                           }
                           className="flex flex-1 items-center justify-center gap-2 bg-lmsy-yellow px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"

@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
       subtype?: string;
       event_date?: string;
       portal_visible?: boolean;
+      /** Drama events hang off a work (series row) through this id. */
+      work_id?: string | null;
     };
 
     const title = body.title?.trim();
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
         curation_status: 'draft',
         portal_visible: body.portal_visible !== false,
         portal_priority: 0,
+        work_id: body.work_id?.trim() || null,
       })
       .select('*')
       .single();
