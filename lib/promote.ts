@@ -85,6 +85,13 @@ export interface PromoteResult {
   results?: PromoteItemResult[];
   coverUpdated?: boolean;
   projectCatalogIdWritten?: boolean;
+  /**
+   * True when the batch was the one that turned a hidden project public.
+   * Promoting pictures INTO an event is an explicit statement that the event
+   * is real content, so a project left on the DB default (portal_visible =
+   * false) is opened rather than silently swallowing the new pictures.
+   */
+  projectPublished?: boolean;
   preview?: {
     firstCatalogId: string;
     r2Key: string | null;
@@ -254,7 +261,7 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
 
   const { data: project, error: projectError } = await supabaseAdmin
     .from('projects')
-    .select('id, title, category, event_date, catalog_id, cover_url')
+    .select('id, title, category, event_date, catalog_id, cover_url, portal_visible, is_container')
     .eq('id', params.projectId)
     .maybeSingle();
   if (projectError || !project) {
@@ -467,11 +474,29 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
     }
   }
 
+  // Promoting into an event means the event now holds visitor-facing content.
+  // The table default for portal_visible is false, so a project created by a
+  // bulk import stays hidden even after pictures land in it - which is exactly
+  // how curated pictures ended up invisible. Open it here. Ingestion
+  // containers are exempt: they are collection buckets, not content.
+  let projectPublished = false;
+  if (promoted.length > 0 && project.portal_visible !== true && project.is_container !== true) {
+    const { error } = await supabaseAdmin
+      .from('projects')
+      .update({ portal_visible: true })
+      .eq('id', params.projectId);
+    projectPublished = !error;
+    if (error) {
+      console.error('[PROMOTE] project publish failed:', error.message);
+    }
+  }
+
   return {
     success: promoted.length > 0,
     results,
     coverUpdated,
     projectCatalogIdWritten,
+    projectPublished,
   };
 }
 
