@@ -141,7 +141,9 @@ function TimelineNode({
       </h2>
 
       {entryGroups.length > 0 ? (
-        <div className="mt-5 flex flex-wrap gap-4">
+        // Mobile: one full-width portrait box per class (the line already
+        // eats ~3rem). From sm up: 2 columns, xl: 3 - bigger on desktop too.
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {entryGroups.map((group) => (
             <GroupBox key={group.key ?? 'all'} entry={entry} group={group} />
           ))}
@@ -163,27 +165,31 @@ function GroupBox({ entry, group }: { entry: DoorEntryRow; group: DoorEntryGroup
   return (
     <Link
       href={href}
-      className="group block w-44 overflow-hidden rounded-xl border border-border bg-card/40 transition-colors hover:border-lmsy-blue/50"
+      className="group relative block w-full overflow-hidden rounded-xl border border-border bg-card/40 transition-colors hover:border-lmsy-blue/50"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      {/* Portrait box: vertical pictures are the archive's dominant shape, so
+          heads and feet survive. Mobile fills the available width; sm+ gets
+          a fixed column from the grid above. */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
         {cover ? (
           <Image
             src={cover}
             alt={label}
             fill
             unoptimized
-            sizes="176px"
+            sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : null}
-      </div>
-      <div className="px-3 py-2.5">
-        <p className="truncate font-serif text-sm font-bold text-ink transition-colors group-hover:text-lmsy-blue">
-          {label}
-        </p>
-        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-2">
-          {t(language, 'drama.eventImages', { count: group.count })}
-        </p>
+        {/* Name + count float on the picture instead of a reserved strip. */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-2.5 pt-8">
+          <p className="truncate font-serif text-sm font-bold text-white transition-colors group-hover:text-lmsy-yellow">
+            {label}
+          </p>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70">
+            {t(language, 'drama.eventImages', { count: group.count })}
+          </p>
+        </div>
       </div>
     </Link>
   );
