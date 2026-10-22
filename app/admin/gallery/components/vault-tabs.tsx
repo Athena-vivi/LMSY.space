@@ -7,25 +7,33 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import type { GalleryItem, Project } from '@/lib/supabase';
+import type { ChronicleEvent, MilestoneImage } from '../hooks/use-vault-data';
 import { VAULT_TABS, type VaultTabId } from '../constants';
 
 interface VaultTabsProps {
   activeTab: VaultTabId;
   onChange: (tab: VaultTabId) => void;
   data: {
-    gallery: any[];
-    projects: any[];
-    events: any[];
-    milestones: Record<string, any>;
+    gallery: GalleryItem[];
+    projects: Project[];
+    events: ChronicleEvent[];
+    milestones: Record<string, MilestoneImage>;
   };
+  /**
+   * Real number of rows in gallery_assets. The loaded array is capped by the
+   * paged fetch, so counting it would print 1000 forever no matter how many
+   * assets exist.
+   */
+  totalAssets?: number;
 }
 
-export function VaultTabs({ activeTab, onChange, data }: VaultTabsProps) {
+export function VaultTabs({ activeTab, onChange, data, totalAssets }: VaultTabsProps) {
   // Get counts for each tab
   const getCount = (tabId: VaultTabId): number => {
     switch (tabId) {
       case 'all':
-        return data.gallery.length;
+        return totalAssets ?? data.gallery.length;
       case 'chronicle':
         return data.events.length;
       case 'editorial':

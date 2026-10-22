@@ -33,8 +33,14 @@ export interface VaultData {
 }
 
 export interface VaultDebug {
+  /** Rows actually loaded into the vault. */
   gallery_count: number;
+  /** Real row count in gallery_assets; what the ALL ASSETS badge prints. */
+  gallery_total?: number;
+  /** True when the page walk hit its ceiling, i.e. some rows are not loaded. */
+  gallery_truncated?: boolean;
   projects_count: number;
+  projects_truncated?: boolean;
   chronicle_count: number;
   milestone_count: number;
   first_gallery_id: string | null;
