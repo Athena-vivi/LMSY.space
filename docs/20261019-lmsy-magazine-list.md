@@ -80,10 +80,10 @@
 |---|---|---|---|---|---|
 | 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SY` | 2026-07-31 | 8 |
 | 2 | KAZZ 217（Lookmhee） | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ-217-LM` | 2026-07-31 | 8 |
-| 4 | PERLA（Sonya） | PERLA · 浪漫之诗 (Sonya) | `SY-MAG-PERLA-DREAM-20250914` | 2025-09-14（官方微博首发日） | 13 |
+| 4 | PERLA（Sonya） | PERLA · 浪漫之诗 (Sonya) | `SY-MAG-PERLA-ROMANTICPOEM-20250914` | 2025-09-14（官方微博首发日） | 13 |
 
 > 地址：`/editorial/perla-romantic-poem-sonya`（旧地址 `perla-dream-sonya` 已作废，全站零重定向）
-| 5 | PERLA（Lookmhee） | PERLA · 摩登秀场 (Lookmhee) | `LM-MAG-PERLA-DREAM-20250914` | 2025-09-14（官方微博首发日） | 13 |
+| 5 | PERLA（Lookmhee） | PERLA · 摩登秀场 (Lookmhee) | `LM-MAG-PERLA-MODERNSHOW-20250914` | 2025-09-14（官方微博首发日） | 13 |
 
 > 编号已重排为 `001-013`；`lm/mag/2025/` 下 5 个与 Sonya 完全重复的孤儿副本（001、015-018）已删。原第 9 张曾被误覆盖，已从本地备份恢复为 `009`。
 | 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-04（预售开卖日 8/4 13:14，售卖截止 8/16 23:59） | 9 |

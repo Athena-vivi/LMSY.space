@@ -12,7 +12,7 @@
 | 步 | 内容 | 状态 |
 |---|---|---|
 | **1. 统一规则（改代码）** | `lib/catalog-id.ts` 重写为规范 A 格式；4 处路由正则；门码表；R2 目录；删 `-000` | ✅ 完成 |
-| 2-7. 按规则改数据 | 135 张图改名、8 条事件编号、清旧目录 | ⏸ 等图片后期整体重做时按新规则一并处理 |
+| 2-7. 按规则改数据 | 135 张图改名、8 条事件编号、清旧目录 | 🔄 进行中：PERLA 两本已完成（26 张 + 2 条事件编号），其余按本表逐本推进 |
 
 统一后实测（`temp/verify_naming.ts` 拿库里全部 398 个真实 ID 跑）：
 `total 398  valid 343  invalid 55` —— 55 个被新规则拒绝的，就是后面要按规则改的清单（`LMSY-AD-*` 54、`LIVE-20260808` 1）。
@@ -87,8 +87,8 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 | 12 | `LMSY-**AD**-20250926-NNN` | 同上 | 同上 |
 | 10 | `LMSY-**AD**-20240214-NNN` | 同上 | 同上 |
 | 8 | `LMSY-**AD**-20251017-NNN` | 同上 | 同上 |
-| 13 | `SY-MAG-PERLA-**DREAM**-20250914-NNN` | `DREAM` 是我建库时随手起的，官方是「浪漫之诗」 | `SY-MAG-PERLA-<主题码>-20250914-NNN`（待定） |
-| 13 | `LM-MAG-PERLA-**MODERNSHOW**-20250914-NNN` | `MODERNSHOW` 不在规范主题表 | `LM-MAG-PERLA-<主题码>-20250914-NNN`（待定） |
+| 13 | `SY-MAG-PERLA-**DREAM**-20250914-NNN` | `DREAM` 是建库时随手起的，官方是「浪漫之诗」 | ✅ 已改 `SY-MAG-PERLA-ROMANTICPOEM-20250914-NNN` |
+| 13 | `LM-MAG-PERLA-**MODERNSHOW**-20250914-NNN` | `MODERNSHOW` 当时不在规范主题表 | ✅ 已合规，规范主题表已补 `MODERNSHOW` |
 | 1 | `**LIVE**-20260808-NNN` | 缺人物段（规范：首两段永远存在） | `LMSY-LIVE-20260808-001` |
 | 3 | `LMSY-APPEAR-**AIRPORT**-20260320-NNN` | `AIRPORT` 不在规范 §4.4 子类表 | 待定：补进子类表 or 换码 |
 
@@ -110,9 +110,9 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 | `LMSY-MAG-KAZZ-217-SY` | `MAG-KAZZ217-YOUTHCHOICE-SY` |
 | `LMSY-MAG-KAZZ-2410` | `MAG-KAZZ2410` |
 | `LMSY-MAG-KAZZ-2502` | `MAG-KAZZ2502` |
-| `LMSY-MAG-PERLA-2509-SY` | `MAG-PERLA-<主题>-SY` |
+| `LMSY-MAG-PERLA-2509-SY` | ✅ `LMSY-MAG-PERLA-ROMANTICPOEM-SY` |
 | `LMSY-MAG-THER-2508` | `MAG-THER-HEARTBEATFORYOU` |
-| `MAG-PERLA-DREAM-LM` | `MAG-PERLA-<主题>-LM` |
+| `MAG-PERLA-DREAM-LM` | ✅ `LMSY-MAG-PERLA-MODERNSHOW-LM` |
 
 合规 14 个（不动）：`APPEAR-AIRPORT`、`APPEAR-BRANDSTAGE-SIRIVANNAVARI`、`DRAMA-AFFAIR-STILL`、
 `EARLY-MILESTONES`、`EVENT-FANMEET-SEOUL`、`MAG-BEATXL-SMOLDERING`、`MAG-GAZE-THEDREAMUNFOLDS`、
@@ -140,7 +140,7 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 | **1** | 改代码：`lib/catalog-id.ts` 改成 A 格式（解析/校验/目录/门码表/删 000）+ 5 处 upload 路由正则 | 6 个文件 | 低。先做这步，后台才不会再产出违规命名 |
 | **2** | 改 `projects.catalog_id` 8 条 | 8 行 | 低。只影响卡片 `#` 标签和页头页脚 |
 | **3** | 改 `gallery_assets` 的 KAZZ 连字符（54 张）+ R2 54 个对象改名 | 54 | 中。R2 copy+delete，旧键删前必须校验新键 200 |
-| **4** | 改 PERLA 两本主题（26 张 + 2 个事件编号） | 26+2 | 中。同上，且要先定主题码 |
+| **4** | 改 PERLA 两本主题（26 张 + 2 个事件编号） | 26+2 | ✅ **完成 2026-10-22**。Sonya 13 张改名、Lookmhee 图片本就合规，两条事件编号已改，断掉的 `homepage_cover_url` 一并修好。详见 `docs/20261022-magazine-naming-audit.md` §十 |
 | **5** | 改 `LMSY-AD-*` → `LMSY-BRAND-<品牌>`（54 张） | 54 | 中。**卡在品牌名未知** |
 | **6** | 补 `LIVE-20260808` 人物段（1 张）+ `APPEAR-AIRPORT` 定码（3 张） | 4 | 低 |
 | **7** | 清 R2 旧目录 `magazines/*`（316 个） | 316 | 高。**必须等 1-6 全绿、线上确认无误后再做** |
@@ -153,7 +153,7 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 
 | # | 项 | 我的建议 |
 |---|---|---|
-| 1 | PERLA 两本的主题码（官方名是中文「浪漫之诗」「摩登秀场」，文件名只能用 ASCII） | Sonya `ROMANTICPOEM`、Lookmhee `MODERNSHOW` |
+| 1 | ~~PERLA 两本的主题码~~ | ✅ 已定并执行：Sonya `ROMANTICPOEM`、Lookmhee `MODERNSHOW` |
 | 2 | `LMSY-AD-*` 那 4 批（20240214 / 20250926 / 20251017 / 20251123，共 54 张）的品牌名 | 需要你给。给了就补进 §4.5 品牌码表 |
 | 3 | `APPEAR-AIRPORT`（3 张，机场图） | 补进 §4.4 子类表，还是归到别的子类？ |
 | 4 | `LIVE-20260808` 那 1 张是谁的播 | 双人 `LMSY` / 单人 `LM` / `SY`？ |
