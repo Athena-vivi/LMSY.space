@@ -12,10 +12,10 @@
 | 步 | 内容 | 状态 |
 |---|---|---|
 | **1. 统一规则（改代码）** | `lib/catalog-id.ts` 重写为规范 A 格式；4 处路由正则；门码表；R2 目录；删 `-000` | ✅ 完成 |
-| 2-7. 按规则改数据 | 135 张图改名、8 条事件编号、清旧目录 | 🔄 进行中：PERLA 两本已完成（26 张 + 2 条事件编号），其余按本表逐本推进 |
+| 2-7. 按规则改数据 | 135 张图改名、8 条事件编号、清旧目录 | 🔄 进行中：PERLA 两本（26 张 + 2 条事件编号）✅、KAZZ 五本（54 张 + 5 条事件编号）✅；剩 `LMSY-AD-*` 54 张、`LIVE`/`APPEAR` 4 张、清旧目录 |
 
-统一后实测（`temp/verify_naming.ts` 拿库里全部 398 个真实 ID 跑）：
-`total 398  valid 343  invalid 55` —— 55 个被新规则拒绝的，就是后面要按规则改的清单（`LMSY-AD-*` 54、`LIVE-20260808` 1）。
+统一后实测（`temp/verify_naming.ts` 拿库里全部 395 个真实 ID 跑）：
+`total 395  valid 340  invalid 55` —— 55 个被新规则拒绝的，就是后面要按规则改的清单（`LMSY-AD-*` 54、`LIVE-20260808` 1）。
 
 **以后任何新增图片，后台生成的 ID 一定符合规范**；旧的违规 ID 在后面改图时按同一规则改名即可，不会再出现第三套写法。
 
@@ -78,11 +78,11 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 
 | 张数 | 现在的形态 | 问题 | 应改成 |
 |---|---|---|---|
-| 28 | `LMSY-MAG-**KAZZ-211**-20250828-NNN` | 刊物码带连字符，且缺主题段 | `LMSY-MAG-KAZZ211-HARMONYSECRET-20250828-NNN` |
-| 8 | `SY-MAG-**KAZZ-217**-20260731-NNN` | 同上 | `SY-MAG-KAZZ217-YOUTHCHOICE-20260731-NNN` |
-| 8 | `LM-MAG-**KAZZ-217**-20260731-NNN` | 同上 | `LM-MAG-KAZZ217-YOUTHCHOICE-20260731-NNN` |
-| 8 | `LMSY-MAG-**KAZZ-2502**-20250201-NNN` | 同上 | `LMSY-MAG-KAZZ2502-20250201-NNN` |
-| 2 | `LMSY-MAG-**KAZZ-2410**-20241001-NNN` | 同上 | `LMSY-MAG-KAZZ2410-20241001-NNN` |
+| 28 | `LMSY-MAG-**KAZZ-211**-20250828-NNN` | 刊物码带连字符，且缺主题段 | ✅ `LMSY-MAG-KAZZ211-HARMONYSECRET-20250828-NNN` |
+| 8 | `SY-MAG-**KAZZ-217**-20260731-NNN` | 同上，且在共用目录 `lmsy/mag/2026/` | ✅ `sy/mag/2026/SY-MAG-KAZZ217-YOUTHCHOICE-20260731-NNN` |
+| 8 | `LM-MAG-**KAZZ-217**-20260731-NNN` | 同上，且在共用目录 `lmsy/mag/2026/` | ✅ `lm/mag/2026/LM-MAG-KAZZ217-YOUTHCHOICE-20260731-NNN` |
+| 8 | `LMSY-MAG-**KAZZ-2502**-20250201-NNN` | 同上 | ✅ `LMSY-MAG-KAZZ2502-20250201-NNN` |
+| 2 | `LMSY-MAG-**KAZZ-2410**-20241001-NNN` | 同上 | ✅ `LMSY-MAG-KAZZ2410-20241001-NNN` |
 | 24 | `LMSY-**AD**-20251123-NNN` | 门码 `AD` 应为 `BRAND`；缺品牌码 | `LMSY-BRAND-<品牌>-20251123-NNN`（品牌名待定） |
 | 12 | `LMSY-**AD**-20250926-NNN` | 同上 | 同上 |
 | 10 | `LMSY-**AD**-20240214-NNN` | 同上 | 同上 |
@@ -100,24 +100,26 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 
 ### 3.2 `projects.catalog_id`（22 行）
 
-规范：`<门>-<主体>[-<主题>]`，**不含人物、不含日期、不含序号**。
-**违规 8 个**——全部是我 10-21/22 这两天做杂志时自己多加的 `LMSY-` 前缀和日期段。
+规范：`LMSY-<门>-<主体>[-<主题>]`，**不含人物、不含日期、不含序号**；`LMSY-` 前缀必须带（用户 2026-10-22 定）。
+**违规 8 个**：其中 6 个除了缺前缀还有别的错，2 个（PERLA）只缺前缀。
 
-| 现在 | 应改成 |
-|---|---|
-| `LMSY-MAG-KAZZ-211` | `MAG-KAZZ211-HARMONYSECRET` |
-| `LMSY-MAG-KAZZ-217-LM` | `MAG-KAZZ217-YOUTHCHOICE-LM` |
-| `LMSY-MAG-KAZZ-217-SY` | `MAG-KAZZ217-YOUTHCHOICE-SY` |
-| `LMSY-MAG-KAZZ-2410` | `MAG-KAZZ2410` |
-| `LMSY-MAG-KAZZ-2502` | `MAG-KAZZ2502` |
-| `LMSY-MAG-PERLA-2509-SY` | ✅ `LMSY-MAG-PERLA-ROMANTICPOEM-SY` |
-| `LMSY-MAG-THER-2508` | `MAG-THER-HEARTBEATFORYOU` |
-| `MAG-PERLA-DREAM-LM` | ✅ `LMSY-MAG-PERLA-MODERNSHOW-LM` |
+| 现在 | 应改成 | 状态 |
+|---|---|---|
+| `LMSY-MAG-KAZZ-211` | `LMSY-MAG-KAZZ211-HARMONYSECRET` | ✅ |
+| `LMSY-MAG-KAZZ-217-LM` | `LMSY-MAG-KAZZ217-YOUTHCHOICE-LM` | ✅ |
+| `LMSY-MAG-KAZZ-217-SY` | `LMSY-MAG-KAZZ217-YOUTHCHOICE-SY` | ✅ |
+| `LMSY-MAG-KAZZ-2410` | `LMSY-MAG-KAZZ2410` | ✅ |
+| `LMSY-MAG-KAZZ-2502` | `LMSY-MAG-KAZZ2502` | ✅ |
+| `LMSY-MAG-PERLA-2509-SY` | `LMSY-MAG-PERLA-ROMANTICPOEM-SY` | ✅ |
+| `LMSY-MAG-THER-2508` | `LMSY-MAG-THER-HEARTBEATFORYOU` | ✅ |
+| `MAG-PERLA-DREAM-LM` | `LMSY-MAG-PERLA-MODERNSHOW-LM` | ✅ |
 
-合规 14 个（不动）：`APPEAR-AIRPORT`、`APPEAR-BRANDSTAGE-SIRIVANNAVARI`、`DRAMA-AFFAIR-STILL`、
-`EARLY-MILESTONES`、`EVENT-FANMEET-SEOUL`、`MAG-BEATXL-SMOLDERING`、`MAG-GAZE-THEDREAMUNFOLDS`、
-`MAG-ISLAND-ALLOFMYLIFE`、`MAG-OAT`、`MAG-RETRO-SOULMATE`、`MAG-STARRY21-DEEPINTHEEYE`、
-`MAG-TIANJINPB`、`MAG-UMAG-BRILLIANTMATCH`、`MAG-UNIQUE-AMORFATI`
+**另有 8 本当时「合规」的其实也缺 `LMSY-` 前缀**（规范原文写成不含前缀，按用户口径作废），2026-10-22 已一并补上：
+`MAG-BEATXL-SMOLDERING`、`MAG-GAZE-THEDREAMUNFOLDS`、`MAG-ISLAND-ALLOFMYLIFE`、`MAG-OAT`、
+`MAG-RETRO-SOULMATE`、`MAG-STARRY21-DEEPINTHEEYE`、`MAG-UMAG-BRILLIANTMATCH`、`MAG-UNIQUE-AMORFATI`。
+
+仍未动的 5 个（不在杂志门，等门级编码统一时处理）：`APPEAR-AIRPORT`、`APPEAR-BRANDSTAGE-SIRIVANNAVARI`、
+`DRAMA-AFFAIR-STILL`、`EARLY-MILESTONES`、`EVENT-FANMEET-SEOUL`、`MAG-TIANJINPB`。
 
 ### 3.3 R2 目录
 
@@ -138,8 +140,8 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 | 步 | 动作 | 涉及量 | 风险 |
 |---|---|---|---|
 | **1** | 改代码：`lib/catalog-id.ts` 改成 A 格式（解析/校验/目录/门码表/删 000）+ 5 处 upload 路由正则 | 6 个文件 | 低。先做这步，后台才不会再产出违规命名 |
-| **2** | 改 `projects.catalog_id` 8 条 | 8 行 | 低。只影响卡片 `#` 标签和页头页脚 |
-| **3** | 改 `gallery_assets` 的 KAZZ 连字符（54 张）+ R2 54 个对象改名 | 54 | 中。R2 copy+delete，旧键删前必须校验新键 200 |
+| **2** | 改 `projects.catalog_id` 8 条 + 补另外 8 本的 `LMSY-` 前缀 | 16 行 | ✅ **完成 2026-10-22** |
+| **3** | 改 `gallery_assets` 的 KAZZ 连字符（54 张）+ R2 54 个对象改名 | 54 | ✅ **完成 2026-10-22**（顺带补主题段、217 拆到 `lm/` `sy/`、修 211 首页封面 404） |
 | **4** | 改 PERLA 两本主题（26 张 + 2 个事件编号） | 26+2 | ✅ **完成 2026-10-22**。Sonya 13 张改名、Lookmhee 图片本就合规，两条事件编号已改，断掉的 `homepage_cover_url` 一并修好。详见 `docs/20261022-magazine-naming-audit.md` §十 |
 | **5** | 改 `LMSY-AD-*` → `LMSY-BRAND-<品牌>`（54 张） | 54 | 中。**卡在品牌名未知** |
 | **6** | 补 `LIVE-20260808` 人物段（1 张）+ `APPEAR-AIRPORT` 定码（3 张） | 4 | 低 |
@@ -153,6 +155,7 @@ FAIL  LMSY-APPEAR-AIRPORT-20260320-001
 
 | # | 项 | 我的建议 |
 |---|---|---|
+| 0 | ~~事件编号带不带 `LMSY-` 前缀~~ | ✅ 已定：**必须带**（网站以 LMSY 为核心）。16 本杂志已全部统一 |
 | 1 | ~~PERLA 两本的主题码~~ | ✅ 已定并执行：Sonya `ROMANTICPOEM`、Lookmhee `MODERNSHOW` |
 | 2 | `LMSY-AD-*` 那 4 批（20240214 / 20250926 / 20251017 / 20251123，共 54 张）的品牌名 | 需要你给。给了就补进 §4.5 品牌码表 |
 | 3 | `APPEAR-AIRPORT`（3 张，机场图） | 补进 §4.4 子类表，还是归到别的子类？ |

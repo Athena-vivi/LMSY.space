@@ -19,7 +19,7 @@
 例：
 
 ```
-LMSY-MAG-KAZZ217-YOUTHCHOICE-20260701-001.webp
+LMSY-MAG-KAZZ217-YOUTHCHOICE-20260731-001.webp
 LM-MAG-OAT-20241211-012.webp
 SY-LIVE-20250218-001.webp
 LMSY-DRAMA-AFFAIR-STILL-20240830-003.webp
@@ -127,7 +127,7 @@ LMSY-MAG-BEATXL-SMOLDERING-20241023-001.webp
 LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001.webp
 LM-MAG-PERLA-MODERNSHOW-20250914-001.webp
 SY-MAG-PERLA-ROMANTICPOEM-20250914-001.webp
-SY-MAG-KAZZ217-YOUTHCHOICE-20260701-001.webp
+SY-MAG-KAZZ217-YOUTHCHOICE-20260731-001.webp
 LMSY-MAG-KAZZ2410-20241001-001.webp        (主题未知)
 ```
 
@@ -217,22 +217,30 @@ SY-LIVE-TIKTOK-20250412-001.webp
 
 图片文件名是「事件 + 页」，所以事件本身也要有稳定编号，两者必须能对得上。
 
-`projects.catalog_id` = `<门>-<主体>[-<主题>]`，**不含人物、不含日期、不含序号**：
+`projects.catalog_id` = `LMSY-<门>-<主体>[-<主题>]`，**不含人物、不含日期、不含序号**：
 
 | 事件 | `catalog_id` | 图片文件名示例 |
 |---|---|---|
-| GAZE 2025-02 | `MAG-GAZE-THEDREAMUNFOLDS` | `LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001` |
-| PERLA Lookmhee | `MAG-PERLA-MODERNSHOW-LM` | `LM-MAG-PERLA-MODERNSHOW-20250914-001` |
-| Affair 宣传 | `DRAMA-AFFAIR-PROMO` | `LMSY-DRAMA-AFFAIR-PROMO-20240815-001` |
+| GAZE 2025-02 | `LMSY-MAG-GAZE-THEDREAMUNFOLDS` | `LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001` |
+| PERLA Lookmhee | `LMSY-MAG-PERLA-MODERNSHOW-LM` | `LM-MAG-PERLA-MODERNSHOW-20250914-001` |
+| Affair 宣传 | `LMSY-DRAMA-AFFAIR-PROMO` | `LMSY-DRAMA-AFFAIR-PROMO-20240815-001` |
+
+**事件编号一律以 `LMSY-` 开头**（2026-10-22 用户定：网站以 LMSY 为核心，编号必须带）。
+这里的前缀是站名，和图片名第一段的人物码不是一回事——单人刊的图片名仍然以 `LM-` / `SY-` 起头。
 
 单人刊是独立事件，主体位后加 `-LM` / `-SY` 以便两条事件不撞号；双人事件不加。
 
-**关系式**：`文件名 = 人物 + "-" + 事件编号 + ["-" + 日期] + "-" + 序号`。
-`gallery_assets.catalog_id` 存文件名主干（不含扩展名），与 R2 对象名逐字一致。
+**关系式**：取事件编号，把开头的 `LMSY` 换成该页的人物码（双人页仍是 `LMSY`）、去掉末尾的 `-LM` / `-SY`，
+再接日期和序号。`gallery_assets.catalog_id` 存文件名主干（不含扩展名），与 R2 对象名逐字一致。
 
-**一个例外**：事件编号末尾的 `-LM` / `-SY` 只是为了把两条单人事件在数据库里分开，人物段已经表达了是谁，
-所以**文件名里不重复这一段**：事件 `MAG-PERLA-MODERNSHOW-LM` 的页是 `LM-MAG-PERLA-MODERNSHOW-20250914-001.webp`。
-只有同一刊物确实出了两人两个版本时才加这个后缀（PERLA、KAZZ 217）；OAT 只有单人版，事件编号就是 `MAG-OAT`。
+| 事件编号 | 人物 | 文件名 |
+|---|---|---|
+| `LMSY-MAG-GAZE-THEDREAMUNFOLDS` | 双人 | `LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001` |
+| `LMSY-MAG-PERLA-MODERNSHOW-LM` | Lookmhee | `LM-MAG-PERLA-MODERNSHOW-20250914-001` |
+| `LMSY-MAG-KAZZ217-YOUTHCHOICE-SY` | Sonya | `SY-MAG-KAZZ217-YOUTHCHOICE-20260731-001` |
+
+事件编号末尾的 `-LM` / `-SY` 只是为了把两条单人事件在数据库里分开，人物段已经表达了是谁，所以文件名里不重复。
+只有同一刊物确实出了两人两个版本时才加这个后缀（PERLA、KAZZ 217）；OAT 只有单人版，事件编号就是 `LMSY-MAG-OAT`。
 
 ### 6.1 封面不参与命名（2026-10-21 定）
 

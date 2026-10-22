@@ -73,32 +73,27 @@
 - **期** = 清单里的一行（17）。同一本刊两人各出单人封面，算两期。
 - **项目** = `projects` 表里的一行。PERLA 已按用户要求拆成两条（Lookmhee / Sonya）。
 
-`category = 'editorial'` 现有 18 行 = **17 个杂志项目** + 1 条 `20241217【天津Fan sign PB】`（不是杂志，仍在此门内未移出）。
-**清单 17 期 → 库内 17 期，齐。**
+`category = 'editorial'` 现有 16 行 = **16 个杂志项目**（`20241217【天津Fan sign PB】` 已移到 `live_event`，不计入）。
+**清单 16 期 → 库内 16 期，齐。**
 
-| # | 期 | 库内项目 | `catalog_id` | `release_date` | 图数 |
-|---|---|---|---|---|---|
-| 1 | KAZZ 217（Sonya） | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ-217-SY` | 2026-07-31 | 8 |
-| 2 | KAZZ 217（Lookmhee） | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ-217-LM` | 2026-07-31 | 8 |
-| 4 | PERLA（Sonya） | PERLA · 浪漫之诗 (Sonya) | `SY-MAG-PERLA-ROMANTICPOEM-20250914` | 2025-09-14（官方微博首发日） | 13 |
-
-> 地址：`/editorial/perla-romantic-poem-sonya`（旧地址 `perla-dream-sonya` 已作废，全站零重定向）
-| 5 | PERLA（Lookmhee） | PERLA · 摩登秀场 (Lookmhee) | `LM-MAG-PERLA-MODERNSHOW-20250914` | 2025-09-14（官方微博首发日） | 13 |
-
-> 编号已重排为 `001-013`；`lm/mag/2025/` 下 5 个与 Sonya 完全重复的孤儿副本（001、015-018）已删。原第 9 张曾被误覆盖，已从本地备份恢复为 `009`。
-| 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-04（预售开卖日 8/4 13:14，售卖截止 8/16 23:59） | 9 |
-| 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-28（开卖日，官方 X 8/28 公布封面并开放预售；拍摄日 2025-08-11；10 月发货） | 28 |
-| 8 | KAZZ 2025-02 | KAZZ 2025-02（实为 KAZZ 206 期，待改名） | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 8 |
-| 9 | GAZE | GAZE · The Dream Unfolds | `MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
-| 10 | ISLAND JOY | ISLAND JOY · All of my Life | `MAG-ISLAND-ALLOFMYLIFE` | 2025-01-01 | 21 |
-| 11 | RETRO | RETRO · Soulmate | `MAG-RETRO-SOULMATE` | 2024-12-18 | 21 |
-| — | 非杂志 | 20241217【天津Fan sign PB】 | `MAG-TIANJINPB` | 2024-12-17 | 38 |
-| 12 | OAT（Lookmhee） | OAT · Lookmhee | `MAG-OAT` | 2024-12-11 | 23 |
-| 13 | U! | U! · Brilliant Match | `MAG-UMAG-BRILLIANTMATCH` | 2024-12-03 | **1**（未导完） |
-| 14 | UNIQUE | UNIQUE · Amor Fati | `MAG-UNIQUE-AMORFATI` | 2024-11-25 | 21 |
-| 15 | STARRY 21 | STARRY 21 · Deep in the Eye | `MAG-STARRY21-DEEPINTHEEYE` | 2024-11-04 | 18 |
-| 16 | BEAT'XL 2024-10 | BEAT'XL · Smoldering Embrace | `MAG-BEATXL-SMOLDERING` | 2024-10-23 | 21 |
-| 17 | KAZZ 2024-10 | KAZZ 2024-10 | `LMSY-MAG-KAZZ-2410` | 2024-10-01* | 2 |
+| # | 库内项目 | `catalog_id` | `release_date` | 图数 |
+|---|---|---|---|---|
+| 1 | KAZZ 217 · Youth Choice (Lookmhee) | `LMSY-MAG-KAZZ217-YOUTHCHOICE-LM` | 2026-07-31 | 8 |
+| 2 | KAZZ 217 · Youth Choice (Sonya) | `LMSY-MAG-KAZZ217-YOUTHCHOICE-SY` | 2026-07-31 | 8 |
+| 3 | PERLA · 摩登秀场 (Lookmhee) | `LMSY-MAG-PERLA-MODERNSHOW-LM` | 2025-09-14 | 13 |
+| 4 | PERLA · 浪漫之诗 (Sonya) | `LMSY-MAG-PERLA-ROMANTICPOEM-SY` | 2025-09-14 | 13 |
+| 5 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ211-HARMONYSECRET` | 2025-08-28 | 28 |
+| 6 | THE R · Heartbeat for You | `LMSY-MAG-THER-HEARTBEATFORYOU` | 2025-08-04 | 9 |
+| 7 | KAZZ 2025-02 | `LMSY-MAG-KAZZ2502` | 2025-02-01* | 8 |
+| 8 | GAZE · The Dream Unfolds | `LMSY-MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
+| 9 | ISLAND JOY · All of my Life | `LMSY-MAG-ISLAND-ALLOFMYLIFE` | 2025-01-01 | 21 |
+| 10 | RETRO · Soulmate | `LMSY-MAG-RETRO-SOULMATE` | 2024-12-18 | 21 |
+| 11 | OAT · Lookmhee | `LMSY-MAG-OAT` | 2024-12-11 | 23 |
+| 12 | U! · Brilliant Match | `LMSY-MAG-UMAG-BRILLIANTMATCH` | 2024-12-03 | 13 |
+| 13 | UNIQUE · Amor Fati | `LMSY-MAG-UNIQUE-AMORFATI` | 2024-11-25 | 21 |
+| 14 | STARRY 21 · Deep in the Eye | `LMSY-MAG-STARRY21-DEEPINTHEEYE` | 2024-11-04 | 18 |
+| 15 | BEAT'XL · Smoldering Embrace | `LMSY-MAG-BEATXL-SMOLDERING` | 2024-10-23 | 21 |
+| 16 | KAZZ 2024-10 | `LMSY-MAG-KAZZ2410` | 2024-10-01* | 2 |
 
 \* 清单只记到月份，这 5 条取当月 1 日，不是已核实的出版日；知道确切日期后改这一列即可（只影响排序位置）。
 门内顺序 = `release_date` 倒序（最新在上），日期相同按建行时间倒序；没有日期的行排在最后，不会顶到最前。
@@ -119,7 +114,7 @@ Lookmhee 条的 18 张原样保留。
    公开渠道也找不到更多成套图。`KAZZ 211` 已从 5 张补到 28 张（2026-10-21：并入 `Untamed` 18 张 + 微博官方 ISSUE 211 内页 2 张 + 微博专栏官方内页 3 张）；R2/DB/catalog 日期段已于 2026-10-22 从 `20251001`（发货月）统一改为 `20250828`（开卖日）；
    `THE R`（8 张）同理，是档案站段落里实际有的数量。
 
-3. **`20241217【天津Fan sign PB】` 不是杂志**，它被放在 `editorial` 分类里。它是签名会的写真小册，归 `public_appearance` 更合适。
+3. ~~**`20241217【天津Fan sign PB】` 不是杂志**~~ —— 已移到 `live_event`（`MAG-TIANJINPB` 仍是无前缀旧号，等全站门级编码统一时再改）。
 
 ---
 
@@ -133,7 +128,18 @@ Lookmhee 条的 18 张原样保留。
 ```
 
 这样 `/editorial` 一眼能按刊物排序，搜索「KAZZ」也能一次出 4 条。
-`catalog_id` 现有格式 `LMSY-MAG-YYYYMMDD-NNN` 已经够用，不用改。
+
+`catalog_id` 已于 2026-10-22 全量统一为 `LMSY-<门>-<主体>[-<主题>][-LM|-SY]`：16 本全部带 `LMSY-`，
+刊码去掉内部的连字符（`KAZZ-211` → `KAZZ211`），补全漏掉的主题段（`KAZZ211` 补 `HARMONYSECRET`、
+`KAZZ217` 补 `YOUTHCHOICE`、`THER-2508` 换成 `HEARTBEATFORYOU`）。规则见规范 §6。
+
+**标题仍待定的 3 本**（访客可见文案，未落库）：
+
+| 现标题 | 问题 | 建议 |
+|---|---|---|
+| `KAZZ 2024-10` | 不是「刊名 · 主题」格式；该次是专访拍摄，官方没给主题名 | `KAZZ · 2024 年 10 月号` |
+| `KAZZ 2025-02` | 同上；已确认是 206 期 | `KAZZ 206 · 2025 年 2 月号` |
+| `OAT · Lookmhee` | 主题位放的是人物名 | `OAT (Lookmhee)` |
 
 ---
 
