@@ -10,7 +10,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminLang } from '@/lib/admin-i18n';
-import { parseCatalogHead, PERSON_CODES } from '@/lib/catalog-id';
+import { parseCatalogHead, CATEGORY_TO_DOOR_CODE, PERSON_CODES } from '@/lib/catalog-id';
+import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
+import type { TranslationKey } from '@/lib/languages';
 
 /**
  * Self-serve promotion wizard (phase 1: live-event door).
@@ -71,6 +73,19 @@ function deriveSubject(project: ProjectRow): string {
   );
 }
 
+/** Wizard top level: every door-mapped category, registry order. */
+const WIZARD_CATEGORIES = Object.keys(CATEGORY_TO_DOOR_CODE) as Array<keyof typeof CATEGORY_TO_DOOR_CODE>;
+const CATEGORY_LABEL_KEY: Record<string, TranslationKey> = {
+  drama_work: 'category.dramaWork',
+  editorial: 'category.editorial',
+  live_event: 'category.liveEvent',
+  public_appearance: 'category.publicAppearance',
+  commercial: 'category.commercial',
+  behind_the_scenes: 'category.behindTheScenes',
+  personal_travel: 'category.personalTravel',
+  early_archive: 'category.earlyArchive',
+};
+
 const BATCH_SIZE = 3;
 
 export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: PromoteWizardModalProps) {
@@ -92,6 +107,9 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [subjectOptions, setSubjectOptions] = useState<SubjectOptions | null>(null);
   const [subjectTouched, setSubjectTouched] = useState(false);
   const [customClass, setCustomClass] = useState(false);
+  // Hall hierarchy: category first, then the registry sub-type, then events.
+  const [category, setCategory] = useState('live_event');
+  const [subtypeFilter, setSubtypeFilter] = useState('all');
   // Inline event creation state.
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingEventNow, setCreatingEventNow] = useState(false);
@@ -196,16 +214,23 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
 
   const filteredProjects = useMemo(() => {
     const q = search.trim().toLowerCase();
-    // Phase 1: the wizard only wires up live-event projects; other doors have
-    // different id rules (magazine issues, date-less features) and come later.
-    const eligible = projects.filter((p) => p.category === 'live_event');
-    if (!q) return eligible;
-    return eligible.filter((p) =>
+    let list = projects.filter((p) => p.category === category);
+    const subtypes = SUBTYPES_BY_CATEGORY[category as keyof typeof SUBTYPES_BY_CATEGORY];
+    if (subtypeFilter !== 'all' && subtypes?.length) {
+      list = list.filter((p) => p.subtype === subtypeFilter);
+    }
+    if (!q) return list;
+    return list.filter((p) =>
       [p.title, p.event_date, p.id]
         .filter((v): v is string => Boolean(v))
         .some((v) => v.toLowerCase().includes(q))
     );
-  }, [projects, search]);
+  }, [projects, category, subtypeFilter, search]);
+
+  const subtypesForCategory = useMemo(
+    () => SUBTYPES_BY_CATEGORY[category as keyof typeof SUBTYPES_BY_CATEGORY] ?? [],
+    [category]
+  );
 
   // Class dropdown: the project's own preset classes first, then classes the
   // same category actually uses - always pickable, never invented ad hoc.
@@ -225,8 +250,8 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newEvent.title.trim(),
-          category: 'live_event',
-          subtype: newEvent.subtype,
+          category,
+          subtype: subtypesForCategory.length > 0 ? newEvent.subtype : undefined,
           event_date: newEvent.eventDate,
           portal_visible: newEvent.portalVisible,
         }),
@@ -395,11 +420,47 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
             </div>
           ) : (
             <>
-              {/* Step 1: event */}
+              {/* Step 1: hall -> sub-type -> event */}
               <div className="space-y-2">
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                   {t('d.promote.stepEvent')}
                 </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={category}
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      setSubtypeFilter('all');
+                      setProjectId(null);
+                      const next = SUBTYPES_BY_CATEGORY[e.target.value as keyof typeof SUBTYPES_BY_CATEGORY] ?? [];
+                      setNewEvent((prev) => ({
+                        ...prev,
+                        subtype: next[0]?.value ?? prev.subtype,
+                      }));
+                    }}
+                    className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
+                  >
+                    {WIZARD_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {t(CATEGORY_LABEL_KEY[c])}
+                      </option>
+                    ))}
+                  </select>
+                  {subtypesForCategory.length > 0 && (
+                    <select
+                      value={subtypeFilter}
+                      onChange={(e) => setSubtypeFilter(e.target.value)}
+                      className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
+                    >
+                      <option value="all">{t('d.promote.subtypeAll')}</option>
+                      {subtypesForCategory.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {t(s.labelKey)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-2" />
                   <input
@@ -460,15 +521,23 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           onChange={(e) => setNewEvent((prev) => ({ ...prev, eventDate: e.target.value }))}
                           className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
                         />
-                        <select
-                          value={newEvent.subtype}
-                          onChange={(e) => setNewEvent((prev) => ({ ...prev, subtype: e.target.value }))}
-                          className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
-                        >
-                          <option value="fanmeeting">{t('d.promote.subtypeFanmeeting')}</option>
-                          <option value="brand_event">{t('d.promote.subtypeBrand')}</option>
-                          <option value="birthday">{t('d.promote.subtypeBirthday')}</option>
-                        </select>
+                        {subtypesForCategory.length > 0 ? (
+                          <select
+                            value={newEvent.subtype}
+                            onChange={(e) => setNewEvent((prev) => ({ ...prev, subtype: e.target.value }))}
+                            className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
+                          >
+                            {subtypesForCategory.map((s) => (
+                              <option key={s.value} value={s.value}>
+                                {t(s.labelKey)}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="flex items-center px-3 font-mono text-[10px] text-ink-2">
+                            {t(CATEGORY_LABEL_KEY[category] ?? 'category.liveEvent')}
+                          </div>
+                        )}
                       </div>
                       <label className="flex cursor-pointer items-center gap-2 font-mono text-[10px] text-ink-2">
                         <input
