@@ -18,7 +18,6 @@ import Image from 'next/image';
 import { getCdnUrl } from '../../utils';
 import { VaultImagePicker } from '../vault-image-picker';
 import { useAdminHeaders } from '../../hooks/use-admin-headers';
-import type { GalleryItem } from '@/lib/supabase';
 
 interface PortraitRow {
   id: string;
@@ -30,14 +29,10 @@ interface PortraitRow {
 }
 
 interface PortraitsViewProps {
-  data: {
-    gallery: GalleryItem[];
-  };
   loading: boolean;
 }
 
-export function PortraitsView({ data, loading }: PortraitsViewProps) {
-  const { gallery } = data;
+export function PortraitsView({ loading }: PortraitsViewProps) {
   const authHeaders = useAdminHeaders();
   const [portraits, setPortraits] = useState<PortraitRow[]>([]);
   const [loadingPortraits, setLoadingPortraits] = useState(true);
@@ -224,7 +219,6 @@ export function PortraitsView({ data, loading }: PortraitsViewProps) {
         open={target !== null}
         title={`SET_PORTRAIT_FOR_${(target?.nickname || target?.name || '').toUpperCase()}`}
         subtitle="SELECT_AN_IMAGE_FROM_THE_VAULT"
-        images={gallery}
         currentImageUrl={targetUrl}
         busy={busy}
         onPick={(item) => {

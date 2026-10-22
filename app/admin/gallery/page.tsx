@@ -13,7 +13,6 @@ import { PortalsView } from './components/views/portals-view';
 import { PortraitsView } from './components/views/portraits-view';
 import { useVaultData } from './hooks/use-vault-data';
 import { useVaultAssets } from './hooks/use-vault-assets';
-import { useVaultFilters } from './hooks/use-vault-filters';
 import { VAULT_TABS, type VaultTabId } from './constants';
 
 /**
@@ -48,12 +47,22 @@ export default function AssetVaultPage() {
   // One server page of assets for the ALL tab.
   const assets = useVaultAssets({ q: qParam, tag: tagParam, projectId: projectIdParam });
 
-  const filteredData = useVaultFilters(data, qParam);
+  // The editorial tab still filters in memory: it holds ~20 projects, not rows.
+  const editorialProjects = useMemo(() => {
+    const projects = data.projects.filter((project) => project.category === 'editorial');
+    if (!qParam) return projects;
 
-  // Get unique tags for the filter dropdown
-  const uniqueTags = useMemo(() => {
-    return [...new Set(data.gallery.map(img => img.tag).filter((tag): tag is string => Boolean(tag)))];
-  }, [data.gallery]);
+    const query = qParam.toLowerCase();
+    return projects.filter(
+      (project) =>
+        project.title?.toLowerCase().includes(query) ||
+        project.description?.toLowerCase().includes(query)
+    );
+  }, [data.projects, qParam]);
+
+  // Tag dropdown options come from the server: every tag in use, not just the
+  // ones on the page that happens to be loaded.
+  const uniqueTags = data.tags;
 
   const pushParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -121,8 +130,9 @@ export default function AssetVaultPage() {
       {debug && (
         <div className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3">
           <p className="text-[10px] font-mono text-ink-2">
-            GALLERY {debug.gallery_count} / {debug.gallery_total ?? debug.gallery_count}
-            {debug.gallery_truncated ? ' (LOAD TRUNCATED)' : ''} · PROJECTS {debug.projects_count} · MILESTONES {debug.milestone_count}
+            GALLERY {debug.gallery_total ?? 0} · PROJECTS {debug.projects_count}
+            {debug.projects_truncated ? ' (LOAD TRUNCATED)' : ''}
+            {' '}· PORTALS {debug.portal_count ?? 0} · MILESTONES {debug.milestone_count ?? 0} · TAGS {debug.tag_count ?? 0}
           </p>
         </div>
       )}
@@ -132,7 +142,6 @@ export default function AssetVaultPage() {
         activeTab={activeTab}
         onChange={handleTabChange}
         data={data}
-        totalAssets={debug?.gallery_total}
       />
 
       {/* Search and Filter Bar */}
@@ -157,16 +166,16 @@ export default function AssetVaultPage() {
           />
         )}
         {activeTab === 'editorial' && (
-          <EditorialView key="editorial" data={filteredData.editorial} loading={loading} />
+          <EditorialView key="editorial" data={{ projects: editorialProjects }} loading={loading} />
         )}
         {activeTab === 'portals' && (
-          <PortalsView key="portals" data={filteredData.portals} loading={loading} />
+          <PortalsView key="portals" data={{ portals: data.portals }} loading={loading} />
         )}
         {activeTab === 'milestones' && (
-          <MilestonesView key="milestones" data={filteredData.milestones} loading={loading} />
+          <MilestonesView key="milestones" data={{ milestones: data.milestones }} loading={loading} />
         )}
         {activeTab === 'portraits' && (
-          <PortraitsView key="portraits" data={filteredData.portraits} loading={loading} />
+          <PortraitsView key="portraits" loading={loading} />
         )}
       </AnimatePresence>
     </div>

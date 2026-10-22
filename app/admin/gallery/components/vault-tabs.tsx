@@ -7,40 +7,27 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import type { GalleryItem, Project } from '@/lib/supabase';
-import type { MilestoneImage } from '../hooks/use-vault-data';
+import type { VaultData } from '../hooks/use-vault-data';
 import { VAULT_TABS, type VaultTabId } from '../constants';
 
 interface VaultTabsProps {
   activeTab: VaultTabId;
   onChange: (tab: VaultTabId) => void;
-  data: {
-    gallery: GalleryItem[];
-    projects: Project[];
-    milestones: Record<string, MilestoneImage>;
-  };
-  /**
-   * Real number of rows in gallery_assets. The loaded array is capped by the
-   * paged fetch, so counting it would print 1000 forever no matter how many
-   * assets exist.
-   */
-  totalAssets?: number;
+  data: VaultData;
 }
 
-export function VaultTabs({ activeTab, onChange, data, totalAssets }: VaultTabsProps) {
-  // Get counts for each tab
+export function VaultTabs({ activeTab, onChange, data }: VaultTabsProps) {
+  // Get counts for each tab. `counts.gallery` is the real number of rows in
+  // gallery_assets - the ALL tab only holds one page of them in memory, so
+  // counting the loaded rows would print 60 forever.
   const getCount = (tabId: VaultTabId): number => {
     switch (tabId) {
       case 'all':
-        return totalAssets ?? data.gallery.length;
+        return data.counts.gallery;
       case 'editorial':
         return data.projects.filter(p => p.category === 'editorial' || p.category === 'drama_work').length;
       case 'portals':
-        // Five entries plus the two soul-resonance doors.
-        return data.gallery.filter(
-          (item: { portal_slot?: string | null; interview_slot?: string | null }) =>
-            item.portal_slot || item.interview_slot
-        ).length;
+        return data.portals.length;
       case 'milestones':
         return Object.keys(data.milestones).length;
       default:

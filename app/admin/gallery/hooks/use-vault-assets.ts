@@ -23,6 +23,11 @@ export interface VaultAssetFilters {
   tag: string;
   /** Gallery rows linked to one project */
   projectId?: string;
+  /**
+   * Skip the request entirely until the caller needs rows. The pickers stay
+   * mounted while closed and would otherwise fetch a page nobody looked at.
+   */
+  enabled?: boolean;
 }
 
 export interface VaultAssetsPage {
@@ -31,7 +36,12 @@ export interface VaultAssetsPage {
   nextCursor: string | null;
 }
 
-export function useVaultAssets({ q, tag, projectId }: VaultAssetFilters) {
+export function useVaultAssets({
+  q,
+  tag,
+  projectId,
+  enabled = true,
+}: VaultAssetFilters) {
   const [rows, setRows] = useState<GalleryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -45,6 +55,8 @@ export function useVaultAssets({ q, tag, projectId }: VaultAssetFilters) {
 
   const load = useCallback(
     async (cursor: string | null, append: boolean) => {
+      if (!enabled) return;
+
       const requestId = requestRef.current + 1;
       requestRef.current = requestId;
 
@@ -96,7 +108,7 @@ export function useVaultAssets({ q, tag, projectId }: VaultAssetFilters) {
         }
       }
     },
-    [q, tag, projectId]
+    [q, tag, projectId, enabled]
   );
 
   // A new filter set starts from the first page.

@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { getCdnUrl } from '../../utils';
 import { VaultImagePicker } from '../vault-image-picker';
 import { useAdminHeaders } from '../../hooks/use-admin-headers';
+import type { PortalSlotRow } from '../../hooks/use-vault-data';
 import type { GalleryItem } from '@/lib/supabase';
 import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
 
@@ -35,7 +36,8 @@ type DoorRef =
 
 interface PortalsViewProps {
   data: {
-    gallery: GalleryItem[];
+    /** Rows already pinned to a door; at most seven, most often fewer. */
+    portals: PortalSlotRow[];
   };
   loading: boolean;
 }
@@ -50,7 +52,7 @@ function doorKey(ref: DoorRef): string {
 }
 
 export function PortalsView({ data, loading }: PortalsViewProps) {
-  const { gallery } = data;
+  const { portals } = data;
   const authHeaders = useAdminHeaders();
   const [pickerDoor, setPickerDoor] = useState<DoorRef | null>(null);
   const [busy, setBusy] = useState(false);
@@ -80,8 +82,8 @@ export function PortalsView({ data, loading }: PortalsViewProps) {
 
     const row =
       ref.kind === 'portal'
-        ? gallery.find((item) => item.portal_slot === ref.category)
-        : gallery.find((item) => item.interview_slot === ref.door);
+        ? portals.find((item) => item.portal_slot === ref.category)
+        : portals.find((item) => item.interview_slot === ref.door);
 
     return row ? { id: row.id, image_url: row.image_url, blur_data: row.blur_data ?? null } : null;
   };
@@ -268,7 +270,6 @@ export function PortalsView({ data, loading }: PortalsViewProps) {
         open={pickerDoor !== null}
         title={`SET_IMAGE_FOR_${pickerDoor ? doorKey(pickerDoor).toUpperCase() : ''}`}
         subtitle="SELECT_AN_IMAGE_FROM_THE_VAULT"
-        images={gallery}
         currentImageId={current?.id ?? null}
         busy={busy}
         onPick={(item) => pickerDoor && writeDoor(pickerDoor, item)}

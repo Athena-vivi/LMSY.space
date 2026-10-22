@@ -5,31 +5,29 @@ import { getAdminEmail } from '@/lib/security/api-auth';
 import { milestonePriorityToYear } from '@/lib/milestone-years';
 
 /**
- * PostgREST answers at most 1000 rows per request (Supabase's db-max-rows),
- * so a single `.select('*')` silently truncates the asset vault and every
- * asset after the first 1000 becomes unreachable.
+ * The vault-wide payload: projects (for the editorial tab), the handful of
+ * fixed slots (homepage doors, year photos), the tag list, and the row count.
+ *
+ * It deliberately does NOT return every gallery asset. That walk used to cost
+ * 1.7 MB and ran on every visit to every tab; the images themselves now come
+ * one page at a time from /api/admin/vault/assets.
+ *
+ * PostgREST answers at most 1000 rows per request (Supabase's db-max-rows), so
+ * the project list is paged with a keyset cursor rather than a plain select -
+ * a single `.select('*')` would silently truncate it.
  *
  * Paging is keyset, not offset: offset windows shift when a row is inserted
  * mid-walk, which duplicate-read one row and skipped another while an upload
  * was running. A cursor on (created_at, id) is immune to that, and `id` breaks
- * ties on created_at - 296 rows share a timestamp, so without it a page
- * boundary could repeat or skip rows.
+ * ties on created_at - a few hundred rows share a timestamp, so without it a
+ * page boundary could repeat or skip rows.
  *
  * The walk always orders by created_at, because the display column for
  * projects (release_date) is nullable and a cursor cannot step past NULLs.
- * Callers that care about display order re-sort afterwards.
+ * The caller re-sorts by display order afterwards.
  */
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50; // hard stop well past the ten-thousand row mark
-
-interface GalleryRow {
-  id: string;
-  image_url: string;
-  milestone_priority: number | null;
-  caption: string | null;
-  tag: string | null;
-  project_id?: string | null;
-}
 
 /** Passed through to the client as JSON; only the sort column is typed. */
 interface ProjectRow {
@@ -45,17 +43,16 @@ interface PagedResult<T> {
   truncated: boolean;
 }
 
-async function fetchEveryRow<T>(
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
-  table: 'gallery_assets' | 'projects'
-): Promise<PagedResult<T>> {
-  const rows: T[] = [];
+async function fetchEveryProject(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+): Promise<PagedResult<ProjectRow>> {
+  const rows: ProjectRow[] = [];
   let cursor: { created_at: string; id: string } | null = null;
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
     let query = supabaseAdmin
       .schema('lmsy_archive')
-      .from(table)
+      .from('projects')
       .select('*')
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -70,7 +67,7 @@ async function fetchEveryRow<T>(
     const { data, error } = await query;
     if (error) return { rows, error, truncated: false };
 
-    const batch = (data ?? []) as T[];
+    const batch = (data ?? []) as ProjectRow[];
     if (batch.length === 0) return { rows, error: null, truncated: false };
 
     rows.push(...batch);
@@ -81,6 +78,42 @@ async function fetchEveryRow<T>(
   }
 
   return { rows, error: null, truncated: true };
+}
+
+/**
+ * Every tag in use, for the filter dropdown. There is no group-by in
+ * PostgREST, so this walks the one column instead of every row: ~1,350 rows of
+ * `{id, tag}` is a few kilobytes, versus the megabytes a full row select cost.
+ */
+async function fetchTags(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+): Promise<{ tags: string[]; error: { message: string } | null }> {
+  const tags = new Set<string>();
+  let cursor: string | null = null;
+
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    let query = supabaseAdmin
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('id, tag')
+      .order('id', { ascending: true })
+      .limit(PAGE_SIZE);
+
+    if (cursor) query = query.gt('id', cursor);
+
+    const { data, error } = await query;
+    if (error) return { tags: [...tags], error };
+
+    const batch = (data ?? []) as Array<{ id: string; tag: string | null }>;
+    if (batch.length === 0) break;
+
+    for (const row of batch) if (row.tag) tags.add(row.tag);
+    cursor = batch[batch.length - 1].id;
+
+    if (batch.length < PAGE_SIZE) break;
+  }
+
+  return { tags: [...tags].sort((a, b) => a.localeCompare(b)), error: null };
 }
 
 /** Newest publication first, undated rows last - the order the vault used. */
@@ -116,23 +149,26 @@ export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    const [galleryResult, projectsResult, galleryTotalResult] = await Promise.all([
-      fetchEveryRow<GalleryRow>(supabaseAdmin, 'gallery_assets'),
-      fetchEveryRow<ProjectRow>(supabaseAdmin, 'projects'),
-      // The true row count, asked for explicitly. The tab badge reads this, so
-      // it stays right even if a future ceiling stops the page walk early.
+    const [projectsResult, galleryTotalResult, portalResult, milestoneResult] = await Promise.all([
+      fetchEveryProject(supabaseAdmin),
+      // The true row count, asked for explicitly. Tab badges read this.
       supabaseAdmin
         .schema('lmsy_archive')
         .from('gallery_assets')
         .select('id', { count: 'exact', head: true }),
+      // The fixed homepage doors: at most one row per slot, so a filter is
+      // enough - no paging, no ordering.
+      supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery_assets')
+        .select('id, image_url, blur_data, portal_slot, interview_slot')
+        .or('portal_slot.not.is.null,interview_slot.not.is.null'),
+      supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery_assets')
+        .select('id, image_url, milestone_priority, caption, tag')
+        .not('milestone_priority', 'is', null),
     ]);
-
-    if (galleryResult.error) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch gallery', details: galleryResult.error.message },
-        { status: 500 }
-      );
-    }
 
     if (projectsResult.error) {
       return NextResponse.json(
@@ -141,48 +177,82 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const gallery = galleryResult.rows;
-    // The walk comes back in created_at order; the vault shows newest
-    // publication first, which is what this restores.
+    if (portalResult.error || milestoneResult.error) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch homepage slots',
+          details: (portalResult.error ?? milestoneResult.error)?.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    const tagResult = await fetchTags(supabaseAdmin);
+    if (tagResult.error) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch tags', details: tagResult.error.message },
+        { status: 500 }
+      );
+    }
+
     const projects = byReleaseDateDesc(projectsResult.rows);
-    /** Real table size; falls back to what was actually loaded. */
-    const galleryTotal = galleryTotalResult.count ?? gallery.length;
+    const galleryTotal = galleryTotalResult.count ?? 0;
+    const portals = (portalResult.data ?? []) as Array<{
+      id: string;
+      image_url: string;
+      blur_data: string | null;
+      portal_slot: string | null;
+      interview_slot: string | null;
+    }>;
 
     const milestones = Object.fromEntries(
-      gallery
-        .filter((item) => item.milestone_priority)
-        .map((item) => {
-          const year = milestonePriorityToYear(item.milestone_priority);
+      ((milestoneResult.data ?? []) as Array<{
+        id: string;
+        image_url: string;
+        milestone_priority: number;
+        caption: string | null;
+        tag: string | null;
+      }>).map((item) => {
+        const year = milestonePriorityToYear(item.milestone_priority);
 
-          return [
+        return [
+          year,
+          {
+            id: item.id,
+            image_url: item.image_url,
             year,
-            {
-              id: item.id,
-              image_url: item.image_url,
-              year,
-              caption: item.caption,
-              tag: item.tag,
-            },
-          ];
-        })
+            caption: item.caption,
+            tag: item.tag,
+          },
+        ];
+      })
     );
 
     return NextResponse.json({
       success: true,
       data: {
-        gallery,
         projects,
+        portals,
         milestones,
+        tags: tagResult.tags,
+        counts: {
+          gallery: galleryTotal,
+          projects: projects.length,
+          editorial: projects.filter(
+            (project) => (project as { category?: string }).category === 'editorial'
+          ).length,
+          portals: portals.length,
+          milestones: Object.keys(milestones).length,
+        },
       },
       debug: {
-        gallery_count: gallery.length,
-        gallery_total: galleryTotal,
-        gallery_truncated: galleryResult.truncated,
         projects_count: projects.length,
         projects_truncated: projectsResult.truncated,
+        gallery_total: galleryTotal,
+        portal_count: portals.length,
         milestone_count: Object.keys(milestones).length,
-        first_gallery_id: gallery[0]?.id || null,
-        first_gallery_project_id: gallery[0]?.project_id || null,
+        tag_count: tagResult.tags.length,
       },
     });
   } catch (error) {

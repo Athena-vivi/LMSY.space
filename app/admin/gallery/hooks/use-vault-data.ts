@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { GalleryItem, Project } from '@/lib/supabase';
+import type { Project } from '@/lib/supabase';
 
 export interface MilestoneImage {
   id: string;
@@ -13,24 +13,39 @@ export interface MilestoneImage {
   tag: string | null;
 }
 
+/** A row pinned to a fixed homepage door (five entries + two soul doors). */
+export interface PortalSlotRow {
+  id: string;
+  image_url: string;
+  blur_data: string | null;
+  portal_slot: string | null;
+  interview_slot: string | null;
+}
+
 export interface VaultData {
-  gallery: GalleryItem[];
   projects: Project[];
+  /** At most one row per door; 7 slots exist, most may be empty. */
+  portals: PortalSlotRow[];
   milestones: Record<string, MilestoneImage>;
+  /** Every tag in use, for the filter dropdown. */
+  tags: string[];
+  counts: {
+    gallery: number;
+    projects: number;
+    editorial: number;
+    portals: number;
+    milestones: number;
+  };
 }
 
 export interface VaultDebug {
-  /** Rows actually loaded into the vault. */
-  gallery_count: number;
-  /** Real row count in gallery_assets; what the ALL ASSETS badge prints. */
-  gallery_total?: number;
-  /** True when the page walk hit its ceiling, i.e. some rows are not loaded. */
-  gallery_truncated?: boolean;
   projects_count: number;
   projects_truncated?: boolean;
-  milestone_count: number;
-  first_gallery_id: string | null;
-  first_gallery_project_id: string | null;
+  /** Real row count in gallery_assets; what the ALL ASSETS badge prints. */
+  gallery_total?: number;
+  portal_count?: number;
+  milestone_count?: number;
+  tag_count?: number;
 }
 
 async function getAuthHeaders() {
@@ -45,12 +60,20 @@ async function getAuthHeaders() {
   };
 }
 
+const EMPTY_DATA: VaultData = {
+  projects: [],
+  portals: [],
+  milestones: {},
+  tags: [],
+  counts: { gallery: 0, projects: 0, editorial: 0, portals: 0, milestones: 0 },
+};
+
+/**
+ * Vault-wide data that is NOT the image list: projects, the fixed slots, tags
+ * and counts. The images themselves are paged by useVaultAssets.
+ */
 export function useVaultData() {
-  const [data, setData] = useState<VaultData>({
-    gallery: [],
-    projects: [],
-    milestones: {},
-  });
+  const [data, setData] = useState<VaultData>(EMPTY_DATA);
   const [debug, setDebug] = useState<VaultDebug | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -2,8 +2,15 @@
  * Vault Image Picker
  *
  * Shared by every "pick an image for this fixed slot" flow in Asset Vault
- * (homepage years, homepage portraits). One implementation so the close
- * button, the Escape key and the thumbnail sizing cannot drift apart again.
+ * (homepage doors, homepage years, homepage portraits).
+ *
+ * By default the list is searched and paged by the server
+ * (/api/admin/vault/assets); the picker used to receive the whole vault as a
+ * prop, which meant every visit to a tab downloaded every asset first.
+ *
+ * Callers that already hold the exact set to choose from - the curation page
+ * only offers the pictures of one node - pass `images` instead, and the picker
+ * filters that array in memory.
  *
  * Thumbnails use a fixed height instead of an aspect ratio: `Image fill`
  * contributes no intrinsic height, so an aspect-ratio box could collapse and
@@ -18,8 +25,12 @@ import { Search, Star, X } from 'lucide-react';
 import Image from 'next/image';
 import type { GalleryItem } from '@/lib/supabase';
 import { getCdnUrl } from '../utils';
+import { useVaultAssets } from '../hooks/use-vault-assets';
 
-const PAGE_SIZE = 48;
+/** Typing pauses this long before the search is applied. */
+const QUERY_DEBOUNCE_MS = 280;
+/** Rows per page when the caller supplies its own list. */
+const LOCAL_PAGE_SIZE = 48;
 
 interface VaultImagePickerProps {
   open: boolean;
@@ -27,7 +38,11 @@ interface VaultImagePickerProps {
   title: string;
   /** Mono subline under the headline */
   subtitle: string;
-  images: GalleryItem[];
+  /**
+   * A fixed set to choose from. Omit it to search the whole vault, which is
+   * paged by the server.
+   */
+  images?: GalleryItem[];
   /** Gallery id that is currently stored for this slot, when known */
   currentImageId?: string | null;
   /** Stored URL, used for portrait slots which only keep a URL */
@@ -51,17 +66,54 @@ export function VaultImagePicker({
   onClose,
   onClear,
 }: VaultImagePickerProps) {
+  const usingLocal = images !== undefined;
   const [query, setQuery] = useState('');
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [term, setTerm] = useState('');
+  const [visibleCount, setVisibleCount] = useState(LOCAL_PAGE_SIZE);
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  // Escape and scroll lock are external-system syncs. The query/visibleCount
-  // reset happens through `key` at the call site so this effect never sets
-  // state (a fresh mount always starts from page one).
+  // Debounce the search so a typed word is one request, not one per letter.
+  useEffect(() => {
+    const timer = setTimeout(() => setTerm(query.trim()), QUERY_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Rows are fetched only while the dialog is up, and never when the caller
+  // already handed us the exact set.
+  const assets = useVaultAssets({ q: term, tag: '', enabled: open && !usingLocal });
+
+  const localFiltered = useMemo(() => {
+    if (!usingLocal) return [];
+    const needle = term.toLowerCase();
+    if (!needle) return images;
+    return images.filter((item) => {
+      const haystack = [item.caption, item.catalog_id, item.tag, item.project_id]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+  }, [usingLocal, images, term]);
+
+  const visible = usingLocal ? localFiltered.slice(0, visibleCount) : assets.rows;
+  const hasMore = usingLocal ? visibleCount < localFiltered.length : assets.nextCursor !== null;
+  const remaining = usingLocal
+    ? localFiltered.length - visibleCount
+    : assets.total - assets.rows.length;
+  const loadingMore = usingLocal ? false : assets.loadingMore;
+  const loadingFirstPage = usingLocal ? false : assets.loading && assets.rows.length === 0;
+  const loadMore = () => {
+    if (usingLocal) setVisibleCount((count) => count + LOCAL_PAGE_SIZE);
+    else assets.loadMore();
+  };
+
+  // Escape and scroll lock are external-system syncs. This effect deliberately
+  // sets no state: the search term is left as the curator typed it, so
+  // reopening the picker for another slot keeps the same filter in view.
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -76,19 +128,7 @@ export function VaultImagePicker({
     };
   }, [open]);
 
-  const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return images;
-    return images.filter((item) => {
-      const haystack = [item.caption, item.catalog_id, item.tag, item.project_id]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(term);
-    });
-  }, [images, query]);
-
-  const visible = filtered.slice(0, visibleCount);
+  const noMatch = !loadingFirstPage && visible.length === 0;
 
   return (
     <AnimatePresence>
@@ -129,10 +169,7 @@ export function VaultImagePicker({
                   <input
                     type="text"
                     value={query}
-                    onChange={(event) => {
-                      setQuery(event.target.value);
-                      setVisibleCount(PAGE_SIZE);
-                    }}
+                    onChange={(event) => setQuery(event.target.value)}
                     placeholder="SEARCH_VAULT..."
                     className="w-full rounded border border-white/10 bg-white/5 py-1.5 pl-8 pr-2 font-mono text-xs text-ink outline-none placeholder:text-ink-2 focus:border-lmsy-yellow/40"
                   />
@@ -151,8 +188,10 @@ export function VaultImagePicker({
 
               {/* Grid */}
               <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-4">
-                {filtered.length === 0 ? (
-                  <p className="py-16 text-center font-mono text-xs text-ink-2">NO_IMAGES_MATCH</p>
+                {noMatch ? (
+                  <p className="py-16 text-center font-mono text-xs text-ink-2">
+                    {term ? 'NO_IMAGES_MATCH' : 'VAULT_EMPTY'}
+                  </p>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                     {visible.map((item) => {
@@ -204,23 +243,36 @@ export function VaultImagePicker({
                   </div>
                 )}
 
-                {visibleCount < filtered.length && (
+                {hasMore && (
                   <div className="pt-4 text-center">
                     <button
                       type="button"
-                      onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-                      className="rounded border border-white/15 px-4 py-1.5 font-mono text-[11px] tracking-wider text-ink-2 transition-colors hover:border-white/40 hover:text-ink"
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="rounded border border-white/15 px-4 py-1.5 font-mono text-[11px] tracking-wider text-ink-2 transition-colors hover:border-white/40 hover:text-ink disabled:cursor-wait disabled:opacity-50"
                     >
-                      LOAD_MORE ({filtered.length - visibleCount} LEFT)
+                      {loadingMore
+                        ? 'LOADING...'
+                        : `LOAD_MORE (${Math.max(0, remaining)} LEFT)`}
                     </button>
                   </div>
+                )}
+
+                {assets.error && (
+                  <p className="pt-4 text-center font-mono text-[11px] text-red-300/80">
+                    {assets.error}
+                  </p>
                 )}
               </div>
 
               {/* Footer */}
               <div className="flex items-center gap-3 border-t border-white/10 px-5 py-3">
                 <span className="font-mono text-[11px] text-ink-2">
-                  {filtered.length} IMAGES
+                  {loadingFirstPage
+                    ? 'LOADING...'
+                    : usingLocal
+                      ? `${localFiltered.length} IMAGES`
+                      : `${assets.rows.length} / ${assets.total} IMAGES`}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
                   {onClear && (

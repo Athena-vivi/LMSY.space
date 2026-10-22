@@ -21,14 +21,14 @@ import type { GalleryItem } from '@/lib/supabase';
 
 interface MilestonesViewProps {
   data: {
+    /** Year -> chosen image. At most one row per year. */
     milestones: Record<string, MilestoneImage>;
-    gallery: GalleryItem[];
   };
   loading: boolean;
 }
 
 export function MilestonesView({ data, loading }: MilestonesViewProps) {
-  const { milestones, gallery } = data;
+  const { milestones } = data;
   const authHeaders = useAdminHeaders();
   const [pickerYear, setPickerYear] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -223,7 +223,6 @@ export function MilestonesView({ data, loading }: MilestonesViewProps) {
         open={pickerYear !== null}
         title={`SET_MILESTONE_FOR_${pickerYear ?? ''}`}
         subtitle="SELECT_AN_IMAGE_FROM_THE_VAULT"
-        images={gallery}
         currentImageId={current?.id ?? null}
         busy={busy}
         onPick={(item) => pickerYear && setMilestone(item, pickerYear)}
