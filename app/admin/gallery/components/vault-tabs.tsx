@@ -8,7 +8,7 @@
 
 import { motion } from 'framer-motion';
 import type { GalleryItem, Project } from '@/lib/supabase';
-import type { ChronicleEvent, MilestoneImage } from '../hooks/use-vault-data';
+import type { MilestoneImage } from '../hooks/use-vault-data';
 import { VAULT_TABS, type VaultTabId } from '../constants';
 
 interface VaultTabsProps {
@@ -17,7 +17,6 @@ interface VaultTabsProps {
   data: {
     gallery: GalleryItem[];
     projects: Project[];
-    events: ChronicleEvent[];
     milestones: Record<string, MilestoneImage>;
   };
   /**
@@ -34,8 +33,6 @@ export function VaultTabs({ activeTab, onChange, data, totalAssets }: VaultTabsP
     switch (tabId) {
       case 'all':
         return totalAssets ?? data.gallery.length;
-      case 'chronicle':
-        return data.events.length;
       case 'editorial':
         return data.projects.filter(p => p.category === 'editorial' || p.category === 'drama_work').length;
       case 'portals':

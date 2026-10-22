@@ -316,7 +316,6 @@ export default function AdminDashboard() {
       <div className="flex flex-wrap items-center gap-4 border-t pt-4 text-[10px] font-mono tracking-widest text-ink-2"
         style={{ borderColor: 'rgba(255,255,255,0.05)' }}
       >
-        <Link href="/admin/chronicle" className="transition-colors hover:text-ink-2">{t('nav.chronicle')}</Link>
         <Link href="/admin/gallery?tab=editorial" className="transition-colors hover:text-ink-2">{t('nav.editorial')}</Link>
         <Link href="/admin/gallery?tab=milestones" className="transition-colors hover:text-ink-2">{t('nav.milestones')}</Link>
         <span className="inline-flex items-center gap-1">

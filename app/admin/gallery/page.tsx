@@ -7,12 +7,11 @@ import { VaultHeader } from './components/vault-header';
 import { VaultTabs } from './components/vault-tabs';
 import { VaultFilterBar } from './components/vault-filter-bar';
 import { AllAssetsView } from './components/views/all-assets-view';
-import { ChronicleView } from './components/views/chronicle-view';
 import { EditorialView } from './components/views/editorial-view';
 import { MilestonesView } from './components/views/milestones-view';
 import { PortalsView } from './components/views/portals-view';
 import { PortraitsView } from './components/views/portraits-view';
-import { useVaultData, type ChronicleEvent, type VaultData } from './hooks/use-vault-data';
+import { useVaultData, type VaultData } from './hooks/use-vault-data';
 import { useVaultFilters } from './hooks/use-vault-filters';
 import { VAULT_TABS, type VaultTabId } from './constants';
 
@@ -62,7 +61,6 @@ export default function AssetVaultPage() {
   };
 
   const allAssetsData = filteredData as { gallery: VaultData['gallery']; projects: VaultData['projects'] };
-  const chronicleData = filteredData as { events: ChronicleEvent[]; gallery: VaultData['gallery'] };
   const editorialData = filteredData as { projects: VaultData['projects'] };
   const milestoneData = filteredData as { milestones: VaultData['milestones']; gallery: VaultData['gallery'] };
   const portalData = filteredData as { gallery: VaultData['gallery'] };
@@ -93,7 +91,7 @@ export default function AssetVaultPage() {
         <div className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3">
           <p className="text-[10px] font-mono text-ink-2">
             GALLERY {debug.gallery_count} / {debug.gallery_total ?? debug.gallery_count}
-            {debug.gallery_truncated ? ' (LOAD TRUNCATED)' : ''} · PROJECTS {debug.projects_count} · CHRONICLE {debug.chronicle_count} · MILESTONES {debug.milestone_count}
+            {debug.gallery_truncated ? ' (LOAD TRUNCATED)' : ''} · PROJECTS {debug.projects_count} · MILESTONES {debug.milestone_count}
           </p>
         </div>
       )}
@@ -126,9 +124,6 @@ export default function AssetVaultPage() {
             loading={loading}
             projectFiltered={Boolean(projectIdParam)}
           />
-        )}
-        {activeTab === 'chronicle' && (
-          <ChronicleView key="chronicle" data={chronicleData} loading={loading} />
         )}
         {activeTab === 'editorial' && (
           <EditorialView key="editorial" data={editorialData} loading={loading} />

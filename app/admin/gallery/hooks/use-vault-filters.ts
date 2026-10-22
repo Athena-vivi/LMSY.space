@@ -17,7 +17,7 @@ export interface VaultFilters {
 
 export function useVaultFilters(
   data: VaultData,
-  activeTab: 'all' | 'chronicle' | 'editorial' | 'portals' | 'milestones' | 'portraits',
+  activeTab: 'all' | 'editorial' | 'portals' | 'milestones' | 'portraits',
   filters: VaultFilters
 ) {
   const { searchQuery, filterTag } = filters;
@@ -27,9 +27,6 @@ export function useVaultFilters(
     switch (activeTab) {
       case 'all':
         return filterAllAssets(data, searchQuery, filterTag, projectId);
-
-      case 'chronicle':
-        return filterChronicle(data, searchQuery);
 
       case 'editorial':
         return filterEditorial(data, searchQuery);
@@ -97,22 +94,6 @@ function filterAllAssets(
   }
 
   return { gallery: filteredGallery, projects: filteredProjects };
-}
-
-// Filter Chronicle events - returns shape expected by ChronicleView
-function filterChronicle(data: VaultData, searchQuery: string) {
-  let filtered = data.events;
-
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filtered = filtered.filter(event => {
-      const titleMatch = event.title?.toLowerCase().includes(query);
-      const descMatch = event.description?.toLowerCase().includes(query);
-      return titleMatch || descMatch;
-    });
-  }
-
-  return { events: filtered, gallery: data.gallery };
 }
 
 // Filter Editorial projects - returns shape expected by EditorialView

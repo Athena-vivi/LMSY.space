@@ -1,29 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { normalizeLocalizedText } from '@/lib/localized-content';
 import { getAdminEmail } from '@/lib/security/api-auth';
 import { milestonePriorityToYear } from '@/lib/milestone-years';
-
-type DraftPayload = {
-  id: string;
-  title?: { en?: string; zh?: string; th?: string } | string | null;
-  description?: { en?: string; zh?: string; th?: string } | string | null;
-  chronicle_title?: string | null;
-  chronicle_excerpt?: string | null;
-  chronicle_title_i18n?: { en?: string; zh?: string; th?: string } | null;
-  chronicle_excerpt_i18n?: { en?: string; zh?: string; th?: string } | null;
-  r2_media_url?: string | null;
-  event_date?: string | null;
-  chronicle_visible?: boolean;
-  project_id?: string | null;
-};
-
-function extractLocalizedText(value: DraftPayload['title'] | DraftPayload['description']) {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  return value.en || value.zh || value.th || '';
-}
 
 /**
  * PostgREST answers at most 1000 rows per request (Supabase's db-max-rows),
@@ -137,14 +116,9 @@ export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    const [galleryResult, projectsResult, draftsResult, galleryTotalResult] = await Promise.all([
+    const [galleryResult, projectsResult, galleryTotalResult] = await Promise.all([
       fetchEveryRow<GalleryRow>(supabaseAdmin, 'gallery_assets'),
       fetchEveryRow<ProjectRow>(supabaseAdmin, 'projects'),
-      supabaseAdmin
-        .from('draft_items')
-        .select('id,title,description,chronicle_title,chronicle_excerpt,chronicle_title_i18n,chronicle_excerpt_i18n,r2_media_url,event_date,chronicle_visible,project_id')
-        .eq('status', 'published')
-        .order('event_date', { ascending: false }),
       // The true row count, asked for explicitly. The tab badge reads this, so
       // it stays right even if a future ceiling stops the page walk early.
       supabaseAdmin
@@ -167,18 +141,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (draftsResult.error) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch chronicle drafts', details: draftsResult.error.message },
-        { status: 500 }
-      );
-    }
-
     const gallery = galleryResult.rows;
     // The walk comes back in created_at order; the vault shows newest
     // publication first, which is what this restores.
     const projects = byReleaseDateDesc(projectsResult.rows);
-    const drafts = (draftsResult.data || []) as DraftPayload[];
     /** Real table size; falls back to what was actually loaded. */
     const galleryTotal = galleryTotalResult.count ?? gallery.length;
 
@@ -201,39 +167,11 @@ export async function GET(request: NextRequest) {
         })
     );
 
-    const chronicle = drafts
-      .filter((item) => item.event_date)
-      .map((item) => {
-        const titleI18n = normalizeLocalizedText(
-          item.chronicle_title_i18n || item.title,
-          item.chronicle_title || extractLocalizedText(item.title) || 'Untitled'
-        );
-        const excerptI18n = normalizeLocalizedText(
-          item.chronicle_excerpt_i18n || item.description,
-          item.chronicle_excerpt || extractLocalizedText(item.description) || ''
-        );
-
-        return {
-          id: item.id,
-          title: titleI18n.en || titleI18n.zh || titleI18n.th || 'Untitled',
-          title_i18n: titleI18n,
-          description: excerptI18n.en || excerptI18n.zh || excerptI18n.th || '',
-          description_i18n: excerptI18n,
-          event_date: item.event_date,
-          event_type: 'custom',
-          image_ids: [],
-          image_url: item.r2_media_url || null,
-          chronicle_visible: item.chronicle_visible ?? true,
-          project_id: item.project_id || null,
-        };
-      });
-
     return NextResponse.json({
       success: true,
       data: {
         gallery,
         projects,
-        events: chronicle,
         milestones,
       },
       debug: {
@@ -242,7 +180,6 @@ export async function GET(request: NextRequest) {
         gallery_truncated: galleryResult.truncated,
         projects_count: projects.length,
         projects_truncated: projectsResult.truncated,
-        chronicle_count: chronicle.length,
         milestone_count: Object.keys(milestones).length,
         first_gallery_id: gallery[0]?.id || null,
         first_gallery_project_id: gallery[0]?.project_id || null,

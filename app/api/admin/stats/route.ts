@@ -19,7 +19,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       gallery: galleryResult.count || 0,
       projects: projectsResult.count || 0,
-      chronicle: 0, // Will be implemented when chronicle table exists
     });
   } catch (error: any) {
     console.error('Stats fetch error:', error);

@@ -13,22 +13,9 @@ export interface MilestoneImage {
   tag: string | null;
 }
 
-export interface ChronicleEvent {
-  id: string;
-  title: string;
-  description: string;
-  event_date: string;
-  event_type: 'gallery' | 'project' | 'custom';
-  image_ids: string[];
-  image_url?: string | null;
-  chronicle_visible?: boolean;
-  project_id?: string | null;
-}
-
 export interface VaultData {
   gallery: GalleryItem[];
   projects: Project[];
-  events: ChronicleEvent[];
   milestones: Record<string, MilestoneImage>;
 }
 
@@ -41,7 +28,6 @@ export interface VaultDebug {
   gallery_truncated?: boolean;
   projects_count: number;
   projects_truncated?: boolean;
-  chronicle_count: number;
   milestone_count: number;
   first_gallery_id: string | null;
   first_gallery_project_id: string | null;
@@ -63,7 +49,6 @@ export function useVaultData() {
   const [data, setData] = useState<VaultData>({
     gallery: [],
     projects: [],
-    events: [],
     milestones: {},
   });
   const [debug, setDebug] = useState<VaultDebug | null>(null);
