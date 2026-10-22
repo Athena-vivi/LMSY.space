@@ -133,13 +133,16 @@ Lookmhee 条的 18 张原样保留。
 刊码去掉内部的连字符（`KAZZ-211` → `KAZZ211`），补全漏掉的主题段（`KAZZ211` 补 `HARMONYSECRET`、
 `KAZZ217` 补 `YOUTHCHOICE`、`THER-2508` 换成 `HEARTBEATFORYOU`）。规则见规范 §6。
 
-**标题仍待定的 3 本**（访客可见文案，未落库）：
+**标题已于 2026-10-22 全部落库**（规范见 `docs/architecture/20261022-title-naming.md`）：
 
-| 现标题 | 问题 | 建议 |
-|---|---|---|
-| `KAZZ 2024-10` | 不是「刊名 · 主题」格式；该次是专访拍摄，官方没给主题名 | `KAZZ · 2024 年 10 月号` |
-| `KAZZ 2025-02` | 同上；已确认是 206 期 | `KAZZ 206 · 2025 年 2 月号` |
-| `OAT · Lookmhee` | 主题位放的是人物名 | `OAT (Lookmhee)` |
+| 原标题 | 现标题 |
+|---|---|
+| `KAZZ 2024-10` | `KAZZ · 2024 年 10 月号` |
+| `KAZZ 2025-02` | `KAZZ 206 · 2025 年 2 月号` |
+| `OAT · Lookmhee` | `OAT (Lookmhee)` |
+
+另有 1 条不是标题写错、而是被翻译字段盖住：`PERLA · 摩登秀场 (Lookmhee)` 的 `title_i18n` 曾是
+`{"en":"perla杂志","th":"","zh":""}`，三语全部回退到 `en`，页面上一直显示 `perla杂志`。已置 `null`。
 
 ---
 
