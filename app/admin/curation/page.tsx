@@ -182,13 +182,22 @@ export default function CurationPage() {
   const openPicker = async (all = showAll) => {
     setPickerOpen(true);
     setPickerImages(null);
+
+    // "All images" is searched and paged by the picker itself, against
+    // /api/admin/vault/assets. It used to fetch /api/admin/gallery with no
+    // filter, which hands back at most 1000 rows - on a vault of several
+    // thousand pictures that silently hid most of them.
+    if (all) {
+      setPickerLoading(false);
+      return;
+    }
+
+    // A single node is a small, exact set, so it stays an in-memory list.
     setPickerLoading(true);
     try {
-      const query = all
-        ? ''
-        : projectIdsForPicker.length
-          ? `?project_ids=${projectIdsForPicker.join(',')}`
-          : '';
+      const query = projectIdsForPicker.length
+        ? `?project_ids=${projectIdsForPicker.join(',')}`
+        : '';
       const response = await fetch(`/api/admin/gallery${query}`, {
         headers: await authHeaders(),
         credentials: 'include',
@@ -772,7 +781,7 @@ export default function CurationPage() {
         open={pickerOpen}
         title="SET_COVER"
         subtitle={showAll ? 'ALL_IMAGES' : 'THIS_NODE_ONLY'}
-        images={pickerImages ?? []}
+        images={showAll ? undefined : pickerImages ?? []}
         currentImageUrl={panel?.cover ?? null}
         busy={busy || pickerLoading}
         onPick={(item) => saveCover(item)}
