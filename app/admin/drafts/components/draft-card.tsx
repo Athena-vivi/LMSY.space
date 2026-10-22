@@ -1,13 +1,15 @@
 /**
  * Draft Card Component
  *
- * Renders a single draft item card with all its interactions
+ * Renders a single draft item card. Filing into events now happens through the
+ * promote wizard on the selection bar, so the card carries only the two
+ * per-image actions that are still used here: edit and delete.
  */
 
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Edit2, Trash2, Play, RotateCcw, ImagePlus, Star, Link2 } from 'lucide-react';
+import { Check, Edit2, Trash2, Play } from 'lucide-react';
 import Image from 'next/image';
 import { platformIcons, platformColors, statusBadges, stageBadges } from '../constants';
 import { formatRelativeTime, getDisplayTitle } from '../utils';
@@ -34,12 +36,6 @@ interface DraftCardProps {
   onToggleSelect: (id: string) => void;
   onVideoHoverStart: (id: string) => void;
   onVideoHoverEnd: () => void;
-  onPublish: (id: string) => void;
-  onUnpublish: (id: string) => void;
-  onCreateProject: (id: string) => void;
-  onLinkExistingProject: (id: string) => void;
-  onAddToAssets: (id: string) => void;
-  onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
   onDelete: (id: string, r2Key: string | null) => void;
   onDragStartDraft?: (id: string, event: React.DragEvent<HTMLDivElement>) => void;
@@ -52,25 +48,12 @@ export function DraftCard({
   onToggleSelect,
   onVideoHoverStart,
   onVideoHoverEnd,
-  onPublish,
-  onUnpublish,
-  onCreateProject,
-  onLinkExistingProject,
-  onAddToAssets,
-  onSetMilestone,
   onEdit,
   onDelete,
   onDragStartDraft,
 }: DraftCardProps) {
   const { t } = useAdminLang();
   const isVideo = draft.media_type === 'video';
-  const hasProject = !!draft.project_id;
-  const isImageWithMedia = draft.media_type === 'image' && !!draft.r2_media_url;
-  // Promotion writes a gallery_assets row, and that row needs a project to hang
-  // from. Without one the button used to stay enabled and only failed after the
-  // click - now it says what it is waiting for.
-  const canCreateAsset = isImageWithMedia;
-  const canPromote = isImageWithMedia && hasProject;
 
   return (
     <div
@@ -217,25 +200,6 @@ export function DraftCard({
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-2 border-t border-white/10">
-            {draft.status === 'published' ? (
-              // Published state - show UNPUBLISH button
-              <button
-                onClick={() => onUnpublish(draft.id)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-blue/10 border border-lmsy-blue/30 text-lmsy-blue/80 text-[10px] font-mono hover:bg-lmsy-blue/20 transition-all"
-              >
-                <RotateCcw className="h-3 w-3" strokeWidth={2} />
-                <span>{t('d.unpublish')}</span>
-              </button>
-            ) : (
-              // Draft state - show PUBLISH button
-              <button
-                onClick={() => onPublish(draft.id)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-green-500/10 border border-green-500/30 text-green-400/80 text-[10px] font-mono hover:bg-green-500/20 transition-all"
-              >
-                <Check className="h-3 w-3" strokeWidth={2} />
-                <span>{t('d.publish')}</span>
-              </button>
-            )}
             <button
               onClick={() => onEdit(draft)}
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-ink-2 text-[10px] font-mono hover:bg-white/15 hover:text-ink transition-all"
@@ -250,52 +214,6 @@ export function DraftCard({
               <Trash2 className="h-3 w-3" strokeWidth={2} />
               <span>{t('common.delete')}</span>
             </button>
-          </div>
-
-          <div className="space-y-2 pt-2 border-t border-white/10">
-            <button
-              onClick={() => onCreateProject(draft.id)}
-              disabled={hasProject}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-blue/10 border border-lmsy-blue/30 text-lmsy-blue/80 text-[10px] font-mono hover:bg-lmsy-blue/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <Check className="h-3 w-3" strokeWidth={2} />
-              <span>{hasProject ? t('d.projectLinked') : t('d.createProject')}</span>
-            </button>
-            <button
-              onClick={() => onLinkExistingProject(draft.id)}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white/10 border border-white/20 text-ink-2 text-[10px] font-mono hover:bg-white/15 transition-all"
-            >
-              <Link2 className="h-3 w-3" strokeWidth={2} />
-              <span>{hasProject ? t('d.relink') : t('d.linkProject')}</span>
-            </button>
-            <button
-              onClick={() => onAddToAssets(draft.id)}
-              disabled={!canPromote}
-              title={hasProject ? undefined : t('d.needProjectFirst')}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-lmsy-yellow/10 border border-lmsy-yellow/30 text-lmsy-yellow/80 text-[10px] font-mono hover:bg-lmsy-yellow/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <ImagePlus className="h-3 w-3" strokeWidth={2} />
-              <span>{hasProject ? t('d.addToAssets') : t('d.needProjectFirst')}</span>
-            </button>
-            <div className="grid grid-cols-5 gap-1">
-              {[
-                ['2022', '22'],
-                ['2023', '23'],
-                ['2024', '24'],
-                ['2025', '25'],
-                ['infinity', 'INF'],
-              ].map(([year, label]) => (
-                <button
-                  key={year}
-                  onClick={() => onSetMilestone(draft.id, year as '2022' | '2023' | '2024' | '2025' | 'infinity')}
-                  disabled={!canCreateAsset}
-                  className="flex items-center justify-center gap-1 px-1 py-1 bg-white/8 border border-white/15 text-ink-2 text-[10px] font-mono hover:bg-white/12 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <Star className="h-2.5 w-2.5" strokeWidth={2} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       </div>

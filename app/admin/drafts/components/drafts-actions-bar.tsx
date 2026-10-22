@@ -1,31 +1,26 @@
 /**
  * Drafts Actions Bar Component
  *
- * Floating action bar that appears when items are selected
+ * Floating action bar that appears when items are selected. Selecting drafts
+ * now means one of two things: file them into an event, or delete them.
  */
 
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Edit2, Trash2, X, ImagePlus, Rocket } from 'lucide-react';
+import { Trash2, X, Rocket } from 'lucide-react';
 import { useAdminLang } from '@/lib/admin-i18n';
 
 interface DraftsActionsBarProps {
   selectedIds: Set<string>;
-  onBatchPublish: () => void;
-  onBatchToGallery: (ids: string[]) => void;
   onBatchDelete: () => void;
-  onBatchEdit: () => void;
   onPromote: (ids: string[]) => void;
   onClearSelection: () => void;
 }
 
 export function DraftsActionsBar({
   selectedIds,
-  onBatchPublish,
-  onBatchToGallery,
   onBatchDelete,
-  onBatchEdit,
   onPromote,
   onClearSelection,
 }: DraftsActionsBarProps) {
@@ -61,25 +56,6 @@ export function DraftsActionsBar({
               <span>{t('d.promote.button')}</span>
             </motion.button>
             <motion.button
-              onClick={onBatchPublish}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/40 text-green-400/90 text-xs font-mono hover:bg-green-500/30 transition-all rounded-full"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Check className="h-3.5 w-3.5" strokeWidth={2} />
-              <span>{t('d.batchPublish')}</span>
-            </motion.button>
-            <motion.button
-              onClick={() => onBatchToGallery(Array.from(selectedIds))}
-              title={t('d.toGalleryAllHint')}
-              className="flex items-center gap-2 px-4 py-2 bg-lmsy-yellow/20 border border-lmsy-yellow/40 text-lmsy-yellow/90 text-xs font-mono hover:bg-lmsy-yellow/30 transition-all rounded-full"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
-              <span>{t('d.toGalleryAll')}</span>
-            </motion.button>
-            <motion.button
               onClick={onBatchDelete}
               className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400/90 text-xs font-mono hover:bg-red-500/30 transition-all rounded-full"
               whileHover={{ scale: 1.05 }}
@@ -87,15 +63,6 @@ export function DraftsActionsBar({
             >
               <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
               <span>{t('d.batchDelete')}</span>
-            </motion.button>
-            <motion.button
-              onClick={onBatchEdit}
-              className="flex items-center gap-2 px-4 py-2 bg-lmsy-blue/20 border border-lmsy-blue/40 text-lmsy-blue/90 text-xs font-mono hover:bg-lmsy-blue/30 transition-all rounded-full"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
-              <span>{t('d.batchEdit')}</span>
             </motion.button>
             <motion.button
               onClick={onClearSelection}

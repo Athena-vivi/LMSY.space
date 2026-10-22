@@ -17,8 +17,6 @@ import {
   DraftsToast,
   DeleteConfirmModal,
   EditModal,
-  BatchEditModal,
-  LinkProjectModal,
   PromoteWizardModal,
 } from './components';
 import { useDrafts } from './hooks/use-drafts';
@@ -39,7 +37,6 @@ export default function DraftsPage() {
     showToast: draftsState.showToast,
   });
 
-  const [linkProjectDraftId, setLinkProjectDraftId] = useState<string | null>(null);
   // Self-serve promotion wizard: pick event + class, one click transcribes,
   // uploads and files the selected drafts under their catalog ids.
   const [promoteDraftIds, setPromoteDraftIds] = useState<string[] | null>(null);
@@ -76,12 +73,6 @@ export default function DraftsPage() {
           loading={draftsState.loading}
           selectedIds={draftsState.selectedIds}
           onToggleSelect={draftsState.toggleSelect}
-          onPublish={actions.handlePublish}
-          onUnpublish={actions.handleUnpublish}
-          onCreateProject={actions.handleCreateProject}
-          onLinkExistingProject={setLinkProjectDraftId}
-          onAddToAssets={actions.handleAddToAssets}
-          onSetMilestone={actions.handleSetMilestone}
           onEdit={forms.handleOpenEdit}
           onDelete={(id, r2Key) => {
             const result = actions.handleDelete(id, r2Key);
@@ -94,13 +85,10 @@ export default function DraftsPage() {
       <DraftsActionsBar
         selectedIds={draftsState.selectedIds}
         onPromote={(ids) => setPromoteDraftIds(ids)}
-        onBatchPublish={actions.handleBatchPublish}
-        onBatchToGallery={actions.handleBatchToGallery}
         onBatchDelete={() => {
           const result = actions.handleBatchDelete();
           forms.showDeleteConfirm(undefined, undefined, result.count);
         }}
-        onBatchEdit={() => forms.handleOpenBatchEdit(draftsState.selectedIds)}
         onClearSelection={() => draftsState.setSelectedIds(new Set())}
       />
 
@@ -112,32 +100,8 @@ export default function DraftsPage() {
         editingItem={forms.editingItem}
         editForm={forms.editForm}
         setEditForm={forms.setEditForm}
-        translating={forms.translating}
         onClose={forms.handleCloseEdit}
         onSave={forms.handleSaveEdit}
-        onTranslate={forms.handleTranslate}
-      />
-
-      {/* Batch Edit Modal */}
-      <BatchEditModal
-        drafts={draftsState.drafts}
-        batchEditing={forms.batchEditing}
-        batchEditForm={forms.batchEditForm}
-        setBatchEditForm={forms.setBatchEditForm}
-        batchOrder={forms.batchOrder}
-        translating={forms.translating}
-        selectedIds={draftsState.selectedIds}
-        onClose={forms.handleCloseBatchEdit}
-        onSave={() => forms.handleSaveBatchEdit(draftsState.selectedIds)}
-        onTranslate={forms.handleTranslate}
-        onMoveItem={forms.handleMoveItem}
-      />
-
-      <LinkProjectModal
-        draftId={linkProjectDraftId}
-        isOpen={linkProjectDraftId !== null}
-        onClose={() => setLinkProjectDraftId(null)}
-        onSelect={actions.handleLinkExistingProject}
       />
 
       <PromoteWizardModal

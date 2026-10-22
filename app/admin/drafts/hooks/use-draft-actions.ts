@@ -1,294 +1,28 @@
 /**
- * useDraftActions - CRUD Operations Hook
+ * useDraftActions - Delete Operations Hook
  *
- * Handles all API operations with optimistic updates
+ * Publish, unpublish, batch publish, project linking and milestone flags used
+ * to live here. Filing into events is the promote wizard's job now, so the only
+ * operations left on the inbox are the two deletes.
  */
 
 'use client';
 
-import type { DraftItem } from '@/lib/supabase/types';
-
 interface UseDraftActionsProps {
-  drafts: DraftItem[];
   selectedIds: Set<string>;
   setSelectedIds: (ids: Set<string>) => void;
   fetchDrafts: () => void;
   showToast: (message: string, type?: 'success' | 'error') => void;
-  updateDraftOptimistically: (id: string, updates: Partial<DraftItem>) => void;
   removeDraftOptimistically: (id: string) => void;
 }
 
 export function useDraftActions({
-  drafts,
   selectedIds,
   setSelectedIds,
   fetchDrafts,
   showToast,
-  updateDraftOptimistically,
   removeDraftOptimistically,
 }: UseDraftActionsProps) {
-  const ensureProjectForDraft = async (id: string) => {
-    const draft = drafts.find((item) => item.id === id);
-    if (draft?.project_id) {
-      return draft.project_id;
-    }
-
-    const response = await fetch(`/api/admin/drafts/${id}/create-project`, {
-      method: 'POST',
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success || !result.data?.id) {
-      throw new Error(result.error || 'Create project failed');
-    }
-
-    updateDraftOptimistically(id, { project_id: result.data.id });
-    return result.data.id as string;
-  };
-
-  const ensureMilestoneProjectForDraft = async (id: string) => {
-    const draft = drafts.find((item) => item.id === id);
-    if (draft?.project_id) {
-      return draft.project_id;
-    }
-
-    const response = await fetch(`/api/admin/drafts/${id}/link-milestone-project`, {
-      method: 'POST',
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success || !result.data?.id) {
-      throw new Error(result.error || 'Link milestone project failed');
-    }
-
-    updateDraftOptimistically(id, { project_id: result.data.id });
-    return result.data.id as string;
-  };
-
-  /**
-   * Publish single item
-   */
-  const handlePublish = async (id: string) => {
-    // Optimistic update
-    updateDraftOptimistically(id, {
-      status: 'published' as const,
-      published_at: new Date().toISOString()
-    });
-    setSelectedIds(new Set([...selectedIds].filter(x => x !== id)));
-
-    try {
-      const response = await fetch(`/api/admin/drafts/${id}/publish`, { method: 'POST' });
-      if (!response.ok) throw new Error('Publish failed');
-      showToast('ITEM_PUBLISHED');
-    } catch {
-      await fetchDrafts(); // Revert on error
-      showToast('PUBLISH_FAILED', 'error');
-    }
-  };
-
-  /**
-   * Unpublish single item
-   */
-  const handleUnpublish = async (id: string) => {
-    // Optimistic update
-    updateDraftOptimistically(id, {
-      status: 'draft' as const,
-      published_at: null
-    });
-
-    try {
-      const response = await fetch(`/api/admin/drafts/${id}/unpublish`, { method: 'POST' });
-      if (!response.ok) throw new Error('Unpublish failed');
-      showToast('ITEM_UNPUBLISHED');
-    } catch {
-      await fetchDrafts(); // Revert on error
-      showToast('UNPUBLISH_FAILED', 'error');
-    }
-  };
-
-  /**
-   * Batch publish
-   */
-  const handleBatchPublish = async () => {
-    const ids = Array.from(selectedIds);
-
-    // Optimistic update
-    ids.forEach(id => {
-      updateDraftOptimistically(id, {
-        status: 'published' as const,
-        published_at: new Date().toISOString()
-      });
-    });
-    setSelectedIds(new Set());
-
-    try {
-      const response = await fetch('/api/admin/drafts/batch-publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids }),
-      });
-
-      if (!response.ok) throw new Error('Batch publish failed');
-
-      const result = await response.json();
-      showToast(`${result.published || 0}_ITEMS_PUBLISHED`);
-    } catch {
-      await fetchDrafts(); // Revert on error
-      showToast('BATCH_PUBLISH_FAILED', 'error');
-    }
-  };
-
-  const handleAddToAssets = async (id: string) => {
-    try {
-      const draft = drafts.find((item) => item.id === id);
-      if (!draft?.project_id) {
-        throw new Error('Create or link a project first');
-      }
-
-      const response = await fetch(`/api/admin/drafts/${id}/to-gallery`, {
-        method: 'POST',
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Add to assets failed');
-      }
-
-      showToast(result.created ? 'ADDED_TO_ASSETS' : 'ALREADY_IN_ASSETS');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'ADD_TO_ASSETS_FAILED';
-      showToast(message, 'error');
-    }
-  };
-
-  /**
-   * Batch 2: promote every selected draft to a gallery asset by looping the
-   * proven single-item to-gallery endpoint. Reports per-item results so a
-   * single failure never blocks the rest. Drafts without a project are
-   * reported as skipped, not silently dropped.
-   */
-  const handleBatchToGallery = async (ids: string[]) => {
-    let created = 0;
-    let skipped = 0;
-    let failed = 0;
-
-    for (const id of ids) {
-      try {
-        const draft = drafts.find((item) => item.id === id);
-        if (!draft?.project_id) {
-          skipped += 1;
-          continue;
-        }
-
-        const response = await fetch(`/api/admin/drafts/${id}/to-gallery`, {
-          method: 'POST',
-        });
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          failed += 1;
-          continue;
-        }
-
-        if (result.created) {
-          created += 1;
-          updateDraftOptimistically(id, { status: 'published' as const });
-        } else {
-          // Idempotent duplicate: asset already exists for this media
-          created += 1;
-        }
-      } catch {
-        failed += 1;
-      }
-    }
-
-    showToast(`TO_GALLERY: ${created} CREATED, ${skipped} SKIPPED, ${failed} FAILED`,
-      failed > 0 ? 'error' : 'success');
-    if (created > 0) {
-      await fetchDrafts();
-    }
-  };
-
-  const handleCreateProject = async (id: string) => {
-    try {
-      const existingDraft = drafts.find((draft) => draft.id === id);
-      if (existingDraft?.project_id) {
-        showToast('PROJECT_ALREADY_LINKED');
-        return;
-      }
-
-      await ensureProjectForDraft(id);
-      showToast('PROJECT_CREATED');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'CREATE_PROJECT_FAILED';
-      showToast(message, 'error');
-    }
-  };
-
-  const handleLinkExistingProject = async (id: string, projectId: string) => {
-    try {
-      const response = await fetch(`/api/admin/drafts/${id}/link-project`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success || !result.data?.id) {
-        throw new Error(result.error || 'Link project failed');
-      }
-
-      updateDraftOptimistically(id, { project_id: result.data.id });
-      showToast(result.relinked ? 'PROJECT_RELINKED' : 'PROJECT_LINKED');
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'LINK_PROJECT_FAILED';
-      showToast(message, 'error');
-      return false;
-    }
-  };
-
-  const handleSetMilestone = async (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => {
-    try {
-      await ensureMilestoneProjectForDraft(id);
-
-      const assetResponse = await fetch(`/api/admin/drafts/${id}/to-gallery`, {
-        method: 'POST',
-      });
-      const assetResult = await assetResponse.json();
-
-      if (!assetResponse.ok || !assetResult.success) {
-        throw new Error(assetResult.error || 'Failed to create asset');
-      }
-
-      const imageId = assetResult.data?.id;
-      if (!imageId) {
-        throw new Error('Missing asset id');
-      }
-
-      const milestoneResponse = await fetch('/api/admin/gallery/milestone', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageId, year }),
-      });
-
-      const milestoneResult = await milestoneResponse.json();
-
-      if (!milestoneResponse.ok || !milestoneResult.success) {
-        throw new Error(milestoneResult.details || milestoneResult.error || 'Failed to set milestone');
-      }
-
-      showToast(`MILESTONE_${year.toUpperCase()}_SET`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'SET_MILESTONE_FAILED';
-      showToast(message, 'error');
-    }
-  };
-
   /**
    * Delete single item (with confirmation)
    */
@@ -352,14 +86,6 @@ const executeBatchDelete = async () => {
   };
 
   return {
-    handlePublish,
-    handleUnpublish,
-    handleBatchPublish,
-    handleBatchToGallery,
-    handleCreateProject,
-    handleLinkExistingProject,
-    handleAddToAssets,
-    handleSetMilestone,
     handleDelete,
     executeDelete,
     handleBatchDelete,

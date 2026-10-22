@@ -17,12 +17,6 @@ interface DraftsContentProps {
   loading: boolean;
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
-  onPublish: (id: string) => void;
-  onUnpublish: (id: string) => void;
-  onCreateProject: (id: string) => void;
-  onLinkExistingProject: (id: string) => void;
-  onAddToAssets: (id: string) => void;
-  onSetMilestone: (id: string, year: '2022' | '2023' | '2024' | '2025' | 'infinity') => void;
   onEdit: (draft: any) => void;
   onDelete: (id: string, r2Key: string | null) => void;
   onDragStartDraft?: (id: string, event: React.DragEvent<HTMLDivElement>) => void;
@@ -34,12 +28,6 @@ export function DraftsContent({
   loading,
   selectedIds,
   onToggleSelect,
-  onPublish,
-  onUnpublish,
-  onCreateProject,
-  onLinkExistingProject,
-  onAddToAssets,
-  onSetMilestone,
   onEdit,
   onDelete,
   onDragStartDraft,
@@ -60,12 +48,6 @@ export function DraftsContent({
           onToggleSelect={onToggleSelect}
           onVideoHoverStart={setHoveredVideoId}
           onVideoHoverEnd={() => setHoveredVideoId(null)}
-          onPublish={onPublish}
-          onUnpublish={onUnpublish}
-          onCreateProject={onCreateProject}
-          onLinkExistingProject={onLinkExistingProject}
-          onAddToAssets={onAddToAssets}
-          onSetMilestone={onSetMilestone}
           onEdit={onEdit}
           onDelete={onDelete}
           onDragStartDraft={onDragStartDraft}
