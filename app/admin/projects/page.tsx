@@ -340,6 +340,18 @@ export default function AdminProjectsPage() {
     [projects]
   );
 
+  /** Real door names for the filter dropdown (same labels as the badges). */
+  const CATEGORY_LABEL_KEY: Record<string, string> = {
+    drama_work: 'category.dramaWork',
+    editorial: 'category.editorial',
+    live_event: 'category.liveEvent',
+    public_appearance: 'category.publicAppearance',
+    commercial: 'category.commercial',
+    behind_the_scenes: 'category.behindTheScenes',
+    personal_travel: 'category.personalTravel',
+    early_archive: 'category.earlyArchive',
+  };
+
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -480,7 +492,7 @@ export default function AdminProjectsPage() {
                   >
                     {categoryOptions.map((option) => (
                       <option key={option} value={option}>
-                        {option === 'all' ? t('cat.ALL') : t('cat.'+option)}
+                        {option === 'all' ? t('cat.ALL') : t(CATEGORY_LABEL_KEY[option] ?? 'category.earlyArchive')}
                       </option>
                     ))}
                   </select>
