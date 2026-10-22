@@ -20,7 +20,7 @@
 | 8 | 2025-01 | ISLAND JOY | 新年首刊 | All of my Life | 双人 | A/B 各 2 | 已有 `ISLAND`（21 图） |
 | 9 | 2025-02 | KAZZ | 待补 | — | 双人 | 单版 | 已入库（1 图，数字封面） |
 | 10 | 2025-02 | GAZE | Feb 2025 | The Dream Unfolds | 双人 | A/B/C | 已有 `GAZE`（37 图） |
-| 11 | 2025-08 | THE R | — | Heartbeat for You | 双人 | — | 已入库（24 图：合体天台/窗边组 8 + 灰蓝油画墙单人组 16） |
+| 11 | 2025-08 | THE R | — | Heartbeat for You | 双人 | A/B/C/D | 已入库（9 图：合体天台/窗边组 8 + Cover B 1；原挂在本刊下的 16 张 KAZZ 211 串刊图已于 2026-10-22 清除） |
 | 12 | 2025-10 | KAZZ | **211** | Harmony Secret | 双人 | A/B | 已入库（25 图） |
 | 13 | 2025-09 | PERLA | — | 摩登秀场（城央魅致 / 甜澈灵犀） | **单人 Lookmhee** | A/B | 已入库（13 图：原有 9 + 官方 9/14 帖 4） |
 | 14 | 2025-09 | PERLA | — | 浪漫之诗（旧潮新绎 / 风格独白） | **单人 Sonya** | A/B | 已入库（13 图：官方 9/14 帖 9 + 9/17 帖 4） |
@@ -86,7 +86,7 @@
 | 5 | PERLA（Lookmhee） | PERLA · 摩登秀场 (Lookmhee) | `LM-MAG-PERLA-DREAM-20250914` | 2025-09-14（官方微博首发日） | 13 |
 
 > 编号已重排为 `001-013`；`lm/mag/2025/` 下 5 个与 Sonya 完全重复的孤儿副本（001、015-018）已删。原第 9 张曾被误覆盖，已从本地备份恢复为 `009`。
-| 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-01 | 24 |
+| 6 | THE R 2025-08 | THE R · Heartbeat for You | `LMSY-MAG-THER-2508` | 2025-08-04（预售开卖日 8/4 13:14，售卖截止 8/16 23:59） | 9 |
 | 7 | KAZZ 211 2025-08 | KAZZ 211 · Harmony Secret | `LMSY-MAG-KAZZ-211` | 2025-08-28（开卖日，官方 X 8/28 公布封面并开放预售；拍摄日 2025-08-11；10 月发货） | 28 |
 | 8 | KAZZ 2025-02 | KAZZ 2025-02（实为 KAZZ 206 期，待改名） | `LMSY-MAG-KAZZ-2502` | 2025-02-01* | 8 |
 | 9 | GAZE | GAZE · The Dream Unfolds | `MAG-GAZE-THEDREAMUNFOLDS` | 2025-01-17 | 37 |
