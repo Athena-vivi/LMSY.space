@@ -14,12 +14,12 @@ import { EditorialDetailContent } from '@/app/editorial/[id]/editorial-detail-co
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
-  const topic = await loadFeatureTopic(id);
+  const { slug } = await params;
+  const topic = await loadFeatureTopic(slug);
   if (!topic) return { title: 'Topic Not Found' };
 
   const title = getLocalizedText(topic.title_i18n, 'en', topic.title);
@@ -34,8 +34,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function FeatureTopicPage({ params }: PageProps) {
-  const { id } = await params;
-  const topic = await loadFeatureTopic(id);
+  const { slug } = await params;
+  const topic = await loadFeatureTopic(slug);
   if (!topic) notFound();
 
   return (
