@@ -141,9 +141,8 @@ function TimelineNode({
       </h2>
 
       {entryGroups.length > 0 ? (
-        // Mobile: one full-width portrait box per class (the line already
-        // eats ~3rem). From sm up: 2 columns, xl: 3 - bigger on desktop too.
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        // Small: 2 columns, sm: 3, xl: 4 - one event's boxes fit on screen.
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {entryGroups.map((group) => (
             <GroupBox key={group.key ?? 'all'} entry={entry} group={group} />
           ))}
@@ -177,7 +176,7 @@ function GroupBox({ entry, group }: { entry: DoorEntryRow; group: DoorEntryGroup
             alt={label}
             fill
             unoptimized
-            sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+            sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : null}
