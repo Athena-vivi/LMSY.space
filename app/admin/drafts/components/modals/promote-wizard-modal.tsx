@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminLang } from '@/lib/admin-i18n';
-import { parseCatalogHead, CATEGORY_TO_DOOR_CODE, PERSON_CODES } from '@/lib/catalog-id';
+import { parseCatalogHead, PERSON_CODES } from '@/lib/catalog-id';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import type { TranslationKey } from '@/lib/languages';
 
@@ -73,18 +73,38 @@ function deriveSubject(project: ProjectRow): string {
   );
 }
 
-/** Wizard top level: every door-mapped category, registry order. */
-const WIZARD_CATEGORIES = Object.keys(CATEGORY_TO_DOOR_CODE) as Array<keyof typeof CATEGORY_TO_DOOR_CODE>;
-const CATEGORY_LABEL_KEY: Record<string, TranslationKey> = {
-  drama_work: 'category.dramaWork',
-  editorial: 'category.editorial',
-  live_event: 'category.liveEvent',
-  public_appearance: 'category.publicAppearance',
-  commercial: 'category.commercial',
-  behind_the_scenes: 'category.behindTheScenes',
-  personal_travel: 'category.personalTravel',
-  early_archive: 'category.earlyArchive',
-};
+/**
+ * Wizard top level: every door with the REAL project categories it covers.
+ * The talks door spans three shelves (interview / variety / radio) and the
+ * live door is the live_stream category - projects never carry the door
+ * names themselves, so filtering and creation must map through this table.
+ */
+const WIZARD_DOORS: Array<{
+  key: string;
+  labelKey: TranslationKey;
+  categories: string[];
+}> = [
+  { key: 'drama_work', labelKey: 'category.dramaWork', categories: ['drama_work'] },
+  { key: 'editorial', labelKey: 'category.editorial', categories: ['editorial'] },
+  { key: 'live_event', labelKey: 'category.liveEvent', categories: ['live_event'] },
+  { key: 'public_appearance', labelKey: 'category.publicAppearance', categories: ['public_appearance'] },
+  { key: 'commercial', labelKey: 'category.commercial', categories: ['commercial'] },
+  {
+    key: 'talks',
+    labelKey: 'door.talks',
+    categories: ['interview', 'variety', 'radio'],
+  },
+  { key: 'live', labelKey: 'door.live', categories: ['live_stream'] },
+  { key: 'behind_the_scenes', labelKey: 'category.behindTheScenes', categories: ['behind_the_scenes'] },
+  { key: 'early_archive', labelKey: 'category.earlyArchive', categories: ['early_archive'] },
+];
+
+/** Second level of the talks door: the shelf IS the project category. */
+const TALK_SHELVES: Array<{ value: string; labelKey: TranslationKey }> = [
+  { value: 'interview', labelKey: 'category.interview' },
+  { value: 'variety', labelKey: 'category.variety' },
+  { value: 'radio', labelKey: 'category.radio' },
+];
 
 const BATCH_SIZE = 3;
 
@@ -107,8 +127,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [subjectOptions, setSubjectOptions] = useState<SubjectOptions | null>(null);
   const [subjectTouched, setSubjectTouched] = useState(false);
   const [customClass, setCustomClass] = useState(false);
-  // Hall hierarchy: category first, then the registry sub-type, then events.
-  const [category, setCategory] = useState('live_event');
+  // Hall hierarchy: door first, then (talks) the shelf or (live) the registry
+  // sub-type, then events.
+  const [doorKey, setDoorKey] = useState('live_event');
+  // Talks door only: which shelf (interview / variety / radio) the event and
+  // its pictures belong to. Empty until picked explicitly.
+  const [shelf, setShelf] = useState('');
   const [subtypeFilter, setSubtypeFilter] = useState('all');
   // Inline event creation state.
   const [creatingEvent, setCreatingEvent] = useState(false);
@@ -117,7 +141,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [newEvent, setNewEvent] = useState({
     title: '',
     eventDate: '',
-    subtype: 'fanmeeting',
+    subtype: '',
     portalVisible: true,
   });
   const [running, setRunning] = useState(false);
@@ -213,10 +237,16 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
+  // The real DB category the wizard currently works on. For the talks door
+  // this is the chosen shelf; empty until picked, which also empties the
+  // event list and blocks inline creation.
+  const activeCategory = doorKey === 'talks' ? shelf : doorKey;
+
   const filteredProjects = useMemo(() => {
+    if (!activeCategory) return [];
     const q = search.trim().toLowerCase();
-    let list = projects.filter((p) => p.category === category);
-    const subtypes = SUBTYPES_BY_CATEGORY[category as keyof typeof SUBTYPES_BY_CATEGORY];
+    let list = projects.filter((p) => p.category === activeCategory);
+    const subtypes = SUBTYPES_BY_CATEGORY[activeCategory as keyof typeof SUBTYPES_BY_CATEGORY];
     if (subtypeFilter !== 'all' && subtypes?.length) {
       list = list.filter((p) => p.subtype === subtypeFilter);
     }
@@ -226,11 +256,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         .filter((v): v is string => Boolean(v))
         .some((v) => v.toLowerCase().includes(q))
     );
-  }, [projects, category, subtypeFilter, search]);
+  }, [projects, activeCategory, subtypeFilter, search]);
 
   const subtypesForCategory = useMemo(
-    () => SUBTYPES_BY_CATEGORY[category as keyof typeof SUBTYPES_BY_CATEGORY] ?? [],
-    [category]
+    () => SUBTYPES_BY_CATEGORY[activeCategory as keyof typeof SUBTYPES_BY_CATEGORY] ?? [],
+    [activeCategory]
   );
 
   // Class dropdown: the project's own preset classes first, then classes the
@@ -242,7 +272,9 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   }, [project, subjectOptions]);
 
   const createEvent = async () => {
-    if (!newEvent.title.trim() || !newEvent.eventDate) return;
+    // The shelf pick doubles as the category for the talks door - without it
+    // there is nowhere to file the new event.
+    if (!activeCategory || !newEvent.title.trim() || !newEvent.eventDate) return;
     // A sub-type must be chosen explicitly - never fall back to the first
     // option of the list, which is how an event lands in the wrong shelf.
     if (subtypesForCategory.length > 0 && !newEvent.subtype) return;
@@ -254,7 +286,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newEvent.title.trim(),
-          category,
+          category: activeCategory,
           subtype: subtypesForCategory.length > 0 ? newEvent.subtype : undefined,
           event_date: newEvent.eventDate,
           portal_visible: newEvent.portalVisible,
@@ -431,9 +463,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <select
-                    value={category}
+                    value={doorKey}
                     onChange={(e) => {
-                      setCategory(e.target.value);
+                      setDoorKey(e.target.value);
+                      setShelf('');
                       setSubtypeFilter('all');
                       setProjectId(null);
                       setNewEvent((prev) => ({
@@ -444,13 +477,34 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                     }}
                     className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
                   >
-                    {WIZARD_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {t(CATEGORY_LABEL_KEY[c])}
+                    {WIZARD_DOORS.map((door) => (
+                      <option key={door.key} value={door.key}>
+                        {t(door.labelKey)}
                       </option>
                     ))}
                   </select>
-                  {subtypesForCategory.length > 0 && (
+                  {doorKey === 'talks' ? (
+                    // The talks door has no sub-types - its second level IS
+                    // the project category, so the pick replaces both the
+                    // shelf filter and the category itself.
+                    <select
+                      value={shelf}
+                      onChange={(e) => {
+                        setShelf(e.target.value);
+                        setProjectId(null);
+                      }}
+                      className={`w-full border bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40 ${
+                        shelf ? 'border-white/10' : 'border-lmsy-yellow/40'
+                      }`}
+                    >
+                      <option value="">{t('d.promote.pickShelf')}</option>
+                      {TALK_SHELVES.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {t(s.labelKey)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : subtypesForCategory.length > 0 && (
                     <select
                       value={subtypeFilter}
                       onChange={(e) => setSubtypeFilter(e.target.value)}
@@ -542,7 +596,14 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           </select>
                         ) : (
                           <div className="flex items-center px-3 font-mono text-[10px] text-ink-2">
-                            {t(CATEGORY_LABEL_KEY[category] ?? 'category.liveEvent')}
+                            {(() => {
+                              const door = WIZARD_DOORS.find((d) => d.key === doorKey);
+                              if (doorKey === 'talks' && shelf) {
+                                const s = TALK_SHELVES.find((item) => item.value === shelf);
+                                return s ? t(s.labelKey) : t(door?.labelKey ?? 'category.liveEvent');
+                              }
+                              return t(door?.labelKey ?? 'category.liveEvent');
+                            })()}
                           </div>
                         )}
                       </div>
@@ -565,6 +626,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           type="button"
                           onClick={() => void createEvent()}
                           disabled={
+                            !activeCategory ||
                             !newEvent.title.trim() ||
                             !newEvent.eventDate ||
                             (subtypesForCategory.length > 0 && !newEvent.subtype) ||

@@ -86,8 +86,12 @@ export const CATEGORY_TO_DOOR_CODE: Record<string, DoorCode> = {
   live_event: 'EVENT',
   public_appearance: 'APPEAR',
   commercial: 'BRAND',
-  talks: 'TALK',
-  live: 'LIVE',
+  // The talks door stores its shelf as the project's category: a project is
+  // an interview, a variety spot or a radio hour - never the door name.
+  interview: 'TALK',
+  variety: 'TALK',
+  radio: 'TALK',
+  live_stream: 'LIVE',
   behind_the_scenes: 'BTS',
   early_archive: 'EARLY',
 };
