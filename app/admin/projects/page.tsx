@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Plus, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw } from 'lucide-react';
+import { Edit2, Trash2, Plus, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw, ImagePlus } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { supabase, type Project } from '@/lib/supabase';
 import EditProjectModal from './_components/edit-project-modal';
 import { useAdminLang } from '@/lib/admin-i18n';
@@ -31,6 +30,10 @@ export default function AdminProjectsPage() {
     message: '',
     type: 'success',
   });
+
+  // Selection drives the right-hand management panel: the list stays a quiet
+  // inventory of events, actions only appear for the picked event.
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -245,8 +248,6 @@ export default function AdminProjectsPage() {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
 
-      console.log('[PROJECTS] Deleting project:', deleteConfirm.projectId);
-
       const response = await fetch(`/api/admin/projects/${deleteConfirm.projectId}`, {
         method: 'DELETE',
         headers,
@@ -264,12 +265,8 @@ export default function AdminProjectsPage() {
         throw new Error('Delete operation returned unsuccessful');
       }
 
-      console.log('[PROJECTS] ✅ Delete successful, reloading page...');
-
-      // Show toast
       showToast('PROJECT_DELETED_FROM_ARCHIVE');
 
-      // Force page reload to ensure real-time feedback
       setTimeout(() => {
         window.location.reload();
       }, 500);
@@ -339,16 +336,22 @@ export default function AdminProjectsPage() {
       const matchesCategory = categoryFilter === 'all' || project.category === categoryFilter;
 
       // ADR-001 D4: status comes only from the formal curation_status field.
-      // The previous fallback inferred 'published'/'archived' from the mere
-      // presence of watch_url, which is a reference link, not a lifecycle
-      // state. Rows without a value are displayed under their default
-      // ('draft') — no new status semantics are introduced here.
       const normalizedStatus = project.curation_status ?? 'draft';
       const matchesStatus = statusFilter === 'all' || normalizedStatus === statusFilter;
 
       return matchesQuery && matchesCategory && matchesStatus;
     });
   }, [projects, searchQuery, categoryFilter, statusFilter]);
+
+  // Keep the selection valid when the list changes (delete/filter).
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    if (!projects.some((p) => p.id === selectedProjectId)) {
+      setSelectedProjectId(null);
+    }
+  }, [projects, selectedProjectId]);
+
+  const activeProject = projects.find((p) => p.id === selectedProjectId) ?? null;
 
   return (
     <div className="space-y-6">
@@ -407,28 +410,6 @@ export default function AdminProjectsPage() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="relative py-20"
           >
-            {/* Vertical Timeline Dashed Line */}
-            <div className="absolute left-8 top-0 bottom-0 w-px">
-              <div className="h-full w-full" style={{
-                backgroundImage: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 50%, transparent 50%)',
-                backgroundSize: '1px 8px',
-              }} />
-            </div>
-
-            {/* Timeline Nodes */}
-            <div className="absolute left-8 top-8 space-y-32">
-              <div className="relative">
-                <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/10" />
-              </div>
-              <div className="relative">
-                <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/10" />
-              </div>
-              <div className="relative">
-                <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/10" />
-              </div>
-            </div>
-
-            {/* Empty State Message */}
             <div className="pl-20">
               <div className="space-y-2">
                 <p className="text-xs font-mono text-ink-2 tracking-widest">
@@ -453,263 +434,295 @@ export default function AdminProjectsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="space-y-1"
+            className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] items-start"
           >
-            <div className="flex flex-col gap-3 border px-4 py-4 md:flex-row md:items-center md:justify-between"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-            >
-              <div className="flex flex-1 flex-col gap-3 md:flex-row">
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder={t('wb.searchPlaceholder')}
-                  className="w-full border bg-transparent px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors placeholder:text-ink-2 md:max-w-sm"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                />
-                <select
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value as 'all' | Project['category'])}
-                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                >
-                  {categoryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option === 'all' ? t('cat.ALL') : t('cat.'+option)}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value as 'all' | 'published' | 'draft' | 'archived')}
-                  className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                >
-                  <option value="all">{t('wb.filterAll')}</option>
-                  <option value="published">{t('status.published')}</option>
-                  <option value="draft">{t('status.candidate')}</option>
-                  <option value="archived">{t('status.archived')}</option>
-                </select>
+            {/* ------------------------------------------------ ----------
+                Left: the event inventory. One quiet row per event -
+                picture, name, meta. No actions here; selection drives
+                the right-hand panel.
+            ---------------------------------------------------------- */}
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-col gap-3 border px-4 py-4 md:flex-row md:items-center md:justify-between"
+                style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+              >
+                <div className="flex flex-1 flex-col gap-3 md:flex-row">
+                  <input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder={t('wb.searchPlaceholder')}
+                    className="w-full border bg-transparent px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors placeholder:text-ink-2 md:max-w-sm"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  />
+                  <select
+                    value={categoryFilter}
+                    onChange={(event) => setCategoryFilter(event.target.value as 'all' | Project['category'])}
+                    className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'all' ? t('cat.ALL') : t('cat.'+option)}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value as 'all' | 'published' | 'draft' | 'archived')}
+                    className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
+                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  >
+                    <option value="all">{t('wb.filterAll')}</option>
+                    <option value="published">{t('status.published')}</option>
+                    <option value="draft">{t('status.candidate')}</option>
+                    <option value="archived">{t('status.archived')}</option>
+                  </select>
+                </div>
+                <div className="text-xs font-mono tracking-wider text-ink-2">
+                  {filteredProjects.length} / {projects.length}
+                </div>
               </div>
-              <div className="text-xs font-mono tracking-wider text-ink-2">
-                {filteredProjects.length} / {projects.length}
-              </div>
-            </div>
 
-            {/* Table Header */}
-            <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b text-xs font-mono font-medium tracking-wider"
-              style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-            >
-              <div className="col-span-4 text-ink-2">{t('p.projectTitle')}</div>
-              <div className="col-span-2 text-ink-2">{t('common.category')}</div>
-              <div className="col-span-2 text-ink-2">{t('common.date')}</div>
-              <div className="col-span-3 text-ink-2">{t('common.status')}</div>
-              <div className="col-span-1 text-ink-2 text-right">{t('common.actions')}</div>
-            </div>
+              {filteredProjects.map((project) => {
+                const selected = project.id === selectedProjectId;
+                const config = categoryConfig[project.category] || categoryConfig.series;
+                const coverUrl = getImageUrl(project.cover_url);
+                const assetCount = (projectAssets[project.id] || []).length;
+                return (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => setSelectedProjectId(selected ? null : project.id)}
+                    className={`flex w-full items-center gap-4 border px-4 py-3 text-left transition-colors ${
+                      selected
+                        ? 'border-lmsy-yellow/40 bg-lmsy-yellow/[0.06]'
+                        : 'border-white/5 hover:bg-white/[0.02]'
+                    }`}
+                  >
+                    <span className="relative block h-14 w-20 shrink-0 overflow-hidden bg-white/5">
+                      {coverUrl ? (
+                        <Image
+                          src={coverUrl}
+                          alt={project.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center">
+                          <Play className="h-4 w-4 text-ink-2" strokeWidth={1.5} />
+                        </span>
+                      )}
+                    </span>
 
-            {/* Table Rows */}
-            {filteredProjects.map((project, index) => {
-              const config = categoryConfig[project.category] || categoryConfig.series;
-              const previewAssets = projectAssets[project.id] || [];
-              return (
-                <motion.div
-                  key={project.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="grid grid-cols-12 gap-4 px-4 py-3 border items-center font-light hover:bg-white/[0.02] transition-colors group"
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-serif text-base text-ink">
+                        {project.title}
+                      </span>
+                      <span className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono tracking-[0.1em] uppercase border ${config.className}`}>
+                          {t(config.label)}
+                        </span>
+                        {project.event_date || project.release_date ? (
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] tracking-wide text-ink-2">
+                            <Calendar className="h-2.5 w-2.5" strokeWidth={1.5} />
+                            {(project.event_date || project.release_date)!.slice(0, 10)}
+                          </span>
+                        ) : null}
+                        {assetCount > 0 && (
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-ink-2">
+                            <Images className="h-2.5 w-2.5" strokeWidth={1.5} />
+                            {assetCount}
+                          </span>
+                        )}
+                        <span className="font-mono text-[10px] text-ink-2">
+                          {project.curation_status === 'published'
+                            ? t('status.published')
+                            : project.curation_status === 'archived'
+                              ? t('status.archived')
+                              : t('status.candidate')}
+                        </span>
+                        {project.project_kind === 'theme' && (
+                          <span className="border border-lmsy-blue/40 px-1 py-0.5 text-[9px] font-mono tracking-[0.1em] text-lmsy-blue/80">
+                            {t('status.theme')}
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+
+              {filteredProjects.length === 0 && (
+                <div
+                  className="border px-4 py-10 text-center text-xs font-mono tracking-wider text-ink-2"
                   style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
                 >
-                  {/* Title */}
-                  <div className="col-span-4">
-                    <div className="flex items-start gap-3">
-                      {/* Thumbnail */}
-                      <Link
-                        href={`/admin/projects/${project.id}/curate`}
-                        className="relative block w-16 h-10 flex-shrink-0 bg-white/5 overflow-hidden transition-opacity hover:opacity-80"
-                        title={t('p.viewAssets')}
-                      >
-                        {(() => {
-                          const coverUrl = getImageUrl(project.cover_url);
-                          return coverUrl ? (
-                            <Image
-                              src={coverUrl}
-                              alt={project.title}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                              />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-4 w-4 text-ink-2" strokeWidth={1.5} />
-                            </div>
-                          );
-                        })()}
-                      </Link>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm text-ink-2 font-serif truncate">
-                          {project.title}
-                        </h3>
-                        {project.description && (
-                          <p className="text-[10px] text-ink-2 font-mono truncate mt-0.5">
-                            {project.description}
-                          </p>
-                        )}
-                        {previewAssets.length > 0 && (
-                          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-                            {previewAssets.map((asset) => {
-                              const imageUrl = getImageUrl(asset.image_url);
-                              return (
-                                <div
-                                  key={asset.id}
-                                  className="relative h-24 w-20 flex-shrink-0 overflow-hidden border bg-black/30"
-                                  style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
-                                >
-                                  {imageUrl ? (
-                                    <Image
-                                      src={imageUrl}
-                                      alt={asset.catalog_id || project.title}
-                                      fill
-                                      className="object-contain p-1"
-                                      style={{ transform: `rotate(${asset.rotation ?? 0}deg)` }}
-                                      unoptimized
-                                    />
-                                  ) : null}
-                                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/70 px-1 py-1">
-                                    <button
-                                      onClick={() => handleRotateAsset(asset, 'left')}
-                                      className="text-ink-2 transition-colors hover:text-white"
-                                      title={t('c.rotateLeft')}
-                                    >
-                                      <RotateCcw className="h-3 w-3" strokeWidth={1.8} />
-                                    </button>
-                                    <button
-                                      onClick={() => handleRotateAsset(asset, 'right')}
-                                      className="text-ink-2 transition-colors hover:text-white"
-                                      title={t('c.rotateRight')}
-                                    >
-                                      <RotateCw className="h-3 w-3" strokeWidth={1.8} />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
+                  NO_MATCHING_PROJECTS
+                </div>
+              )}
+            </div>
+
+            {/* ------------------------------------------------ ----------
+                Right: management panel for the picked event. Preview
+                first, actions underneath - the reverse of the old table.
+            ---------------------------------------------------------- */}
+            <aside className="border bg-white/[0.02] lg:sticky lg:top-6" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+              {!activeProject ? (
+                <div className="px-6 py-16 text-center">
+                  <ImagePlus className="mx-auto h-6 w-6 text-ink-2/50" strokeWidth={1.5} />
+                  <p className="mt-4 font-mono text-[11px] leading-relaxed tracking-wider text-ink-2">
+                    {t('p.panelHint')}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 p-5">
+                  {/* Cover preview */}
+                  <div className="relative aspect-[3/2] w-full overflow-hidden border bg-black/40" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+                    {(() => {
+                      const coverUrl = getImageUrl(activeProject.cover_url) || getImageUrl((projectAssets[activeProject.id] || [])[0]?.image_url);
+                      return coverUrl ? (
+                        <Image
+                          src={coverUrl}
+                          alt={activeProject.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Play className="h-5 w-5 text-ink-2" strokeWidth={1.5} />
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <h3 className="font-serif text-lg leading-snug text-ink">{activeProject.title}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono tracking-[0.1em] uppercase border ${(categoryConfig[activeProject.category] || categoryConfig.series).className}`}>
+                        {t((categoryConfig[activeProject.category] || categoryConfig.series).label)}
+                      </span>
+                      {(activeProject.event_date || activeProject.release_date) && (
+                        <span className="inline-flex items-center gap-1 font-mono text-[10px] text-ink-2">
+                          <Calendar className="h-2.5 w-2.5" strokeWidth={1.5} />
+                          {(activeProject.event_date || activeProject.release_date)!.slice(0, 10)}
+                        </span>
+                      )}
+                      <span className="font-mono text-[10px] text-ink-2">
+                        {activeProject.curation_status === 'published'
+                          ? t('status.published')
+                          : activeProject.curation_status === 'archived'
+                            ? t('status.archived')
+                            : t('status.candidate')}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Category Badge */}
-                  <div className="col-span-2">
-                    <motion.span
-                      className={`inline-block px-2 py-1 text-[10px] font-mono tracking-[0.1em] uppercase border ${config.className}`}
-                      whileHover={{
-                        scale: 1.02,
-                      }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {t(config.label)}
-                    </motion.span>
-                  </div>
-
-                  {/* Release Date */}
-                  <div className="col-span-2">
-                    {project.release_date ? (
-                      <div className="flex items-center gap-2 text-xs text-ink-2">
-                        <Calendar className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
-                        <span className="font-mono tracking-wide">
-                          {new Date(project.release_date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          }).toUpperCase()}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-ink-2 font-mono">—</span>
-                    )}
-                  </div>
-
-                  {/* Status — from the formal curation_status field only
-                      (ADR-001 D4). watch_url is a reference link, not a
-                      lifecycle state, and no longer drives this column. */}
-                  <div className="col-span-3">
-                    <span className="text-xs font-mono text-ink-2">
-                      {project.curation_status === 'published'
-                        ? t('status.published')
-                        : project.curation_status === 'archived'
-                          ? t('status.archived')
-                          : t('status.candidate')}
-                    </span>
-                    {project.project_kind === 'theme' && (
-                      <span className="ml-2 border border-lmsy-blue/40 px-1 py-0.5 text-[9px] font-mono tracking-[0.1em] text-lmsy-blue/80">
-                        {t('status.theme')}
-                      </span>
-                    )}
-                  </div>
+                  {/* Picture strip with rotation controls */}
+                  {(projectAssets[activeProject.id] || []).length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {(projectAssets[activeProject.id] || []).map((asset) => {
+                        const imageUrl = getImageUrl(asset.image_url);
+                        return (
+                          <div
+                            key={asset.id}
+                            className="relative h-24 w-20 shrink-0 overflow-hidden border bg-black/30"
+                            style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+                          >
+                            {imageUrl ? (
+                              <Image
+                                src={imageUrl}
+                                alt={asset.catalog_id || activeProject.title}
+                                fill
+                                className="object-contain p-1"
+                                style={{ transform: `rotate(${asset.rotation ?? 0}deg)` }}
+                                unoptimized
+                              />
+                            ) : null}
+                            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/70 px-1 py-1">
+                              <button
+                                onClick={() => handleRotateAsset(asset, 'left')}
+                                className="text-ink-2 transition-colors hover:text-white"
+                                title={t('c.rotateLeft')}
+                              >
+                                <RotateCcw className="h-3 w-3" strokeWidth={1.8} />
+                              </button>
+                              <button
+                                onClick={() => handleRotateAsset(asset, 'right')}
+                                className="text-ink-2 transition-colors hover:text-white"
+                                title={t('c.rotateRight')}
+                              >
+                                <RotateCw className="h-3 w-3" strokeWidth={1.8} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Actions */}
-                  <div className="col-span-1 flex items-center justify-end gap-2">
-                    <Link
-                      href={`/admin/preview/${project.id}`}
+                  <div className="grid grid-cols-2 gap-2 border-t pt-4" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+                    <a
+                      href={`/admin/preview/${activeProject.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-ink-2 hover:text-lmsy-blue/80 hover:bg-lmsy-blue/5 transition-all"
-                      title={t('p.viewLive')}
+                      className="flex items-center gap-2 border border-white/10 px-3 py-2 font-mono text-[11px] text-ink-2 transition-colors hover:border-white/25 hover:text-ink"
                     >
-                      <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    </Link>
-                    <Link
-                      href={`/admin/gallery?tab=all&projectId=${project.id}`}
-                      className="p-1.5 text-ink-2 hover:text-lmsy-blue/60 hover:bg-lmsy-blue/5 transition-all"
-                      title={t('p.viewAssets')}
+                      <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
+                      {t('p.viewLive')}
+                    </a>
+                    <a
+                      href={`/admin/gallery?tab=all&projectId=${activeProject.id}`}
+                      className="flex items-center gap-2 border border-white/10 px-3 py-2 font-mono text-[11px] text-ink-2 transition-colors hover:border-white/25 hover:text-ink"
                     >
-                      <Images className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    </Link>
+                      <Images className="h-3 w-3" strokeWidth={1.5} />
+                      {t('p.viewAssets')}
+                    </a>
+                    <a
+                      href={`/admin/projects/${activeProject.id}/curate`}
+                      className="flex items-center gap-2 border border-white/10 px-3 py-2 font-mono text-[11px] text-ink-2 transition-colors hover:border-white/25 hover:text-ink"
+                    >
+                      <ImagePlus className="h-3 w-3" strokeWidth={1.5} />
+                      {t('p.curateAssets')}
+                    </a>
                     <button
-                      onClick={() => handleMerge(project)}
-                      className="p-1.5 text-ink-2 hover:text-ink-2 hover:bg-white/5 transition-all"
-                      title={t('p.merge')}
+                      onClick={() => handleEdit(activeProject)}
+                      className="flex items-center gap-2 border border-lmsy-yellow/30 bg-lmsy-yellow/[0.06] px-3 py-2 font-mono text-[11px] text-lmsy-yellow/90 transition-colors hover:bg-lmsy-yellow/[0.12]"
                     >
-                      <ArrowRightLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      <Edit2 className="h-3 w-3" strokeWidth={1.5} />
+                      {t('p.editProject')}
                     </button>
                     <button
-                      onClick={() => handleSplit(project)}
-                      className="p-1.5 text-ink-2 hover:text-ink-2 hover:bg-white/5 transition-all"
-                      title={t('p.split')}
+                      onClick={() => handleMerge(activeProject)}
+                      className="flex items-center gap-2 border border-white/10 px-3 py-2 font-mono text-[11px] text-ink-2 transition-colors hover:border-white/25 hover:text-ink"
                     >
-                      <SplitSquareVertical className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      <ArrowRightLeft className="h-3 w-3" strokeWidth={1.5} />
+                      {t('p.merge')}
                     </button>
                     <button
-                      onClick={() => handleEdit(project)}
-                      className="p-1.5 text-ink-2 hover:text-lmsy-yellow/60 hover:bg-lmsy-yellow/5 transition-all"
+                      onClick={() => handleSplit(activeProject)}
+                      className="flex items-center gap-2 border border-white/10 px-3 py-2 font-mono text-[11px] text-ink-2 transition-colors hover:border-white/25 hover:text-ink"
                     >
-                      <Edit2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      <SplitSquareVertical className="h-3 w-3" strokeWidth={1.5} />
+                      {t('p.split')}
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(project)}
-                      disabled={deletingProjectId === project.id}
-                      className="p-1.5 text-ink-2 hover:text-red-400/80 hover:bg-red-500/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      onClick={() => handleDeleteClick(activeProject)}
+                      disabled={deletingProjectId === activeProject.id}
+                      className="col-span-2 flex items-center justify-center gap-2 border border-red-500/25 px-3 py-2 font-mono text-[11px] text-red-400/80 transition-colors hover:border-red-500/50 hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      {deletingProjectId === project.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+                      {deletingProjectId === activeProject.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" strokeWidth={1.5} />
                       ) : (
-                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                        <Trash2 className="h-3 w-3" strokeWidth={1.5} />
                       )}
+                      {t('p.deleteProject')}
                     </button>
                   </div>
-                </motion.div>
-              );
-            })}
-
-            {filteredProjects.length === 0 && (
-              <div
-                className="border px-4 py-10 text-center text-xs font-mono tracking-wider text-ink-2"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}
-              >
-                NO_MATCHING_PROJECTS
-              </div>
-            )}
+                </div>
+              )}
+            </aside>
           </motion.div>
         )}
       </AnimatePresence>

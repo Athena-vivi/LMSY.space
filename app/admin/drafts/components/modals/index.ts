@@ -6,5 +6,4 @@ export { DeleteConfirmModal } from './delete-confirm-modal';
 export { EditModal } from './edit-modal';
 export { BatchEditModal } from './batch-edit-modal';
 export { LinkProjectModal } from './link-project-modal';
-export { RenameProjectModal } from './rename-project-modal';
 export { PromoteWizardModal } from './promote-wizard-modal';
