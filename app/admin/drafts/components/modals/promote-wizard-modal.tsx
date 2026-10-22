@@ -92,6 +92,16 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [subjectOptions, setSubjectOptions] = useState<SubjectOptions | null>(null);
   const [subjectTouched, setSubjectTouched] = useState(false);
   const [customClass, setCustomClass] = useState(false);
+  // Inline event creation state.
+  const [creatingEvent, setCreatingEvent] = useState(false);
+  const [creatingEventNow, setCreatingEventNow] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    eventDate: '',
+    subtype: 'fanmeeting',
+    portalVisible: true,
+  });
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [errors, setErrors] = useState<string[]>([]);
@@ -204,6 +214,41 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     const common = (subjectOptions?.commonGroups || []).filter((g) => !own.includes(g));
     return [...own, ...common];
   }, [project, subjectOptions]);
+
+  const createEvent = async () => {
+    if (!newEvent.title.trim() || !newEvent.eventDate) return;
+    setCreatingEventNow(true);
+    setCreateError(null);
+    try {
+      const response = await fetch('/api/admin/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newEvent.title.trim(),
+          category: 'live_event',
+          subtype: newEvent.subtype,
+          event_date: newEvent.eventDate,
+          portal_visible: newEvent.portalVisible,
+        }),
+      });
+      const result = await response.json();
+      if (!result?.success || !result?.project) {
+        throw new Error(result?.error || 'Failed to create event');
+      }
+      const created = result.project as ProjectRow;
+      // Refresh the list and land on the new event.
+      const listResponse = await fetch('/api/admin/projects', { cache: 'no-store' });
+      const listResult = await listResponse.json();
+      if (listResult?.projects) setProjects(listResult.projects as ProjectRow[]);
+      setProjectId(created.id);
+      setCreatingEvent(false);
+      setNewEvent({ title: '', eventDate: '', subtype: 'fanmeeting', portalVisible: true });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create event');
+    } finally {
+      setCreatingEventNow(false);
+    }
+  };
 
   const refreshPreview = async () => {
     if (!project || !subject.trim() || draftIds.length === 0) return;
@@ -394,6 +439,84 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                     <div className="px-3 py-4 text-center font-mono text-[11px] text-ink-2">
                       {t('d.promote.noEvents')}
                     </div>
+                  )}
+
+                  {/* Inline event creation: the picture batch usually comes
+                      from an event that has no project row yet. */}
+                  {creatingEvent ? (
+                    <div className="space-y-2.5 border border-lmsy-yellow/30 bg-lmsy-yellow/[0.04] p-3">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={newEvent.title}
+                        onChange={(e) => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
+                        placeholder={t('d.promote.newEventTitle')}
+                        className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none placeholder:text-ink-2 focus:border-lmsy-yellow/40"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          value={newEvent.eventDate}
+                          onChange={(e) => setNewEvent((prev) => ({ ...prev, eventDate: e.target.value }))}
+                          className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
+                        />
+                        <select
+                          value={newEvent.subtype}
+                          onChange={(e) => setNewEvent((prev) => ({ ...prev, subtype: e.target.value }))}
+                          className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
+                        >
+                          <option value="fanmeeting">{t('d.promote.subtypeFanmeeting')}</option>
+                          <option value="brand_event">{t('d.promote.subtypeBrand')}</option>
+                          <option value="birthday">{t('d.promote.subtypeBirthday')}</option>
+                        </select>
+                      </div>
+                      <label className="flex cursor-pointer items-center gap-2 font-mono text-[10px] text-ink-2">
+                        <input
+                          type="checkbox"
+                          checked={newEvent.portalVisible}
+                          onChange={(e) =>
+                            setNewEvent((prev) => ({ ...prev, portalVisible: e.target.checked }))
+                          }
+                          className="h-3 w-3 accent-lmsy-yellow"
+                        />
+                        {t('d.promote.newEventVisible')}
+                      </label>
+                      {createError && (
+                        <p className="font-mono text-[10px] text-red-300/80">{createError}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void createEvent()}
+                          disabled={!newEvent.title.trim() || !newEvent.eventDate || creatingEventNow}
+                          className="flex flex-1 items-center justify-center gap-2 bg-lmsy-yellow px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {creatingEventNow && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {t('d.promote.newEventCreate')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreatingEvent(false);
+                            setCreateError(null);
+                          }}
+                          className="border border-white/15 px-3 py-2 font-mono text-[11px] text-ink-2 hover:border-white/30 hover:text-ink"
+                        >
+                          {t('common.cancel')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreatingEvent(true);
+                        setCreateError(null);
+                      }}
+                      className="w-full border border-dashed border-white/20 px-3 py-2 text-center font-mono text-[11px] text-ink-2 transition-colors hover:border-lmsy-yellow/40 hover:text-ink"
+                    >
+                      ＋ {t('d.promote.newEvent')}
+                    </button>
                   )}
                 </div>
               </div>
