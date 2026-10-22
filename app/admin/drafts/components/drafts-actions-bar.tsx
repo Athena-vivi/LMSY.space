@@ -7,7 +7,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Edit2, Trash2, X, ImagePlus } from 'lucide-react';
+import { Check, Edit2, Trash2, X, ImagePlus, Rocket } from 'lucide-react';
 import { useAdminLang } from '@/lib/admin-i18n';
 
 interface DraftsActionsBarProps {
@@ -16,6 +16,7 @@ interface DraftsActionsBarProps {
   onBatchToGallery: (ids: string[]) => void;
   onBatchDelete: () => void;
   onBatchEdit: () => void;
+  onPromote: (ids: string[]) => void;
   onClearSelection: () => void;
 }
 
@@ -25,6 +26,7 @@ export function DraftsActionsBar({
   onBatchToGallery,
   onBatchDelete,
   onBatchEdit,
+  onPromote,
   onClearSelection,
 }: DraftsActionsBarProps) {
   const { t } = useAdminLang();
@@ -48,6 +50,16 @@ export function DraftsActionsBar({
               {t('common.selected')} {selectedIds.size}
             </span>
             <div className="w-px h-4 bg-white/10" />
+            <motion.button
+              onClick={() => onPromote(Array.from(selectedIds))}
+              title={t('d.promote.title')}
+              className="flex items-center gap-2 px-4 py-2 bg-lmsy-yellow border border-lmsy-yellow text-black text-xs font-mono hover:opacity-90 transition-all rounded-full"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Rocket className="h-3.5 w-3.5" strokeWidth={2} />
+              <span>{t('d.promote.button')}</span>
+            </motion.button>
             <motion.button
               onClick={onBatchPublish}
               className="flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/40 text-green-400/90 text-xs font-mono hover:bg-green-500/30 transition-all rounded-full"

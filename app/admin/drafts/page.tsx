@@ -20,6 +20,7 @@ import {
   BatchEditModal,
   LinkProjectModal,
   RenameProjectModal,
+  PromoteWizardModal,
   type DraftFolder,
 } from './components';
 import { useDrafts } from './hooks/use-drafts';
@@ -67,6 +68,9 @@ export default function DraftsPage() {
   });
 
   const [linkProjectDraftId, setLinkProjectDraftId] = useState<string | null>(null);
+  // Self-serve promotion wizard: pick event + class, one click transcribes,
+  // uploads and files the selected drafts under their catalog ids.
+  const [promoteDraftIds, setPromoteDraftIds] = useState<string[] | null>(null);
   // Quick rename straight from the folder rail - project management is where
   // the full form lives, but a name fix should not require hunting for it.
   const [renamingProject, setRenamingProject] = useState<{ id: string; title: string } | null>(null);
@@ -363,6 +367,7 @@ export default function DraftsPage() {
       {/* Floating Batch Action Bar */}
       <DraftsActionsBar
         selectedIds={draftsState.selectedIds}
+        onPromote={(ids) => setPromoteDraftIds(ids)}
         onBatchPublish={actions.handleBatchPublish}
         onBatchToGallery={actions.handleBatchToGallery}
         onBatchDelete={() => {
@@ -414,6 +419,17 @@ export default function DraftsPage() {
         isOpen={renamingProject !== null}
         onClose={() => setRenamingProject(null)}
         onSaved={handleProjectRenamed}
+      />
+
+      <PromoteWizardModal
+        isOpen={promoteDraftIds !== null}
+        draftIds={promoteDraftIds ?? []}
+        onClose={() => setPromoteDraftIds(null)}
+        onDone={(message) => {
+          draftsState.setSelectedIds(new Set());
+          void draftsState.fetchDrafts();
+          draftsState.showToast(message);
+        }}
       />
 
       {/* Delete Confirmation Modal */}
