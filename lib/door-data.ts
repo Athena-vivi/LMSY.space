@@ -39,7 +39,7 @@ import type { ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
  */
 
 const ENTRY_COLUMNS =
-  'id, slug, title, title_i18n, description, description_i18n, category, subtype, event_date, release_date, cover_url, watch_url, project_kind';
+  'id, slug, title, title_i18n, description, description_i18n, category, subtype, event_date, release_date, cover_url, watch_url, project_kind, video_url_bilibili, video_url_youtube, interview_md';
 
 export interface DoorEntryRow {
   id: string;
@@ -56,6 +56,11 @@ export interface DoorEntryRow {
   cover_url: string | null;
   watch_url: string | null;
   project_kind: string | null;
+  /** Talks door: per-platform video links; the shelf renders one box each. */
+  video_url_bilibili: string | null;
+  video_url_youtube: string | null;
+  /** Talks door: the transcript the curator pasted in (markdown). */
+  interview_md: string | null;
   /** Pictures filed under this entry, counted in one extra query. */
   imageCount: number;
   /**
@@ -105,7 +110,7 @@ export interface DoorEntryGroup {
 }
 
 /** Newest first: a hall reads as a history, so the latest thing is on top. */
-async function loadRows(categories: readonly ProjectCategory[]): Promise<DoorEntryRow[]> {
+export async function loadRows(categories: readonly ProjectCategory[]): Promise<DoorEntryRow[]> {
   if (categories.length === 0) return [];
 
   const { data, error } = await applyPublicProjectFilter(
@@ -329,8 +334,24 @@ export async function loadSegmentEntryGroups(
   segment: string
 ): Promise<Map<string, DoorEntryGroup[]>> {
   const entries = await loadSegmentEntries(category, segment);
+  return buildEntryGroups(entries ?? []);
+}
+
+/**
+ * Same group map for a whole category with no sub-class filter - the talks
+ * door's shelves ARE categories (`/talks/radio`), so the segment filter that
+ * loadSegmentEntryGroups applies would find nothing.
+ */
+export async function loadCategoryEntryGroups(
+  category: ProjectCategory
+): Promise<Map<string, DoorEntryGroup[]>> {
+  const entries = await loadRows([category]);
+  return buildEntryGroups(entries);
+}
+
+async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, DoorEntryGroup[]>> {
   const map = new Map<string, DoorEntryGroup[]>();
-  if (!entries || entries.length === 0) return map;
+  if (entries.length === 0) return map;
 
   for (const entry of entries) map.set(entry.id, []);
 

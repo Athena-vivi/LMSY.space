@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { PageIntro } from '@/components/page-intro';
+import { InterviewArticle } from '@/components/interview-article';
 import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
@@ -534,6 +535,14 @@ export function DoorEntryPage({
           )}
         </div>
       </section>
+
+      {/* Transcript: the curator-pasted conversation (interview_md). The
+          timeline's transcript box anchors here. */}
+      {entry.interview_md ? (
+        <div id="transcript" className="container mx-auto px-4 pb-24 sm:px-6 lg:px-8">
+          <InterviewArticle markdown={entry.interview_md} />
+        </div>
+      ) : null}
     </div>
   );
 }

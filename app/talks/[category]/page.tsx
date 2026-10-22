@@ -2,12 +2,15 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
-import { loadDoorEntries } from '@/lib/door-data';
-import { DoorEntriesPage } from '@/components/doors/door-views';
+import { loadCategoryEntryGroups, loadRows } from '@/lib/door-data';
+import { TalksTimelinePage } from '@/components/doors/talks-timeline';
 import { TALK_CATEGORIES, categoryDefinition, normalizeCategory } from '@/lib/category-registry';
 
 /**
- * /talks/[category] - level 2: the conversations of one kind.
+ * /talks/[category] - level 2: one shelf of the conversations door, rendered
+ * as a vertical timeline (2026-10-22). One node per interview, newest first;
+ * each node hangs its resources off the line - Bilibili / YouTube links out,
+ * the archived pictures and the transcript route into the entry's page.
  *
  * The segment is the category itself (`interview`, `variety`, `radio`), which
  * is the shelf a visitor picks on the door. Anything else is a 404: the three
@@ -44,14 +47,17 @@ export default async function TalksShelfPage({ params }: PageProps) {
   const category = talksCategoryOf(segment);
   if (!category) notFound();
 
-  const entries = await loadDoorEntries(category);
+  // The shelf IS the category, so there is no sub-class segment to filter by.
+  const entries = await loadRows([category]);
+  const groups = await loadCategoryEntryGroups(category);
 
   return (
-    <DoorEntriesPage
+    <TalksTimelinePage
       titleKey={categoryDefinition(category)?.labelKey ?? null}
       doorTitleKey="talks.title"
       doorHref="/talks"
       entries={entries}
+      groups={groups}
     />
   );
 }
