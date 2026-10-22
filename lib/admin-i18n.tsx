@@ -144,7 +144,7 @@ const DICT: Record<string, [string, string]> = {
   'subtype.fanmeeting': ['见面会', 'Fan Meetings'],
   'subtype.brand_event': ['品牌活动', 'Brand Events'],
   'subtype.birthday': ['生日会', 'Birthdays'],
-  'subtype.premiere': ['首映', 'Premieres'],
+  'subtype.premiere': ['公司活动', 'Company Events'],
   'subtype.awards': ['颁奖礼', 'Awards'],
   'subtype.fashion': ['时装周', 'Fashion Weeks'],
   'subtype.brand_stage': ['品牌站台', 'Brand Appearances'],

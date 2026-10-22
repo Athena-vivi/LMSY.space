@@ -323,7 +323,7 @@ export const translations = {
 
     // Doors 2-5 (homepage entries with a page of their own)
     'door.description.liveEvents': 'Fan meetings, birthday parties and brand events.',
-    'door.description.appearances': 'Award shows, fashion weeks and premieres.',
+    'door.description.appearances': 'Award shows, fashion weeks and company events.',
     'door.description.commercial': 'Endorsements and ads.',
     'door.viewCategory': 'Open the shelf',
     'door.unfiled': 'Not filed yet',
@@ -407,7 +407,7 @@ export const translations = {
     'subtype.fanmeeting': 'Fan Meetings',
     'subtype.brand_event': 'Brand Events',
     'subtype.birthday': 'Birthdays',
-    'subtype.premiere': 'Premieres',
+    'subtype.premiere': 'Company Events',
     'subtype.awards': 'Awards',
     'subtype.fashion': 'Fashion Weeks',
     'subtype.brand_stage': 'Brand Appearances',
@@ -791,7 +791,7 @@ export const translations = {
 
     // Doors 2-5
     'door.description.liveEvents': '见面会、生日会与品牌活动。',
-    'door.description.appearances': '颁奖礼、时装周与首映。',
+    'door.description.appearances': '颁奖礼、时装周与公司活动。',
     'door.description.commercial': '代言与广告。',
     'door.viewCategory': '进入这一类',
     'door.unfiled': '未归类',
@@ -872,7 +872,7 @@ export const translations = {
     'subtype.fanmeeting': '见面会',
     'subtype.brand_event': '品牌活动',
     'subtype.birthday': '生日会',
-    'subtype.premiere': '首映',
+    'subtype.premiere': '公司活动',
     'subtype.awards': '颁奖礼',
     'subtype.fashion': '时装周',
     'subtype.brand_stage': '品牌站台',
@@ -1253,7 +1253,7 @@ export const translations = {
 
     // Doors 2-5
     'door.description.liveEvents': 'งานแฟนมีตติ้ง วันเกิด และกิจกรรมของแบรนด์',
-    'door.description.appearances': 'งานประกาศรางวัล สัปดาห์แฟชั่น และรอบปฐมทัศน์',
+    'door.description.appearances': 'งานประกาศรางวัล สัปดาห์แฟชั่น และกิจกรรมบริษัท',
     'door.description.commercial': 'งานพรีเซ็นเตอร์และโฆษณา',
     'door.viewCategory': 'เปิดหมวดนี้',
     'door.unfiled': 'ยังไม่จัดหมวด',
@@ -1336,7 +1336,7 @@ export const translations = {
     'subtype.fanmeeting': 'แฟนมีตติ้ง',
     'subtype.brand_event': 'อีเวนต์แบรนด์',
     'subtype.birthday': 'วันเกิด',
-    'subtype.premiere': 'รอบปฐมทัศน์',
+    'subtype.premiere': 'กิจกรรมบริษัท',
     'subtype.awards': 'รางวัล',
     'subtype.fashion': 'สัปดาห์แฟชั่น',
     'subtype.brand_stage': 'งานแบรนด์',
