@@ -19,9 +19,23 @@ interface SessionInfo {
  */
 async function fetchSessionInfo(): Promise<SessionInfo> {
   try {
+    // Send the access token as a Bearer credential as well: cookie auth can be
+    // missing (expired, blocked, or never written), and without a fallback the
+    // endpoint reports isAdmin:false and the admin layout bounces to "/".
+    const headers: Record<string, string> = {};
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+    } catch {
+      // Ignore and rely on cookies.
+    }
+
     const response = await fetch('/api/auth/session', {
       method: 'GET',
       credentials: 'include',
+      headers,
     });
 
     if (!response.ok) {
@@ -102,11 +116,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Refresh the admin flag from the server endpoint. Avoid awaiting inside
       // this callback (Supabase warns it can deadlock), so fire-and-forget.
+      // Loading is cleared only after the flag arrives: clearing it earlier let
+      // the admin layout see loading=false + isAdmin=false for one tick and
+      // redirect the owner back to the public site right after signing in.
       void fetchSessionInfo().then((sessionInfo) => {
         setIsAdminUser(sessionInfo.isAdmin);
+        setLoading(false);
       });
-
-      setLoading(false);
     });
 
     return () => {

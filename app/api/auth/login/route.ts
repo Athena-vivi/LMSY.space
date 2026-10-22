@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
     resetRateLimit(identityKey);
     console.log('[LOGIN] success');
 
-    return NextResponse.json(
-      {
+    return (() => {
+      const finalResponse = NextResponse.json({
         success: true,
         user: {
           id: data.user.id,
@@ -141,13 +141,20 @@ export async function POST(request: NextRequest) {
               user: data.session.user,
             }
           : null,
-      },
-      {
-        headers: {
-          'Set-Cookie': response.headers.get('Set-Cookie') || '',
-        },
+      });
+
+      // Auth cookies MUST be appended one header line each. Reading them with
+      // headers.get('Set-Cookie') returns a single comma-joined string, which
+      // browsers do not split (RFC 6265) - the session cookies were silently
+      // dropped, so /api/auth/session always answered isAdmin:false and the
+      // admin layout redirected the owner back to the public site.
+      const authCookies = response.headers.getSetCookie?.() ?? [];
+      for (const cookie of authCookies) {
+        finalResponse.headers.append('Set-Cookie', cookie);
       }
-    );
+
+      return finalResponse;
+    })();
   } catch (error) {
     return apiServerError('auth/login', error);
   }
