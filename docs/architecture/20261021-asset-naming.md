@@ -50,6 +50,7 @@ LMSY-DRAMA-AFFAIR-STILL-20240830-003.webp
 |---|---|---|
 | 影视作品 | `/dramas` | `DRAMA` |
 | 杂志特辑 | `/editorial` | `MAG` |
+| 特色专题 | `/features` | `FEAT` |
 | 现场活动 | `/live-events` | `EVENT` |
 | 公开亮相 | `/appearances` | `APPEAR` |
 | 品牌合作 | `/commercial` | `BRAND` |
@@ -203,6 +204,20 @@ SY-LIVE-TIKTOK-20250412-001.webp
 
 `LMSY-BTS-<作品码>-<日期>-001`、`LMSY-EARLY-<内容码>-<日期>-001`。
 
+### 4.9 特色专题 `FEAT`（2026-10-22 定）
+
+主体 = 专题码。**专题一律不写日期段**：专题是长期收藏，不是一个时间点的事件，
+同一专题往后随时可能补进几年前的旧图或几年后的新图，日期无法钉死在整套图上。
+
+```
+LMSY-FEAT-BACKVIEW-001.webp
+LMSY-FEAT-BACKVIEW-010.webp
+```
+
+- 序号只增不减，新图接在最大序号后面，已有图的序号永远不动。
+- 专题以 `project_kind = 'theme'` 的项目挂在 `/features`，事件编号 = `LMSY-FEAT-<专题码>`。
+- 不要用 `EARLY` 码命名专题——专题不是「早期」，是长期主题（用户 2026-10-22 定）。
+
 ---
 
 ## 五、日期与序号
@@ -280,10 +295,17 @@ SY-LIVE-TIKTOK-20250412-001.webp
 <person>/<door>/<yyyy>/<文件名>
 ```
 
+无日期的编号（FEAT 专题）不带年份段：
+
+```
+<person>/<door>/<文件名>
+```
+
 ```
 lmsy/mag/2025/LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001.webp
 lm/mag/2024/LM-MAG-OAT-20241211-001.webp
 sy/live/2025/SY-LIVE-20250218-001.webp
+lmsy/feat/LMSY-FEAT-BACKVIEW-001.webp
 ```
 
 现在用的是 `magazines/2025/…`（按旧门名分目录），改名时一并换成上面的结构。

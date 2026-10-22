@@ -139,21 +139,25 @@ export function EditorialDetailContent({
       {/* Magazine Header Section */}
       <section className="relative px-6 py-16 md:px-12">
         <div className="max-w-7xl mx-auto">
-          {/* Date and Artifact Count */}
+          {/* Date and Artifact Count. A FEAT topic carries no date by design
+              (images join the topic over the years), so the slot stays empty
+              instead of showing "date to be confirmed" forever. */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex items-center justify-between mb-8"
           >
-            <div>
-              <p className="font-mono text-4xl md:text-6xl font-bold text-ink mb-2">
-                {dateLabel}
-              </p>
-              <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
-                {t(language, keys.releaseDate)}
-              </p>
-            </div>
+            {(magazine.release_date || ns === 'editorial') && (
+              <div>
+                <p className="font-mono text-4xl md:text-6xl font-bold text-ink mb-2">
+                  {dateLabel}
+                </p>
+                <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
+                  {t(language, keys.releaseDate)}
+                </p>
+              </div>
+            )}
             <div className="text-right">
               <p className="font-mono text-3xl md:text-5xl font-bold text-lmsy-yellow/80">
                 {totalArtifacts}

@@ -228,18 +228,16 @@ export async function loadFeatureTopics(): Promise<EditorialIssue[]> {
   return (data as unknown as IssueRow[]).map(toIssue);
 }
 
-/** One theme topic by slug (or uuid), same visibility rule as the rack. */
+/**
+ * One theme topic by slug (or uuid), same visibility rule as the rack.
+ *
+ * Reads through loadFeatureTopics() instead of a single-row query on
+ * purpose: the list read is what the /features rack already runs in
+ * production, so the detail page cannot drift from what the rack shows.
+ * (A direct maybeSingle() here returned null on the deployed site while
+ * the same filter ran fine locally - see 2026-10-22 back-view 404.)
+ */
 export async function loadFeatureTopic(key: string): Promise<EditorialIssue | null> {
-  const { data } = await applyPublicProjectFilter(
-    getSupabaseAdmin()
-      .schema('lmsy_archive')
-      .from('projects')
-      .select(ISSUE_COLUMNS)
-      .eq('project_kind', 'theme')
-      .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key) ? 'id' : 'slug', key)
-  ).maybeSingle();
-
-  if (!data) return null;
-
-  return toIssue(data as unknown as IssueRow);
+  const topics = await loadFeatureTopics();
+  return topics.find((topic) => topic.slug === key || topic.id === key) ?? null;
 }

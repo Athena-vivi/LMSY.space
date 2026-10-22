@@ -10,6 +10,7 @@
  *   LM-MAG-OAT-20241211-012
  *   SY-MAG-KAZZ217-YOUTHCHOICE-20260731-001
  *   LMSY-DRAMA-AFFAIR-PROMO-20240815-003
+ *   LMSY-FEAT-BACKVIEW-001            (special topic: no date by design)
  *
  * Rules (from the spec, do not invent new ones):
  *   - Uppercase ASCII, single '-' separator. No spaces, dots, underscores.
@@ -17,6 +18,9 @@
  *     segments vary in count, so the ID is read right-to-left.
  *   - A missing segment is omitted entirely - never write NA / 0000 placeholders.
  *   - YYYYMMDD is 8 digits; omitted as a whole when unknown.
+ *   - FEAT topics omit the date on purpose: a topic is a long-lived
+ *     collection whose images join over the years, so the sequence is
+ *     append-only and no date can be pinned to the set.
  *   - NNN starts at 001. There is NO -000 cover segment: a cover is a POINTER
  *     (projects.cover_url / homepage_cover_url) to an existing asset in the
  *     same batch, never a separate numbered file.
@@ -45,6 +49,7 @@ export const DOOR_CODES = [
   'LIVE',
   'BTS',
   'EARLY',
+  'FEAT',
 ] as const;
 export type DoorCode = (typeof DOOR_CODES)[number];
 
@@ -66,6 +71,7 @@ export const DOOR_DIR: Record<DoorCode, string> = {
   LIVE: 'live',
   BTS: 'bts',
   EARLY: 'early',
+  FEAT: 'feat',
 };
 
 /**
@@ -216,7 +222,11 @@ export function generateCatalogId(parts: CatalogIdParts): string {
   return buildCatalogId(parts);
 }
 
-/** R2 object key for an asset: <person>/<door>/<year>/<id>.webp */
+/**
+ * R2 object key for an asset: <person>/<door>/<year>/<id>.webp
+ * Date-less IDs (FEAT topics: long-lived, images join over the years) carry
+ * no year segment: <person>/<door>/<id>.webp
+ */
 export function r2KeyForCatalogId(catalogId: string): string {
   const parsed = parseCatalogId(catalogId);
   if (!parsed) {
@@ -224,7 +234,10 @@ export function r2KeyForCatalogId(catalogId: string): string {
       `Invalid catalog ID: ${catalogId}. Expected <PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>`
     );
   }
-  const year = parsed.date ? parsed.date.substring(0, 4) : 'unknown';
+  if (!parsed.date) {
+    return `${PERSON_DIR[parsed.person]}/${DOOR_DIR[parsed.door]}/${catalogId}.webp`;
+  }
+  const year = parsed.date.substring(0, 4);
   return `${PERSON_DIR[parsed.person]}/${DOOR_DIR[parsed.door]}/${year}/${catalogId}.webp`;
 }
 
