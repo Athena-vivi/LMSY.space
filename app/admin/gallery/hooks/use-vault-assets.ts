@@ -24,6 +24,11 @@ export interface VaultAssetFilters {
   /** Gallery rows linked to one project */
   projectId?: string;
   /**
+   * Gallery rows linked to any of several projects - a door or a shelf holds
+   * a batch per event, and its cover picker offers all of them at once.
+   */
+  projectIds?: string[];
+  /**
    * Skip the request entirely until the caller needs rows. The pickers stay
    * mounted while closed and would otherwise fetch a page nobody looked at.
    */
@@ -40,6 +45,7 @@ export function useVaultAssets({
   q,
   tag,
   projectId,
+  projectIds,
   enabled = true,
 }: VaultAssetFilters) {
   const [rows, setRows] = useState<GalleryItem[]>([]);
@@ -48,6 +54,11 @@ export function useVaultAssets({
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Callers build their id list inline, so the array is a new reference on
+  // every render. Comparing the joined form keeps it out of the effect deps
+  // without dropping the change signal.
+  const projectIdsKey = projectIds?.join(',') ?? '';
 
   // Responses can land out of order when a filter changes mid-request; only
   // the newest request is allowed to write state.
@@ -76,6 +87,7 @@ export function useVaultAssets({
         if (q) params.set('q', q);
         if (tag) params.set('tag', tag);
         if (projectId) params.set('projectId', projectId);
+        if (projectIdsKey) params.set('project_ids', projectIdsKey);
         if (cursor) params.set('cursor', cursor);
 
         const response = await fetch(`/api/admin/vault/assets?${params.toString()}`, {
@@ -108,7 +120,7 @@ export function useVaultAssets({
         }
       }
     },
-    [q, tag, projectId, enabled]
+    [q, tag, projectId, projectIdsKey, enabled]
   );
 
   // A new filter set starts from the first page.

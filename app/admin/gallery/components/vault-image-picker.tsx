@@ -1,16 +1,14 @@
 /**
  * Vault Image Picker
  *
- * Shared by every "pick an image for this fixed slot" flow in Asset Vault
- * (homepage doors, homepage years, homepage portraits).
+ * Shared by every "pick an image for this fixed slot" flow: the homepage doors,
+ * the homepage years, the homepage portraits, and an event's cover.
  *
- * By default the list is searched and paged by the server
- * (/api/admin/vault/assets); the picker used to receive the whole vault as a
- * prop, which meant every visit to a tab downloaded every asset first.
- *
- * Callers that already hold the exact set to choose from - the curation page
- * only offers the pictures of one node - pass `images` instead, and the picker
- * filters that array in memory.
+ * The list is searched and paged by the server (/api/admin/vault/assets). It
+ * used to receive the rows as a prop, which meant the caller had to fetch them
+ * in one go - a request PostgREST caps at 1000 rows, so on a larger vault most
+ * pictures never appeared. `projectIds` narrows the search instead of handing
+ * rows over.
  *
  * Thumbnails use a fixed height instead of an aspect ratio: `Image fill`
  * contributes no intrinsic height, so an aspect-ratio box could collapse and
@@ -19,7 +17,7 @@
 
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, X } from 'lucide-react';
 import Image from 'next/image';
@@ -29,8 +27,6 @@ import { useVaultAssets } from '../hooks/use-vault-assets';
 
 /** Typing pauses this long before the search is applied. */
 const QUERY_DEBOUNCE_MS = 280;
-/** Rows per page when the caller supplies its own list. */
-const LOCAL_PAGE_SIZE = 48;
 
 interface VaultImagePickerProps {
   open: boolean;
@@ -39,10 +35,10 @@ interface VaultImagePickerProps {
   /** Mono subline under the headline */
   subtitle: string;
   /**
-   * A fixed set to choose from. Omit it to search the whole vault, which is
-   * paged by the server.
+   * Narrow the search to these projects, for a picker whose whole point is one
+   * door or one shelf. Omit it to search every asset.
    */
-  images?: GalleryItem[];
+  projectIds?: string[];
   /** Gallery id that is currently stored for this slot, when known */
   currentImageId?: string | null;
   /** Stored URL, used for portrait slots which only keep a URL */
@@ -58,7 +54,7 @@ export function VaultImagePicker({
   open,
   title,
   subtitle,
-  images,
+  projectIds,
   currentImageId,
   currentImageUrl,
   busy = false,
@@ -66,10 +62,8 @@ export function VaultImagePicker({
   onClose,
   onClear,
 }: VaultImagePickerProps) {
-  const usingLocal = images !== undefined;
   const [query, setQuery] = useState('');
   const [term, setTerm] = useState('');
-  const [visibleCount, setVisibleCount] = useState(LOCAL_PAGE_SIZE);
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -82,34 +76,13 @@ export function VaultImagePicker({
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Rows are fetched only while the dialog is up, and never when the caller
-  // already handed us the exact set.
-  const assets = useVaultAssets({ q: term, tag: '', enabled: open && !usingLocal });
+  // Rows are fetched only while the dialog is up.
+  const assets = useVaultAssets({ q: term, tag: '', projectIds, enabled: open });
 
-  const localFiltered = useMemo(() => {
-    if (!usingLocal) return [];
-    const needle = term.toLowerCase();
-    if (!needle) return images;
-    return images.filter((item) => {
-      const haystack = [item.caption, item.catalog_id, item.tag, item.project_id]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(needle);
-    });
-  }, [usingLocal, images, term]);
-
-  const visible = usingLocal ? localFiltered.slice(0, visibleCount) : assets.rows;
-  const hasMore = usingLocal ? visibleCount < localFiltered.length : assets.nextCursor !== null;
-  const remaining = usingLocal
-    ? localFiltered.length - visibleCount
-    : assets.total - assets.rows.length;
-  const loadingMore = usingLocal ? false : assets.loadingMore;
-  const loadingFirstPage = usingLocal ? false : assets.loading && assets.rows.length === 0;
-  const loadMore = () => {
-    if (usingLocal) setVisibleCount((count) => count + LOCAL_PAGE_SIZE);
-    else assets.loadMore();
-  };
+  const visible = assets.rows;
+  const hasMore = assets.nextCursor !== null;
+  const remaining = assets.total - assets.rows.length;
+  const loadingFirstPage = assets.loading && assets.rows.length === 0;
 
   // Escape and scroll lock are external-system syncs. This effect deliberately
   // sets no state: the search term is left as the curator typed it, so
@@ -247,11 +220,11 @@ export function VaultImagePicker({
                   <div className="pt-4 text-center">
                     <button
                       type="button"
-                      onClick={loadMore}
-                      disabled={loadingMore}
+                      onClick={assets.loadMore}
+                      disabled={assets.loadingMore}
                       className="rounded border border-white/15 px-4 py-1.5 font-mono text-[11px] tracking-wider text-ink-2 transition-colors hover:border-white/40 hover:text-ink disabled:cursor-wait disabled:opacity-50"
                     >
-                      {loadingMore
+                      {assets.loadingMore
                         ? 'LOADING...'
                         : `LOAD_MORE (${Math.max(0, remaining)} LEFT)`}
                     </button>
@@ -270,9 +243,7 @@ export function VaultImagePicker({
                 <span className="font-mono text-[11px] text-ink-2">
                   {loadingFirstPage
                     ? 'LOADING...'
-                    : usingLocal
-                      ? `${localFiltered.length} IMAGES`
-                      : `${assets.rows.length} / ${assets.total} IMAGES`}
+                    : `${assets.rows.length} / ${assets.total} IMAGES`}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
                   {onClear && (

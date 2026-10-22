@@ -57,8 +57,6 @@ export default function CurationPage() {
   const [note, setNote] = useState<string | null>(null);
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerImages, setPickerImages] = useState<GalleryItem[] | null>(null);
-  const [pickerLoading, setPickerLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
   /** id of the row that currently holds the slot, needed to clear it */
   const [currentAssetId, setCurrentAssetId] = useState<string>('');
@@ -179,38 +177,7 @@ export default function CurationPage() {
     ];
   }, [door, event, selected, shelf]);
 
-  const openPicker = async (all = showAll) => {
-    setPickerOpen(true);
-    setPickerImages(null);
-
-    // "All images" is searched and paged by the picker itself, against
-    // /api/admin/vault/assets. It used to fetch /api/admin/gallery with no
-    // filter, which hands back at most 1000 rows - on a vault of several
-    // thousand pictures that silently hid most of them.
-    if (all) {
-      setPickerLoading(false);
-      return;
-    }
-
-    // A single node is a small, exact set, so it stays an in-memory list.
-    setPickerLoading(true);
-    try {
-      const query = projectIdsForPicker.length
-        ? `?project_ids=${projectIdsForPicker.join(',')}`
-        : '';
-      const response = await fetch(`/api/admin/gallery${query}`, {
-        headers: await authHeaders(),
-        credentials: 'include',
-      });
-      const payload = await response.json();
-      setPickerImages((payload.data ?? []) as GalleryItem[]);
-    } catch (err) {
-      console.error('[CURATION] picker failed', err);
-      setPickerImages([]);
-    } finally {
-      setPickerLoading(false);
-    }
-  };
+  const openPicker = () => setPickerOpen(true);
 
   const writeSlot = async (
     body: Record<string, unknown>,
@@ -781,9 +748,12 @@ export default function CurationPage() {
         open={pickerOpen}
         title="SET_COVER"
         subtitle={showAll ? 'ALL_IMAGES' : 'THIS_NODE_ONLY'}
-        images={showAll ? undefined : pickerImages ?? []}
+        // Rows come from the server, paged: the whole vault, or just this
+        // node's projects. Both used to arrive as one preloaded array from
+        // /api/admin/gallery, which PostgREST caps at 1000 rows.
+        projectIds={showAll ? undefined : projectIdsForPicker}
         currentImageUrl={panel?.cover ?? null}
-        busy={busy || pickerLoading}
+        busy={busy}
         onPick={(item) => saveCover(item)}
         onClose={() => setPickerOpen(false)}
         onClear={panel?.pinned ? () => saveCover(null) : undefined}
@@ -792,11 +762,7 @@ export default function CurationPage() {
       {pickerOpen && (
         <div className="fixed bottom-6 left-1/2 z-[60] -translate-x-1/2">
           <button
-            onClick={() => {
-              const next = !showAll;
-              setShowAll(next);
-              void openPicker(next);
-            }}
+            onClick={() => setShowAll((prev) => !prev)}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/80 px-4 py-2 text-xs text-ink-2 backdrop-blur hover:text-ink"
           >
             <Images className="h-3.5 w-3.5" />

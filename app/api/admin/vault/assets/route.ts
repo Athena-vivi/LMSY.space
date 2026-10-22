@@ -23,6 +23,8 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 const DEFAULT_LIMIT = 60;
 const MAX_LIMIT = 200;
 const MAX_TERM_LENGTH = 120;
+/** A door holds a few dozen batches; this is the URL-length guard, not a limit. */
+const MAX_PROJECT_IDS = 100;
 
 interface Cursor {
   createdAt: string;
@@ -66,6 +68,20 @@ function parseLimit(raw: string | null): number {
   return Math.min(parsed, MAX_LIMIT);
 }
 
+/**
+ * A door or a shelf is several project rows, and its cover picker offers the
+ * pictures of all of them. Comma separated, same shape /api/admin/gallery
+ * accepts, so the callers can hand over the ids they already hold.
+ */
+function parseProjectIds(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .slice(0, MAX_PROJECT_IDS);
+}
+
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
@@ -74,6 +90,7 @@ export async function GET(request: NextRequest) {
   const q = searchTerm(params.get('q'));
   const tag = (params.get('tag') ?? '').trim();
   const projectId = (params.get('projectId') ?? '').trim();
+  const projectIds = parseProjectIds(params.get('project_ids'));
   const cursor = parseCursor(params.get('cursor'));
   const limit = parseLimit(params.get('limit'));
 
@@ -92,7 +109,10 @@ export async function GET(request: NextRequest) {
         .from('gallery_assets')
         .select('*', { count: 'exact' });
 
-      if (projectId) query = query.eq('project_id', projectId);
+      // A set of projects wins over the single one: the picker sends the ids of
+      // a whole door, and `eq` would narrow that back to one event.
+      if (projectIds.length > 0) query = query.in('project_id', projectIds);
+      else if (projectId) query = query.eq('project_id', projectId);
       if (tag) query = query.eq('tag', tag);
       // Two `or` params. PostgREST ANDs duplicate parameters rather than letting
       // the last one win, so the search and the cursor narrow each other.
@@ -147,7 +167,8 @@ export async function GET(request: NextRequest) {
         limit,
         returned: rows.length,
         total,
-        filtered: Boolean(q || tag || projectId),
+        filtered: Boolean(q || tag || projectId || projectIds.length),
+        projects: projectIds.length,
         paged: Boolean(cursor),
         has_next: nextCursor !== null,
       },
