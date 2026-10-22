@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Rocket, Search, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Loader2, Rocket, Search, CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -47,6 +47,7 @@ interface SubjectOptions {
   fromTitle: string;
   existing: string[];
   peers: string[];
+  commonGroups: string[];
 }
 
 interface PromoteWizardModalProps {
@@ -90,6 +91,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [previewing, setPreviewing] = useState(false);
   const [subjectOptions, setSubjectOptions] = useState<SubjectOptions | null>(null);
   const [subjectTouched, setSubjectTouched] = useState(false);
+  const [customClass, setCustomClass] = useState(false);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [errors, setErrors] = useState<string[]>([]);
@@ -113,6 +115,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     setErrors([]);
     setPhase('select');
     setSearch('');
+    setCustomClass(false);
 
     let cancelled = false;
     setLoadingProjects(true);
@@ -165,6 +168,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           if (subjectTouched && prev) return prev;
           return options.fromProject || options.fromTitle || prev;
         });
+        // Default the class dropdown to the most common class in the
+        // category when the project has no preset of its own.
+        setAssetGroup((prev) => {
+          if (prev || customClass) return prev;
+          return options.commonGroups[0] ?? '';
+        });
       } catch {
         // Candidates are a convenience; the editable input still works.
       }
@@ -187,6 +196,14 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         .some((v) => v.toLowerCase().includes(q))
     );
   }, [projects, search]);
+
+  // Class dropdown: the project's own preset classes first, then classes the
+  // same category actually uses - always pickable, never invented ad hoc.
+  const mergedClassOptions = useMemo(() => {
+    const own = project?.asset_groups || [];
+    const common = (subjectOptions?.commonGroups || []).filter((g) => !own.includes(g));
+    return [...own, ...common];
+  }, [project, subjectOptions]);
 
   const refreshPreview = async () => {
     if (!project || !subject.trim() || draftIds.length === 0) return;
@@ -389,27 +406,53 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                         {t('d.promote.stepClass')}
                       </span>
-                      {(project.asset_groups?.length ?? 0) > 0 ? (
+                      {customClass ? (
+                        <span className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            autoFocus
+                            value={assetGroup}
+                            onChange={(e) => setAssetGroup(e.target.value)}
+                            onBlur={() => {
+                              if (!assetGroup.trim()) setCustomClass(false);
+                            }}
+                            placeholder={t('d.promote.classPlaceholder')}
+                            className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none focus:border-lmsy-yellow/40"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomClass(false);
+                              const groups = mergedClassOptions;
+                              setAssetGroup(groups[0] ?? '');
+                            }}
+                            title={t('common.back')}
+                            className="shrink-0 border border-white/15 px-2 py-2 font-mono text-[10px] text-ink-2 hover:border-white/30 hover:text-ink"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ) : (
                         <select
                           value={assetGroup}
-                          onChange={(e) => setAssetGroup(e.target.value)}
+                          onChange={(e) => {
+                            if (e.target.value === '__custom__') {
+                              setCustomClass(true);
+                              setAssetGroup('');
+                            } else {
+                              setAssetGroup(e.target.value);
+                            }
+                          }}
                           className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
                         >
-                          {project.asset_groups!.map((g) => (
+                          {mergedClassOptions.map((g) => (
                             <option key={g} value={g}>
                               {g}
                             </option>
                           ))}
                           <option value="">{t('d.promote.noClass')}</option>
+                          <option value="__custom__">{t('d.promote.newClass')}</option>
                         </select>
-                      ) : (
-                        <input
-                          type="text"
-                          value={assetGroup}
-                          onChange={(e) => setAssetGroup(e.target.value)}
-                          placeholder={t('d.promote.classPlaceholder')}
-                          className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none focus:border-lmsy-yellow/40"
-                        />
                       )}
                     </label>
 

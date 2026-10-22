@@ -120,6 +120,8 @@ const DICT: Record<string, [string, string]> = {
   'd.promote.searchEvent': ['搜索事件名称 / 日期…', 'Search event title / date...'],
   'd.promote.noEvents': ['没有可选的现场活动项目', 'No live-event projects available'],
   'd.promote.stepClass': ['2 · 图片分类', '2 · Picture class'],
+  'd.promote.noClass': ['不分类', 'No class'],
+  'd.promote.newClass': ['＋ 新建分类…', '+ New class...'],
   'd.promote.classPlaceholder': ['输入分类名（如：演出图）', 'Class name, e.g. performance'],
   'd.promote.person': ['人物码', 'Person code'],
   'd.promote.subject': ['主题编码段', 'Subject segment'],

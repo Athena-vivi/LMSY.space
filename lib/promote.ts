@@ -135,6 +135,8 @@ export interface SubjectOptions {
   existing: string[];
   /** Subjects used elsewhere in the same category, as reference. */
   peers: string[];
+  /** Picture classes used across the same category, for the class dropdown. */
+  commonGroups: string[];
 }
 
 export async function loadSubjectOptions(projectId: string): Promise<SubjectOptions | null> {
@@ -179,16 +181,22 @@ export async function loadSubjectOptions(projectId: string): Promise<SubjectOpti
   // Reference: subjects used anywhere in the same category (project heads +
   // sibling project assets), so a curator picks a consistent style.
   const peers = new Set<string>();
+  const groupCount = new Map<string, number>();
   if (project.category) {
     const { data: siblings } = await supabaseAdmin
       .from('projects')
-      .select('id, catalog_id')
+      .select('id, catalog_id, asset_groups')
       .eq('category', project.category)
       .neq('id', projectId)
-      .not('catalog_id', 'is', null)
-      .limit(200);
+      .limit(300);
     for (const s of collectSubjects((siblings || []).map((r) => r.catalog_id as string))) {
       if (!existing.includes(s)) peers.add(s);
+    }
+    // Picture classes the category actually uses, most common first.
+    for (const sib of siblings || []) {
+      for (const g of (sib.asset_groups as string[] | null) || []) {
+        groupCount.set(g, (groupCount.get(g) || 0) + 1);
+      }
     }
     const siblingIds = (siblings || []).map((r) => r.id as string);
     if (siblingIds.length > 0) {
@@ -206,11 +214,16 @@ export async function loadSubjectOptions(projectId: string): Promise<SubjectOpti
     }
   }
 
+  const commonGroups = [...groupCount.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([g]) => g);
+
   return {
     fromProject: fromProject || null,
     fromTitle: titleGuess,
     existing,
     peers: [...peers].slice(0, 24),
+    commonGroups,
   };
 }
 
