@@ -432,11 +432,11 @@ async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, Do
   for (const entry of entries) map.set(entry.id, []);
 
   // A curated entry can pre-declare its classes (projects.asset_groups, an
-  // ordered jsonb array of names). Declared classes get their box even before
-  // any picture is filed into them, in the curator's order; classes found on
-  // actual assets but not declared are appended after.
-  // asset_group_covers: curator-picked cover per class ({ class: catalogId });
-  // a picked cover wins over the "first picture" default.
+  // ordered jsonb array of names). Declared classes keep the curator's order
+  // and are appended with any undeclared ones found on actual assets; empty
+  // declarations are dropped at the end (a box shows only once it has
+  // pictures). asset_group_covers: curator-picked cover per class
+  // ({ class: catalogId }); a picked cover wins over "first picture".
   const { data: projectRows } = await getSupabaseAdmin()
     .schema('lmsy_archive')
     .from('projects')
@@ -505,8 +505,14 @@ async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, Do
     }
   }
 
-  // An entry whose classes are all declared and none of which has pictures
-  // keeps its declared (empty) boxes; a declared class that also holds the
-  // unfiled null bucket only shows once the null bucket has pictures.
+  // Empty boxes never render (2026-10-22 curator call): a declared class
+  // with no pictures yet, or the pre-declared placeholder of an event whose
+  // pictures all live elsewhere, stays hidden until it has content - same
+  // behaviour as an undeclared class, which only ever appears with assets.
+  for (const [id, groups] of map) {
+    const filled = groups.filter((group) => group.count > 0);
+    if (filled.length !== groups.length) map.set(id, filled);
+  }
+
   return map;
 }
