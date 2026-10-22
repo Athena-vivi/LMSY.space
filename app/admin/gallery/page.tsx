@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { VaultHeader } from './components/vault-header';
@@ -11,7 +11,8 @@ import { EditorialView } from './components/views/editorial-view';
 import { MilestonesView } from './components/views/milestones-view';
 import { PortalsView } from './components/views/portals-view';
 import { PortraitsView } from './components/views/portraits-view';
-import { useVaultData, type VaultData } from './hooks/use-vault-data';
+import { useVaultData } from './hooks/use-vault-data';
+import { useVaultAssets } from './hooks/use-vault-assets';
 import { useVaultFilters } from './hooks/use-vault-filters';
 import { VAULT_TABS, type VaultTabId } from './constants';
 
@@ -19,14 +20,14 @@ import { VAULT_TABS, type VaultTabId } from './constants';
  * Asset Vault Page
  *
  * Unified content management for:
- * - All Assets: Gallery images and editorial projects
- * - Chronicle: Timeline events
+ * - All Assets: every gallery image, one server page at a time
  * - Editorial: Magazine projects
  * - Portals: Homepage entry images
  * - Milestones: Homepage timeline images
  * - Portraits: Homepage people images
  *
- * Supports ?tab= URL parameter for direct tab linking.
+ * Supports ?tab= URL parameter for direct tab linking, and ?q= / ?tag= /
+ * ?projectId= so a filtered view can be linked or reloaded.
  */
 export default function AssetVaultPage() {
   const router = useRouter();
@@ -34,37 +35,67 @@ export default function AssetVaultPage() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as VaultTabId | null;
   const projectIdParam = searchParams.get('projectId') || '';
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterTag, setFilterTag] = useState('');
+  // The ALL tab filters in the database, so the active filters live in the URL
+  // rather than in component state: reload and back keep the same view.
+  const qParam = searchParams.get('q') ?? '';
+  const tagParam = searchParams.get('tag') ?? '';
   const activeTab: VaultTabId =
     tabParam && VAULT_TABS.some((tab) => tab.id === tabParam) ? tabParam : 'all';
 
-  // Fetch all vault data in parallel
+  // Fetch the vault-wide data the other tabs and the badges need.
   const { data, debug, loading, error, refetch } = useVaultData();
 
-  // Apply filters based on active tab - use 'as' to narrow the type for each view
-  const filteredData = useVaultFilters(data, activeTab, {
-    searchQuery,
-    filterTag,
-    projectId: activeTab === 'all' ? projectIdParam : undefined,
-  });
+  // One server page of assets for the ALL tab.
+  const assets = useVaultAssets({ q: qParam, tag: tagParam, projectId: projectIdParam });
+
+  const filteredData = useVaultFilters(data, qParam);
 
   // Get unique tags for the filter dropdown
   const uniqueTags = useMemo(() => {
     return [...new Set(data.gallery.map(img => img.tag).filter((tag): tag is string => Boolean(tag)))];
   }, [data.gallery]);
 
+  const pushParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      }
+      const query = next.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
   const handleTabChange = (tab: VaultTabId) => {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('tab', tab);
-    router.replace(`${pathname}?${nextParams.toString()}`);
+    pushParams({ tab });
   };
 
-  const allAssetsData = filteredData as { gallery: VaultData['gallery']; projects: VaultData['projects'] };
-  const editorialData = filteredData as { projects: VaultData['projects'] };
-  const milestoneData = filteredData as { milestones: VaultData['milestones']; gallery: VaultData['gallery'] };
-  const portalData = filteredData as { gallery: VaultData['gallery'] };
-  const portraitData = filteredData as { gallery: VaultData['gallery'] };
+  // The search box stays responsive while the URL update is debounced, so a
+  // keystroke does not trigger a navigation (and a refetch) each time.
+  const [searchDraft, setSearchDraft] = useState(qParam);
+  const [adoptedQ, setAdoptedQ] = useState(qParam);
+
+  // Adopt a URL value that changed from elsewhere: CLEAR_FILTER, back button.
+  // Adjusting state during render is React's answer to "derive from props";
+  // doing it in an effect would render the stale draft once first.
+  if (qParam !== adoptedQ) {
+    setAdoptedQ(qParam);
+    setSearchDraft(qParam);
+  }
+
+  useEffect(() => {
+    if (searchDraft.trim() === qParam) return;
+    const timer = setTimeout(() => {
+      pushParams({ q: searchDraft.trim() || null });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchDraft, qParam, pushParams]);
+
+  const handleTagChange = (tag: string) => {
+    pushParams({ tag: tag || null });
+  };
 
   return (
     <div className="space-y-6">
@@ -105,37 +136,37 @@ export default function AssetVaultPage() {
       />
 
       {/* Search and Filter Bar */}
-        <VaultFilterBar
-          activeTab={activeTab}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterTag={filterTag}
-          setFilterTag={setFilterTag}
-          uniqueTags={uniqueTags}
-          projectId={activeTab === 'all' ? projectIdParam : ''}
-        />
+      <VaultFilterBar
+        activeTab={activeTab}
+        searchQuery={searchDraft}
+        setSearchQuery={setSearchDraft}
+        filterTag={tagParam}
+        setFilterTag={handleTagChange}
+        uniqueTags={uniqueTags}
+        projectId={projectIdParam}
+      />
 
       {/* Content Views */}
       <AnimatePresence mode="wait">
         {activeTab === 'all' && (
           <AllAssetsView
             key="all"
-            data={allAssetsData}
-            loading={loading}
+            assets={assets}
             projectFiltered={Boolean(projectIdParam)}
+            filtered={Boolean(qParam || tagParam)}
           />
         )}
         {activeTab === 'editorial' && (
-          <EditorialView key="editorial" data={editorialData} loading={loading} />
+          <EditorialView key="editorial" data={filteredData.editorial} loading={loading} />
         )}
         {activeTab === 'portals' && (
-          <PortalsView key="portals" data={portalData} loading={loading} />
+          <PortalsView key="portals" data={filteredData.portals} loading={loading} />
         )}
         {activeTab === 'milestones' && (
-          <MilestonesView key="milestones" data={milestoneData} loading={loading} />
+          <MilestonesView key="milestones" data={filteredData.milestones} loading={loading} />
         )}
         {activeTab === 'portraits' && (
-          <PortraitsView key="portraits" data={portraitData} loading={loading} />
+          <PortraitsView key="portraits" data={filteredData.portraits} loading={loading} />
         )}
       </AnimatePresence>
     </div>

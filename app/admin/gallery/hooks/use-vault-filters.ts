@@ -1,7 +1,11 @@
 /**
  * useVaultFilters Hook
  *
- * Filter logic for different vault views
+ * Filter logic for the vault views that still hold their rows in memory.
+ *
+ * The ALL tab is not here: its search, tag and project filters run in the
+ * database and its rows arrive one page at a time (useVaultAssets), so there
+ * is nothing left to filter in the browser.
  */
 
 'use client';
@@ -9,107 +13,32 @@
 import { useMemo } from 'react';
 import type { VaultData } from './use-vault-data';
 
-export interface VaultFilters {
-  searchQuery: string;
-  filterTag: string;
-  projectId?: string;
-}
-
-export function useVaultFilters(
-  data: VaultData,
-  activeTab: 'all' | 'editorial' | 'portals' | 'milestones' | 'portraits',
-  filters: VaultFilters
-) {
-  const { searchQuery, filterTag } = filters;
-  const { projectId } = filters;
-
-  return useMemo(() => {
-    switch (activeTab) {
-      case 'all':
-        return filterAllAssets(data, searchQuery, filterTag, projectId);
-
-      case 'editorial':
-        return filterEditorial(data, searchQuery);
-
-      // Portal doors also pick from the whole vault: the page-level filter
-      // would only hide choices the picker can search itself.
-      case 'portals':
-        return { gallery: data.gallery };
-
-      case 'milestones':
-        return { milestones: data.milestones, gallery: data.gallery };
-
-      // The portrait tab feeds its picker from the full vault; the picker has
-      // its own search so the page-level filter would only hide choices.
-      case 'portraits':
-        return { gallery: data.gallery };
-
-      default:
-        return data.gallery;
-    }
-  }, [data, activeTab, searchQuery, filterTag, projectId]);
-}
-
-// Filter All Assets (gallery + editorial projects)
-function filterAllAssets(
-  data: VaultData,
-  searchQuery: string,
-  filterTag: string,
-  projectId?: string
-) {
-  const { gallery, projects } = data;
-
-  // Filter gallery items
-  let filteredGallery = gallery;
-  if (projectId) {
-    filteredGallery = filteredGallery.filter(item => item.project_id === projectId);
-  }
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filteredGallery = filteredGallery.filter(item => {
-      const captionMatch = item.caption?.toLowerCase().includes(query);
-      const tagMatch = item.tag?.toLowerCase().includes(query);
-      const catalogMatch = item.catalog_id?.toLowerCase().includes(query);
-      return captionMatch || tagMatch || catalogMatch;
-    });
-  }
-  if (filterTag) {
-    filteredGallery = filteredGallery.filter(item => item.tag === filterTag);
-  }
-
-  // Filter editorial projects
-  let filteredProjects = projects.filter(p =>
-    p.category === 'editorial'
+export function useVaultFilters(data: VaultData, searchQuery: string) {
+  return useMemo(
+    () => ({
+      editorial: { projects: filterEditorial(data, searchQuery) },
+      // Portal and portrait slots pick from the whole vault; their pickers have
+      // their own search, so the page-level filter would only hide choices.
+      portals: { gallery: data.gallery },
+      milestones: { milestones: data.milestones, gallery: data.gallery },
+      portraits: { gallery: data.gallery },
+    }),
+    [data, searchQuery]
   );
-  if (projectId) {
-    filteredProjects = filteredProjects.filter(p => p.id === projectId);
-  }
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filteredProjects = filteredProjects.filter(p => {
-      const titleMatch = p.title?.toLowerCase().includes(query);
-      const descMatch = p.description?.toLowerCase().includes(query);
-      return titleMatch || descMatch;
-    });
-  }
-
-  return { gallery: filteredGallery, projects: filteredProjects };
 }
 
 // Filter Editorial projects - returns shape expected by EditorialView
 function filterEditorial(data: VaultData, searchQuery: string) {
-  let filtered = data.projects.filter(p =>
-    p.category === 'editorial'
-  );
+  let filtered = data.projects.filter((p) => p.category === 'editorial');
 
   if (searchQuery) {
     const query = searchQuery.toLowerCase();
-    filtered = filtered.filter(p => {
+    filtered = filtered.filter((p) => {
       const titleMatch = p.title?.toLowerCase().includes(query);
       const descMatch = p.description?.toLowerCase().includes(query);
       return titleMatch || descMatch;
     });
   }
 
-  return { projects: filtered };
+  return filtered;
 }

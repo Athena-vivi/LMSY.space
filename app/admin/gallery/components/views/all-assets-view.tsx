@@ -1,7 +1,9 @@
 /**
  * All Assets View Component
  *
- * Combined view of gallery images and editorial projects
+ * Grid of gallery images, one server page at a time. Search, tag and project
+ * filters run in the database (/api/admin/vault/assets), so the grid holds 60
+ * rows and grows with LOAD MORE instead of downloading the whole vault.
  */
 
 'use client';
@@ -14,23 +16,25 @@ import { supabase } from '@/lib/supabase';
 import { getCdnUrl } from '../../utils';
 import type { GalleryItem } from '@/lib/supabase';
 import type { Project } from '@/lib/supabase';
+import type { VaultAssetsState } from '../../hooks/use-vault-assets';
 import { getLocalizedText, normalizeLocalizedText } from '@/lib/localized-content';
 import { translateFieldMap, type AdminTranslateTarget } from '@/lib/admin-translate';
 
 interface AllAssetsViewProps {
-  data: {
-    gallery: GalleryItem[];
-    projects: Project[];
-  };
-  loading: boolean;
+  /** Paged asset list: rows, total, loadMore, refresh, removeRows */
+  assets: VaultAssetsState;
+  /** Narrowed by ?projectId= in the URL */
   projectFiltered?: boolean;
+  /** A search term or tag is narrowing the set */
+  filtered?: boolean;
 }
 
-export function AllAssetsView({ data, loading, projectFiltered = false }: AllAssetsViewProps) {
-  const { gallery } = data;
-
-  // Combined items for display
-  const displayGallery = gallery; // Can be filtered by props
+export function AllAssetsView({
+  assets,
+  projectFiltered = false,
+  filtered = false,
+}: AllAssetsViewProps) {
+  const gallery = assets.rows;
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -92,6 +96,11 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
     });
   };
 
+  /** Select every row currently on screen; LOAD MORE brings more in. */
+  const selectAllLoaded = () => {
+    setSelectedIds(new Set(gallery.map((item) => item.id)));
+  };
+
   const handleDelete = async (id: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -110,7 +119,13 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
         throw new Error(errorData.error || 'Delete failed');
       }
 
-      window.location.reload();
+      // Drop the row in place; a reload would jump back to the first page.
+      assets.removeRows([id]);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     } catch (err) {
       console.error('[ADMIN_DELETE] Error:', err);
       alert('Failed to delete image');
@@ -122,15 +137,16 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
 
     if (!confirm(`Delete ${selectedIds.size} images?`)) return;
 
+    const ids = Array.from(selectedIds);
+
     try {
-      const ids = Array.from(selectedIds).join(',');
       const { data: { session } } = await supabase.auth.getSession();
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers.Authorization = `Bearer ${session.access_token}`;
       }
 
-      const response = await fetch(`/api/admin/gallery?ids=${ids}`, {
+      const response = await fetch(`/api/admin/gallery?ids=${ids.join(',')}`, {
         method: 'DELETE',
         headers,
       });
@@ -140,7 +156,8 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
         throw new Error(errorData.error || 'Batch delete failed');
       }
 
-      window.location.reload();
+      assets.removeRows(ids);
+      setSelectedIds(new Set());
     } catch (err) {
       console.error('[ADMIN_BATCH_DELETE] Error:', err);
       alert('Failed to delete images');
@@ -174,7 +191,11 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
         throw new Error(errorData.error || 'Transfer failed');
       }
 
-      window.location.reload();
+      // Links changed, which can move rows in or out of a project filter, so
+      // this one re-reads the page instead of patching rows in place.
+      setSelectedIds(new Set());
+      setShowTransferModal(false);
+      assets.refresh();
     } catch (err) {
       console.error('[BATCH_TRANSFER] Error:', err);
       alert('Failed to transfer items');
@@ -220,31 +241,32 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
     setSavingAsset(true);
     try {
       const headers = await getAuthHeaders(true);
+      const nextCopy = {
+        title: assetForm.title_en,
+        title_i18n: {
+          en: assetForm.title_en,
+          zh: assetForm.title_zh,
+          th: assetForm.title_th,
+        },
+        caption: assetForm.caption_en,
+        caption_i18n: {
+          en: assetForm.caption_en,
+          zh: assetForm.caption_zh,
+          th: assetForm.caption_th,
+        },
+        excerpt: assetForm.excerpt_en,
+        excerpt_i18n: {
+          en: assetForm.excerpt_en,
+          zh: assetForm.excerpt_zh,
+          th: assetForm.excerpt_th,
+        },
+      };
+
       const response = await fetch('/api/admin/gallery', {
         method: 'PATCH',
         headers,
         credentials: 'include',
-        body: JSON.stringify({
-          id: editingAsset.id,
-          title: assetForm.title_en,
-          title_i18n: {
-            en: assetForm.title_en,
-            zh: assetForm.title_zh,
-            th: assetForm.title_th,
-          },
-          caption: assetForm.caption_en,
-          caption_i18n: {
-            en: assetForm.caption_en,
-            zh: assetForm.caption_zh,
-            th: assetForm.caption_th,
-          },
-          excerpt: assetForm.excerpt_en,
-          excerpt_i18n: {
-            en: assetForm.excerpt_en,
-            zh: assetForm.excerpt_zh,
-            th: assetForm.excerpt_th,
-          },
-        }),
+        body: JSON.stringify({ id: editingAsset.id, ...nextCopy }),
       });
 
       const result = await response.json();
@@ -252,7 +274,9 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
         throw new Error(result.error || 'Failed to update asset');
       }
 
-      window.location.reload();
+      // Patch the row in place so the grid keeps its place and page.
+      assets.updateRow(editingAsset.id, nextCopy);
+      setEditingAsset(null);
     } catch (err) {
       console.error('[ASSET_EDIT] Error:', err);
       alert('Failed to save asset translations');
@@ -304,7 +328,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
     }
   };
 
-  if (loading) {
+  if (assets.loading && gallery.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex items-center gap-1">
@@ -316,11 +340,58 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
     );
   }
 
+  if (assets.error && gallery.length === 0) {
+    return (
+      <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs font-mono text-red-300/80">{assets.error}</p>
+          <button
+            onClick={assets.refresh}
+            className="shrink-0 border border-red-400/30 px-3 py-1 text-[10px] font-mono text-red-200/80 transition-colors hover:border-red-300/50 hover:text-red-100"
+          >
+            RETRY
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
+      {/* Loaded / total + selection helpers. The grid only holds one server
+          page, so "select all" means "all rows currently on screen". */}
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-2">
+        <span className="text-[10px] font-mono tracking-wider text-ink-2">
+          LOADED {gallery.length} / {assets.total}
+          {filtered ? ' · FILTERED' : ''}
+        </span>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <span className="text-[10px] font-mono tracking-wider text-lmsy-yellow/80">
+              {selectedIds.size} SELECTED
+            </span>
+          )}
+          <button
+            onClick={selectAllLoaded}
+            disabled={gallery.length === 0}
+            className="border border-white/15 px-2 py-1 text-[10px] font-mono tracking-wider text-ink-2 transition-colors hover:border-white/40 hover:text-ink disabled:opacity-30"
+          >
+            SELECT_ALL_LOADED
+          </button>
+          {selectedIds.size > 0 && (
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="border border-white/15 px-2 py-1 text-[10px] font-mono tracking-wider text-ink-2 transition-colors hover:border-white/40 hover:text-ink"
+            >
+              CLEAR_SELECTION
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Grid View - Gallery Images */}
       <AnimatePresence mode="wait">
-        {!loading && displayGallery.length === 0 ? (
+        {gallery.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -343,10 +414,18 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center space-y-2">
                 <p className="text-xs font-mono text-ink-2 tracking-widest">
-                  {projectFiltered ? 'NO_ASSETS_FOR_THIS_PROJECT' : 'VAULT_EMPTY'}
+                  {projectFiltered
+                    ? 'NO_ASSETS_FOR_THIS_PROJECT'
+                    : filtered
+                      ? 'NO_ASSETS_MATCH_THE_FILTER'
+                      : 'VAULT_EMPTY'}
                 </p>
                 <p className="text-[10px] font-mono text-ink-2 tracking-wider">
-                  {projectFiltered ? 'CLEAR_FILTER_TO_VIEW_ALL_ASSETS' : 'WAITING_FOR_SYNC'}
+                  {projectFiltered
+                    ? 'CLEAR_FILTER_TO_VIEW_ALL_ASSETS'
+                    : filtered
+                      ? 'CLEAR_SEARCH_OR_TAG_TO_VIEW_EVERYTHING'
+                      : 'WAITING_FOR_SYNC'}
                 </p>
               </div>
             </div>
@@ -359,7 +438,7 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
             exit={{ opacity: 0 }}
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 bg-white/5"
           >
-            {displayGallery.map((item, index) => {
+            {gallery.map((item) => {
               const imageUrl = getCdnUrl(item.image_url);
 
               return (
@@ -367,7 +446,6 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
                   key={item.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
                   className="relative bg-black group overflow-hidden rounded-lg"
                   style={{
                     border: selectedIds.has(item.id)
@@ -465,6 +543,28 @@ export function AllAssetsView({ data, loading, projectFiltered = false }: AllAss
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Next server page. `nextCursor` is null once the last page arrived. */}
+      {assets.nextCursor && (
+        <div className="flex flex-col items-center gap-2 pt-6">
+          <button
+            onClick={assets.loadMore}
+            disabled={assets.loadingMore}
+            className="border border-white/15 px-4 py-2 text-[11px] font-mono tracking-wider text-ink-2 transition-colors hover:border-lmsy-yellow/40 hover:text-lmsy-yellow/90 disabled:cursor-wait disabled:opacity-50"
+          >
+            {assets.loadingMore
+              ? 'LOADING...'
+              : `LOAD_MORE (${Math.max(0, assets.total - gallery.length)} LEFT)`}
+          </button>
+          {assets.loadingMore && (
+            <span className="flex items-center gap-1">
+              <span className="h-1 w-1 bg-lmsy-yellow/60 animate-pulse" style={{ animationDelay: '0ms' }} />
+              <span className="h-1 w-1 bg-lmsy-yellow/60 animate-pulse" style={{ animationDelay: '150ms' }} />
+              <span className="h-1 w-1 bg-lmsy-yellow/60 animate-pulse" style={{ animationDelay: '300ms' }} />
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Batch Actions Bar */}
       {selectedIds.size > 0 && (
