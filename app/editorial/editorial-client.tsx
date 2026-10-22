@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/components/language-provider';
-import { t } from '@/lib/languages';
+import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
 import { titlePlateLabel } from '@/lib/editorial-meta';
@@ -54,9 +54,56 @@ function themeOf(issue: EditorialIssue): NebulaColors {
   return magazineThemes.default;
 }
 
-export function EditorialClient({ issues }: { issues: EditorialIssue[] }) {
+/**
+ * Copy namespace per door. /editorial and /features render the same rack;
+ * only the words and the link base differ.
+ */
+type RackNamespace = 'editorial' | 'features';
+
+const RACK_KEYS: Record<RackNamespace, {
+  title: TranslationKey;
+  subtitle: TranslationKey;
+  viewIssue: TranslationKey;
+  artifacts: TranslationKey;
+  noCover: TranslationKey;
+  emptyTitle: TranslationKey;
+  emptyDesc: TranslationKey;
+  issueCount: TranslationKey;
+}> = {
+  editorial: {
+    title: 'editorial.title',
+    subtitle: 'editorial.subtitle',
+    viewIssue: 'editorial.viewIssue',
+    artifacts: 'editorial.artifacts',
+    noCover: 'editorial.noCover',
+    emptyTitle: 'editorial.emptyTitle',
+    emptyDesc: 'editorial.emptyDesc',
+    issueCount: 'editorial.issueCount',
+  },
+  features: {
+    title: 'features.title',
+    subtitle: 'features.subtitle',
+    viewIssue: 'features.viewIssue',
+    artifacts: 'features.artifacts',
+    noCover: 'features.noCover',
+    emptyTitle: 'features.emptyTitle',
+    emptyDesc: 'features.emptyDesc',
+    issueCount: 'features.issueCount',
+  },
+};
+
+export function EditorialClient({
+  issues,
+  ns = 'editorial',
+  basePath = '/editorial',
+}: {
+  issues: EditorialIssue[];
+  ns?: RackNamespace;
+  basePath?: string;
+}) {
   const { language } = useLanguage();
   const [hovered, setHovered] = useState<string | null>(null);
+  const keys = RACK_KEYS[ns];
 
   const hoveredEntry = hovered ? issues.find((issue) => issue.id === hovered) : undefined;
   const theme = hoveredEntry ? themeOf(hoveredEntry) : magazineThemes.default;
@@ -83,11 +130,11 @@ export function EditorialClient({ issues }: { issues: EditorialIssue[] }) {
           >
             <h1 className="mb-2 font-serif text-4xl font-bold md:text-5xl">
               <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                {t(language, 'editorial.title')}
+                {t(language, keys.title)}
               </span>
             </h1>
             <p className="font-mono text-xs uppercase tracking-[0.3em] text-ink-2">
-              {t(language, 'editorial.subtitle')}
+              {t(language, keys.subtitle)}
             </p>
           </motion.div>
         </div>
@@ -104,10 +151,10 @@ export function EditorialClient({ issues }: { issues: EditorialIssue[] }) {
                 className="py-32 text-center"
               >
                 <p className="font-serif text-xl text-ink-2">
-                  {t(language, 'editorial.emptyTitle')}
+                  {t(language, keys.emptyTitle)}
                 </p>
                 <p className="mt-3 text-sm text-ink-2/70">
-                  {t(language, 'editorial.emptyDesc')}
+                  {t(language, keys.emptyDesc)}
                 </p>
               </motion.div>
             ) : (
@@ -124,6 +171,8 @@ export function EditorialClient({ issues }: { issues: EditorialIssue[] }) {
                     issue={issue}
                     index={index}
                     onHover={setHovered}
+                    keys={keys}
+                    basePath={basePath}
                   />
                 ))}
               </motion.div>
@@ -135,7 +184,7 @@ export function EditorialClient({ issues }: { issues: EditorialIssue[] }) {
       <footer className="relative z-10 border-t border-border px-6 py-12">
         <div className="mx-auto max-w-7xl text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
-            LMSY.SPACE · {t(language, 'editorial.issueCount', { count: issues.length })}
+            LMSY.SPACE · {t(language, keys.issueCount, { count: issues.length })}
           </p>
         </div>
       </footer>
@@ -147,10 +196,14 @@ function IssueSlot({
   issue,
   index,
   onHover,
+  keys,
+  basePath,
 }: {
   issue: EditorialIssue;
   index: number;
   onHover: (id: string | null) => void;
+  keys: (typeof RACK_KEYS)[RackNamespace];
+  basePath: string;
 }) {
   const { language } = useLanguage();
   const [imageFailed, setImageFailed] = useState(false);
@@ -158,7 +211,7 @@ function IssueSlot({
   const localizedTitle = getLocalizedText(issue.title_i18n, language, issue.title);
   // Stored covers may be a relative path (old rows) or an absolute CDN URL.
   const coverUrl = getImageUrl(issue.cover_url);
-  const href = `/editorial/${issue.slug || issue.id}`;
+  const href = `${basePath}/${issue.slug || issue.id}`;
 
   return (
     <motion.div
@@ -195,7 +248,7 @@ function IssueSlot({
                 <div className="absolute inset-0 h-6 w-6 rotate-45 border border-white/10" />
               </div>
               <p className="px-4 text-center font-mono text-[11px] uppercase leading-relaxed tracking-[0.2em] text-ink-2">
-                {t(language, 'editorial.noCover')}
+                {t(language, keys.noCover)}
               </p>
             </div>
           )}
@@ -204,13 +257,13 @@ function IssueSlot({
 
           <div className="absolute right-3 top-3 rounded border border-white/10 bg-black/60 px-2 py-1 backdrop-blur-md">
             <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-ink-2">
-              {issue.artifact_count} {t(language, 'editorial.artifacts')}
+              {issue.artifact_count} {t(language, keys.artifacts)}
             </span>
           </div>
 
           <div className="absolute inset-x-0 bottom-4 text-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
-              {t(language, 'editorial.viewIssue')} →
+              {t(language, keys.viewIssue)} →
             </span>
           </div>
         </div>

@@ -124,7 +124,7 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
           </motion.div>
 
           {/* Right - Hero Image */}
-          <Link href="/editorial" className="order-1 lg:order-2 relative block">
+          <Link href="/features" className="order-1 lg:order-2 relative block">
             {/*
               No filter/blur on this wrapper. A CSS filter makes the browser
               rasterise the whole subtree into one texture, and on mobile GPUs
@@ -218,7 +218,7 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
                 >
                   <ExternalLink className="w-4 h-4 text-lmsy-yellow" />
                   <span className="text-xs font-medium text-ink">
-                    {t(language, 'editorial.title')}
+                    {t(language, 'features.title')}
                   </span>
                 </motion.div>
 

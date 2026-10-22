@@ -8,7 +8,7 @@ import { GalleryImageWithLightbox } from './gallery-image';
 import { getImageUrl } from '@/lib/image-url';
 import { ArchiveCreditCompact } from '@/components/archive-credit';
 import { useLanguage } from '@/components/language-provider';
-import { t } from '@/lib/languages';
+import { t, type TranslationKey } from '@/lib/languages';
 import { formatDisplayDate } from '@/lib/display-date';
 import { countIssueArtifacts } from '@/lib/editorial-meta';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
@@ -34,16 +34,60 @@ interface GalleryImage {
   catalog_id: string | null;
 }
 
+/**
+ * Copy namespace per door: /editorial speaks in issue/page words, /features
+ * speaks in topic/image words. Same layout, different vocabulary.
+ */
+type DetailNamespace = 'editorial' | 'features';
+
+const DETAIL_KEYS: Record<DetailNamespace, {
+  dateTbd: TranslationKey;
+  releaseDate: TranslationKey;
+  artifacts: TranslationKey;
+  curatorNote: TranslationKey;
+  pagesEmpty: TranslationKey;
+  pagesEmptyHint: TranslationKey;
+  insideIssue: TranslationKey;
+  pagesPreserved: TranslationKey;
+}> = {
+  editorial: {
+    dateTbd: 'editorial.dateTbd',
+    releaseDate: 'editorial.releaseDate',
+    artifacts: 'editorial.artifacts',
+    curatorNote: 'editorial.curatorNote',
+    pagesEmpty: 'editorial.pagesEmpty',
+    pagesEmptyHint: 'editorial.pagesEmptyHint',
+    insideIssue: 'editorial.insideIssue',
+    pagesPreserved: 'editorial.pagesPreserved',
+  },
+  features: {
+    dateTbd: 'features.dateTbd',
+    releaseDate: 'features.releaseDate',
+    artifacts: 'features.artifacts',
+    curatorNote: 'features.curatorNote',
+    pagesEmpty: 'features.pagesEmpty',
+    pagesEmptyHint: 'features.pagesEmptyHint',
+    insideIssue: 'features.insideIssue',
+    pagesPreserved: 'features.pagesPreserved',
+  },
+};
+
 interface EditorialDetailContentProps {
   magazine: Magazine;
   galleryImages: GalleryImage[];
+  /** Rack to return to; defaults to the editorial door. */
+  backHref?: string;
+  ns?: DetailNamespace;
 }
 
 export function EditorialDetailContent({
   magazine,
   galleryImages,
+  backHref = '/editorial',
+  ns = 'editorial',
 }: EditorialDetailContentProps) {
   const { language } = useLanguage();
+  const keys = DETAIL_KEYS[ns];
   const localizedTitle = getLocalizedText(magazine.title_i18n, language, magazine.title);
   const localizedDescription = getLocalizedText(
     magazine.description_i18n,
@@ -54,7 +98,7 @@ export function EditorialDetailContent({
   // Locale-aware date (was hard-coded to en-US, so zh/th readers saw English
   // dates). Missing dates say "to be confirmed" rather than a bare 'TBD'.
   const dateLabel =
-    formatDisplayDate(magazine.release_date, language) ?? t(language, 'editorial.dateTbd');
+    formatDisplayDate(magazine.release_date, language) ?? t(language, keys.dateTbd);
 
   // Distinct artifacts. The cover counts once: 7 of the 11 public editorial
   // works store a cover_url that is already one of their gallery pages.
@@ -67,7 +111,7 @@ export function EditorialDetailContent({
         <div className="flex items-start justify-between gap-6 max-w-7xl mx-auto">
           {/* Back to the rack. Sits opposite the title, which stays on the right. */}
           <Link
-            href="/editorial"
+            href={backHref}
             className="mt-1 inline-flex shrink-0 items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-2 transition-colors hover:text-lmsy-blue"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -107,7 +151,7 @@ export function EditorialDetailContent({
                 {dateLabel}
               </p>
               <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
-                {t(language, 'editorial.releaseDate')}
+                {t(language, keys.releaseDate)}
               </p>
             </div>
             <div className="text-right">
@@ -115,7 +159,7 @@ export function EditorialDetailContent({
                 {totalArtifacts}
               </p>
               <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
-                {t(language, 'editorial.artifacts')}
+                {t(language, keys.artifacts)}
               </p>
             </div>
           </motion.div>
@@ -139,7 +183,7 @@ export function EditorialDetailContent({
               className="mb-12"
             >
               <p className="font-mono text-[10px] text-lmsy-yellow/60 tracking-[0.2em] uppercase mb-3">
-                {t(language, 'editorial.curatorNote')}
+                {t(language, keys.curatorNote)}
               </p>
               <p className="font-serif text-lg md:text-xl text-ink-2 leading-relaxed">
                 {localizedDescription}
@@ -184,10 +228,10 @@ export function EditorialDetailContent({
               className="mx-auto max-w-xl border-t border-border pt-16 text-center"
             >
               <p className="mb-3 font-serif text-xl text-ink">
-                {t(language, 'editorial.pagesEmpty')}
+                {t(language, keys.pagesEmpty)}
               </p>
               <p className="text-sm text-ink-2">
-                {t(language, 'editorial.pagesEmptyHint')}
+                {t(language, keys.pagesEmptyHint)}
               </p>
             </motion.div>
           </div>
@@ -205,10 +249,10 @@ export function EditorialDetailContent({
               className="mb-8"
             >
               <h2 className="font-serif text-2xl md:text-3xl text-ink-2 mb-2">
-                {t(language, 'editorial.insideIssue')}
+                {t(language, keys.insideIssue)}
               </h2>
               <p className="font-mono text-xs text-ink-2 tracking-[0.2em] uppercase">
-                {t(language, 'editorial.pagesPreserved', { count: galleryImages.length })}
+                {t(language, keys.pagesPreserved, { count: galleryImages.length })}
               </p>
             </motion.div>
 
@@ -233,7 +277,7 @@ export function EditorialDetailContent({
             LMSY.SPACE
             {magazine.catalog_id ? ` · ${magazine.catalog_id}` : ''}
             {' · '}
-            {totalArtifacts} {t(language, 'editorial.artifacts')}
+            {totalArtifacts} {t(language, keys.artifacts)}
           </p>
         </div>
       </footer>

@@ -200,3 +200,46 @@ export async function loadEditorialIssue(key: string): Promise<EditorialIssue | 
 
   return toIssue(data as unknown as IssueRow);
 }
+
+// ---------------------------------------------------------------------------
+// Features door (/features)
+//
+// Special topics (project_kind = 'theme', e.g. Back View) reuse the exact
+// rack structure as door 2: one project row plus its gallery assets, cover
+// from the database or discovered in the vault. The reading layer is shared
+// on purpose - a topic and an issue differ in scope, not in shape.
+// ---------------------------------------------------------------------------
+
+/** Every public theme project, for the rack on /features. */
+export async function loadFeatureTopics(): Promise<EditorialIssue[]> {
+  const { data, error } = await applyPublicProjectFilter(
+    getSupabaseAdmin()
+      .schema('lmsy_archive')
+      .from('projects')
+      .select(ISSUE_COLUMNS)
+      .eq('project_kind', 'theme')
+  )
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+
+  return (data as unknown as IssueRow[]).map(toIssue);
+}
+
+/** One theme topic by slug (or uuid), same visibility rule as the rack. */
+export async function loadFeatureTopic(key: string): Promise<EditorialIssue | null> {
+  const { data } = await applyPublicProjectFilter(
+    getSupabaseAdmin()
+      .schema('lmsy_archive')
+      .from('projects')
+      .select(ISSUE_COLUMNS)
+      .eq('project_kind', 'theme')
+      .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key) ? 'id' : 'slug', key)
+  ).maybeSingle();
+
+  if (!data) return null;
+
+  return toIssue(data as unknown as IssueRow);
+}

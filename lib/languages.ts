@@ -423,6 +423,23 @@ export const translations = {
     'editorial.dateTbd': 'Date to be confirmed',
     'editorial.loading': 'Loading',
 
+    // Features door (/features) - special topics rack
+    'features.title': 'Features',
+    'features.subtitle': 'Special Topics',
+    'features.viewIssue': 'View Topic',
+    'features.artifacts': 'Artifacts',
+    'features.noCover': 'No cover',
+    'features.emptyTitle': 'No topics available yet',
+    'features.emptyDesc': 'Curated special topics will appear here once published.',
+    'features.issueCount': '{count} topics curated',
+    'features.dateTbd': 'Date to be confirmed',
+    'features.releaseDate': 'Release date',
+    'features.curatorNote': 'Curator\u2019s note',
+    'features.pagesEmpty': 'This topic has no digitized images yet.',
+    'features.pagesEmptyHint': 'Images appear here once they have been curated.',
+    'features.insideIssue': 'Inside this topic',
+    'features.pagesPreserved': '{count} images preserved',
+
     // Chronicle empty state helper
     'chronicle.tryAnotherYear': 'Try another year:',
 
@@ -857,6 +874,22 @@ export const translations = {
     'editorial.noCover': '暂无封面',
     'editorial.dateTbd': '日期待确认',
     'editorial.loading': '加载中',
+
+    'features.title': '特色专题',
+    'features.subtitle': '主题特辑',
+    'features.viewIssue': '查看专题',
+    'features.artifacts': '件藏品',
+    'features.noCover': '暂无封面',
+    'features.emptyTitle': '暂无可展示的专题',
+    'features.emptyDesc': '正式发布的专题会在这里出现。',
+    'features.issueCount': '共 {count} 个专题',
+    'features.dateTbd': '日期待确认',
+    'features.releaseDate': '发布日期',
+    'features.curatorNote': '策展手记',
+    'features.pagesEmpty': '该专题尚无数字化图片。',
+    'features.pagesEmptyHint': '完成整理后，图片会出现在这里。',
+    'features.insideIssue': '专题内容',
+    'features.pagesPreserved': '已保存 {count} 张',
 
     // Chronicle empty state helper
     'chronicle.tryAnotherYear': '查看其他年份：',
@@ -1294,6 +1327,22 @@ export const translations = {
     'editorial.noCover': 'ไม่มีปก',
     'editorial.dateTbd': 'รอยืนยันวันที่',
     'editorial.loading': 'กำลังโหลด',
+
+    'features.title': 'หัวข้อพิเศษ',
+    'features.subtitle': 'คอลเลกชันพิเศษ',
+    'features.viewIssue': 'ดูหัวข้อ',
+    'features.artifacts': 'ชิ้นงาน',
+    'features.noCover': 'ไม่มีปก',
+    'features.emptyTitle': 'ยังไม่มีหัวข้อพิเศษที่แสดงได้',
+    'features.emptyDesc': 'หัวข้อพิเศษจะปรากฏที่นี่เมื่อเผยแพร่อย่างเป็นทางการ',
+    'features.issueCount': 'คัดสรรแล้ว {count} หัวข้อ',
+    'features.dateTbd': 'รอยืนยันวันที่',
+    'features.releaseDate': 'วันที่เผยแพร่',
+    'features.curatorNote': 'บันทึกภัณฑารักษ์',
+    'features.pagesEmpty': 'หัวข้อนี้ยังไม่มีภาพที่ถูกดิจิทัล',
+    'features.pagesEmptyHint': 'ภาพจะปรากฏที่นี่เมื่อได้รับการคัดสรร',
+    'features.insideIssue': 'ภายในหัวข้อนี้',
+    'features.pagesPreserved': 'เก็บรักษาไว้ {count} ภาพ',
 
     // Chronicle empty state helper
     'chronicle.tryAnotherYear': 'ลองดูปีอื่น:',
