@@ -155,6 +155,7 @@ const DICT: Record<string, [string, string]> = {
   'drama.group.footage': ['影像物料', 'Footage'],
   'drama.group.award': ['奖项', 'Awards'],
   'd.promote.subtypeAll': ['全部子分类', 'All sub-types'],
+  'd.promote.chooseSubtype': ['请选择类型', 'Choose a type'],
   'd.promote.classPlaceholder': ['输入分类名（如：演出图）', 'Class name, e.g. performance'],
   'd.promote.person': ['人物码', 'Person code'],
   'd.promote.subject': ['主题编码段', 'Subject segment'],

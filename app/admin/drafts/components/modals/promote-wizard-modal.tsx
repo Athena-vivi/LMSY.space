@@ -144,6 +144,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     setPhase('select');
     setSearch('');
     setCustomClass(false);
+    setNewEvent({ title: '', eventDate: '', subtype: '', portalVisible: true });
 
     let cancelled = false;
     setLoadingProjects(true);
@@ -242,6 +243,9 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
 
   const createEvent = async () => {
     if (!newEvent.title.trim() || !newEvent.eventDate) return;
+    // A sub-type must be chosen explicitly - never fall back to the first
+    // option of the list, which is how an event lands in the wrong shelf.
+    if (subtypesForCategory.length > 0 && !newEvent.subtype) return;
     setCreatingEventNow(true);
     setCreateError(null);
     try {
@@ -267,7 +271,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
       if (listResult?.projects) setProjects(listResult.projects as ProjectRow[]);
       setProjectId(created.id);
       setCreatingEvent(false);
-      setNewEvent({ title: '', eventDate: '', subtype: 'fanmeeting', portalVisible: true });
+      setNewEvent({ title: '', eventDate: '', subtype: '', portalVisible: true });
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create event');
     } finally {
@@ -432,10 +436,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       setCategory(e.target.value);
                       setSubtypeFilter('all');
                       setProjectId(null);
-                      const next = SUBTYPES_BY_CATEGORY[e.target.value as keyof typeof SUBTYPES_BY_CATEGORY] ?? [];
                       setNewEvent((prev) => ({
                         ...prev,
-                        subtype: next[0]?.value ?? prev.subtype,
+                        // Force an explicit pick; never preselect the first.
+                        subtype: '',
                       }));
                     }}
                     className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
@@ -525,8 +529,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           <select
                             value={newEvent.subtype}
                             onChange={(e) => setNewEvent((prev) => ({ ...prev, subtype: e.target.value }))}
-                            className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
+                            className={`w-full border px-3 py-2 font-mono text-xs outline-none focus:border-lmsy-yellow/40 ${
+                              newEvent.subtype ? 'border-white/10 bg-black text-ink' : 'border-lmsy-yellow/50 bg-black text-lmsy-yellow'
+                            }`}
                           >
+                            <option value="">{t('d.promote.chooseSubtype')}</option>
                             {subtypesForCategory.map((s) => (
                               <option key={s.value} value={s.value}>
                                 {t(s.labelKey)}
@@ -557,7 +564,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                         <button
                           type="button"
                           onClick={() => void createEvent()}
-                          disabled={!newEvent.title.trim() || !newEvent.eventDate || creatingEventNow}
+                          disabled={
+                            !newEvent.title.trim() ||
+                            !newEvent.eventDate ||
+                            (subtypesForCategory.length > 0 && !newEvent.subtype) ||
+                            creatingEventNow
+                          }
                           className="flex flex-1 items-center justify-center gap-2 bg-lmsy-yellow px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {creatingEventNow && <Loader2 className="h-3 w-3 animate-spin" />}
