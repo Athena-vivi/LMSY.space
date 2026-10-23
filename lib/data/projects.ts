@@ -839,12 +839,19 @@ export async function listFeatureTopics(db: AdminClient): Promise<EditorialIssue
 
 /**
  * The JSON API's own column list: the rack columns plus the homepage feature
- * fields. Returns null on a read failure - the route answers 500
- * EDITORIAL_QUERY_FAILED there.
+ * fields the rack never selects. Returns null on a read failure - the route
+ * answers 500 EDITORIAL_QUERY_FAILED there.
  */
+export interface EditorialApiIssueRow extends EditorialIssueRow {
+  homepage_featured: boolean | null;
+  homepage_excerpt: string | null;
+  homepage_excerpt_i18n: LocalizedText | null;
+  homepage_cover_url: string | null;
+}
+
 export async function listEditorialIssuesForApi(
   db: AdminClient
-): Promise<EditorialIssueRow[] | null> {
+): Promise<EditorialApiIssueRow[] | null> {
   const { data, error } = await applyPublicProjectFilter(
     db
       .schema('lmsy_archive')
@@ -879,7 +886,7 @@ export async function listEditorialIssuesForApi(
   ).order('release_date', { ascending: false, nullsFirst: false });
 
   if (error) return null;
-  return (data ?? []) as unknown as EditorialIssueRow[];
+  return (data ?? []) as unknown as EditorialApiIssueRow[];
 }
 
 // ---------------------------------------------------------------------------
