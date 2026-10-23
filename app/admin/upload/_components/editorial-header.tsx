@@ -150,7 +150,7 @@ export default function EditorialHeader({
           }}
         />
         <div className="text-[10px] font-mono text-ink-2 tracking-[0.3em] uppercase">
-          Curator's Statement
+          Curator&apos;s Statement
         </div>
       </div>
     </div>

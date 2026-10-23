@@ -302,7 +302,7 @@ export default function WhispersPage() {
                               : isDark ? 'rgba(56, 189, 248, 0.9)' : 'rgba(30, 120, 200, 0.9)',
                           }}
                         >
-                          "{message.content}"
+                          &quot;{message.content}&quot;
                         </p>
 
                         {/* Footer */}

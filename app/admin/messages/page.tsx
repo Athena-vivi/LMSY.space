@@ -290,7 +290,7 @@ export default function AdminMessagesPage() {
               {/* Message Content */}
               <div className="pr-24">
                 <p className="font-serif text-lg text-ink-2 leading-relaxed mb-4">
-                  "{message.content}"
+                  &quot;{message.content}&quot;
                 </p>
 
                 <div className="flex items-center gap-4 text-sm">

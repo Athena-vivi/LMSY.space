@@ -33,7 +33,7 @@ export default function NotFound() {
               This part of the universe is still expanding...
             </h2>
             <p className="text-lg md:text-xl text-ink-2 max-w-2xl mx-auto leading-relaxed">
-              The stars you're looking for seem to have drifted into another galaxy.
+              The stars you&apos;re looking for seem to have drifted into another galaxy.
               Let us guide you back to familiar territory.
             </p>
           </motion.div>
