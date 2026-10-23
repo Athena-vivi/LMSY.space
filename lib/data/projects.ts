@@ -24,6 +24,16 @@ export interface ProjectRow {
   id: string;
   created_at: string;
   release_date: string | null;
+  /**
+   * The three display-control columns. Every read here selects the whole row,
+   * so they are always present; they are declared (not left to the index
+   * signature) because PublicProjectShape is structural and
+   * isPublicProject(row) must accept a row straight out of this module
+   * without a cast. Optional, because a caller may select a narrower list.
+   */
+  portal_visible?: boolean | null;
+  curation_status?: string | null;
+  is_container?: boolean | null;
   [key: string]: unknown;
 }
 
