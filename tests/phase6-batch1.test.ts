@@ -415,8 +415,14 @@ describe('editorial', () => {
     assert.ok(!api.includes('console.log'));
     assert.ok(!api.includes('fullError:'));
     assert.ok(!api.includes('stack: error'));
-    assert.ok(api.includes('applyPublicProjectFilter'));
-    assert.ok(api.includes(".eq('category', 'editorial')"));
+    // The query moved into lib/data/projects.ts (listEditorialIssuesForApi),
+    // so the strict editorial filter and the shared visibility rule are pinned
+    // there - one layer without the other would let either be dropped.
+    assert.ok(api.includes('listEditorialIssuesForApi'), 'reads through the repository');
+    const repo = src('lib/data/projects.ts');
+    assert.ok(repo.includes('listEditorialIssuesForApi'), 'the repository owns the read');
+    assert.ok(repo.includes('applyPublicProjectFilter'), 'shared visibility rule');
+    assert.ok(repo.includes(".eq('category', 'editorial')"), 'strict editorial filter');
   });
 });
 

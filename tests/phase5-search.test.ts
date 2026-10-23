@@ -393,11 +393,21 @@ describe('related routing fixes', () => {
   });
 
   test('chronicle image groups have a deterministic within-group order', () => {
+    // The asset read lives in lib/data/gallery-assets.ts as an id-cursored
+    // walk (a cursor cannot carry a composite sort), so the display order -
+    // event_date, then catalog_id, then id (a total order) - is restored in
+    // memory by lib/timeline.ts. Both halves are pinned here.
     const timelineSrc = src('lib/timeline.ts');
-    const assetQuery = timelineSrc.slice(timelineSrc.indexOf('.from(\'gallery_assets\')'), timelineSrc.indexOf('if (assetsError)'));
-    assert.ok(assetQuery.includes(".order('event_date'"), 'assets ordered by event_date');
-    assert.ok(assetQuery.includes(".order('catalog_id'"), 'then catalog_id');
-    assert.ok(assetQuery.includes(".order('id'"), 'then id (total order)');
+    const comparator = timelineSrc.slice(
+      timelineSrc.indexOf('assets.sort('),
+      timelineSrc.indexOf('const projectById')
+    );
+    assert.ok(comparator.includes('a.event_date !== b.event_date'), 'assets ordered by event_date');
+    assert.ok(comparator.includes('ca !== cb'), 'then catalog_id');
+    assert.ok(comparator.includes('a.id.localeCompare'), 'then id (total order)');
+    const repoSrc = src('lib/data/gallery-assets.ts');
+    assert.ok(repoSrc.includes('listTimelineAssetsForYear'), 'the walk lives in the repository');
+    assert.ok(repoSrc.includes(".order('id'"), 'the walk is id-cursored');
   });
 
   test('gallery handles hash navigation after the page is already mounted', () => {

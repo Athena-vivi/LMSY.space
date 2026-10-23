@@ -59,7 +59,18 @@ describe('chronicle data source', () => {
   });
 
   test('uses the shared public visibility filter', () => {
-    assert.ok(timelineSrc.includes('applyPublicProjectFilter'));
+    // The read moved into lib/data/projects.ts (listPublicTimelineProjects),
+    // which is where the shared rule is applied now. Both layers are pinned so
+    // the rule cannot be dropped by editing only one of them.
+    assert.ok(timelineSrc.includes('listPublicTimelineProjects'), 'reads through the repository');
+    assert.ok(
+      src('lib/data/projects.ts').includes('listPublicTimelineProjects'),
+      'the repository owns the read'
+    );
+    assert.ok(
+      src('lib/data/projects.ts').includes('applyPublicProjectFilter'),
+      'the repository applies the shared visibility rule'
+    );
   });
 
   test('every event is dated and addressed by its own door', () => {
@@ -71,10 +82,14 @@ describe('chronicle data source', () => {
   });
 
   test('dates come from event_date, with release_date only as a fallback', () => {
-    assert.ok(timelineSrc.includes('p.event_date as string | null'), 'event_date selected');
-    assert.ok(timelineSrc.includes("(p.event_date as string | null) || (p.release_date as string | null)"));
-    assert.ok(!timelineSrc.includes('const date = (p.release_date as string | null)'),
+    assert.ok(timelineSrc.includes('(p.event_date || p.release_date)'), 'event_date first');
+    assert.ok(!timelineSrc.includes('const date = (p.release_date'),
       'release_date alone must not date an event');
+    // The row is typed now, so the columns come from the repository's select.
+    assert.ok(
+      src('lib/data/projects.ts').includes('listPublicTimelineProjects'),
+      'the repository selects both date columns'
+    );
   });
 
   test('image group ids are stable db-derived combinations', () => {
