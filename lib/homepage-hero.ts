@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getHeroSectionImageUrl } from '@/app/admin/settings/content-blocks';
+import { getSiteContentBlock } from '@/lib/data/site-content';
 
 /**
  * The two photos the homepage opens with, read on the server.
@@ -22,19 +23,10 @@ const EMPTY: HomepageHeroMedia = { splashImageUrl: '', heroImageUrl: '' };
 
 export async function getHomepageHeroMedia(): Promise<HomepageHeroMedia> {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .schema('lmsy_archive')
-      .from('site_content_blocks')
-      .select('content_i18n, image_url')
-      .eq('block_key', 'homepage_hero')
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false })
-      .limit(1);
+    const rows = await getSiteContentBlock(getSupabaseAdmin(), 'homepage_hero');
+    if (rows.length === 0) return EMPTY;
 
-    if (error || !data || data.length === 0) return EMPTY;
-
-    const block = data[0] as { content_i18n?: unknown; image_url?: string | null };
+    const block = rows[0];
 
     return {
       splashImageUrl:

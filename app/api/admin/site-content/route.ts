@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import {
+  listActiveSiteContentBlocks,
+  upsertSiteContentBlock,
+} from '@/lib/data/site-content';
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -11,28 +15,12 @@ export async function GET(request: NextRequest) {
     const key = searchParams.get('key');
 
     const supabaseAdmin = getSupabaseAdmin();
-    let query = supabaseAdmin
-      .schema('lmsy_archive')
-      .from('site_content_blocks')
-      .select('*');
-
-    if (key) {
-      query = query.eq('block_key', key);
-    }
-
-    const { data, error } = await query.order('updated_at', { ascending: false });
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch site content', details: error.message },
-        { status: 500 }
-      );
-    }
+    const blocks = await listActiveSiteContentBlocks(supabaseAdmin, '*', key ?? undefined);
 
     return NextResponse.json({
       success: true,
-      block: key ? (data?.[0] || null) : null,
-      blocks: key ? undefined : (data || []),
+      block: key ? (blocks[0] ?? null) : null,
+      blocks: key ? undefined : blocks,
     });
   } catch (error) {
     return NextResponse.json(
@@ -61,32 +49,17 @@ export async function PUT(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('site_content_blocks')
-      .upsert(
-        {
-          block_key,
-          content_i18n,
-          image_url,
-          is_active,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'block_key' }
-      )
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to save site content', details: error.message },
-        { status: 500 }
-      );
-    }
+    const block = await upsertSiteContentBlock(supabaseAdmin, {
+      block_key,
+      content_i18n,
+      image_url,
+      is_active,
+      updated_at: new Date().toISOString(),
+    });
 
     return NextResponse.json({
       success: true,
-      block: data,
+      block,
     });
   } catch (error) {
     return NextResponse.json(
