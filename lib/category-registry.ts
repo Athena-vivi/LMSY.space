@@ -407,7 +407,10 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
     { value: 'brand_stage', labelKey: 'subtype.brand_stage' },
     { value: 'industry', labelKey: 'subtype.industry' },
     { value: 'charity', labelKey: 'subtype.charity' },
-    { value: 'premiere', labelKey: 'subtype.premiere' },
+    // Was `premiere` until 2026-10-23. The shelf covers worship ceremonies,
+    // press conferences and company get-togethers - none of them premieres -
+    // so the value was renamed with the label. /appearances/company.
+    { value: 'company', labelKey: 'subtype.company' },
   ],
   // /live splits by who held the phone. 2026-10-21: the second level is
   // "both of them" or one of the two names - a stream by one person belongs to

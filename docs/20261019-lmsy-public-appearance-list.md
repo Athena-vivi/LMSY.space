@@ -29,7 +29,7 @@
 | E | 公益 / 社群 / 书展 | 6 |
 | F | 公司活动 | 4 |
 
-> **2026-10-23 改名**：F 原为「剧集祭拜仪式 / 首映」，用户判断「首映」与实际内容不符（下面 4 条里 3 条是剧集开机祭拜仪式，1 条是合作方品牌活动），改名「公司活动」——共性是制作公司或品牌方主办、非红毯非售票的活动。`subtype` 值仍为 `premiere`，URL 段 `/appearances/premiere` 不变。
+> **2026-10-23 改名**：F 原为「剧集祭拜仪式 / 首映」，用户判断「首映」与实际内容不符（下面 4 条里 3 条是剧集开机祭拜仪式，1 条是合作方品牌活动），改名「公司活动」——共性是制作公司或品牌方主办、非红毯非售票的活动。`subtype` 值同日由 `premiere` 改为 `company`，URL 段 `/appearances/company`（本站不做重定向，旧地址直接 404）。
 
 **地理分布**：44 场在泰国（曼谷为主），1 场在菲律宾（马尼拉时装周）。公开活动基本是本地市场行为，海外曝光主要靠见面会而不是红毯——这一点值得在首页"线下活动"入口的文案里区分开。
 
@@ -117,12 +117,24 @@
 
 ## 六、库里现状
 
-`projects` 表 `category = 'public_appearance'` 目前只有 **2 条**：
+**2026-10-23 更新**：这一门已建满，48 条、433 张图，全部有了 `subtype` 和 `city`。
 
-| 项目 | 日期 | 说明 |
+| 子类 | 条数 | 说明 |
 |---|---|---|
-| SIRIVANNAVARI | 2025-11-18 | 品牌活动，**不在档案站清单里**——说明你自己的采集也补到了档案站没有的场次 |
-| 20260320-airport | 2026-03-20 | 机场，属"路透/接机"性质，不是正式出席活动 |
+| `awards` 颁奖礼 | 15 | |
+| `brand_stage` 品牌站台 | 11 | 含 3 场 Hometown Romance × 民俗舞台 |
+| `charity` 公益 | 6 | 含 3 场书展 |
+| `fashion` 时装周 | 6 | 唯一非泰国场：Manila Fashion Week 2026 |
+| `industry` 行业活动 | 5 | iQIYI iJOY ×2、MIRROR50、CHANGEVERSE、TCM |
+| `company` 公司活动 | 5 | 3 场祭拜 + SAY HI 2026 + CHANGEVERSE 现场图集 |
+
+同日处理的三件事：
+
+- `premiere` 改名 `company`，URL 变为 `/appearances/company`。
+- **机场条目已删**（`20260320-airport`，原 3 张图）。它不是出席活动：没有主办方、没有舞台，只有人在路上。R2 对象留在了桶里，要恢复走 `temp/20261023_public_appearance_rollback.sql`。
+- **CHANGEVERSE 2026 的两条都留**：一条是档案站导入的年度推介会（`CHANGEVERSE 2026 · 年度推介会`），一条是现场图集（`CHANGEVERSE 2026 · 现场图集`，7 张图）。
+
+**与上文清单的差异**（清单 46 场，库里 48 条）：清单有 2 场库里没有——2024-04-25 CHANGE2561 年度推介会、2025-07-26 HARMONY SECRET FIRST PREMIERE；库里有 3 条清单没列——SIRIVANNAVARI、LMSY SAY HI 2026、以及被删掉的 airport。另有 3 处日期不一致：KAZZ Awards（清单 05-15 / 库 05-14）、Hometown Romance 祭拜（清单 03-12 / 库 03-14）、Bangkok International Fashion Week（清单 10-17 / 库 10-16）。这些是待核项，不是错误结论。
 
 另有两个分类会跟这一类打架，建议明确边界：
 

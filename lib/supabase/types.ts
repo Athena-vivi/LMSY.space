@@ -47,7 +47,10 @@ export type ProjectCategory =
  *                     the second level. concert = ticketed stage shows and
  *                     tours; fansign = signing sessions.)
  *   public_appearance awards / fashion / brand_stage / industry /
- *                     charity / premiere
+ *                     charity / company
+ *                     (2026-10-23: `premiere` renamed `company` - the shelf
+ *                     holds worship ceremonies and press conferences, not
+ *                     premieres, and the label had already been changed.)
  *   interview         feature / press / tv_news
  *   live_stream       duo / lookmhee / sonya
  *   drama_work        series_body / music / novel / promo / award / footage
@@ -62,7 +65,7 @@ export type ProjectSubtype =
   | 'fansign'
   | 'brand_event'
   | 'birthday'
-  | 'premiere'
+  | 'company'
   | 'awards'
   | 'fashion'
   | 'brand_stage'

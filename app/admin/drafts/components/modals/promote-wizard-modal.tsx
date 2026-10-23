@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminLang } from '@/lib/admin-i18n';
-import { parseCatalogHead, PERSON_CODES, CITY_CODES, liveEventSubject } from '@/lib/catalog-id';
+import { parseCatalogHead, PERSON_CODES, CITY_CODES, pickedSubject, hasPickedSubject } from '@/lib/catalog-id';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import type { TranslationKey } from '@/lib/languages';
 
@@ -279,12 +279,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   // event list and blocks inline creation.
   const activeCategory = doorKey === 'talks' ? shelf : doorKey;
 
-  // Door 3 names its assets by room type + city (spec 4.3). Both halves come
-  // from a pick, so the field is read-only there and editable everywhere else
-  // until those halls get the same treatment.
-  const isLiveEvent = activeCategory === 'live_event';
-  const effectiveSubject = isLiveEvent
-    ? liveEventSubject(project?.subtype, city) ?? ''
+  // Doors 3 and 4 name their assets by shelf type + city (spec 4.3 / 4.4).
+  // Both halves come from a pick, so the field is read-only there and editable
+  // everywhere else until those halls get the same treatment.
+  const picksSubject = hasPickedSubject(activeCategory);
+  const effectiveSubject = picksSubject
+    ? pickedSubject(activeCategory, project?.subtype, city) ?? ''
     : subject;
 
   // Only cities the code table knows can be picked - an unknown name would
@@ -292,7 +292,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const cityOptions = useMemo(() => {
     const seen = new Set(Object.keys(CITY_CODES));
     for (const p of projects) {
-      if (p.category === 'live_event' && p.city) seen.add(p.city.trim());
+      if (hasPickedSubject(p.category) && p.city) seen.add(p.city.trim());
     }
     return Array.from(seen).filter((name) => CITY_CODES[name]).sort();
   }, [projects]);
@@ -515,9 +515,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     }
   };
 
+  // The subject alone gates the run: when the city is unknown the code is
+  // just the type (spec: an unknown city omits the segment), so a booking
+  // with no city is still promotable.
   const canPreview = Boolean(
-    project && effectiveSubject.trim() && draftIds.length > 0 && !previewing &&
-      (!isLiveEvent || city)
+    project && effectiveSubject.trim() && draftIds.length > 0 && !previewing
   );
   const canRun = Boolean(
     project && effectiveSubject.trim() && preview && !running && draftIds.length > 0
@@ -854,7 +856,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       </select>
                     </label>
 
-                    {isLiveEvent && (
+                    {picksSubject && (
                       <label className="block space-y-1.5">
                         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                           {t('d.promote.city')}
@@ -901,7 +903,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                         {t('d.promote.subject')}
                       </span>
-                      {isLiveEvent ? (
+                      {picksSubject ? (
                         <>
                           <div className="w-full border border-lmsy-yellow/30 bg-lmsy-yellow/[0.08] px-3 py-2 font-mono text-xs tracking-wide text-lmsy-yellow">
                             {effectiveSubject || '—'}

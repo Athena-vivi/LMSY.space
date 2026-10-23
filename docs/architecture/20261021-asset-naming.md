@@ -173,7 +173,7 @@ LMSY-EVENT-BRANDDAY-20260822-001.webp   (城市未知)
 
 ### 4.4 公开亮相 `APPEAR`
 
-主体 = 子类码 + 活动码。
+主体 = 子类码 + 城市码。两段都由后台下拉决定，**不手填**（2026-10-23 起，与 4.3 同一机制）。
 
 | 子类 | 码 |
 |---|---|
@@ -182,11 +182,14 @@ LMSY-EVENT-BRANDDAY-20260822-001.webp   (城市未知)
 | 品牌站台 `brand_stage` | `BRANDSTAGE` |
 | 行业活动 `industry` | `INDUSTRY` |
 | 公益 `charity` | `CHARITY` |
-| 首映 `premiere` | `PREMIERE` |
+| 公司活动 `company` | `COMPANY` |
+
+城市码同 4.3 的 `CITY_CODES`；城市未知时整段省略。
 
 ```
-LMSY-APPEAR-AWARDS-KAZZAWARDS-20250515-001.webp
-LMSY-APPEAR-FASHION-MNLFW-20260905-001.webp
+LMSY-APPEAR-AWARDS-BKK-20250515-001.webp
+SY-APPEAR-FASHION-MNL-20260905-001.webp
+LMSY-APPEAR-COMPANY-BKK-20250611-001.webp
 ```
 
 ### 4.5 品牌合作 `BRAND`

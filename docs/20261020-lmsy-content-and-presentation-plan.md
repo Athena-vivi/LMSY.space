@@ -182,7 +182,7 @@
 |---|---|
 | 1 影视作品 | `series_body` / `music` / `novel` / `promo` / `award` / `footage`（剧本身不是 subtype，是 `project_kind='series'` 的一行） |
 | 3 线下活动 | `concert` / `fanmeeting` / `fansign` / `brand_event` / `birthday` |
-| 4 公开活动 | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `premiere` |
+| 4 公开活动 | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `company` |
 | 6 访谈 | `feature` / `press` / `tv_news` |
 
 **事件的形态由 `project_kind` 表达，不由 subtype 表达**：`event`（一次有日期的事，默认）/ `theme`（跨日期的主题）/ `series`（作品本体，别的行挂在它下面）/ `video`（内容在外链，站内只放介绍和封面）。一条事件点进去是图片墙还是介绍外链，看的就是这一列加 `watch_url`。
@@ -200,7 +200,7 @@
 1. **清掉 4 条自动抓取垃圾**：`Project 2026-10-19`、`2025年6月28日`、`Photo from...`、`Project 2026-03-15`。删前先按 id 逐条 select 确认，**不许用 `where title like '%Project%'` 批量删**。
 2. **补 `works`**：现在只有 Affair、Harmony Secret 两条，缺 Hometown Romance；加 10 首歌、3 本原著。
 3. **26 条悬空项目挂 `work_id`**：不挂上去，后面建什么都会重复。
-4. **修错分类**：`爱情诡计首映` 从 `early_archive` 移到 `public_appearance`，subtype `premiere`。
+4. **修错分类**：`爱情诡计首映` 从 `early_archive` 移到 `public_appearance`，subtype `premiere`（该值 2026-10-23 起改名 `company`）。
 
 ---
 

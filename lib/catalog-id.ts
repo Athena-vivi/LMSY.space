@@ -124,6 +124,34 @@ export const LIVE_EVENT_SUBTYPE_CODES = {
   birthday: 'BIRTHDAY',
 } as const;
 
+/**
+ * public_appearance subtype -> the first SUBJECT segment (spec section 4.4).
+ *
+ * Same idea as the live-event hall: the shelf plus the city is the subject,
+ * both come from a dropdown, and the wizard shows the result instead of
+ * asking for it.
+ *   LMSY-APPEAR-AWARDS-BKK-20250515-001
+ *   SY-APPEAR-FASHION-MNL-20260905-003
+ */
+export const APPEARANCE_SUBTYPE_CODES = {
+  awards: 'AWARDS',
+  fashion: 'FASHION',
+  brand_stage: 'BRANDSTAGE',
+  industry: 'INDUSTRY',
+  charity: 'CHARITY',
+  company: 'COMPANY',
+} as const;
+
+/**
+ * Halls whose SUBJECT is decided by two picks. A hall that is not in this
+ * table still types its subject by hand - the doors are being moved over one
+ * at a time, and a value here is what makes the wizard read-only.
+ */
+const PICKED_SUBJECT_HALLS: Record<string, Record<string, string>> = {
+  live_event: LIVE_EVENT_SUBTYPE_CODES,
+  public_appearance: APPEARANCE_SUBTYPE_CODES,
+};
+
 /** City display name (projects.city) -> three-letter SUBJECT segment. */
 export const CITY_CODES: Record<string, string> = {
   曼谷: 'BKK',
@@ -150,21 +178,40 @@ export const CITY_CODES: Record<string, string> = {
 };
 
 /**
- * The SUBJECT segment for a live-event asset, or null when the pick does not
- * decide it yet (unknown subtype, or a city outside the table). Null means
- * "caller must ask", never "invent a value".
+ * The SUBJECT segment for an asset in a hall whose subject is decided by
+ * picks, or null when the picks do not decide it yet (unknown hall, unknown
+ * subtype, or a city outside the table). Null means "caller must ask", never
+ * "invent a value".
+ */
+export function pickedSubject(
+  category: string | null | undefined,
+  subtype: string | null | undefined,
+  city: string | null | undefined
+): string | null {
+  const hall = category ? PICKED_SUBJECT_HALLS[category] : undefined;
+  if (!hall) return null;
+  const kind = subtype ? hall[subtype] : undefined;
+  if (!kind) return null;
+  const name = city?.trim();
+  const place = name ? CITY_CODES[name] : undefined;
+  return place ? `${kind}-${place}` : kind;
+}
+
+/** True when this hall's subject comes from picks rather than typing. */
+export function hasPickedSubject(category: string | null | undefined): boolean {
+  return Boolean(category && PICKED_SUBJECT_HALLS[category]);
+}
+
+/**
+ * Kept as an alias so existing call sites keep compiling. Prefer
+ * pickedSubject(category, subtype, city) - it covers every hall that has a
+ * subject rule, not just the live-event one.
  */
 export function liveEventSubject(
   subtype: string | null | undefined,
   city: string | null | undefined
 ): string | null {
-  const kind = subtype
-    ? (LIVE_EVENT_SUBTYPE_CODES as Record<string, string>)[subtype]
-    : undefined;
-  if (!kind) return null;
-  const name = city?.trim();
-  const place = name ? CITY_CODES[name] : undefined;
-  return place ? `${kind}-${place}` : kind;
+  return pickedSubject('live_event', subtype, city);
 }
 
 // ---------------------------------------------------------------------------
