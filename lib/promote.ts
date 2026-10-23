@@ -118,6 +118,25 @@ function normalizeSubject(raw: string): string {
 }
 
 /**
+ * Readable text for anything thrown or handed back as an error. Supabase
+ * failures are plain `{ code, message, details }` objects rather than Error
+ * instances, so `String(err)` prints "[object Object]" into the wizard.
+ */
+function errorText(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === 'object') {
+    const message = (err as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return 'Unknown error';
+    }
+  }
+  return String(err);
+}
+
+/**
  * Derive the SUBJECT segment for a project: the catalog head's subject when
  * the project already has one, else a normalised guess from the title
  * (truncated at "in/at/@ ..." location phrases). A guess, never an
@@ -439,7 +458,7 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
         results.push({
           draftId,
           status: 'failed',
-          error: lastError instanceof Error ? lastError.message : String(lastError),
+          error: errorText(lastError),
         });
         continue;
       }
@@ -457,7 +476,7 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
       results.push({
         draftId,
         status: 'failed',
-        error: err instanceof Error ? err.message : String(err),
+        error: errorText(err),
       });
     }
   }

@@ -159,11 +159,19 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [errors, setErrors] = useState<string[]>([]);
   const [phase, setPhase] = useState<'select' | 'running' | 'done'>('select');
+  /**
+   * What this dialog still owes the curator. Null means "the whole selection";
+   * after a run that left some pictures behind it narrows to exactly those, so
+   * a retry never re-promotes (and never re-uploads) work that already landed.
+   */
+  const [retryIds, setRetryIds] = useState<string[] | null>(null);
 
   const project = useMemo(
     () => projects.find((p) => p.id === projectId) ?? null,
     [projects, projectId]
   );
+
+  const activeIds = retryIds ?? draftIds;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -177,6 +185,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     setPreview(null);
     setErrors([]);
     setPhase('select');
+    setRetryIds(null);
     setSearch('');
     setCustomClass(false);
     setNewEvent({ title: '', eventDate: '', subtype: '', portalVisible: true });
@@ -365,7 +374,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   };
 
   const refreshPreview = async () => {
-    if (!project || !subject.trim() || draftIds.length === 0) return;
+    if (!project || !subject.trim() || activeIds.length === 0) return;
     setPreviewing(true);
     setErrors([]);
     try {
@@ -373,7 +382,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          draftIds: [draftIds[0]],
+          draftIds: [activeIds[0]],
           projectId: project.id,
           subject,
           personCode,
@@ -397,13 +406,13 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   };
 
   const run = async () => {
-    if (!project || !subject.trim() || draftIds.length === 0) return;
+    if (!project || !subject.trim() || activeIds.length === 0) return;
     setRunning(true);
     setPhase('running');
-    setProgress({ done: 0, total: draftIds.length });
+    setProgress({ done: 0, total: activeIds.length });
     setErrors([]);
 
-    const allIds = [...draftIds];
+    const allIds = [...activeIds];
     const promotedIds: string[] = [];
     const failures: string[] = [];
 
@@ -424,7 +433,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           }),
         });
         const result = await response.json();
-        if (!result?.success) {
+        // A batch can come back unsuccessful yet still carry per-picture
+        // results (every picture in it failed). Those are ordinary failures -
+        // keep going. Only a rejection with no results is about the request
+        // itself (auth, project, missing drafts), and every later batch would
+        // fail the same way.
+        if (!Array.isArray(result?.results)) {
           failures.push(result?.error || `Batch at ${i + 1} failed`);
           break;
         }
@@ -443,13 +457,15 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
       setProgress({ done: Math.min(i + BATCH_SIZE, allIds.length), total: allIds.length });
     }
 
-    // Only when everything promoted: delete the consumed drafts + sources.
-    if (failures.length === 0 && promotedIds.length === allIds.length) {
+    // Consumed drafts are cleaned up batch by batch's worth of success, not
+    // once everything succeeded: a picture that landed is finished work, and
+    // leaving its draft behind only forces the curator to pick it again.
+    if (promotedIds.length > 0) {
       try {
         const response = await fetch('/api/admin/drafts/promote/cleanup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ draftIds: allIds }),
+          body: JSON.stringify({ draftIds: promotedIds }),
         });
         const result = await response.json();
         if (!result?.success && Array.isArray(result?.failed)) {
@@ -462,26 +478,37 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           `Cleanup failed (promoted assets are safe): ${err instanceof Error ? err.message : 'unknown'}`
         );
       }
-    } else if (promotedIds.length > 0) {
-      failures.push(
-        t('d.promote.partialKeep').replace('{count}', String(promotedIds.length))
-      );
     }
 
+    const remaining = allIds.filter((id) => !promotedIds.includes(id));
     setErrors(failures);
     setRunning(false);
-    setPhase(failures.length === 0 ? 'done' : 'select');
-    if (failures.length === 0) {
-      onDone(
-        (t('d.promote.done') as string).replace('{count}', String(promotedIds.length))
-      );
+
+    if (remaining.length === 0) {
+      setPhase('done');
+      onDone((t('d.promote.done') as string).replace('{count}', String(promotedIds.length)));
       onClose();
+      return;
+    }
+
+    // Something is left over. Narrow the dialog to exactly those drafts so the
+    // next click retries them, and only them.
+    setRetryIds(remaining);
+    setPhase('select');
+    // onDone refreshes the inbox and raises a toast; it does not close the
+    // dialog - the wizard deliberately stays open on the leftovers.
+    if (promotedIds.length > 0) {
+      onDone(
+        (t('d.promote.partialKeep') as string)
+          .replace('{count}', String(promotedIds.length))
+          .replace('{left}', String(remaining.length))
+      );
     }
   };
 
-  const canPreview = Boolean(project && subject.trim() && draftIds.length > 0 && !previewing);
+  const canPreview = Boolean(project && subject.trim() && activeIds.length > 0 && !previewing);
   const canRun = Boolean(
-    project && subject.trim() && preview && !running && draftIds.length > 0
+    project && subject.trim() && preview && !running && activeIds.length > 0
   );
 
   return (
@@ -495,7 +522,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
             {t('d.promote.title')}
           </DialogTitle>
           <DialogDescription className="font-mono text-[11px] tracking-wider text-ink-2">
-            {t('d.promote.subtitle').replace('{count}', String(draftIds.length))}
+            {t('d.promote.subtitle').replace('{count}', String(activeIds.length))}
           </DialogDescription>
         </DialogHeader>
 
@@ -937,6 +964,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       </div>
                     )}
 
+                    {retryIds && (
+                      <div className="border border-lmsy-yellow/25 bg-lmsy-yellow/[0.06] px-4 py-3 font-mono text-[11px] leading-relaxed text-lmsy-yellow/90">
+                        {t('d.promote.retryNotice').replace('{count}', String(activeIds.length))}
+                      </div>
+                    )}
+
                     {errors.length > 0 && (
                       <div className="space-y-1 rounded border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-200/80">
                         {errors.map((e, i) => (
@@ -955,7 +988,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       className="flex w-full items-center justify-center gap-2 bg-lmsy-yellow px-4 py-3 font-mono text-xs uppercase tracking-wider text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                      {running ? t('d.promote.running') : t('d.promote.run').replace('{count}', String(draftIds.length))}
+                      {running ? t('d.promote.running') : t('d.promote.run').replace('{count}', String(activeIds.length))}
                     </button>
 
                     <p className="text-center font-mono text-[10px] leading-relaxed text-ink-2/70">
