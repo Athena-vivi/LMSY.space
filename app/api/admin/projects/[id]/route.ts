@@ -205,6 +205,14 @@ export async function PATCH(
     // city is the structured half of "where": picked from a fixed list and used
     // to build the asset subject code (FANMEET-BKK). location stays free text.
     if (body.city !== undefined) updateData.city = body.city || null;
+    // person says who the event belongs to, and since 2026-10-23 it is a TAIL
+    // code on the event number (...-20251129-LM) rather than the first segment.
+    // Anything that is not LM / SY means a duo booking, which stores LMSY and
+    // writes no tail at all - never a blank, or the column stops being a code.
+    if (body.person !== undefined) {
+      const person = String(body.person || '').trim().toUpperCase();
+      updateData.person = person === 'LM' || person === 'SY' ? person : 'LMSY';
+    }
     if (body.location !== undefined) updateData.location = body.location || null;
     if (body.work_id !== undefined) updateData.work_id = body.work_id || null;
     if (body.description !== undefined) updateData.description = body.description || null;

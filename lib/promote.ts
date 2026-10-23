@@ -6,6 +6,9 @@ import {
   r2KeyForCatalogId,
   parseCatalogId,
   subjectFromProjectId,
+  buildProjectCatalogId,
+  normalizeEventNumber,
+  assetIdPrefixFor,
   isCatalogIdConflict,
   CATALOG_ID_MAX_ATTEMPTS,
   CATEGORY_TO_DOOR_CODE,
@@ -62,6 +65,11 @@ export interface PromoteParams {
   projectId: string;
   /** User-confirmed SUBJECT segment (e.g. EVERAFTER-UNFOLD). */
   subject: string;
+  /**
+   * Overrides projects.person when the caller knows better. The project row is
+   * the authority in normal use: the tail code belongs to the event, not to the
+   * batch being filed into it.
+   */
   personCode?: PersonCode;
   assetGroup?: string | null;
   captionPrefix?: string | null;
@@ -283,16 +291,21 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
       error: `Subject segment "${params.subject}" has no A-Z / 0-9 left after normalisation`,
     };
   }
-  const personCode = params.personCode || 'LMSY';
 
   const { data: project, error: projectError } = await supabaseAdmin
     .from('projects')
-    .select('id, title, category, event_date, catalog_id, cover_url, portal_visible, is_container')
+    .select('id, title, category, event_date, catalog_id, cover_url, portal_visible, is_container, person')
     .eq('id', params.projectId)
     .maybeSingle();
   if (projectError || !project) {
     return { success: false, error: 'Project not found' };
   }
+
+  // Who this event belongs to. The project row wins: the tail code describes
+  // the event, so every batch filed into it must agree with it, not the other
+  // way round.
+  const personCode: PersonCode =
+    ((project.person as PersonCode | null) || params.personCode || 'LMSY');
 
   const doorCode: DoorCode | undefined = CATEGORY_TO_DOOR_CODE[project.category || ''];
   if (!doorCode) {
@@ -311,11 +324,22 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
   const assetGroup = params.assetGroup?.trim() || null;
   const captionPrefix = params.captionPrefix?.trim() || assetGroup || subject;
 
+  // The event number is the authority when it already exists; otherwise it is
+  // built from door + subject + date + person tail. The asset prefix is derived
+  // from it by the same helper that produced it, so the order of the date and
+  // the tail can never drift between the two (spec section 6).
+  const eventNumber =
+    normalizeEventNumber(project.catalog_id) ||
+    buildProjectCatalogId(doorCode, subject, project.event_date, personCode);
+  if (!eventNumber) {
+    return { success: false, error: 'Cannot build an event number: the event date is not a date' };
+  }
+  const assetHead = assetIdPrefixFor(eventNumber, doorCode, project.event_date);
+
   // Dry run: allocate the next id once, touch nothing.
   if (params.dryRun) {
     const firstId = await allocateNextCatalogId(supabaseAdmin, doorCode, project.event_date, {
-      person: personCode,
-      subject,
+      head: assetHead,
     });
     let previewKey: string | null = null;
     try {
@@ -380,8 +404,7 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
 
       for (let attempt = 0; attempt < CATALOG_ID_MAX_ATTEMPTS && !inserted; attempt++) {
         const catalogId = await allocateNextCatalogId(supabaseAdmin, doorCode, project.event_date, {
-          person: personCode,
-          subject,
+          head: assetHead,
         });
         const targetKey = r2KeyForCatalogId(catalogId);
 
@@ -489,10 +512,12 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
 
   let projectCatalogIdWritten = false;
   if (promoted.length > 0 && !project.catalog_id) {
-    const head = `${personCode}-${doorCode}-${subject}`;
+    // Exactly the number the pictures were filed under (eventNumber already
+    // carries the date for EVENT / APPEAR and the person tail for a
+    // single-person booking), so the row can never disagree with its shelf.
     const { error } = await supabaseAdmin
       .from('projects')
-      .update({ catalog_id: head })
+      .update({ catalog_id: eventNumber })
       .eq('id', params.projectId);
     projectCatalogIdWritten = !error;
     if (error) {

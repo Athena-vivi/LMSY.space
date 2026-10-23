@@ -170,6 +170,7 @@ const DICT: Record<string, [string, string]> = {
   'd.promote.city': ['城市', 'City'],
   'd.promote.pickCity': ['请选择城市', 'Pick a city'],
   'd.promote.subjectLocked': ['由活动类型与城市决定，不可修改', 'Decided by the type and city; not editable'],
+  'd.promote.personLocked': ['该事件已有编号，人物码随编号固定', 'This event already has a number; its person code is fixed'],
   'd.promote.subjectLockedHint': ['形如 FANMEET-BKK、AWARDS-BKK：类型码 + 城市码；若为空，先给该事件选类型与城市', 'Shaped like FANMEET-BKK or AWARDS-BKK: type code + city code; if empty, set the event type and city first'],
   'd.promote.subjectHint': ['活动/刊物的专有名（不是活动类型），如 BEINLOVE、EVERAFTER-UNFOLD；点下方参考直接填入', 'The event or issue proper name (not its type), e.g. BEINLOVE, EVERAFTER-UNFOLD; click a reference below to fill it in'],
   'd.promote.optProject': ['本项目编码', 'this project'],

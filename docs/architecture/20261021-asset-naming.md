@@ -1,6 +1,7 @@
 # 图片命名规范（全站）
 
 2026-10-21 起草，取代同日的 `20261021-asset-naming.md` 初版（那一版只管杂志，且把站点前缀和人物混在了一段里）。
+**2026-10-23 修订**：首段改为站点码 `LMSY`，人物改为尾码（见第二节）；699 张单人图与 23 个事件编号已按此重编。
 
 目标是上万张图片仍然可管理：文件名本身就是一条完整档案，脱离数据库也能读懂。
 
@@ -9,38 +10,58 @@
 ## 一、一条规则
 
 ```
-<人物>-<门>-<主体>[-<主题>]-<日期>-<序号>.webp
+<事件编号>-<序号>.webp
 ```
+
+事件编号本身是 `LMSY-<门>-<主体>[-<主题>][-<日期>][-<人物>]`，完整定义见第六节；
+**图片名只是事件编号加一个序号**，没有别的变化。
 
 - 全大写 ASCII，只用 `-` 分隔，不用空格、下划线、点、引号、感叹号。
 - **缺的段整段省略，不写占位符**（不写 `NA`、不写 `0000`）。
-- 段数不固定，但首两段（人物、门）和末段（序号）永远存在，所以从右往左读一定稳。
+- 首段永远是站点码 `LMSY`，末段永远是序号；**人物码只作尾码出现**（`-LM` / `-SY`），双人图不带。
+- 段数不固定，所以从右往左读（序号 → 日期/人物 → 主体 → 门）一定稳。
 
 例：
 
 ```
-LMSY-MAG-KAZZ217-YOUTHCHOICE-20260731-001.webp
-LM-MAG-OAT-20241211-012.webp
-SY-LIVE-20250218-001.webp
+LMSY-MAG-KAZZ217-YOUTHCHOICE-SY-20260731-001.webp
+LMSY-MAG-OAT-LM-20241211-012.webp
+LMSY-LIVE-20250218-001.webp
 LMSY-DRAMA-AFFAIR-STILL-20240830-003.webp
+LMSY-EVENT-FANMEET-WUH-20251129-LM-001.webp
 ```
 
 ---
 
-## 二、第一段：人物
+## 二、第一段：站点，最后一段人物
 
-一站两角，所以人物是最先要能看出来的东西。
+这个站是两个人的站，**所有编号都以 `LMSY` 开头**（2026-10-22 用户定，2026-10-23 落到图片名）。
+第一段回答的是「这是哪个站的档案」，不是「谁在里面」。
 
-| 值 | 含义 |
-|---|---|
-| `LMSY` | 双人 |
-| `LM` | Lookmhee 单人 |
-| `SY` | Sonya 单人 |
+人物放在**尾码**位，只在单人时出现：
 
-双人刊、双人活动、双人直播一律 `LMSY`。单人刊、单人直播、单人出席一律写人名码。
-**这一条同时解决了「同一天两人各拍一本」的编号相撞问题**——PERLA 2025-09-10 两版靠首段就分开了。
+| 值 | 含义 | 出现位置 |
+|---|---|---|
+| `LMSY` | 双人 | 只在首段，不写尾码 |
+| `LM` | Lookmhee 单人 | 事件编号最后一个段（见第六节） |
+| `SY` | Sonya 单人 | 同上 |
 
----
+尾码紧贴**事件编号的末尾**：`MAG` 这类编号没有日期，尾码就接在主体后面（`…-OAT-LM`）；
+`EVENT` / `APPEAR` 的编号带日期，尾码在日期之后（`…-WUH-20251129-LM`）。
+图片名 = 事件编号 +（编号缺日期时补日期）+ 序号，所以尾码永远在序号前一位。
+
+```
+LMSY-MAG-KAZZ217-YOUTHCHOICE-SY-20260731-001     Sonya 单人刊
+LMSY-MAG-OAT-LM-20241211-012                     Lookmhee 单人刊
+LMSY-EVENT-FANMEET-WUH-20251129-LM-001           武汉 Lookmhee 单人场
+LMSY-EVENT-FANMEET-BKK-20250115-001              双人见面会，没有尾码
+```
+
+尾码表达的是**这场活动归谁**，不是「这张图里有谁」：单人场里偶尔混着的双人合影也带同一个尾码，
+因为编号先要能唯一定位到活动。2026-10-23 之前首段写 `LM-` / `SY-`，同一个活动里的双人页与单人页
+会落在两个前缀下、各自起一套序号，取数时要分两次——这是改掉它的原因。
+
+**编号是唯一的，不是识别人数的**：想知道图里有几个人，看图，不看名。
 
 ## 三、第二段：门
 
@@ -126,9 +147,9 @@ PERLA 2025-09 两本是同一天出的单人刊，主题取各自官方中文名
 ```
 LMSY-MAG-BEATXL-SMOLDERING-20241023-001.webp
 LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001.webp
-LM-MAG-PERLA-MODERNSHOW-20250914-001.webp
-SY-MAG-PERLA-ROMANTICPOEM-20250914-001.webp
-SY-MAG-KAZZ217-YOUTHCHOICE-20260731-001.webp
+LMSY-MAG-PERLA-MODERNSHOW-LM-20250914-001.webp
+LMSY-MAG-PERLA-ROMANTICPOEM-SY-20250914-001.webp
+LMSY-MAG-KAZZ217-YOUTHCHOICE-SY-20260731-001.webp
 LMSY-MAG-KAZZ2410-20241001-001.webp        (主题未知)
 ```
 
@@ -166,10 +187,12 @@ LMSY-MAG-KAZZ2410-20241001-001.webp        (主题未知)
 LMSY-EVENT-FANMEET-BKK-20250115-001.webp
 LMSY-EVENT-FANMEET-MNL-20260919-001.webp
 LMSY-EVENT-CONCERT-MEX-20261011-001.webp
-SY-EVENT-FANSIGN-SHA-20260321-001.webp
-LM-EVENT-BIRTHDAY-20250218-001.webp
-LMSY-EVENT-BRANDDAY-20260822-001.webp   (城市未知)
+LMSY-EVENT-FANSIGN-SHA-20260321-SY-001.webp     单人场，尾码在日期之后
+LMSY-EVENT-BIRTHDAY-20250218-LM-001.webp        城市未知，城市段省略
+LMSY-EVENT-BRANDDAY-20260822-001.webp           (城市未知)
 ```
+
+这两门的事件编号带日期，见第六节；单人场的 `-LM` / `-SY` 写在日期之后。
 
 对应的事件编号在后面接日期，见第六节的例外说明。
 
@@ -190,7 +213,7 @@ LMSY-EVENT-BRANDDAY-20260822-001.webp   (城市未知)
 
 ```
 LMSY-APPEAR-AWARDS-BKK-20250515-001.webp
-SY-APPEAR-FASHION-MNL-20260905-001.webp
+LMSY-APPEAR-FASHION-MNL-20260905-SY-001.webp
 LMSY-APPEAR-COMPANY-BKK-20250611-001.webp
 ```
 
@@ -220,12 +243,12 @@ LMSY-TALK-VARIETY-WOODY-20250610-001.webp
 
 ### 4.7 直播 `LIVE`
 
-人物段已经说清是谁开的播，主体不再写 `duo`/`solo`，只写平台（可省）。
+尾码已经说清是谁开的播，主体不再写 `duo`/`solo`，只写平台（可省）。
 
 ```
 LMSY-LIVE-20250301-001.webp
-LM-LIVE-IG-20250412-001.webp
-SY-LIVE-TIKTOK-20250412-001.webp
+LMSY-LIVE-IG-LM-20250412-001.webp
+LMSY-LIVE-TIKTOK-SY-20250412-001.webp
 ```
 
 ### 4.8 幕后 / 早期档案
@@ -259,20 +282,22 @@ LMSY-FEAT-BACKVIEW-010.webp
 ## 六、事件层编号（数据库）
 
 图片文件名是「事件 + 页」，所以事件本身也要有稳定编号，两者必须能对得上。
+`projects.catalog_id` 是唯一的权威：图片名从它推导，不反过来。
 
-`projects.catalog_id` = `LMSY-<门>-<主体>[-<主题>]`，**不含人物、不含日期、不含序号**：
+```
+LMSY-<门>-<主体>[-<主题>][-<人物>]             不带日期的门
+LMSY-<门>-<主体>[-<主题>]-<日期>[-<人物>]       EVENT / APPEAR
+```
 
 | 事件 | `catalog_id` | 图片文件名示例 |
 |---|---|---|
 | GAZE 2025-02 | `LMSY-MAG-GAZE-THEDREAMUNFOLDS` | `LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001` |
-| PERLA Lookmhee | `LMSY-MAG-PERLA-MODERNSHOW-LM` | `LM-MAG-PERLA-MODERNSHOW-20250914-001` |
+| PERLA Lookmhee | `LMSY-MAG-PERLA-MODERNSHOW-LM` | `LMSY-MAG-PERLA-MODERNSHOW-LM-20250914-001` |
 | Affair 宣传 | `LMSY-DRAMA-AFFAIR-PROMO` | `LMSY-DRAMA-AFFAIR-PROMO-20240815-001` |
 
-**例外：现场活动 `EVENT` 与公开亮相 `APPEAR` 带日期（2026-10-23 定）。**
-
+**`EVENT` / `APPEAR` 的编号带日期（2026-10-23 定）。**
 这两门的主体只有「类型 + 城市」，不含活动身份——两门 105 个事件里 69 个会撞号
-（曼谷 15 场颁奖礼都叫 `LMSY-APPEAR-AWARDS-BKK`）。所以这两门的事件编号在后面接日期，
-把「哪一天办的那一场」作为事件身份：
+（曼谷 15 场颁奖礼都叫 `LMSY-APPEAR-AWARDS-BKK`）。日期段把「哪一天办的那一场」变成事件身份：
 
 ```
 LMSY-EVENT-FANMEET-BKK-20250115        双人见面会
@@ -281,40 +306,48 @@ LMSY-APPEAR-AWARDS-BKK-20250515        曼谷颁奖礼
 LMSY-EVENT-BRANDDAY-20260822           城市未知，城市段整段省略
 ```
 
-**只有同一天、同类型、同城市确实存在两场单人活动时才加 `-LM` / `-SY` 尾码**
-（沿用本节的单人事件后缀规则）。目前全站仅两处：
+**其余门（`MAG` / `DRAMA` / `BRAND` / `TALK` / `LIVE` / `FEAT`）编号里不带日期。**
+
+**所有门都可能带 `-LM` / `-SY` 尾码（2026-10-23 定）。** 尾码表示这场事件归谁，
+写在事件编号的最后一段：不带日期的门接在主体之后，`EVENT` / `APPEAR` 接在日期之后。
+双人事件没有尾码。
 
 ```
-LMSY-EVENT-FANMEET-NNG-20241221-LM  →  LM-EVENT-FANMEET-NNG-20241221-001
-LMSY-EVENT-FANMEET-NNG-20241221-SY  →  SY-EVENT-FANMEET-NNG-20241221-001
+LMSY-EVENT-FANMEET-WUH-20251129-LM      武汉 Lookmhee 单人场
+LMSY-MAG-OAT-LM                         Lookmhee 单人刊（只有一版，也带尾码）
+LMSY-MAG-KAZZ217-YOUTHCHOICE-SY         Sonya 版，与 LM 版靠尾码分开
+LMSY-MAG-GAZE-THEDREAMUNFOLDS           双人，无尾码
 ```
 
-其余门（`MAG` / `DRAMA` / `BRAND` / `TALK` / `LIVE` / `FEAT`）仍按上表，编号里不带日期。
+单人**不再**靠首段区分：旧写法 `LM-MAG-OAT` / `SY-EVENT-FANSIGN-SHA-20260321` 已于 2026-10-23 全部退役。
 
-**事件编号一律以 `LMSY-` 开头**（2026-10-22 用户定：网站以 LMSY 为核心，编号必须带）。
-这里的前缀是站名，和图片名第一段的人物码不是一回事——单人刊的图片名仍然以 `LM-` / `SY-` 起头。
-
-单人刊是独立事件，主体位后加 `-LM` / `-SY` 以便两条事件不撞号；双人事件不加。
-
-**关系式**：取事件编号，把开头的 `LMSY` 换成该页的人物码（双人页仍是 `LMSY`）、去掉末尾的 `-LM` / `-SY`，
-再接日期和序号。`gallery_assets.catalog_id` 存文件名主干（不含扩展名），与 R2 对象名逐字一致。
-
-`EVENT` / `APPEAR` 两门的编号里**已经含日期**，所以不再接日期，只接序号：
+**关系式（2026-10-23 定）**：
 
 ```
-LMSY-EVENT-FANMEET-BKK-20250115      →  LMSY-EVENT-FANMEET-BKK-20250115-001
-LMSY-EVENT-FANMEET-NNG-20241221-LM   →  LM-EVENT-FANMEET-NNG-20241221-001
-LMSY-APPEAR-AWARDS-BKK-20250515      →  LMSY-APPEAR-AWARDS-BKK-20250515-001
+图片名 = 事件编号 +（编号里没有日期时补上 <日期>）+ <序号>
 ```
 
-| 事件编号 | 人物 | 文件名 |
+人物不再是关系式里的变量：没有「把 LMSY 换成人物码」这一步，也没有「去掉尾码」这一步。
+`gallery_assets.catalog_id` 存文件名主干（不含扩展名），与 R2 对象名逐字一致。
+
+```
+LMSY-EVENT-FANMEET-BKK-20250115        →  LMSY-EVENT-FANMEET-BKK-20250115-001
+LMSY-EVENT-FANMEET-WUH-20251129-LM     →  LMSY-EVENT-FANMEET-WUH-20251129-LM-001
+LMSY-APPEAR-AWARDS-BKK-20250515        →  LMSY-APPEAR-AWARDS-BKK-20250515-001
+LMSY-MAG-GAZE-THEDREAMUNFOLDS          →  LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001
+LMSY-MAG-OAT-LM                        →  LMSY-MAG-OAT-LM-20241211-001
+LMSY-FEAT-BACKVIEW                     →  LMSY-FEAT-BACKVIEW-001
+```
+
+| 事件编号 | 归属 | 文件名 |
 |---|---|---|
 | `LMSY-MAG-GAZE-THEDREAMUNFOLDS` | 双人 | `LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001` |
-| `LMSY-MAG-PERLA-MODERNSHOW-LM` | Lookmhee | `LM-MAG-PERLA-MODERNSHOW-20250914-001` |
-| `LMSY-MAG-KAZZ217-YOUTHCHOICE-SY` | Sonya | `SY-MAG-KAZZ217-YOUTHCHOICE-20260731-001` |
+| `LMSY-MAG-PERLA-MODERNSHOW-LM` | Lookmhee | `LMSY-MAG-PERLA-MODERNSHOW-LM-20250914-001` |
+| `LMSY-MAG-KAZZ217-YOUTHCHOICE-SY` | Sonya | `LMSY-MAG-KAZZ217-YOUTHCHOICE-SY-20260731-001` |
 
-事件编号末尾的 `-LM` / `-SY` 只是为了把两条单人事件在数据库里分开，人物段已经表达了是谁，所以文件名里不重复。
-只有同一刊物确实出了两人两个版本时才加这个后缀（PERLA、KAZZ 217）；OAT 只有单人版，事件编号就是 `LMSY-MAG-OAT`。
+代码唯一实现：`lib/catalog-id.ts` 的 `buildProjectCatalogId()`（事件编号）、
+`assetIdPrefixFor()`（图片名主干）、`subjectFromProjectId()` / `personFromProjectId()`（反向读）。
+文件名叫什么只由这几个函数决定，路由和脚本不再自己拼字符串。
 
 ### 6.1 封面不参与命名（2026-10-21 定）
 
@@ -348,26 +381,27 @@ LMSY-APPEAR-AWARDS-BKK-20250515      →  LMSY-APPEAR-AWARDS-BKK-20250515-001
 
 ## 七、Cloudflare R2 目录
 
-对象键（object key）分层，便于按人物/门/年批量操作：
+对象键（object key）与文件名同源，第一层就是站点码 `lmsy`（2026-10-23 起；旧目录 `lm/` / `sy/` 已清空）：
 
 ```
-<person>/<door>/<yyyy>/<文件名>
+lmsy/<door>/<yyyy>/<文件名>
 ```
 
 无日期的编号（FEAT 专题）不带年份段：
 
 ```
-<person>/<door>/<文件名>
+lmsy/<door>/<文件名>
 ```
 
 ```
 lmsy/mag/2025/LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001.webp
-lm/mag/2024/LM-MAG-OAT-20241211-001.webp
-sy/live/2025/SY-LIVE-20250218-001.webp
+lmsy/mag/2024/LMSY-MAG-OAT-LM-20241211-001.webp
+lmsy/live/2025/LMSY-LIVE-TIKTOK-SY-20250412-001.webp
 lmsy/feat/LMSY-FEAT-BACKVIEW-001.webp
 ```
 
-现在用的是 `magazines/2025/…`（按旧门名分目录），改名时一并换成上面的结构。
+路径由 `lib/catalog-id.ts` 的 `r2KeyForCatalogId()` 从文件名推出来，不单独维护。
+旧目录 `magazines/<年>/`（按旧门名分）仍有对象待退役，新图不再写入那里。
 
 ---
 
@@ -418,3 +452,22 @@ lmsy/feat/LMSY-FEAT-BACKVIEW-001.webp
 1. 商业门 4 个事件的品牌名（Sweet / Close / live / coffee 都是泛词，对应 54 张图），给了名字就补。
 2. 事件封面（`projects.cover_url` 指向 `events/live/*.png`、`events/public/*.png` 的那批，共 45 个）仍停在旧目录。**不按 §6.1 给它们起名**：改由后台「设为封面」把指针指到该事件图批里的某一页，指针改了这些孤立的封面文件自然就不被引用，等它们全部失联后整批删掉即可。
 3. 未引用的 52 个 R2 对象（`draft/` 下 34 个等）不在任何表里，暂不碰。
+
+---
+
+## 十一、2026-10-23 首段统一为站点码（执行记录）
+
+用户决定：单人不再用首段区分，**首段永远是 `LMSY`，单人改成尾码**。理由是两个前缀会把同一场活动的图拆成两套序号。
+
+| 项 | 结果 |
+|---|---|
+| 受影响事件 | **23 个**（5 本单人杂志 + 18 场单人活动），其中 15 个新加尾码 |
+| 图片改名 | **699 张**（R2 复制到新键 → 库内 `catalog_id` / `image_url` 切换 → 删旧键） |
+| 事件编号 | 15 条追加 `-LM` / `-SY`（另 8 条本来就是单人、编号已带） |
+| 指针 | `projects.cover_url` / `homepage_cover_url`、`profiles.avatar_url` 同步改指新地址 |
+| 尺寸表 | `lib/generated/image-dimensions.json` 699 个 key 重写，另删 4 条孤儿 key |
+| 校验 | 库内 `catalog_id` 与事件编号全量对账 0 偏差；新键 R2 HEAD 全存在 |
+| 备份 | `gallery_assets_snap_person_20261023`、`projects_snap_person_20261023`、`profiles_snap_person_20261023` |
+
+代码侧：`buildProjectCatalogId()` / `assetIdPrefixFor()` 成为唯一构造入口，
+`subjectFromProjectId()` 同时剥日期与尾码；后台「人物码」在事件已有编号后锁定，不再逐批手选。

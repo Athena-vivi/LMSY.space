@@ -1,4 +1,5 @@
 import type { LocalizedText } from '@/lib/localized-content';
+import type { PersonCode } from '@/lib/catalog-id';
 
 /**
  * Shared Supabase-facing TypeScript types.
@@ -115,6 +116,14 @@ export interface Project {
   category: ProjectCategory;
   /** Sub-class inside the hall; see ProjectSubtype. */
   subtype?: ProjectSubtype | null;
+  /**
+   * Who the event belongs to when it is not a duo booking. This is a TAIL
+   * code on the event number (`LMSY-EVENT-FANMEET-WUH-20251129-LM`), not a
+   * leading segment: every id starts with LMSY because the site is the pair's.
+   */
+  person?: PersonCode | null;
+  /** Structured city (live events, appearances); feeds the subject code. */
+  city?: string | null;
   release_date: string | null;
   description: string | null;
   description_i18n?: LocalizedText | null;

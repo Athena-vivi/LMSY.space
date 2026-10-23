@@ -43,6 +43,11 @@ interface ProjectRow {
   catalog_id: string | null;
   /** Structured city; the promote wizard reads it to build the subject code. */
   city: string | null;
+  /**
+   * Who the event belongs to: LMSY (duo) or LM / SY, which the event number
+   * carries as a trailing code. Fixed once the event has a number.
+   */
+  person: 'LMSY' | 'LM' | 'SY' | null;
   asset_groups: string[] | null;
   cover_url: string | null;
 }
@@ -224,6 +229,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     setSubjectTouched(false);
     setSubject(deriveSubject(project));
     setCity(project.city ?? '');
+    // The person now belongs to the event (it is the id's tail code), so the
+    // picker follows the row instead of starting at a default that would
+    // contradict ids already filed under this event.
+    setPersonCode(
+      project.person === 'LM' || project.person === 'SY' ? project.person : 'LMSY'
+    );
     const groups = project.asset_groups || [];
     setAssetGroup(defaultClassOf(groups));
     setWriteCover(!project.cover_url);
@@ -845,10 +856,36 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                         {t('d.promote.person')}
                       </span>
+                      {/* Locked once the event has a number: the tail code is
+                          part of that number, so changing it now would leave
+                          the pictures already filed under it on the old code.
+                          A fresh event has nothing filed yet and stays free. */}
                       <select
                         value={personCode}
-                        onChange={(e) => setPersonCode(e.target.value as 'LMSY' | 'LM' | 'SY')}
-                        className="w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow/40"
+                        disabled={Boolean(project.catalog_id)}
+                        onChange={(e) => {
+                          const next = e.target.value as 'LMSY' | 'LM' | 'SY';
+                          setPersonCode(next);
+                          setPreview(null);
+                          // Remember it on the event, the same way the city is
+                          // remembered, so the next batch needs no answer.
+                          setProjects((prev) =>
+                            prev.map((row) =>
+                              row.id === project.id ? { ...row, person: next } : row
+                            )
+                          );
+                          void fetch(`/api/admin/projects/${project.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ person: next }),
+                          }).catch(() => {
+                            // The id is already derived locally; a failed save
+                            // only means the next batch asks again.
+                          });
+                        }}
+                        className={`w-full border border-white/10 bg-black px-3 py-2 font-mono text-xs outline-none focus:border-lmsy-yellow/40 ${
+                          project.catalog_id ? 'cursor-not-allowed text-ink-2' : 'text-ink'
+                        }`}
                       >
                         {PERSON_CODES.map((code) => (
                           <option key={code} value={code}>
@@ -856,6 +893,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           </option>
                         ))}
                       </select>
+                      {project.catalog_id && (
+                        <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
+                          {t('d.promote.personLocked')}
+                        </span>
+                      )}
                     </label>
 
                     {picksSubject && (

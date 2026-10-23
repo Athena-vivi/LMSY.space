@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
-import { createProject, listAllProjectsByReleaseDate } from '@/lib/data/projects';
+import { createProject, listAllProjectsByReleaseDate, updateProject } from '@/lib/data/projects';
 
 /**
  * POST /api/admin/projects - create an event from the promote wizard.
@@ -29,6 +29,11 @@ export async function POST(request: NextRequest) {
       portal_visible?: boolean;
       /** Structured city, picked in the wizard; feeds the subject code. */
       city?: string | null;
+      /**
+       * Who the event belongs to: 'LMSY' (duo, the default) or 'LM' / 'SY'
+       * for a single-person booking, which becomes a tail code on the id.
+       */
+      person?: string | null;
       /** Drama events hang off a work (series row) through this id. */
       work_id?: string | null;
     };
@@ -67,6 +72,15 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       );
+    }
+
+    // createProject keeps its minimal field list; the person is written right
+    // after so a single-person event gets its tail code from the start. The
+    // table default is LMSY, so a duo event needs no extra round trip.
+    const person = body.person?.trim().toUpperCase();
+    if (person === 'LM' || person === 'SY') {
+      const [patched] = await updateProject(supabaseAdmin, project.id, { person });
+      if (patched) project = patched;
     }
 
     revalidateContentSurfaces();

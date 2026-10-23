@@ -4,18 +4,25 @@
  * CANONICAL SPEC: docs/architecture/20261021-asset-naming.md
  * Unification tracker: docs/architecture/20261022-naming-unification.md
  *
- *   <PERSON>-<DOOR>-<SUBJECT>[-<THEME>]-<YYYYMMDD>-<NNN>
+ *   LMSY-<DOOR>-<SUBJECT>[-<PERSON>]-<YYYYMMDD>-<NNN>
  *
  *   LMSY-MAG-THER-HEARTBEATFORYOU-20250801-001
- *   LM-MAG-OAT-20241211-012
- *   SY-MAG-KAZZ217-YOUTHCHOICE-20260731-001
+ *   LMSY-MAG-OAT-LM-20241211-012          (single-person event)
+ *   LMSY-MAG-KAZZ217-YOUTHCHOICE-SY-20260731-001
  *   LMSY-DRAMA-AFFAIR-PROMO-20240815-003
  *   LMSY-FEAT-BACKVIEW-001            (special topic: no date by design)
  *
+ * The first segment is the SITE (LMSY), not the person: this is a two-person
+ * archive, so every id starts the same way. The person, when an event belongs
+ * to one of them, is a tail code after the subject - see personTail(). Before
+ * 2026-10-23 the first segment carried the person (LM- / SY-), which made the
+ * same event address differently depending on who was in the picture.
+ *
  * Rules (from the spec, do not invent new ones):
  *   - Uppercase ASCII, single '-' separator. No spaces, dots, underscores.
- *   - PERSON and DOOR and the trailing NNN are always present; SUBJECT/THEME
- *     segments vary in count, so the ID is read right-to-left.
+ *   - DOOR and the trailing NNN are always present, as is the leading LMSY;
+ *     SUBJECT/THEME/PERSON segments vary in count, so the ID is read
+ *     right-to-left.
  *   - A missing segment is omitted entirely - never write NA / 0000 placeholders.
  *   - YYYYMMDD is 8 digits; omitted as a whole when unknown.
  *   - FEAT topics omit the date on purpose: a topic is a long-lived
@@ -34,9 +41,26 @@
 // Vocabulary
 // ---------------------------------------------------------------------------
 
-/** First segment: who is in the picture. */
+/** First segment: the site. Every catalog id starts with it (2026-10-23). */
+export const SITE_PREFIX = 'LMSY' as const;
+
+/**
+ * Who an event belongs to.
+ *
+ * Since 2026-10-23 this is a TAIL code, not the first segment: `LMSY` (duo)
+ * adds nothing, `LM` / `SY` append `-LM` / `-SY` after the subject. The
+ * values are still the same three, so parsing code keeps working; only the
+ * position moved. `PERSON_CODES` stays as the accepted vocabulary because
+ * old ids with a leading LM- / SY- still have to parse.
+ */
 export const PERSON_CODES = ['LMSY', 'LM', 'SY'] as const;
 export type PersonCode = (typeof PERSON_CODES)[number];
+
+/** `-LM` / `-SY` for a single-person event, empty string for a duo event. */
+export function personTail(person?: string | null): string {
+  const p = (person || '').trim().toUpperCase();
+  return p === 'LM' || p === 'SY' ? `-${p}` : '';
+}
 
 /** Second segment: which door the asset belongs to. */
 export const DOOR_CODES = [
@@ -369,10 +393,11 @@ export function getR2PathForCatalogId(catalogId: string): string {
 /**
  * Parse a project catalog HEAD (`<PERSON>-<DOOR>-<SUBJECT>`, no date or
  * sequence - projects.catalog_id stores exactly that shape, e.g.
- * LMSY-EVENT-BEINLOVE). Full asset ids go through parseCatalogId instead.
+ * LMSY-EVENT-FANMEET-BKK). Full asset ids go through parseCatalogId instead.
  *
- * Note that EVENT and APPEAR event numbers also carry the date (spec section
- * 6); use subjectFromProjectId to get the bare subject for those two.
+ * Note that EVENT and APPEAR event numbers also carry the date, and a
+ * single-person event carries a `-LM` / `-SY` tail; use subjectFromProjectId
+ * to get the bare subject for those two.
  */
 export function parseCatalogHead(head: string | null | undefined): string | null {
   if (!head) return null;
@@ -388,18 +413,104 @@ export function parseCatalogHead(head: string | null | undefined): string | null
 /**
  * SUBJECT segment of an event number, for any door.
  *
- * EVENT / APPEAR event numbers end with the date (and, for the two Nanning
- * single events, a `-LM` / `-SY` tail). Feeding that back as an asset subject
- * would write the date twice - `LMSY-EVENT-FANMEET-BKK-20250115-20250115-001`
- * - so the tail is stripped here rather than at every call site.
+ * EVENT / APPEAR event numbers end with the date (and, for a single-person
+ * event, a `-LM` / `-SY` tail). Feeding either back as an asset subject would
+ * write the date twice - `LMSY-EVENT-FANMEET-BKK-20250115-20250115-001` - so
+ * both are stripped here rather than at every call site. Every other door
+ * carries only the person tail, which comes off the same way.
  */
 export function subjectFromProjectId(head: string | null | undefined): string | null {
   const subject = parseCatalogHead(head);
   if (!subject) return null;
   const door = String(head).split('-')[1];
-  if (door !== 'EVENT' && door !== 'APPEAR') return subject;
-  const bare = subject.replace(/-\d{8}(?:-(?:LM|SY))?$/, '');
+  let bare = subject;
+  if (door === 'EVENT' || door === 'APPEAR') {
+    bare = bare.replace(/-\d{8}(?:-(?:LM|SY))?$/, '');
+  }
+  bare = bare.replace(/-(?:LM|SY)$/, '');
   return bare || null;
+}
+
+/** Tail code of an event number: 'LM' / 'SY', or 'LMSY' when it has none. */
+export function personFromProjectId(head: string | null | undefined): PersonCode {
+  const parts = String(head || '').split('-');
+  if (parts.length > 2) {
+    const last = parts[parts.length - 1];
+    if (last === 'LM' || last === 'SY') return last;
+  }
+  return 'LMSY';
+}
+
+/** `YYYY-MM-DD` -> `YYYYMMDD`, or '' when the value is not a plain date. */
+function compactDate(dateString: string | null | undefined): string {
+  const value = (dateString || '').trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.replace(/-/g, '') : '';
+}
+
+/**
+ * Event number (`projects.catalog_id`) for a project.
+ *
+ * EVENT / APPEAR carry the date because their subject is type + city, which is
+ * not unique: fifteen Bangkok award nights would all be `APPEAR-AWARDS-BKK`.
+ * The person tail always comes LAST, after the date, so personFromProjectId
+ * reads it the same way for every door:
+ *
+ *   LMSY-EVENT-FANMEET-WUH-20251129-LM      (event, single person)
+ *   LMSY-MAG-OAT-LM                          (magazine, single person)
+ *   LMSY-EVENT-FANMEET-BKK-20250115          (event, duo - no tail)
+ */
+export function buildProjectCatalogId(
+  doorCode: string,
+  subject: string,
+  eventDate: string | null | undefined,
+  person?: string | null
+): string | null {
+  const tail = personTail(person);
+  if (doorCode === 'EVENT' || doorCode === 'APPEAR') {
+    const date = compactDate(eventDate);
+    return date ? `${SITE_PREFIX}-${doorCode}-${subject}-${date}${tail}` : null;
+  }
+  return `${SITE_PREFIX}-${doorCode}-${subject}${tail}`;
+}
+
+/**
+ * Canonical event number for a row that already has one.
+ *
+ * Two container rows predate the site prefix (`DRAMA-AFFAIR-STILL`,
+ * `EARLY-MILESTONES`) while the pictures filed under them already start with
+ * LMSY. Prepending it keeps a new batch in the same series instead of starting
+ * a second, differently prefixed one. Returns null when the value is not an
+ * event number at all, so callers can fall back to building one.
+ */
+export function normalizeEventNumber(head: string | null | undefined): string | null {
+  const value = (head || '').trim();
+  if (!value) return null;
+  if (value.startsWith(`${SITE_PREFIX}-`)) return value;
+  const first = value.split('-')[0];
+  return (DOOR_CODES as readonly string[]).includes(first) ? `${SITE_PREFIX}-${value}` : null;
+}
+
+/**
+ * Asset id prefix: the event number, plus the date when the number does not
+ * already carry one.
+ *
+ * An asset id is "which event, then which picture in it", so the only thing
+ * added to an event number is the date it lacks. EVENT / APPEAR have it inside;
+ * FEAT omits the date on purpose (a topic is a long-lived set whose pictures
+ * join over the years, so no single date can be pinned to it).
+ *
+ *   LMSY-EVENT-FANMEET-WUH-20251129-LM      -> + 001
+ *   LMSY-MAG-OAT-LM          + 20241211     -> + 001
+ *   LMSY-FEAT-BACKVIEW                      -> + 001
+ */
+export function assetIdPrefixFor(
+  eventNumber: string,
+  doorCode: string,
+  eventDate: string | null | undefined
+): string {
+  if (doorCode === 'EVENT' || doorCode === 'APPEAR' || doorCode === 'FEAT') return eventNumber;
+  const date = compactDate(eventDate);
+  return date ? `${eventNumber}-${date}` : eventNumber;
 }
 
 // ---------------------------------------------------------------------------
@@ -410,21 +521,31 @@ export function subjectFromProjectId(head: string | null | undefined): string | 
  * Highest existing sequence + 1 for a given prefix, starting at 001.
  * Not atomic by itself - the unique index on gallery_assets.catalog_id is the
  * final authority; callers must treat a 23505 conflict as retryable.
+ *
+ * `person` is the leading segment and stays LMSY: a single-person event puts
+ * its `-LM` / `-SY` inside the subject instead (see personTail), so both
+ * batches of one event share a prefix and one running sequence.
+ *
+ * Pass `head` when the prefix is already known (the promote path derives it
+ * from the event number, tail and date order included); the other options only
+ * exist so older call sites can keep composing it inline.
  */
 export async function allocateNextCatalogId(
   supabase: CatalogIdClient,
   doorCode: string,
   eventDate: string,
-  options: { person?: PersonCode; subject?: string; tableName?: string } = {}
+  options: { person?: PersonCode; subject?: string; tableName?: string; head?: string } = {}
 ): Promise<string> {
   const person = options.person ?? 'LMSY';
   const subject = options.subject;
   const tableName = options.tableName ?? 'gallery_assets';
-  const compactDate = formatDateToCompact(eventDate);
+  const compacted = formatDateToCompact(eventDate);
 
-  const head = subject
-    ? `${person}-${doorCode}-${subject}-${compactDate}`
-    : `${person}-${doorCode}-${compactDate}`;
+  const head =
+    options.head ??
+    (subject
+      ? `${person}-${doorCode}-${subject}-${compacted}`
+      : `${person}-${doorCode}-${compacted}`);
 
   const { data, error } = await supabase
     .schema('lmsy_archive')
