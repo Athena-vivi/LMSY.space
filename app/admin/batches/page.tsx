@@ -49,7 +49,7 @@ export default function AdminBatchesPage() {
 
     if (!error && data) {
       const map = new Map<string, BatchRow>();
-      let looseRow: LooseRow = { total: 0, linked: 0 };
+      const looseRow: LooseRow = { total: 0, linked: 0 };
       for (const d of data) {
         if (!d.batch_id) {
           looseRow.total += 1;

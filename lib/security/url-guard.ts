@@ -131,7 +131,7 @@ export function isBlockedMediaUrl(rawUrl: string): UrlGuardResult {
     return { blocked: true, reason: `unsupported protocol ${parsed.protocol}` };
   }
 
-  let host = parsed.hostname.toLowerCase().replace(/\.$/, '');
+  const host = parsed.hostname.toLowerCase().replace(/\.$/, '');
   if (host.startsWith('[') && host.endsWith(']')) {
     return guardIpv6(host);
   }

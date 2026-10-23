@@ -271,7 +271,7 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    let nextCoverId = `LMSY-MAG-${today.replace(/-/g, '')}-000`;
+    const nextCoverId = `LMSY-MAG-${today.replace(/-/g, '')}-000`;
     let nextPageSequence = 1;
 
     if (lastItem?.catalog_id) {

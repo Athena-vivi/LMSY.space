@@ -263,7 +263,7 @@ export async function downloadMedia(
     const fileName = `${timestamp}-${random}.${extension}`;
 
     // 获取图片元数据（仅限图片）
-    let metadata: MediaDownloadResult['metadata'] = {
+    const metadata: MediaDownloadResult['metadata'] = {
       format: extension || undefined,
     };
 
