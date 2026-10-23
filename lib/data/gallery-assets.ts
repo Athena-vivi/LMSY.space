@@ -938,31 +938,77 @@ export async function countAssetsInYear(
 // ---------------------------------------------------------------------------
 // Draft delete guard (moved from lib/draft-delete-guard.ts)
 //
-// The guard takes a structural client (its unit tests pass a stub with only
-// from().select()), so these two queries deliberately do NOT call .schema():
-// the admin client defaults to lmsy_archive, and the stub has no schema
-// method to call. Throws on a read failure - the guard re-wraps the message
-// with its own "Failed to load R2 references from <table>" prefix, verbatim.
+// The guard takes a structural client (its unit tests pass a stub), so these
+// queries deliberately do NOT call .schema(): the admin client defaults to
+// lmsy_archive, and the stub has no schema method to call. Throws on a read
+// failure - the guard re-wraps the message with its own
+// "Failed to load R2 references from <table>" prefix, verbatim.
+//
+// Both reads are paged (2026-10-23 fix). A missed reference here is not a
+// cosmetic bug: the guard decides whether an R2 object may be deleted, so a
+// silently truncated read means "nothing references this" for every asset
+// past PostgREST's 1000-row cap - i.e. a mistaken delete removes a live
+// image. gallery_assets already holds 2,522 rows and was reading 1,000.
 // ---------------------------------------------------------------------------
+
+/** Page size for the guard's full-table walks. */
+const GUARD_WALK_PAGE_SIZE = 1000;
 
 /** Structural minimum of the guard's client; the admin client satisfies it. */
 export interface GuardQueryClient {
+  from(table: string): GuardQueryBuilder;
+}
+
+/** select() is awaitable on its own - the guard's other reads stop there. */
+export interface GuardQueryBuilder {
+  select(columns: string): GuardPagedBuilder;
+}
+
+export interface GuardPagedBuilder extends PromiseLike<GuardQueryResult> {
+  order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }): GuardPagedBuilder;
+  range(from: number, to: number): GuardPagedBuilder;
+}
+
+export interface GuardQueryResult {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  from(table: 'gallery_assets' | 'projects'): { select(columns: string): PromiseLike<{ data: any; error: any }> };
+  data: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error: any;
+}
+
+/** id-ordered .range() walk; throws on a page failure, same as the old single query. */
+async function walkGuardRows<T>(
+  client: GuardQueryClient,
+  table: string,
+  columns: string
+): Promise<T[]> {
+  const rows: T[] = [];
+
+  for (let from = 0; ; from += GUARD_WALK_PAGE_SIZE) {
+    const { data, error } = await client
+      .from(table)
+      .select(columns)
+      .order('id', { ascending: true })
+      .range(from, from + GUARD_WALK_PAGE_SIZE - 1);
+
+    if (error) throw new Error(error.message);
+
+    const page = (data ?? []) as T[];
+    rows.push(...page);
+    if (page.length < GUARD_WALK_PAGE_SIZE) break;
+  }
+
+  return rows;
 }
 
 export async function listAllAssetImageUrls(
   client: GuardQueryClient
 ): Promise<Array<{ image_url: string | null }>> {
-  const { data, error } = await client.from('gallery_assets').select('image_url');
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Array<{ image_url: string | null }>;
+  return walkGuardRows(client, 'gallery_assets', 'image_url');
 }
 
 export async function listAllProjectCoverRefs(
   client: GuardQueryClient
 ): Promise<Array<{ cover_url: string | null; homepage_cover_url: string | null }>> {
-  const { data, error } = await client.from('projects').select('cover_url, homepage_cover_url');
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Array<{ cover_url: string | null; homepage_cover_url: string | null }>;
+  return walkGuardRows(client, 'projects', 'cover_url, homepage_cover_url');
 }

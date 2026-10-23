@@ -25,6 +25,11 @@
  */
 
 import { getRelativePath } from './r2-client.ts';
+import {
+  listAllAssetImageUrls,
+  listAllProjectCoverRefs,
+  type GuardQueryClient,
+} from './data/gallery-assets.ts';
 
 export interface DraftObjectRef {
   id: string;
@@ -47,11 +52,12 @@ export type ReferenceIndex = Map<string, string[]>;
 /**
  * Minimal structural shape of the Supabase admin client used here. Keeping it
  * structural lets unit tests pass a stub without any environment or network.
+ *
+ * Same shape as the guard's two repository queries (lib/data/gallery-assets.ts)
+ * so the real admin client and the test stub both satisfy them: the reference
+ * reads are paged, hence order()/range() on the builder.
  */
-export interface SupabaseLike {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  from(table: string): { select(columns: string): PromiseLike<{ data: any; error: any }> };
-}
+export type SupabaseLike = GuardQueryClient;
 
 /** Normalize a full CDN URL or a bare key to a bare R2 key (no leading slash). */
 export function normalizeR2Key(urlOrKey: string): string {
@@ -164,15 +170,21 @@ export async function loadReferenceIndex(
   excludeDraftIds: string[]
 ): Promise<{ index: ReferenceIndex; siteContentBlocks: Array<Record<string, unknown>> }> {
   const [gallery, projects, blocks, otherDrafts] = await Promise.all([
-    client.from('gallery_assets').select('image_url'),
-    client.from('projects').select('cover_url, homepage_cover_url'),
+    listAllAssetImageUrls(client).catch((error: unknown) => {
+      throw new Error(
+        `Failed to load R2 references from gallery_assets: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }),
+    listAllProjectCoverRefs(client).catch((error: unknown) => {
+      throw new Error(
+        `Failed to load R2 references from projects: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }),
     client.from('site_content_blocks').select('*'),
     client.from('draft_items').select('id, r2_media_url, r2_key'),
   ]);
 
   for (const [table, result] of [
-    ['gallery_assets', gallery],
-    ['projects', projects],
     ['site_content_blocks', blocks],
     ['draft_items', otherDrafts],
   ] as const) {
@@ -183,8 +195,8 @@ export async function loadReferenceIndex(
 
   const excluded = new Set(excludeDraftIds);
   const index = buildReferenceIndex({
-    galleryAssets: gallery.data || [],
-    projects: projects.data || [],
+    galleryAssets: gallery,
+    projects,
     otherDrafts: (otherDrafts.data || []).filter(
       (row: { id?: string }) => !row.id || !excluded.has(row.id)
     ),
