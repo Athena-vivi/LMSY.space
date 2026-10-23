@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import { getProjectByIdStrict, insertProject } from '@/lib/data/projects';
 
+/**
+ * POST /api/admin/projects/[id]/split - mint a sibling project that
+ * inherits the source's filing, so pictures can be moved onto it.
+ *
+ * P1-3 Phase 2: the source read and the insert moved to lib/data; the
+ * inherited field list and the response shape are unchanged.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,24 +31,21 @@ export async function POST(
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data: sourceProject, error: sourceError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .eq('id', sourceProjectId)
-      .single();
-
-    if (sourceError || !sourceProject) {
+    // .single() semantics carried over by getProjectByIdStrict: a missing
+    // row surfaces as the PGRST116 message, same as the old branch.
+    let sourceProject;
+    try {
+      sourceProject = await getProjectByIdStrict(supabaseAdmin, sourceProjectId);
+    } catch (error) {
       return NextResponse.json(
-        { error: sourceError?.message || 'Source project not found' },
+        { error: error instanceof Error ? error.message : 'Source project not found' },
         { status: 404 }
       );
     }
 
-    const { data: newProject, error: createError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .insert({
+    let newProject;
+    try {
+      newProject = await insertProject(supabaseAdmin, {
         title: String(title).trim(),
         category: sourceProject.category,
         release_date: sourceProject.release_date,
@@ -52,13 +57,11 @@ export async function POST(
         portal_priority: 0,
         theme_statement: sourceProject.theme_statement || null,
         curation_status: 'draft',
-      })
-      .select('*')
-      .single();
-
-    if (createError || !newProject) {
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
       return NextResponse.json(
-        { error: createError?.message || 'Failed to create split project' },
+        { error: message || 'Failed to create split project' },
         { status: 500 }
       );
     }

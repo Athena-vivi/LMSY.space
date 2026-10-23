@@ -264,6 +264,24 @@ export async function setCoverFlag(db: AdminClient, assetId: string): Promise<vo
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Re-file every asset of one project under another (the merge route's
+ * second step). Throws on error - the route maps it to its own 500.
+ */
+export async function moveAssetsToProject(
+  db: AdminClient,
+  fromProjectId: string,
+  toProjectId: string
+): Promise<void> {
+  const { error } = await db
+    .schema('lmsy_archive')
+    .from('gallery_assets')
+    .update({ project_id: toProjectId })
+    .eq('project_id', fromProjectId);
+
+  if (error) throw new Error(error.message);
+}
+
 // ---------------------------------------------------------------------------
 // Door reads (moved from lib/door-data.ts)
 // ---------------------------------------------------------------------------

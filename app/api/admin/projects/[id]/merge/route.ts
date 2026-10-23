@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import { getProjectByIdStrict, deleteProject, setProjectCover } from '@/lib/data/projects';
+import { moveAssetsToProject } from '@/lib/data/gallery-assets';
 
+/**
+ * POST /api/admin/projects/[id]/merge - fold one project into another.
+ *
+ * P1-3 Phase 2: the reads and writes moved to lib/data; the multi-step
+ * sequence (and its order) is unchanged, because there is no transaction
+ * here - each step commits on its own and a later failure leaves the
+ * earlier ones applied, exactly as before the move.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,34 +40,32 @@ export async function POST(
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data: sourceProject, error: sourceError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .eq('id', sourceProjectId)
-      .single();
-
-    if (sourceError || !sourceProject) {
+    // .single() semantics carried over by getProjectByIdStrict: a missing row
+    // surfaces as the PGRST116 message, which is what the old branches
+    // answered with.
+    let sourceProject;
+    try {
+      sourceProject = await getProjectByIdStrict(supabaseAdmin, sourceProjectId);
+    } catch (error) {
       return NextResponse.json(
-        { error: sourceError?.message || 'Source project not found' },
+        { error: error instanceof Error ? error.message : 'Source project not found' },
         { status: 404 }
       );
     }
 
-    const { data: targetProject, error: targetError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .eq('id', targetProjectId)
-      .single();
-
-    if (targetError || !targetProject) {
+    let targetProject;
+    try {
+      targetProject = await getProjectByIdStrict(supabaseAdmin, targetProjectId);
+    } catch (error) {
       return NextResponse.json(
-        { error: targetError?.message || 'Target project not found' },
+        { error: error instanceof Error ? error.message : 'Target project not found' },
         { status: 404 }
       );
     }
 
+    // Draft items stay on their own table access: there is no drafts
+    // repository yet (Phase 3), and this call deliberately runs without a
+    // schema prefix, exactly as before.
     const draftUpdate = await supabaseAdmin
       .from('draft_items')
       .update({ project_id: targetProjectId })
@@ -70,36 +78,31 @@ export async function POST(
       );
     }
 
-    const assetUpdate = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .update({ project_id: targetProjectId })
-      .eq('project_id', sourceProjectId);
-
-    if (assetUpdate.error) {
+    try {
+      await moveAssetsToProject(supabaseAdmin, sourceProjectId, targetProjectId);
+    } catch (error) {
       return NextResponse.json(
-        { error: assetUpdate.error.message },
+        { error: error instanceof Error ? error.message : String(error) },
         { status: 500 }
       );
     }
 
+    // A target without a cover inherits the source's. The old code fired
+    // this update without checking its error; that fire-and-forget shape is
+    // preserved on purpose.
     if (!targetProject.cover_url && sourceProject.cover_url) {
-      await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .update({ cover_url: sourceProject.cover_url })
-        .eq('id', targetProjectId);
+      try {
+        await setProjectCover(supabaseAdmin, targetProjectId, sourceProject.cover_url as string);
+      } catch {
+        // verbatim: the old route ignored this update's error
+      }
     }
 
-    const { error: deleteError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .delete()
-      .eq('id', sourceProjectId);
-
-    if (deleteError) {
+    try {
+      await deleteProject(supabaseAdmin, sourceProjectId);
+    } catch (error) {
       return NextResponse.json(
-        { error: deleteError.message },
+        { error: error instanceof Error ? error.message : String(error) },
         { status: 500 }
       );
     }
