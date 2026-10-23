@@ -263,6 +263,32 @@ export async function deleteProject(db: AdminClient, id: string): Promise<void> 
   if (error) throw new Error(error.message);
 }
 
+/** Admin dashboard: all editorial + series projects, newest release first. GET /api/admin/editorial. */
+export async function listEditorialSeriesProjects(db: AdminClient): Promise<Array<Record<string, unknown>>> {
+  const { data, error } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('*')
+    .or('category.eq.editorial,category.eq.series')
+    .order('release_date', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Array<Record<string, unknown>>;
+}
+
+/** Clear the previously-featured editorial project before promoting a new one. PUT /api/admin/editorial. */
+export async function clearEditorialHomepageFeatured(db: AdminClient, exceptId: string): Promise<void> {
+  const { error } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .update({ homepage_featured: false })
+    .eq('category', 'editorial')
+    .eq('homepage_featured', true)
+    .neq('id', exceptId);
+
+  if (error) throw new Error(error.message);
+}
+
 /**
  * The cover pointer (projects.cover_url). A cover is a pointer, not a file:
  * null clears it back to the automatic first-picture cover.

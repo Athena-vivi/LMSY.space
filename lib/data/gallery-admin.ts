@@ -93,6 +93,65 @@ export async function deleteGalleryAssetsByIds(db: AdminClient, ids: string[]): 
   if (error) throw new Error(error.message);
 }
 
+/** Delete every gallery asset of a project (used before deleting the project). DELETE /api/admin/editorial. */
+export async function deleteGalleryAssetsByProjectId(db: AdminClient, projectId: string): Promise<void> {
+  const { error } = await db
+    .schema('lmsy_archive')
+    .from('gallery_assets')
+    .delete()
+    .eq('project_id', projectId);
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Every (catalog_id, image_url) pair in gallery_assets, paged by id.
+ *
+ * Used by the reconcile route to build its dedup set. A single unpaged
+ * select() truncates at the PostgREST 1000-row cap - gallery_assets holds
+ * 2522+ rows, so the old inline read silently dropped ~1500 assets and
+ * reconciliation would have re-inserted them as duplicates. Paging fixes that.
+ */
+export async function walkAllGalleryCatalogRefs(
+  db: AdminClient
+): Promise<Array<{ catalog_id: string | null; image_url: string | null }>> {
+  const out: Array<{ catalog_id: string | null; image_url: string | null }> = [];
+  let cursor = 0;
+  const PAGE = 1000;
+  for (;;) {
+    const { data, error } = await db
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('catalog_id, image_url')
+      .order('id', { ascending: true })
+      .range(cursor, cursor + PAGE - 1);
+
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as Array<{ catalog_id: string | null; image_url: string | null }>;
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+    cursor += PAGE;
+  }
+  return out;
+}
+
+/** Reconcile route: backfill one asset discovered in an R2 scan. Returns the saved row. */
+export async function insertReconciledAsset(
+  db: AdminClient,
+  row: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const { data, error } = await db
+    .schema('lmsy_archive')
+    .from('gallery_assets')
+    .insert(row)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Insert returned no row');
+  return data as Record<string, unknown>;
+}
+
 /** Patch one asset's fields (PATCH /api/admin/gallery). */
 export async function updateGalleryAsset(
   db: AdminClient,
