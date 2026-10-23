@@ -4,46 +4,39 @@ import { normalizeLocalizedText } from '@/lib/localized-content';
 import { requireAdmin } from '@/lib/security/api-auth';
 
 /**
- * GET - Retrieve gallery images
- * Supports filtering by project_id via query parameter
- * Returns all images including those linked to projects
+ * GET - Retrieve one project's gallery images.
+ *
+ * v2 (2026-10-23): project_id is now required. The old unfiltered "return the
+ * whole vault" path had no callers - the Asset Vault grid reads
+ * /api/admin/vault/assets, which is keyset-paged - and it was the only place
+ * the 1000-row PostgREST truncation could bite. The project_ids (multi) branch
+ * had no callers either. Both removed; a missing project_id now fails fast with
+ * 400 instead of scanning the whole table. The three curation callers
+ * (?project_id=<one>) are unchanged and still read the flat `data` array.
  */
 export async function GET(request: NextRequest) {
-  // Authentication
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Get query parameters
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('project_id');
-    const projectIds = searchParams.get('project_ids');
 
-    // Build query
-    let query = supabaseAdmin
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Missing required parameter: project_id' },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('gallery_assets')
       .select('*')
+      .eq('project_id', projectId)
       .order('created_at', { ascending: false });
-
-    // Filter by project_id if provided (for curation view)
-    if (projectId) {
-      query = query.eq('project_id', projectId);
-    }
-
-    // A shelf or a door holds several batches; the picker needs them in one
-    // read rather than one request per event.
-    if (projectIds) {
-      const ids = projectIds
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean);
-      if (ids.length > 0) query = query.in('project_id', ids);
-    }
-
-    const { data, error } = await query;
 
     if (error) {
       console.error('[ADMIN_GALLERY_API] ❌ Fetch failed:', error);
