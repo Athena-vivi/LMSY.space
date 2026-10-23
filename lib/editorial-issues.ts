@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import {
   getEditorialIssueByKey,
   listEditorialIssues,
@@ -19,6 +19,12 @@ import type { LocalizedText } from '@/lib/localized-content';
  * shell that fetched /api/editorial after paint, which meant search engines
  * saw an empty grid - the reason this module exists now is that an issue has
  * to be crawlable from the door.
+ *
+ * Reads go through the anon client: every caller of this module is a public
+ * page (/editorial, /editorial/<slug>, /features, /features/<slug>), so the
+ * visitor privilege is the honest one to read with. The public visibility
+ * filter in lib/project-visibility.ts is unchanged and still applied inside
+ * the repository, and RLS is the second line of defence.
  */
 
 const CDN_BASE = 'https://cdn.lmsy.space';
@@ -137,7 +143,7 @@ export async function loadEditorialIssues(): Promise<EditorialIssue[]> {
   // select) and the three sorts: newest issue first, issues whose date is
   // still unknown sink to the end instead of floating to the top on a NULL
   // sort key. It answers [] on a read failure, verbatim.
-  const rows = await listEditorialIssues(getSupabaseAdmin());
+  const rows = await listEditorialIssues(getSupabasePublic());
 
   return (rows as unknown as IssueRow[]).map(toIssue);
 }
@@ -147,7 +153,7 @@ export async function loadEditorialIssues(): Promise<EditorialIssue[]> {
  * rack, so an unpublished issue cannot be opened by guessing its address.
  */
 export async function loadEditorialIssue(key: string): Promise<EditorialIssue | null> {
-  const data = await getEditorialIssueByKey(getSupabaseAdmin(), key);
+  const data = await getEditorialIssueByKey(getSupabasePublic(), key);
 
   if (!data) return null;
 
@@ -165,7 +171,7 @@ export async function loadEditorialIssue(key: string): Promise<EditorialIssue | 
 
 /** Every public theme project, for the rack on /features. */
 export async function loadFeatureTopics(): Promise<EditorialIssue[]> {
-  const rows = await listFeatureTopics(getSupabaseAdmin());
+  const rows = await listFeatureTopics(getSupabasePublic());
 
   return (rows as unknown as IssueRow[]).map(toIssue);
 }

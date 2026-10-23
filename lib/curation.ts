@@ -53,7 +53,7 @@ export async function loadCurationTree(): Promise<CurationDoor[]> {
     secondLevelsFor(category as ProjectCategory).map((level) => level.path)
   );
 
-  const covers = await loadCategoryCovers(paths);
+  const covers = await loadCategoryCovers(supabaseAdmin, paths);
   const shelfCovers = new Map<string, string>();
   for (const [path, cover] of covers) shelfCovers.set(path, cover.imageUrl);
 

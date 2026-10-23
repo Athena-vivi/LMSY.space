@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import { listEditorialIssuesForApi } from '@/lib/data/projects';
 import { countIssueArtifacts } from '@/lib/editorial-meta';
 
@@ -51,13 +51,16 @@ function discoverCoverFromGallery(galleryImages: Array<{ image_url?: string | nu
 
 export async function GET() {
   try {
-    const supabaseAdmin = getSupabaseAdmin();
+    // Public route: reads with the anon client so the visitor privilege is the
+    // one being exercised. Visibility is still enforced app-side by the shared
+    // rule in lib/project-visibility.ts, with RLS as the second line.
+    const supabasePublic = getSupabasePublic();
 
     // Strict editorial-only filter; public visibility comes from the shared
     // rule in lib/project-visibility.ts.
     // The repository returns null on a read failure - the route keeps that
     // distinguishable from an empty rack with its own 500.
-    const data = await listEditorialIssuesForApi(supabaseAdmin);
+    const data = await listEditorialIssuesForApi(supabasePublic);
 
     if (!data) {
       console.error('[EDITORIAL_API] query failed');

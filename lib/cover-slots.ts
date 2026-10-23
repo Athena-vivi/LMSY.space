@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import type { DbClient } from '@/lib/data/client';
 import { listCategorySlotCovers } from '@/lib/data/gallery-assets';
 import {
   PROJECT_CATEGORIES,
@@ -89,14 +89,19 @@ export function isSecondLevelPath(path: string): boolean {
 /**
  * Pinned covers, keyed by shelf path. A path with no row is a shelf that is
  * still on automatic: the door falls back to the first covered entry.
+ *
+ * The client is the caller's: the doors read with the anon client, the admin
+ * curation page reads with the service-role one. This module only owns the
+ * shelf rule, never the privilege.
  */
 export async function loadCategoryCovers(
+  db: DbClient,
   paths: readonly string[]
 ): Promise<Map<string, SlotCover>> {
   const map = new Map<string, SlotCover>();
   if (paths.length === 0) return map;
 
-  const rows = await listCategorySlotCovers(getSupabaseAdmin(), paths);
+  const rows = await listCategorySlotCovers(db, paths);
 
   for (const row of rows) {
     if (!row.category_slot) continue;

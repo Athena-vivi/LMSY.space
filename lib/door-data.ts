@@ -164,6 +164,7 @@ export async function loadDoorCategories(category: ProjectCategory): Promise<Doo
   // A shelf's cover can be pinned from the curation page. Pinned wins; the
   // first covered entry is only the fallback it always was.
   const pinnedByPath = await loadCategoryCovers(
+    getSupabasePublic(),
     secondLevelsFor(category).map((level) => level.path)
   );
   const pinnedCover = (segment: string) =>
@@ -214,6 +215,7 @@ export async function loadGroupCategories(
 ): Promise<DoorCategoryRow[]> {
   const rows = await loadRows(categories);
   const pinnedByPath = await loadCategoryCovers(
+    getSupabasePublic(),
     categories.flatMap((category) => secondLevelsFor(category).map((level) => level.path))
   );
 
