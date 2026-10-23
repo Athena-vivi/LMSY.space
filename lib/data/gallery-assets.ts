@@ -764,18 +764,30 @@ export interface CurationAssetRow {
 /**
  * Every asset row the admin curation page folds into its tree.
  *
- * NOT paged, deliberately verbatim: the single .select() predates the
- * 1000-row discovery and a fix (with before/after evidence, the same way
- * countAssetsByProject was fixed) is a separate change - this move must not
- * alter behaviour. Answers [] on a read failure.
+ * Paged on purpose (2026-10-23 fix): the single .select() silently truncated
+ * at PostgREST's 1000-row cap, and the table already holds 2,522 assets - the
+ * curation tree was reading 1,000 of them, so every entry whose only pictures
+ * sat past the cap showed no cover and no page count. The walk mirrors
+ * listEntryGroupAssets. A page error stops the walk and keeps what was
+ * collected - the same shape the old single query failed with.
  */
 export async function listCurationAssets(db: AdminClient): Promise<CurationAssetRow[]> {
-  const { data } = await db
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select('id, project_id, image_url, catalog_id, portal_slot, interview_slot');
+  const assets: CurationAssetRow[] = [];
 
-  return (data ?? []) as unknown as CurationAssetRow[];
+  for (let from = 0; ; from += ASSET_WALK_PAGE_SIZE) {
+    const { data } = await db
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('id, project_id, image_url, catalog_id, portal_slot, interview_slot')
+      .order('id', { ascending: true })
+      .range(from, from + ASSET_WALK_PAGE_SIZE - 1);
+
+    const page = (data ?? []) as unknown as CurationAssetRow[];
+    assets.push(...page);
+    if (page.length < ASSET_WALK_PAGE_SIZE) break;
+  }
+
+  return assets;
 }
 
 // ---------------------------------------------------------------------------
