@@ -287,14 +287,14 @@ export async function moveAssetsToProject(
 // ---------------------------------------------------------------------------
 
 /**
- * imageCount per entry for a door's cards, in one query.
+ * imageCount per entry for a door's cards.
  *
- * KNOWN LANDMINE, deliberately carried over verbatim: this is a single
- * .in() request and PostgREST truncates at 1000 rows. live_event already
- * holds 1,633 assets across 57 entries, so roughly 600 assets fall past the
- * cap today and the door cards undercount. The fix is paging this walk (same
- * shape as listEntryGroupAssets below) and lands as its own commit after
- * the door-data migration, so the move stays behaviour-identical.
+ * Paged on purpose (2026-10-23 fix): the old single .in() request silently
+ * truncated at PostgREST's 1000-row cap, and live_event already holds 1,633
+ * assets across 57 entries - roughly 600 assets fell past the cap and the
+ * door cards printed too few "N images". The walk mirrors
+ * listEntryGroupAssets below. A page error answers {} (no counts), the
+ * same shape the old single query failed with.
  */
 export async function countAssetsByProject(
   db: AdminClient,
@@ -303,15 +303,24 @@ export async function countAssetsByProject(
   const counts: Record<string, number> = {};
   if (ids.length === 0) return counts;
 
-  const { data } = await db
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select('project_id')
-    .in('project_id', ids);
+  for (let from = 0; ; from += ASSET_WALK_PAGE_SIZE) {
+    const { data, error } = await db
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('project_id')
+      .in('project_id', ids)
+      .order('id', { ascending: true })
+      .range(from, from + ASSET_WALK_PAGE_SIZE - 1);
 
-  for (const asset of (data ?? []) as Array<{ project_id: string | null }>) {
-    if (!asset.project_id) continue;
-    counts[asset.project_id] = (counts[asset.project_id] ?? 0) + 1;
+    if (error) return {};
+
+    const page = (data ?? []) as Array<{ project_id: string | null }>;
+    for (const asset of page) {
+      if (!asset.project_id) continue;
+      counts[asset.project_id] = (counts[asset.project_id] ?? 0) + 1;
+    }
+
+    if (page.length < ASSET_WALK_PAGE_SIZE) break;
   }
 
   return counts;
