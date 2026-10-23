@@ -15,6 +15,12 @@ import {
   collectR2Failures,
   type ObjectPlan,
 } from '@/lib/draft-delete-guard';
+import {
+  getDraftItemById,
+  updateDraftItem,
+  getDraftItemRef,
+  deleteDraftItem,
+} from '@/lib/data/drafts';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -33,13 +39,10 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const { data, error } = await supabaseAdmin
-      .from('draft_items')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
+    let data;
+    try {
+      data = await getDraftItemById(supabaseAdmin, id);
+    } catch (error) {
       return apiServerError('admin/drafts/[id] GET', error);
     }
 
@@ -78,14 +81,10 @@ export async function PATCH(
 
     console.log('[DRAFTS_API] Updating item:', id);
 
-    const { data, error } = await supabaseAdmin
-      .from('draft_items')
-      .update(body)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
+    let data;
+    try {
+      data = await updateDraftItem(supabaseAdmin, id, body);
+    } catch (error) {
       console.error('[DRAFTS_API] Update error:', error);
       return apiServerError('admin/drafts/[id] PATCH', error);
     }
@@ -128,15 +127,12 @@ export async function DELETE(
     console.log('[DRAFTS_API] Deleting item:', id);
 
     // First, fetch the item to get its R2 key
-    const { data: item, error: fetchError } = await supabaseAdmin
-      .from('draft_items')
-      .select('id, r2_key')
-      .eq('id', id)
-      .single();
-
-    if (fetchError) {
-      console.error('[DRAFTS_API] Fetch for delete error:', fetchError);
-      return apiServerError('admin/drafts/[id] DELETE', fetchError);
+    let item;
+    try {
+      item = await getDraftItemRef(supabaseAdmin, id);
+    } catch (error) {
+      console.error('[DRAFTS_API] Fetch for delete error:', error);
+      return apiServerError('admin/drafts/[id] DELETE', error);
     }
 
     if (!item) {
@@ -179,14 +175,11 @@ export async function DELETE(
 
     // Delete from database. The row is removed even when the object was kept:
     // the draft no longer owns the object, published content does.
-    const { error: deleteError } = await supabaseAdmin
-      .from('draft_items')
-      .delete()
-      .eq('id', id);
-
-    if (deleteError) {
-      console.error('[DRAFTS_API] Database delete error:', deleteError);
-      return apiServerError('admin/drafts/[id] DELETE', deleteError);
+    try {
+      await deleteDraftItem(supabaseAdmin, id);
+    } catch (error) {
+      console.error('[DRAFTS_API] Database delete error:', error);
+      return apiServerError('admin/drafts/[id] DELETE', error);
     }
 
     console.log('[DRAFTS_API] Deleted successfully:', id);

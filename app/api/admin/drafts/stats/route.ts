@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
+import { countDraftItems } from '@/lib/data/drafts';
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -15,24 +16,14 @@ export async function GET(request: NextRequest) {
 
   try {
     // Count all drafts
-    const { count, error } = await supabaseAdmin
-      .from('draft_items')
-      .select('*', { count: 'exact', head: true });
-
-    if (error) {
-      console.error('[DRAFTS_STATS] Error:', error);
-      return apiServerError('admin/drafts/stats GET', error);
-    }
+    const count = await countDraftItems(supabaseAdmin);
 
     return NextResponse.json({
       success: true,
-      pendingCount: count || 0,
+      pendingCount: count,
     });
   } catch (error) {
-    console.error('[DRAFTS_STATS] Unexpected error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('[DRAFTS_STATS] Error:', error);
+    return apiServerError('admin/drafts/stats GET', error);
   }
 }

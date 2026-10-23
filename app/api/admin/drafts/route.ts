@@ -14,6 +14,12 @@ import {
   collectR2Failures,
   type ObjectPlan,
 } from '@/lib/draft-delete-guard';
+import {
+  listDraftItems,
+  listDraftItemRefs,
+  deleteDraftItems,
+  type DraftItemRefRow,
+} from '@/lib/data/drafts';
 
 // =====================================================
 // GET - Fetch draft items with optional filtering
@@ -33,41 +39,29 @@ export async function GET(request: NextRequest) {
 
     console.log('[DRAFTS_API] Fetching with filters:', { status, mediaType, batchId, projectId, limit, offset });
 
-    let query = supabaseAdmin
-      .from('draft_items')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    // Apply filters
-    if (status && status !== 'all') {
-      query = query.eq('status', status);
-    }
-    if (mediaType && mediaType !== 'all') {
-      query = query.eq('media_type', mediaType);
-    }
-    if (batchId) {
-      query = query.eq('batch_id', batchId);
-    }
-    if (projectId) {
-      query = query.eq('project_id', projectId);
-    }
-
-    // Exclude archived and rejected by default
-    query = query.not('status', 'in', '("archived", "rejected")');
-
-    const { data, error, count } = await query;
-
-    if (error) {
+    let rows;
+    let count;
+    try {
+      const page = await listDraftItems(supabaseAdmin, {
+        status,
+        mediaType,
+        batchId,
+        projectId,
+        limit,
+        offset,
+      });
+      rows = page.rows;
+      count = page.count;
+    } catch (error) {
       console.error('[DRAFTS_API] Fetch error:', error);
       return apiServerError('admin/drafts GET', error);
     }
 
-    console.log('[DRAFTS_API] Retrieved:', data?.length || 0, 'items');
+    console.log('[DRAFTS_API] Retrieved:', rows.length || 0, 'items');
 
     return NextResponse.json({
       success: true,
-      data: data || [],
+      data: rows,
       count,
       limit,
       offset,
@@ -102,17 +96,15 @@ export async function DELETE(request: NextRequest) {
     console.log('[DRAFTS_API] Batch delete:', ids.length, 'items');
 
     // First, fetch the items to get their R2 keys
-    const { data: items, error: fetchError } = await supabaseAdmin
-      .from('draft_items')
-      .select('id, r2_key')
-      .in('id', ids);
-
-    if (fetchError) {
-      console.error('[DRAFTS_API] Fetch for delete error:', fetchError);
-      return apiServerError('admin/drafts DELETE', fetchError);
+    let items: DraftItemRefRow[];
+    try {
+      items = await listDraftItemRefs(supabaseAdmin, ids);
+    } catch (error) {
+      console.error('[DRAFTS_API] Fetch for delete error:', error);
+      return apiServerError('admin/drafts DELETE', error);
     }
 
-    if (!items || items.length === 0) {
+    if (items.length === 0) {
       return NextResponse.json({
         success: true,
         deleted: 0,
@@ -160,14 +152,11 @@ export async function DELETE(request: NextRequest) {
 
     // Delete from database. Rows are removed even when their object was kept:
     // the draft no longer owns the object, published content does.
-    const { error: deleteError } = await supabaseAdmin
-      .from('draft_items')
-      .delete()
-      .in('id', ids);
-
-    if (deleteError) {
-      console.error('[DRAFTS_API] Database delete error:', deleteError);
-      return apiServerError('admin/drafts DELETE', deleteError);
+    try {
+      await deleteDraftItems(supabaseAdmin, ids);
+    } catch (error) {
+      console.error('[DRAFTS_API] Database delete error:', error);
+      return apiServerError('admin/drafts DELETE', error);
     }
 
     console.log('[DRAFTS_API] Deleted:', items.length, 'items');
