@@ -32,6 +32,7 @@ import { translateDraftItem } from '@/lib/ai-translator';
 import { requireMachineKey } from '@/lib/security/machine-auth';
 import { describeError } from '@/lib/security/http';
 import { isDuplicateFileHash } from '@/lib/catalog-id';
+import { projectExists } from '@/lib/data/projects';
 
 /**
  * URL 清洗函数 - 去除查询参数和片段
@@ -140,14 +141,12 @@ export async function POST(request: NextRequest) {
 
   // Validate project_id against the database so a bad reference fails with a
   // clear 400 instead of a foreign-key 500 after the media was uploaded.
+  // The repository answers false for BOTH a failed read and a missing row -
+  // exactly the old `projectError || !projectRow` branch below.
   if (requestedProjectId) {
-    const { data: projectRow, error: projectError } = await supabaseAdmin
-      .from('projects')
-      .select('id')
-      .eq('id', requestedProjectId)
-      .maybeSingle();
+    const exists = await projectExists(supabaseAdmin, requestedProjectId);
 
-    if (projectError || !projectRow) {
+    if (!exists) {
       return NextResponse.json<IngestApiResponse>(
         {
           success: false,

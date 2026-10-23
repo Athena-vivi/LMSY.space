@@ -2,11 +2,13 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAdminFromCookies } from '@/lib/security/api-auth';
-import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
+import { isPublicProject } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { aggregateProjectSpans } from '@/lib/project-span';
+import { getProjectBySlugOrId, listRelatedProjects } from '@/lib/data/projects';
+import { listPreviewProjectImages, listRelatedCoverCandidates } from '@/lib/data/gallery-assets';
 import type { LocalizedText } from '@/lib/localized-content';
-import ProjectDetailClient from './project-detail-client';
+import ProjectDetailClient, { type Project as PreviewProject } from './project-detail-client';
 
 /**
  * /admin/preview/<id> - the workbench renderer for one row.
@@ -53,9 +55,8 @@ interface ProjectGalleryImage {
 // auth-gated page must not be served from the ISR cache.
 
 // Only the columns the detail view renders (the previous select('*') pulled
-// excerpt/credits/i18n blobs the gallery grid never shows).
-const PROJECT_GALLERY_COLUMNS =
-  'id, image_url, caption, caption_i18n, catalog_id, category_tag, curator_note, is_featured, event_date, created_at, is_cover, rotation, sequence, width, height';
+// excerpt/credits/i18n blobs the gallery grid never shows). The column list
+// now lives in lib/data/gallery-assets.ts (PREVIEW_GALLERY_COLUMNS).
 
 // Tab categories configuration
 export const CATEGORIES = [
@@ -78,7 +79,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const supabaseAdmin = getSupabaseAdmin();
 
-  const project = await resolveProject(supabaseAdmin, id);
+  const project = await getProjectBySlugOrId(supabaseAdmin, id);
 
   if (!project || !isPublicProject(project)) {
     return {
@@ -88,42 +89,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${project.title} | LMSY Preview`,
-    description: project?.description || `Preview of ${project.title}`,
+    description: (project.description as string | null) || `Preview of ${project.title}`,
     robots: { index: false, follow: false },
   };
-}
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * A project URL may carry the stable slug or the raw uuid. Both resolve to the
- * same row, so links written before the phase-7 slug migration keep working
- * and new links stay readable.
- */
-async function resolveProject(
-  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
-  key: string
-) {
-  const bySlug = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('*')
-    .eq('slug', key)
-    .maybeSingle();
-
-  if (bySlug.data) return bySlug.data;
-
-  if (!UUID_PATTERN.test(key)) return null;
-
-  const byId = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('*')
-    .eq('id', key)
-    .maybeSingle();
-
-  return byId.data ?? null;
 }
 
 export default async function ProjectPage({ params }: PageProps) {
@@ -165,7 +133,7 @@ export default async function ProjectPage({ params }: PageProps) {
   // Public visibility (see lib/project-visibility.ts): visitor-facing only
   // when the admin opted the project in via portal_visible, it is not
   // archived, and it is not an ingestion container.
-  const project = await resolveProject(supabaseAdmin, id);
+  const project = await getProjectBySlugOrId(supabaseAdmin, id);
 
   if (!project || !isPublicProject(project)) {
     notFound();
@@ -176,14 +144,11 @@ export default async function ProjectPage({ params }: PageProps) {
   // preview that jumps somewhere else is not a preview.
 
   // Fetch gallery images for this project
-  const { data: galleryImages } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select(PROJECT_GALLERY_COLUMNS)
-    .eq('project_id', project.id)
-    .order('created_at', { ascending: true });
+  const galleryImages = await listPreviewProjectImages(supabaseAdmin, project.id);
 
-  const sortedGalleryImages = sortProjectImages(galleryImages || []);
+  const sortedGalleryImages = sortProjectImages(
+    (galleryImages ?? []) as unknown as ProjectGalleryImage[]
+  );
 
   // A theme project has no single event date, so its header is dated by the
   // span its images cover. Derived from the assets already fetched above - the
@@ -213,16 +178,11 @@ export default async function ProjectPage({ params }: PageProps) {
   // "More in this category" (phase-4 Task 4): same category, different project,
   // public visibility rule applied, hidden when empty. Covers follow the same
   // is_cover / -000-catalog / first-asset rule as the projects list.
-  const { data: relatedRows } = await applyPublicProjectFilter(
-    supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('id, slug, title, title_i18n, category, event_date, release_date')
-  )
-    .neq('id', project.id)
-    .eq('category', project.category)
-    .order('event_date', { ascending: false, nullsFirst: false })
-    .limit(6);
+  const related = await listRelatedProjects(supabaseAdmin, {
+    excludeId: project.id,
+    category: project.category as string,
+    limit: 6,
+  });
 
   let relatedProjects: Array<{
     id: string;
@@ -235,14 +195,11 @@ export default async function ProjectPage({ params }: PageProps) {
     category: string;
   }> = [];
 
-  const related = relatedRows || [];
   if (related.length > 0) {
-    const { data: relatedAssets } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('project_id, image_url, is_cover, catalog_id')
-      .in('project_id', related.map((r) => r.id))
-      .order('created_at', { ascending: true, nullsFirst: false });
+    const relatedAssets = await listRelatedCoverCandidates(
+      supabaseAdmin,
+      related.map((r) => r.id)
+    );
     const covers = pickCoversByProject(relatedAssets || []);
     relatedProjects = related.map((r) => ({
       id: r.id,
@@ -306,7 +263,12 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <ProjectDetailClient
-      project={{ ...project, cover_rotation: coverRotation, people, work }}
+      project={{
+        ...(project as unknown as PreviewProject),
+        cover_rotation: coverRotation,
+        people,
+        work,
+      }}
       images={groupedImages}
       dateSpan={dateSpan}
       relatedProjects={relatedProjects}

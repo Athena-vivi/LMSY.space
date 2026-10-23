@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { listMilestonePriorityAssets } from '@/lib/data/gallery-assets';
 
 /**
  * GET - Get milestone images for homepage timeline
@@ -10,15 +11,14 @@ export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('id, image_url, milestone_priority')
-      .not('milestone_priority', 'is', null)
-      .order('milestone_priority', { ascending: true });
+    // The repository answers null on a read failure - the route keeps the
+    // failure distinguishable from an empty set with its own 500.
+    const rows = await listMilestonePriorityAssets(supabaseAdmin);
 
-    if (error) {
-      console.error('[MILESTONES_PUBLIC_API] ❌ Failed to fetch:', error);
+    if (!rows) {
+      // The repository reports the failure without the error object; the
+      // response below is byte-identical to the old inline branch.
+      console.error('[MILESTONES_PUBLIC_API] ❌ Failed to fetch milestone assets');
       return NextResponse.json(
         { error: 'Failed to fetch milestones' },
         { status: 500 }
@@ -34,10 +34,10 @@ export async function GET() {
       5: '∞',
     };
 
-    const milestones = data?.map(item => ({
+    const milestones = rows.map(item => ({
       year: priorityToYear[item.milestone_priority!],
       image_url: item.image_url,
-    })) || [];
+    }));
 
     // Return as object keyed by year for easy access
     const milestonesMap: Record<string, string | null> = {

@@ -52,7 +52,7 @@ interface Chapter {
   startIndex: number;
 }
 
-interface Project {
+export interface Project {
   id: string;
   title: string;
   title_i18n?: LocalizedText | null;

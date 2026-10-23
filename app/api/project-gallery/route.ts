@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { isPublicProject } from '@/lib/project-visibility';
+import { getProjectVisibility } from '@/lib/data/projects';
+import { listProjectGalleryAssets, type ProjectGalleryAssetRow } from '@/lib/data/gallery-assets';
 
 /**
  * GET - Retrieve gallery images for a project (public endpoint)
@@ -27,44 +29,30 @@ export async function GET(request: NextRequest) {
     // public-project rule used by the detail page — hidden containers'
     // assets must not be fetchable via API. (No front-end consumer today;
     // this changes no legitimate behaviour.)
-    const { data: projectRow } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('portal_visible, curation_status')
-      .eq('id', projectId)
-      .maybeSingle();
+    const row = await getProjectVisibility(supabaseAdmin, projectId);
 
-    if (!projectRow || !isPublicProject(projectRow)) {
+    if (!row || !isPublicProject(row)) {
       return NextResponse.json(
         { error: 'Project not found' },
         { status: 404 }
       );
     }
 
-    // Build query
-    let query = supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: true });
-
-    // Filter by category if not 'all'
-    if (category !== 'all') {
-      query = query.eq('category_tag', category);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching gallery:', error);
+    // The repository throws on a read failure; the route maps the message
+    // onto its own 500, exactly like the old inline query did.
+    let assets: ProjectGalleryAssetRow[];
+    try {
+      assets = await listProjectGalleryAssets(supabaseAdmin, projectId, category);
+    } catch (err) {
+      console.error('Error fetching gallery:', err);
+      const message = err instanceof Error ? err.message : String(err);
       return NextResponse.json(
-        { error: `Failed to fetch gallery: ${error.message}` },
+        { error: `Failed to fetch gallery: ${message}` },
         { status: 500 }
       );
     }
 
-    const sortedData = [...(data || [])].sort((a, b) => {
+    const sortedData = [...(assets || [])].sort((a, b) => {
       const aCoverRank = a.is_cover || a.catalog_id?.endsWith('-000') ? 0 : 1;
       const bCoverRank = b.is_cover || b.catalog_id?.endsWith('-000') ? 0 : 1;
       if (aCoverRank !== bCoverRank) {
