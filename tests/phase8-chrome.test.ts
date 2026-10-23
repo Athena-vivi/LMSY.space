@@ -132,9 +132,13 @@ describe('homepage blocks are picture doors', () => {
 
   test('portraits are picked by hand and have their own tab', () => {
     const api = src('app/api/admin/people/portrait/route.ts');
-    assert.ok(api.includes("from('profiles')"), 'writes the profiles table');
-    assert.ok(api.includes('avatar_url'), 'stores the portrait on avatar_url');
     assert.ok(api.includes('requireAdmin'), 'admin only');
+
+    // The profiles table mutation moved into the data layer (lib/data, like
+    // every other admin write) - assert it there rather than in the route.
+    const repo = src('lib/data/profiles.ts');
+    assert.ok(repo.includes("from('profiles')"), 'writes the profiles table');
+    assert.ok(repo.includes('avatar_url'), 'stores the portrait on avatar_url');
 
     const view = src('app/admin/gallery/components/views/portraits-view.tsx');
     assert.ok(view.includes('HOMEPAGE_PORTRAITS'), 'portrait grid has its own view');
