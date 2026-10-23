@@ -1,5 +1,4 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import {
   SUBTYPES_BY_CATEGORY,
   UNFILED_SUBTYPE_SEGMENT,
@@ -15,6 +14,19 @@ import type { TranslationKey } from '@/lib/languages';
 import { loadCategoryCovers, secondLevelsFor } from '@/lib/cover-slots';
 import type { LocalizedText } from '@/lib/localized-content';
 import type { ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
+import {
+  getProjectGroupMeta,
+  getProjectTalkCoverPicks,
+  listPublicDoorEntries,
+} from '@/lib/data/projects';
+import {
+  countAssetsByProject,
+  listEntryAssets,
+  listEntryGroupAssets,
+  type DoorAssetRow,
+} from '@/lib/data/gallery-assets';
+
+export type { DoorAssetRow };
 
 /**
  * Reading layer for every door that owns a page.
@@ -36,10 +48,10 @@ import type { ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
  *
  * Server-rendered on purpose: these pages are the crawl surface for the
  * entries underneath them, so the list cannot sit behind a client fetch.
+ *
+ * The queries live in lib/data (projects / gallery-assets repositories); this
+ * module keeps the grouping, filtering and ordering of each door.
  */
-
-const ENTRY_COLUMNS =
-  'id, slug, title, title_i18n, description, description_i18n, category, subtype, event_date, release_date, cover_url, watch_url, project_kind, video_url_bilibili, video_url_youtube, interview_md';
 
 export interface DoorEntryRow {
   id: string;
@@ -83,23 +95,6 @@ export interface DoorCategoryRow {
   href: string;
 }
 
-export interface DoorAssetRow {
-  id: string;
-  image_url: string;
-  caption: string | null;
-  catalog_id: string | null;
-  rotation: number | null;
-  /** Intrinsic size stamped at promotion time; null on historical rows. */
-  width: number | null;
-  height: number | null;
-  /**
-   * Curated picture class inside one entry (airport official / airport fan /
-   * rehearsal / show ...). Null means unfiled, which the timeline shows as the
-   * entry's single "all photos" box.
-   */
-  asset_group: string | null;
-}
-
 /** One picture class inside an entry, for the level-2 timeline boxes. */
 export interface DoorEntryGroup {
   /** The stored asset_group value; null is the unfiled bucket. */
@@ -113,33 +108,16 @@ export interface DoorEntryGroup {
 export async function loadRows(categories: readonly ProjectCategory[]): Promise<DoorEntryRow[]> {
   if (categories.length === 0) return [];
 
-  const { data, error } = await applyPublicProjectFilter(
-    getSupabaseAdmin().schema('lmsy_archive').from('projects').select(ENTRY_COLUMNS)
-  )
-    .in('category', categories as unknown as string[])
-    .order('event_date', { ascending: false, nullsFirst: false })
-    .order('release_date', { ascending: false, nullsFirst: false });
-
-  if (error || !data) return [];
-
-  const rows = data as unknown as Omit<DoorEntryRow, 'imageCount' | 'href'>[];
+  const db = getSupabaseAdmin();
+  const rows = (await listPublicDoorEntries(db, categories)) as unknown as Omit<
+    DoorEntryRow,
+    'imageCount' | 'href'
+  >[];
   const ids = rows.map((row) => row.id);
 
   // One query for every count. A hall with 46 entries should not fire 46
   // round-trips just to print "8 images" on a card.
-  const counts: Record<string, number> = {};
-  if (ids.length > 0) {
-    const { data: assets } = await getSupabaseAdmin()
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('project_id')
-      .in('project_id', ids);
-
-    for (const asset of (assets ?? []) as Array<{ project_id: string | null }>) {
-      if (!asset.project_id) continue;
-      counts[asset.project_id] = (counts[asset.project_id] ?? 0) + 1;
-    }
-  }
+  const counts = await countAssetsByProject(db, ids);
 
   return rows.map((row) => ({
     ...row,
@@ -311,14 +289,10 @@ export async function loadEntry(
     if (segmentOfSubtype(entry.subtype, category) !== segment) return null;
   }
 
-  const { data: assets } = await getSupabaseAdmin()
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select('id, image_url, caption, catalog_id, rotation, asset_group, width, height')
-    .eq('project_id', entry.id)
-    .order('created_at', { ascending: true });
+  const db = getSupabaseAdmin();
+  const assets = await listEntryAssets(db, entry.id);
 
-  return { entry, assets: (assets ?? []) as unknown as DoorAssetRow[] };
+  return { entry, assets };
 }
 
 /**
@@ -370,15 +344,12 @@ export async function loadTalkResourceCovers(
   if (entries.length === 0) return map;
 
   const ids = entries.map((entry) => entry.id);
-  const { data: projectRows } = await getSupabaseAdmin()
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('id, talk_resource_covers')
-    .in('id', ids);
+  const db = getSupabaseAdmin();
+  const projectRows = await getProjectTalkCoverPicks(db, ids);
 
   // slot -> picked catalog id, per entry.
   const picks = new Map<string, Map<TalkResourceSlot, string>>();
-  for (const row of (projectRows ?? []) as Array<{
+  for (const row of projectRows as Array<{
     id: string;
     talk_resource_covers: unknown;
   }>) {
@@ -437,18 +408,13 @@ async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, Do
   // declarations are dropped at the end (a box shows only once it has
   // pictures). asset_group_covers: curator-picked cover per class
   // ({ class: catalogId }); a picked cover wins over "first picture".
-  const { data: projectRows } = await getSupabaseAdmin()
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('id, asset_groups, asset_group_covers')
-    .in(
-      'id',
-      entries.map((entry) => entry.id)
-    );
+  const db = getSupabaseAdmin();
+  const ids = entries.map((entry) => entry.id);
+  const projectRows = await getProjectGroupMeta(db, ids);
 
   const declared = new Map<string, string[]>();
   const pickedCovers = new Map<string, Map<string, string>>();
-  for (const row of (projectRows ?? []) as Array<{
+  for (const row of projectRows as Array<{
     id: string;
     asset_groups: unknown;
     asset_group_covers: unknown;
@@ -474,34 +440,12 @@ async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, Do
     }
   }
 
-  const ids = entries.map((entry) => entry.id);
   // PostgREST returns at most 1000 rows per request (Supabase's default
   // max-rows), and this shelf is already past it: fan meetings alone hold
-  // 1200+ pictures. A single `.in(...)` therefore dropped everything after
-  // row 1000, which - ordered oldest first - meant the *newest* entries
-  // rendered with no class boxes at all (2026-10-23: both Nanning 2nd fan
-  // meeting rows looked picture-less while holding 28 and 46 pictures).
-  // Walk the window in pages; `id` is the tiebreaker so pages cannot overlap.
-  const PAGE_SIZE = 1000;
-  const assets: Array<{
-    project_id: string | null;
-    asset_group: string | null;
-    image_url: string | null;
-    catalog_id: string | null;
-  }> = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data } = await getSupabaseAdmin()
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('project_id, asset_group, image_url, catalog_id, created_at')
-      .in('project_id', ids)
-      .order('created_at', { ascending: true })
-      .order('id', { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-    const page = (data ?? []) as typeof assets;
-    assets.push(...page);
-    if (page.length < PAGE_SIZE) break;
-  }
+  // 1200+ pictures. The repository walks the window in pages; `id` is the
+  // tiebreaker so pages cannot overlap (2026-10-23: a single `.in(...)` left
+  // the newest fan-meeting rows looking picture-less).
+  const assets = await listEntryGroupAssets(db, ids);
 
   for (const asset of assets) {
     if (!asset.project_id || !map.has(asset.project_id)) continue;
