@@ -475,19 +475,35 @@ async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, Do
   }
 
   const ids = entries.map((entry) => entry.id);
-  const { data: assets } = await getSupabaseAdmin()
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select('project_id, asset_group, image_url, catalog_id, created_at')
-    .in('project_id', ids)
-    .order('created_at', { ascending: true });
-
-  for (const asset of (assets ?? []) as Array<{
+  // PostgREST returns at most 1000 rows per request (Supabase's default
+  // max-rows), and this shelf is already past it: fan meetings alone hold
+  // 1200+ pictures. A single `.in(...)` therefore dropped everything after
+  // row 1000, which - ordered oldest first - meant the *newest* entries
+  // rendered with no class boxes at all (2026-10-23: both Nanning 2nd fan
+  // meeting rows looked picture-less while holding 28 and 46 pictures).
+  // Walk the window in pages; `id` is the tiebreaker so pages cannot overlap.
+  const PAGE_SIZE = 1000;
+  const assets: Array<{
     project_id: string | null;
     asset_group: string | null;
     image_url: string | null;
     catalog_id: string | null;
-  }>) {
+  }> = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data } = await getSupabaseAdmin()
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('project_id, asset_group, image_url, catalog_id, created_at')
+      .in('project_id', ids)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    const page = (data ?? []) as typeof assets;
+    assets.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+
+  for (const asset of assets) {
     if (!asset.project_id || !map.has(asset.project_id)) continue;
     const groups = map.get(asset.project_id)!;
     let group = groups.find((item) => item.key === asset.asset_group);
