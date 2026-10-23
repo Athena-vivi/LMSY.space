@@ -1,5 +1,10 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import {
+  getEditorialIssueByKey,
+  listEditorialIssues,
+  listFeatureTopics,
+  type EditorialIssueRow,
+} from '@/lib/data/projects';
 import { countIssueArtifacts } from '@/lib/editorial-meta';
 import type { LocalizedText } from '@/lib/localized-content';
 
@@ -91,43 +96,7 @@ function sortPages<T extends { catalog_id?: string | null; created_at?: string |
   });
 }
 
-const ISSUE_COLUMNS = `
-  id,
-  slug,
-  title,
-  title_i18n,
-  description,
-  description_i18n,
-  category,
-  cover_url,
-  blur_data,
-  release_date,
-  catalog_id,
-  created_at,
-  gallery_assets (
-    id,
-    image_url,
-    blur_data,
-    caption,
-    catalog_id,
-    created_at
-  )
-`;
-
-type IssueRow = {
-  id: string;
-  slug: string | null;
-  title: string;
-  title_i18n: unknown;
-  description: string | null;
-  description_i18n: unknown;
-  category: string | null;
-  cover_url: string | null;
-  blur_data: string | null;
-  release_date: string | null;
-  catalog_id: string | null;
-  gallery_assets: EditorialGalleryImage[] | null;
-};
+type IssueRow = EditorialIssueRow;
 
 function toIssue(row: IssueRow): EditorialIssue {
   const galleryImages = sortPages(row.gallery_assets ?? []);
@@ -164,22 +133,13 @@ function toIssue(row: IssueRow): EditorialIssue {
 
 /** Every public issue, newest first. The rack on /editorial. */
 export async function loadEditorialIssues(): Promise<EditorialIssue[]> {
-  const { data, error } = await applyPublicProjectFilter(
-    getSupabaseAdmin()
-      .schema('lmsy_archive')
-      .from('projects')
-      .select(ISSUE_COLUMNS)
-      .eq('category', 'editorial')
-  )
-    // Newest issue first. Issues whose date is still unknown sink to the end
-    // instead of floating to the top on a NULL sort key.
-    .order('release_date', { ascending: false, nullsFirst: false })
-    .order('event_date', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false });
+  // The repository owns the column list (including the embedded gallery_assets
+  // select) and the three sorts: newest issue first, issues whose date is
+  // still unknown sink to the end instead of floating to the top on a NULL
+  // sort key. It answers [] on a read failure, verbatim.
+  const rows = await listEditorialIssues(getSupabaseAdmin());
 
-  if (error || !data) return [];
-
-  return (data as unknown as IssueRow[]).map(toIssue);
+  return (rows as unknown as IssueRow[]).map(toIssue);
 }
 
 /**
@@ -187,14 +147,7 @@ export async function loadEditorialIssues(): Promise<EditorialIssue[]> {
  * rack, so an unpublished issue cannot be opened by guessing its address.
  */
 export async function loadEditorialIssue(key: string): Promise<EditorialIssue | null> {
-  const { data } = await applyPublicProjectFilter(
-    getSupabaseAdmin()
-      .schema('lmsy_archive')
-      .from('projects')
-      .select(ISSUE_COLUMNS)
-      .eq('category', 'editorial')
-      .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key) ? 'id' : 'slug', key)
-  ).maybeSingle();
+  const data = await getEditorialIssueByKey(getSupabaseAdmin(), key);
 
   if (!data) return null;
 
@@ -212,20 +165,9 @@ export async function loadEditorialIssue(key: string): Promise<EditorialIssue | 
 
 /** Every public theme project, for the rack on /features. */
 export async function loadFeatureTopics(): Promise<EditorialIssue[]> {
-  const { data, error } = await applyPublicProjectFilter(
-    getSupabaseAdmin()
-      .schema('lmsy_archive')
-      .from('projects')
-      .select(ISSUE_COLUMNS)
-      .eq('project_kind', 'theme')
-  )
-    .order('release_date', { ascending: false, nullsFirst: false })
-    .order('event_date', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false });
+  const rows = await listFeatureTopics(getSupabaseAdmin());
 
-  if (error || !data) return [];
-
-  return (data as unknown as IssueRow[]).map(toIssue);
+  return (rows as unknown as IssueRow[]).map(toIssue);
 }
 
 /**

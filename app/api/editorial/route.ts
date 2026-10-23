@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { listEditorialIssuesForApi } from '@/lib/data/projects';
 import { countIssueArtifacts } from '@/lib/editorial-meta';
 
 /**
@@ -55,48 +55,19 @@ export async function GET() {
 
     // Strict editorial-only filter; public visibility comes from the shared
     // rule in lib/project-visibility.ts.
-    const { data, error } = await applyPublicProjectFilter(
-      supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select(`
-        id,
-        slug,
-        title,
-        title_i18n,
-        description,
-        description_i18n,
-        category,
-        cover_url,
-        homepage_featured,
-        homepage_excerpt,
-        homepage_excerpt_i18n,
-        homepage_cover_url,
-        blur_data,
-        release_date,
-        catalog_id,
-        created_at,
-        gallery_assets (
-          id,
-          image_url,
-          blur_data,
-          caption,
-          catalog_id,
-          created_at
-        )
-      `)
-        .eq('category', 'editorial')
-    ).order('release_date', { ascending: false, nullsFirst: false });
+    // The repository returns null on a read failure - the route keeps that
+    // distinguishable from an empty rack with its own 500.
+    const data = await listEditorialIssuesForApi(supabaseAdmin);
 
-    if (error) {
-      console.error('[EDITORIAL_API] query failed:', error.message);
+    if (!data) {
+      console.error('[EDITORIAL_API] query failed');
       return NextResponse.json(
         { error: 'EDITORIAL_QUERY_FAILED' },
         { status: 500 }
       );
     }
 
-    if (!data || data.length === 0) {
+    if (data.length === 0) {
       return NextResponse.json({ success: true, projects: [], count: 0 });
     }
 
