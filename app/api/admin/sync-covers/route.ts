@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { listSyncCoverProjects, type SyncCoverProjectRow } from '@/lib/data/projects';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
@@ -48,14 +49,13 @@ export async function POST(request: NextRequest) {
     console.log(`[SYNC_COVERS] 📊 Found ${coverImages.length} -000 images`);
 
     // Step 2: Fetch all projects that need covers
-    const { data: projects, error: projectError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('id, title, cover_url, release_date, catalog_id');
-
-    if (projectError) {
-      console.error('[SYNC_COVERS] ❌ Failed to fetch projects:', projectError);
-      throw new Error(`Failed to fetch projects: ${projectError.message}`);
+    let projects: SyncCoverProjectRow[];
+    try {
+      projects = await listSyncCoverProjects(supabaseAdmin);
+    } catch (error) {
+      console.error('[SYNC_COVERS] ❌ Failed to fetch projects:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to fetch projects: ${msg}`);
     }
 
     console.log(`[SYNC_COVERS] 📊 Found ${projects?.length || 0} projects`);

@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { listCategorySlotCovers } from '@/lib/data/gallery-assets';
 import {
   PROJECT_CATEGORIES,
   categoryHref,
@@ -95,20 +96,9 @@ export async function loadCategoryCovers(
   const map = new Map<string, SlotCover>();
   if (paths.length === 0) return map;
 
-  const { data, error } = await getSupabaseAdmin()
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select('id, image_url, blur_data, category_slot')
-    .in('category_slot', paths as string[]);
+  const rows = await listCategorySlotCovers(getSupabaseAdmin(), paths);
 
-  if (error || !data) return map;
-
-  for (const row of data as unknown as Array<{
-    id: string;
-    image_url: string;
-    blur_data: string | null;
-    category_slot: string | null;
-  }>) {
+  for (const row of rows) {
     if (!row.category_slot) continue;
     map.set(row.category_slot, {
       id: row.id,

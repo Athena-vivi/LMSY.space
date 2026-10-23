@@ -4,6 +4,8 @@ import { uploadToR2, deleteFromR2 } from '@/lib/r2-client';
 import { purgeCdnUrls } from '@/lib/cloudflare-purge';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
 import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS, allocateNextCatalogId as allocateSharedCatalogId, CATEGORY_TO_DOOR_CODE } from '@/lib/catalog-id';
+import { getProjectCategory } from '@/lib/data/projects';
+import { countAllAssets, getLatestCatalogIdForPrefix } from '@/lib/data/gallery-assets';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { validateUploadFile } from '@/lib/security/upload-guard';
@@ -49,18 +51,11 @@ export async function POST(request: NextRequest) {
   // If project_id is provided, fetch the project to get its category
   if (projectId) {
     console.log('[UPLOAD] Project ID provided, fetching project category:', projectId);
-    const { data: project, error: projectError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('category')
-      .eq('id', projectId)
-      .maybeSingle();
-
-    if (!projectError && project) {
-      projectCategory = project.category;
+    projectCategory = await getProjectCategory(supabaseAdmin, projectId);
+    if (projectCategory !== null) {
       console.log('[UPLOAD] Project category:', projectCategory);
     } else {
-      console.warn('[UPLOAD] Failed to fetch project category:', projectError);
+      console.warn('[UPLOAD] Failed to fetch project category:', projectId);
     }
   }
 
@@ -274,31 +269,24 @@ export async function GET(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin();
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: lastItem } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('catalog_id')
-      .like('catalog_id', `LMSY-G-${today.replace(/-/g, '')}-%`)
-      .order('catalog_id', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const lastCatalogId = await getLatestCatalogIdForPrefix(
+      supabaseAdmin,
+      `LMSY-G-${today.replace(/-/g, '')}-%`
+    );
 
     let nextSequence = 1;
-    if (lastItem?.catalog_id) {
-      const match = lastItem.catalog_id.match(/-(\d{3})$/);
+    if (lastCatalogId) {
+      const match = lastCatalogId.match(/-(\d{3})$/);
       if (match) {
         nextSequence = parseInt(match[1], 10) + 1;
       }
     }
 
-    const { count } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('*', { count: 'exact', head: true });
+    const totalCount = await countAllAssets(supabaseAdmin);
 
     return NextResponse.json({
       next_catalog_id: `LMSY-G-${today.replace(/-/g, '')}-${String(nextSequence).padStart(3, '0')}`,
-      total_items: count || 0,
+      total_items: totalCount,
       today: today,
     });
   } catch (error) {

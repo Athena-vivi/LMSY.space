@@ -1,11 +1,10 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { loadCategoryCovers, secondLevelsFor } from './cover-slots';
+import { listCurationAssets } from '@/lib/data/gallery-assets';
+import { listCurationProjects } from '@/lib/data/projects';
 import {
   assembleCurationTree,
-  type CurationAsset,
   type CurationDoor,
-  type CurationRow,
 } from './curation-assemble';
 import type { ProjectCategory } from './category-registry';
 
@@ -25,10 +24,10 @@ export type {
  *
  * Only what a visitor can reach is listed: rows go through the same visibility
  * rule as the doors, so a draft's cover is not counted as a cover.
+ *
+ * The two queries live in lib/data (projects / gallery-assets repositories);
+ * this module keeps the category list, the cover levels and the assembly.
  */
-
-const VISIBLE_SELECT =
-  'id, slug, title, category, subtype, project_kind, work_id, event_date, release_date, cover_url';
 
 const DOOR_CATEGORIES = [
   'drama_work',
@@ -45,14 +44,9 @@ const DOOR_CATEGORIES = [
 export async function loadCurationTree(): Promise<CurationDoor[]> {
   const supabaseAdmin = getSupabaseAdmin();
 
-  const [{ data: projectData }, { data: assetData }] = await Promise.all([
-    applyPublicProjectFilter(
-      supabaseAdmin.schema('lmsy_archive').from('projects').select(VISIBLE_SELECT)
-    ).in('category', DOOR_CATEGORIES),
-    supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('id, project_id, image_url, catalog_id, portal_slot, interview_slot'),
+  const [projectData, assetData] = await Promise.all([
+    listCurationProjects(supabaseAdmin, DOOR_CATEGORIES),
+    listCurationAssets(supabaseAdmin),
   ]);
 
   const paths = DOOR_CATEGORIES.flatMap((category) =>
@@ -64,8 +58,8 @@ export async function loadCurationTree(): Promise<CurationDoor[]> {
   for (const [path, cover] of covers) shelfCovers.set(path, cover.imageUrl);
 
   return assembleCurationTree({
-    rows: (projectData ?? []) as unknown as CurationRow[],
-    assets: (assetData ?? []) as unknown as CurationAsset[],
+    rows: projectData,
+    assets: assetData,
     shelfCovers,
   });
 }
