@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { uploadToR2 } from '@/lib/r2-client';
+import { purgeCdnUrls } from '@/lib/cloudflare-purge';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
 import {
   generateMagazinePageCatalogId,
@@ -109,6 +110,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Every R2 key this request writes, for one batched CDN purge at the end.
+    const uploadedR2Paths: string[] = [coverR2Path];
+
     // Create magazine project record with cover catalog_id
     console.log('[MAGAZINE] Creating project record...');
     const { data: project, error: projectError } = await supabaseAdmin
@@ -177,6 +181,8 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
+          uploadedR2Paths.push(imageR2Path);
+
           // Create gallery record linked to project
           const { data: galleryItem, error: galleryError } = await supabaseAdmin
             .schema('lmsy_archive')
@@ -204,6 +210,10 @@ export async function POST(request: NextRequest) {
 
       console.log(`[MAGAZINE] Successfully uploaded ${uploadedGalleryItems.length}/${additionalImages.length} additional images`);
     }
+
+    // Keys are freshly allocated, but a previous failed attempt can leave an
+    // orphan object behind; one batched purge covers the whole issue.
+    await purgeCdnUrls(uploadedR2Paths);
 
     return NextResponse.json({
       success: true,

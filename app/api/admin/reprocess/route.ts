@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { convertToWebP } from '@/lib/image-processing';
 import { uploadToR2 } from '@/lib/r2-client';
+import { purgeCdnUrls } from '@/lib/cloudflare-purge';
 import { getR2PathForCatalogId } from '@/lib/catalog-id';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
@@ -67,6 +68,9 @@ export async function POST(request: NextRequest) {
     const results = [];
     let successCount = 0;
     let errorCount = 0;
+    // Same-key rewrites: collect the overwritten keys and purge them in one
+    // batched call after the loop (Cloudflare caps a purge at 30 URLs).
+    const purgedKeys: string[] = [];
 
     // Process each image
     for (const image of images) {
@@ -105,6 +109,7 @@ export async function POST(request: NextRequest) {
             throw new Error(uploadResult.error || 'Failed to upload to R2');
           }
 
+          purgedKeys.push(r2Path);
           console.log(`[REPROCESS] Uploaded back to R2: ${r2Path}`);
         }
 
@@ -140,6 +145,10 @@ export async function POST(request: NextRequest) {
 
         errorCount++;
       }
+    }
+
+    if (purgedKeys.length > 0) {
+      await purgeCdnUrls(purgedKeys);
     }
 
     const summary = {

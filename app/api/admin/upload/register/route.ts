@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { purgeCdnUrls } from '@/lib/cloudflare-purge';
 import { validateObjectKey } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
 import { buildManualDraftRecord } from '@/lib/manual-draft';
@@ -154,6 +155,10 @@ export async function POST(request: NextRequest) {
     }
 
     draftRecordId = data.id;
+
+    // Browser-direct upload: the key comes from the client-supplied catalog
+    // id, so an overwrite is possible - drop the stale edge copy.
+    await purgeCdnUrls([r2Key]);
 
     return NextResponse.json({
       success: true,

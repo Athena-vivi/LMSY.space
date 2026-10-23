@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-client';
+import { purgeCdnUrls } from '@/lib/cloudflare-purge';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
 import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS, allocateNextCatalogId as allocateSharedCatalogId, CATEGORY_TO_DOOR_CODE } from '@/lib/catalog-id';
 import { requireAdmin } from '@/lib/security/api-auth';
@@ -224,6 +225,14 @@ export async function POST(request: NextRequest) {
 
   if (!insertedItem || !uploadResult) {
     return apiServerError('admin/upload', new Error('Could not allocate a unique catalog id after retries'));
+  }
+
+  // CDN: a manually supplied catalog id can point at an object that already
+  // exists in R2 (a re-upload), and the edge keeps serving the stale copy.
+  // Auto-allocated ids are fresh (DB max + 1) and were never served, so they
+  // are skipped - purge calls are rate-limited upstream.
+  if (!canRetryWithNewId) {
+    await purgeCdnUrls([r2Path]);
   }
 
   // Success response

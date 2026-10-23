@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { uploadToR2 } from '@/lib/r2-client';
+import { purgeCdnUrls } from '@/lib/cloudflare-purge';
 import { convertToWebP, type ProcessedImageResult } from '@/lib/image-processing';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { validateUploadFile } from '@/lib/security/upload-guard';
@@ -99,6 +100,10 @@ export async function POST(request: NextRequest) {
     if (error || !data) {
       throw new Error(error?.message || 'Failed to create draft');
     }
+
+    // The catalog id is curator-supplied, so the key may already exist in R2
+    // (a re-upload): drop the stale edge copy.
+    await purgeCdnUrls([r2Path]);
 
     return NextResponse.json({
       success: true,
