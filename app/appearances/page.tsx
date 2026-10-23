@@ -14,7 +14,7 @@ export const revalidate = 300;
 export const metadata: Metadata = pageMetadata({
   title: 'Public Appearances',
   description:
-    'Awards, fashion weeks, brand stages, premieres — every time Lookmhee & Sonya stepped out and were seen.',
+    'Awards, fashion weeks, brand stages, company events — every time Lookmhee & Sonya stepped out and were seen.',
   path: '/appearances',
 });
 
