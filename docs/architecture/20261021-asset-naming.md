@@ -507,3 +507,70 @@ lmsy/feat/LMSY-FEAT-BACKVIEW-001.webp
 | 尺寸表 | 18 个 key 重写；另 50 张的宽高存在 `gallery_assets.width/height`，无需进尺寸表 |
 | 校验 | 78/78 图片名 = 事件编号 + 日期 + 序号；旧编号在 `projects` / `gallery_assets` / 指针列中 0 引用 |
 | 备份 | `projects_snap_drama_ids_20261023`、`gallery_assets_snap_drama_ids_20261023`，回滚 `temp/20261024_drama_ids_rollback.sql` |
+
+---
+
+## 十三、2026-10-24 后台入库流程对齐八个门
+
+命名规则写在这里，但真正产生名字的是后台。此前草稿箱入库向导只有 4 个选项、6 个门的主体靠手填，
+「规范」和「实际产出的名字」是两套东西。本节把两者钉在一起：**向导里每一个决定名字的步骤都是下拉**。
+
+### 13.1 向导顺序（与第一段的构造同序）
+
+`图片分类` 之外全部是选择，顺序就是编号的构造顺序：
+
+| 步 | 选什么 | 落到哪一段 | 数据来源 |
+|---|---|---|---|
+| 1 | 人物（`LMSY` / `LM` / `SY`） | 首段永远是 `LMSY`；单人只在尾部加码 | 固定三项 |
+| 2 | 门（8 个） | 第二段 | `WIZARD_DOORS`，与第三节表格一一对应 |
+| 3 | 门内第二层 | 第三段起头 | 见 13.2 |
+| 4 | 地点（`EVENT` / `APPEAR`） | 主体第二段 | `CITY_CODES` |
+| 5 | 事件 / 日期 / 主题 | 主体余下部分或事件编号 | 事件列表 + 日期修补 |
+| 6 | 图片分类 | 不参与命名 | 事件自带分类 ∪ 同类目常用分类，可手填 |
+
+八个门的顺序即是首页顺序：特色专题 → 五个入口（影视作品 / 杂志特辑 / 现场活动 / 公开亮相 / 品牌合作）
+→ 灵魂共振两个门（对话 / 直播）。
+
+### 13.2 每个门的第二层
+
+| 门 | 第二层 | 来源 |
+|---|---|---|
+| `FEAT` | 主题 | `catalog_registry` kind=topic |
+| `DRAMA` | 作品行 → 部分 | 作品行（`project_kind=series`）+ `DRAMA_SUBTYPE_CODES` |
+| `MAG` | 刊物 | `catalog_registry` kind=publication |
+| `EVENT` / `APPEAR` | 分类（subtype）→ 城市 | 分类注册表 + `CITY_CODES` |
+| `BRAND` | 品牌 | `catalog_registry` kind=brand |
+| `TALK` | 分类（=货架 interview/variety/radio）→ 节目 | 分类 + `catalog_registry` kind=program |
+| `LIVE` | 平台 | `LIVE_PLATFORM_CODES` |
+
+事件已有编号时第三段**不再重算**，直接取 `subjectFromProjectId(catalog_id)`——同一个活动不允许出现两种写法。
+
+### 13.3 编码词表 `lmsy_archive.catalog_registry`
+
+品牌、节目、刊物、主题原来散落在对话和代码里，加一个就要改代码。现在是一张表，后台可直接新增：
+
+| 列 | 说明 |
+|---|---|
+| `kind` | `brand` / `program` / `publication` / `topic` |
+| `scope` | `program` 专属货架（interview / variety / radio），其余留空 |
+| `code` | `^[A-Z0-9]{2,24}$`，`(kind, scope, code)` 唯一 |
+| `name` | 显示名；新增时由它派生 code |
+
+新增入口只有一个：向导里下拉底部的「＋ 新增」行。填的是名字，存的是派生出的 code，
+下一批直接可选——**同一个品牌不会被第二个人拼成第二种码**。
+接口 `GET/POST /api/admin/catalog-registry`，新增走 `codeFromTitle(name, 24)`，非法 code 不落库。
+
+### 13.4 三个被修掉的死角
+
+| 问题 | 现在 |
+|---|---|
+| `FEAT` 门在向导里根本不存在 | 认 `project_kind === 'theme'`，不靠类目字符串；`promote.ts` 的 `doorCodeForProject()` 同一逻辑，主题图不会再落到 `EARLY` |
+| 事件缺 `event_date` 时向导走到死路 | 主体框下方就地补日期（`PATCH /api/admin/projects/{id}`），不必退回事件页丢失已选批次；`FEAT` 不需要日期（4.9） |
+| 「快速新建事件」绕过 API、前缀表还是旧的 | 改走 `POST /api/admin/projects`（白名单 + slug + 失效缓存），分类表按门重写，无日期直接拦下 |
+
+### 13.5 刻意不做的事
+
+- 无门的两个旧类目（`behind_the_scenes` / `early_archive`）从向导里删了，**旧数据不动**：门不存在，
+  从向导放进去的批次没有任何页面会读到。
+- 图片分类保留手填。它不参与命名，加限制只会挡住新出现的分类。
+- 没有宽表、没有自动推断门：门由类目或 `project_kind` 决定，不猜。

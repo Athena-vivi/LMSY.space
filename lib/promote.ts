@@ -11,7 +11,7 @@ import {
   assetIdPrefixFor,
   isCatalogIdConflict,
   CATALOG_ID_MAX_ATTEMPTS,
-  CATEGORY_TO_DOOR_CODE,
+  doorCodeForProject,
   type DoorCode,
   type PersonCode,
 } from './catalog-id.ts';
@@ -294,7 +294,9 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
 
   const { data: project, error: projectError } = await supabaseAdmin
     .from('projects')
-    .select('id, title, category, event_date, catalog_id, cover_url, portal_visible, is_container, person')
+    .select(
+      'id, title, category, project_kind, event_date, catalog_id, cover_url, portal_visible, is_container, person'
+    )
     .eq('id', params.projectId)
     .maybeSingle();
   if (projectError || !project) {
@@ -307,14 +309,17 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
   const personCode: PersonCode =
     ((project.person as PersonCode | null) || params.personCode || 'LMSY');
 
-  const doorCode: DoorCode | undefined = CATEGORY_TO_DOOR_CODE[project.category || ''];
+  // A theme lives under `early_archive` but belongs to the FEAT door, so the
+  // door is read from the project kind first (spec 4.9).
+  const doorCode: DoorCode | null = doorCodeForProject(project);
   if (!doorCode) {
     return {
       success: false,
       error: `Category "${project.category}" has no door mapping yet (phase 1 supports mapped categories)`,
     };
   }
-  if (!project.event_date) {
+  // A FEAT topic is a long-lived set and carries no date by design (spec 4.9).
+  if (!project.event_date && doorCode !== 'FEAT') {
     return {
       success: false,
       error: 'Project has no event date - fill it in first (the id needs a date segment)',

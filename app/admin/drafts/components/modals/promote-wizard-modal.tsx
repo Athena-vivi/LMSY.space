@@ -10,27 +10,24 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminLang } from '@/lib/admin-i18n';
-import { subjectFromProjectId, PERSON_CODES, CITY_CODES, pickedSubject, hasPickedSubject } from '@/lib/catalog-id';
+import {
+  subjectFromProjectId,
+  PERSON_CODES,
+  CITY_CODES,
+  pickedSubject,
+  hasPickedSubject,
+  DRAMA_SUBTYPE_CODES,
+  LIVE_PLATFORM_CODES,
+  themeAfterSeparator,
+  eventCodeFromTitle,
+  magSubject,
+  brandSubject,
+  talkSubject,
+  liveSubject,
+  featSubject,
+} from '@/lib/catalog-id';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import type { TranslationKey } from '@/lib/languages';
-
-/** Default picture class for a fresh import - the commonest one by far. */
-const DEFAULT_CLASS = '演出图';
-
-/** Pick the class a fresh import starts on; 演出图 wins whenever it exists. */
-function defaultClassOf(groups: string[]): string {
-  return groups.includes(DEFAULT_CLASS) ? DEFAULT_CLASS : groups[0] ?? '';
-}
-
-/**
- * Self-serve promotion wizard (phase 1: live-event door).
- *
- * Pick an event -> pick the picture class -> confirm the naming path ->
- * one click runs small batches (transcode -> R2 -> gallery_assets) with an
- * automatic progress bar, then deletes the consumed drafts. The catalog id
- * continues from the event's current max sequence, so later batches keep
- * counting where earlier ones stopped.
- */
 
 interface ProjectRow {
   id: string;
@@ -61,6 +58,7 @@ interface PreviewInfo {
   projectCatalogId: string | null;
 }
 
+/** Shape of `/api/admin/drafts/promote/subject-options` (class options only now). */
 interface SubjectOptions {
   fromProject: string | null;
   fromTitle: string;
@@ -76,51 +74,74 @@ interface PromoteWizardModalProps {
   onDone: (message: string) => void;
 }
 
-/** Derive the SUBJECT segment: catalog head first, else a normalised title. */
-function deriveSubject(project: ProjectRow): string {
-  // subjectFromProjectId strips the date that EVENT / APPEAR event numbers end
-  // with, so the segment does not come out as FANMEET-BKK-20250115.
-  const headSubject = subjectFromProjectId(project.catalog_id);
-  if (headSubject) return headSubject;
-  // Event titles are often written in decorative Unicode (𝐋𝐌𝐒𝐘 𝐱 ...). NFKC
-  // folds those compatibility characters back to ASCII first, or the segment
-  // would come out empty and the server would refuse the batch.
-  const cut = project.title
-    .normalize('NFKC')
-    .replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
-  return (
-    cut
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 48) || ''
-  );
+/**
+ * Coding registry row (brand / program / publication / topic).
+ * Read from the API so a new brand is a form submission, not a deploy.
+ */
+interface RegistryItem {
+  id: string;
+  kind: 'brand' | 'program' | 'publication' | 'topic';
+  scope: string;
+  code: string;
+  name: string;
+}
+
+type RegistryKind = RegistryItem['kind'];
+
+/** Default picture class for a fresh import - the commonest one by far. */
+const DEFAULT_CLASS = '演出图';
+
+/** Pick the class a fresh import starts on; 演出图 wins whenever it exists. */
+function defaultClassOf(groups: string[]): string {
+  return groups.includes(DEFAULT_CLASS) ? DEFAULT_CLASS : groups[0] ?? '';
 }
 
 /**
- * Wizard top level: every door with the REAL project categories it covers.
- * The talks door spans three shelves (interview / variety / radio) and the
- * live door is the live_stream category - projects never carry the door
- * names themselves, so filtering and creation must map through this table.
+ * Second axis of each door - what the curator picks after the door itself.
+ *
+ *   work        drama -> the series row, then the part
+ *   publication magazine -> the issue (the issue number is part of the code)
+ *   topic       features -> the theme
+ *   subtype     live events / appearances -> shelf, then city
+ *   brand       commercial -> the brand; the campaign comes from the title
+ *   shelf       talks -> the shelf IS the category, then the programme
+ *   platform    live -> the platform
+ */
+type DoorLevel = 'work' | 'publication' | 'topic' | 'subtype' | 'brand' | 'shelf' | 'platform';
+
+/**
+ * The eight doors the site actually has, in homepage order: the featured topic
+ * above the fold, the five entry cards, then the two soul-resonance halls.
+ *
+ * The two legacy categories (behind_the_scenes, early_archive) are gone from
+ * this list on purpose - they have no front door, and offering them was how a
+ * batch could be filed somewhere no page reads. Their old rows stay in the
+ * database untouched.
  */
 const WIZARD_DOORS: Array<{
   key: string;
   labelKey: TranslationKey;
   categories: string[];
+  level: DoorLevel;
 }> = [
-  { key: 'drama_work', labelKey: 'category.dramaWork', categories: ['drama_work'] },
-  { key: 'editorial', labelKey: 'category.editorial', categories: ['editorial'] },
-  { key: 'live_event', labelKey: 'category.liveEvent', categories: ['live_event'] },
-  { key: 'public_appearance', labelKey: 'category.publicAppearance', categories: ['public_appearance'] },
-  { key: 'commercial', labelKey: 'category.commercial', categories: ['commercial'] },
+  { key: 'features', labelKey: 'features.title', categories: [], level: 'topic' },
+  { key: 'drama_work', labelKey: 'category.dramaWork', categories: ['drama_work'], level: 'work' },
+  { key: 'editorial', labelKey: 'category.editorial', categories: ['editorial'], level: 'publication' },
+  { key: 'live_event', labelKey: 'category.liveEvent', categories: ['live_event'], level: 'subtype' },
+  {
+    key: 'public_appearance',
+    labelKey: 'category.publicAppearance',
+    categories: ['public_appearance'],
+    level: 'subtype',
+  },
+  { key: 'commercial', labelKey: 'category.commercial', categories: ['commercial'], level: 'brand' },
   {
     key: 'talks',
     labelKey: 'door.talks',
     categories: ['interview', 'variety', 'radio'],
+    level: 'shelf',
   },
-  { key: 'live', labelKey: 'door.live', categories: ['live_stream'] },
-  { key: 'behind_the_scenes', labelKey: 'category.behindTheScenes', categories: ['behind_the_scenes'] },
-  { key: 'early_archive', labelKey: 'category.earlyArchive', categories: ['early_archive'] },
+  { key: 'live', labelKey: 'door.live', categories: ['live_stream'], level: 'platform' },
 ];
 
 /** Second level of the talks door: the shelf IS the project category. */
@@ -140,7 +161,6 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [search, setSearch] = useState('');
 
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [subject, setSubject] = useState('');
   // Live-event subject is not typed any more: the subtype and the city decide
   // it (spec 4.3, FANMEET-BKK). City is picked, not written, so two curators
   // cannot produce two spellings of the same place.
@@ -152,8 +172,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
 
   const [preview, setPreview] = useState<PreviewInfo | null>(null);
   const [previewing, setPreviewing] = useState(false);
-  const [subjectOptions, setSubjectOptions] = useState<SubjectOptions | null>(null);
-  const [subjectTouched, setSubjectTouched] = useState(false);
+  const [commonGroups, setCommonGroups] = useState<string[]>([]);
   const [customClass, setCustomClass] = useState(false);
   // Hall hierarchy: door first, then (talks) the shelf or (live) the registry
   // sub-type, then events.
@@ -166,6 +185,25 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   // front door, so a premiere lands on the right series without hunting.
   const [dramaSeries, setDramaSeries] = useState('');
   const [subtypeFilter, setSubtypeFilter] = useState('all');
+  // The codes each door's subject is built from. Every one of them is a pick
+  // out of a controlled list (registry table or a code table), never typing.
+  const [picks, setPicks] = useState({
+    publication: '',
+    brand: '',
+    program: '',
+    platform: '',
+    topic: '',
+  });
+  const [registry, setRegistry] = useState<RegistryItem[]>([]);
+  // Inline "this brand does not exist yet" entry, the one place a name is typed.
+  const [adding, setAdding] = useState<{ kind: RegistryKind; scope: string } | null>(null);
+  const [addingName, setAddingName] = useState('');
+  const [addingBusy, setAddingBusy] = useState(false);
+  const [addingError, setAddingError] = useState<string | null>(null);
+  // An event whose row has no date cannot be numbered; fill it here instead of
+  // sending the curator out to the project page and losing the selection.
+  const [dateDraft, setDateDraft] = useState('');
+  const [savingDate, setSavingDate] = useState(false);
   // Inline event creation state.
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingEventNow, setCreatingEventNow] = useState(false);
@@ -190,7 +228,6 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     if (!isOpen) return;
     // Reset everything on open.
     setProjectId(null);
-    setSubject('');
     setCity('');
     setPersonCode('LMSY');
     setAssetGroup('');
@@ -201,17 +238,26 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     setPhase('select');
     setSearch('');
     setCustomClass(false);
+    setPicks({ publication: '', brand: '', program: '', platform: '', topic: '' });
+    setDateDraft('');
+    setAdding(null);
     setNewEvent({ title: '', eventDate: '', subtype: '', portalVisible: true });
 
     let cancelled = false;
     setLoadingProjects(true);
     (async () => {
       try {
-        const response = await fetch('/api/admin/projects', { cache: 'no-store' });
-        const result = await response.json();
-        if (!cancelled && result?.projects) setProjects(result.projects as ProjectRow[]);
+        const [projectsResponse, registryResponse] = await Promise.all([
+          fetch('/api/admin/projects', { cache: 'no-store' }),
+          fetch('/api/admin/catalog-registry', { cache: 'no-store' }),
+        ]);
+        const result = await projectsResponse.json();
+        const registryResult = await registryResponse.json();
+        if (cancelled) return;
+        if (result?.projects) setProjects(result.projects as ProjectRow[]);
+        if (registryResult?.items) setRegistry(registryResult.items as RegistryItem[]);
       } catch {
-        // The dropdown simply stays empty; the error surfaces on retry.
+        // The dropdowns simply stay empty; the error surfaces on retry.
       } finally {
         if (!cancelled) setLoadingProjects(false);
       }
@@ -221,30 +267,25 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     };
   }, [isOpen]);
 
-  // Re-derive subject / class / cover defaults when the project changes, and
-  // load subject candidates so the segment is picked from references instead
-  // of invented.
+  // Follow the event's own answers: city, person, class and cover belong to the
+  // row, so the pickers start where the last batch left them.
   useEffect(() => {
     if (!project) return;
-    setSubjectTouched(false);
-    setSubject(deriveSubject(project));
     setCity(project.city ?? '');
-    // The person now belongs to the event (it is the id's tail code), so the
-    // picker follows the row instead of starting at a default that would
-    // contradict ids already filed under this event.
     setPersonCode(
       project.person === 'LM' || project.person === 'SY' ? project.person : 'LMSY'
     );
     const groups = project.asset_groups || [];
     setAssetGroup(defaultClassOf(groups));
     setWriteCover(!project.cover_url);
+    setDateDraft(project.event_date ?? '');
     setPreview(null);
   }, [project]);
 
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
-    setSubjectOptions(null);
+    setCommonGroups([]);
     (async () => {
       try {
         const response = await fetch(
@@ -254,13 +295,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         const result = await response.json();
         if (cancelled || !result?.success || !result?.options) return;
         const options = result.options as SubjectOptions;
-        setSubjectOptions(options);
-        // The catalog head is authoritative; refine the local title guess
-        // with it (and with the title candidate) unless already edited.
-        setSubject((prev) => {
-          if (subjectTouched && prev) return prev;
-          return options.fromProject || options.fromTitle || prev;
-        });
+        setCommonGroups(options.commonGroups || []);
         // Default the class to 演出图 whenever this category uses it. It is the
         // commonest class by a wide margin, and leaving the pick to "first
         // common group" meant a fresh import could silently be filed under a
@@ -270,7 +305,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           return defaultClassOf(options.commonGroups);
         });
       } catch {
-        // Candidates are a convenience; the editable input still works.
+        // Class options are a convenience; the dropdown still works.
       }
     })();
     return () => {
@@ -279,26 +314,19 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
-  // A rejection belongs to the value that produced it. Editing the subject (or
-  // the class / person) makes the notice below the button stale - it sat there
-  // describing a segment that was no longer in the field, which read like the
-  // current input was being refused.
+  // A rejection belongs to the value that produced it. Changing any of the
+  // picks makes the notice below the button stale.
   useEffect(() => {
     setErrors([]);
-  }, [subject, assetGroup, personCode, projectId]);
+  }, [assetGroup, personCode, projectId, city, picks, dateDraft]);
 
-  // The real DB category the wizard currently works on. For the talks door
-  // this is the chosen shelf; empty until picked, which also empties the
-  // event list and blocks inline creation.
-  const activeCategory = doorKey === 'talks' ? shelf : doorKey;
-
-  // Doors 3 and 4 name their assets by shelf type + city (spec 4.3 / 4.4).
-  // Both halves come from a pick, so the field is read-only there and editable
-  // everywhere else until those halls get the same treatment.
-  const picksSubject = hasPickedSubject(activeCategory);
-  const effectiveSubject = picksSubject
-    ? pickedSubject(activeCategory, project?.subtype, city) ?? ''
-    : subject;
+  // The real DB category the wizard currently works on. A theme has no category
+  // of its own (it is project_kind = 'theme'), and the talks door takes its
+  // category from the shelf, so both are resolved here.
+  const activeCategory =
+    doorKey === 'features' ? '' : doorKey === 'talks' ? shelf : doorKey;
+  const doorConfig = WIZARD_DOORS.find((d) => d.key === doorKey) ?? WIZARD_DOORS[3];
+  const level: DoorLevel = doorConfig.level;
 
   // Only cities the code table knows can be picked - an unknown name would
   // silently drop the second segment.
@@ -309,6 +337,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     }
     return Array.from(seen).filter((name) => CITY_CODES[name]).sort();
   }, [projects]);
+
+  const registered = (kind: RegistryKind, scope?: string) =>
+    registry
+      .filter((item) => item.kind === kind && (scope === undefined || item.scope === scope))
+      .sort((a, b) => a.code.localeCompare(b.code));
 
   // The drama hall's second level: the series rows themselves. Events hang
   // off a work through work_id, so the pick gates the event list the same way
@@ -326,6 +359,13 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   );
 
   const filteredProjects = useMemo(() => {
+    // A theme has no category of its own: it is every project_kind = 'theme'.
+    if (doorKey === 'features') {
+      const q = search.trim().toLowerCase();
+      const list = projects.filter((p) => p.project_kind === 'theme');
+      if (!q) return list;
+      return list.filter((p) => p.title.toLowerCase().includes(q));
+    }
     if (!activeCategory) return [];
     const q = search.trim().toLowerCase();
     let list: ProjectRow[];
@@ -361,13 +401,319 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     [activeCategory]
   );
 
+  /**
+   * The SUBJECT the batch will be filed under - assembled from picks only.
+   *
+   * An event that already has a number keeps it: the city, the tail code and
+   * the part are all inside the id, and re-deriving would let two curators
+   * produce two spellings of the same event.
+   */
+  const derivedSubject = useMemo(() => {
+    if (!project) return '';
+    const existing = subjectFromProjectId(project.catalog_id);
+    if (existing) return existing;
+
+    switch (level) {
+      case 'work': {
+        const work = subjectFromProjectId(dramaSeriesRow?.catalog_id ?? null);
+        const part =
+          DRAMA_SUBTYPE_CODES[project.subtype as keyof typeof DRAMA_SUBTYPE_CODES];
+        if (!work || !part) return '';
+        // A premiere is one per work, so it is already unique; every other part
+        // holds several entries and needs the event code (spec 4.1).
+        if (project.subtype === 'premiere') return `${work}-${part}`;
+        const eventCode = eventCodeFromTitle(project.title, work);
+        return eventCode ? `${work}-${part}-${eventCode}` : '';
+      }
+      case 'publication': {
+        if (!picks.publication) return '';
+        return magSubject(picks.publication, themeAfterSeparator(project.title)) ?? '';
+      }
+      case 'topic':
+        return featSubject(picks.topic) ?? '';
+      case 'brand': {
+        if (!picks.brand) return '';
+        return brandSubject(picks.brand, eventCodeFromTitle(project.title, picks.brand)) ?? '';
+      }
+      case 'shelf':
+        return talkSubject(activeCategory, picks.program) ?? '';
+      case 'platform':
+        return liveSubject(picks.platform) ?? '';
+      case 'subtype':
+      default:
+        return pickedSubject(activeCategory, project.subtype, city) ?? '';
+    }
+  }, [project, level, dramaSeriesRow, picks, activeCategory, city]);
+
+  const effectiveSubject = derivedSubject;
+
   // Class dropdown: the project's own preset classes first, then classes the
   // same category actually uses - always pickable, never invented ad hoc.
   const mergedClassOptions = useMemo(() => {
     const own = project?.asset_groups || [];
-    const common = (subjectOptions?.commonGroups || []).filter((g) => !own.includes(g));
+    const common = commonGroups.filter((g) => !own.includes(g));
     return [...own, ...common];
-  }, [project, subjectOptions]);
+  }, [project, commonGroups]);
+
+  /**
+   * Add a code the registry does not know yet. This is the only place a
+   * curator types a name, and what gets stored is the code it produces - so
+   * the next batch picks it instead of spelling it again.
+   */
+  const addRegistryItem = async () => {
+    if (!adding) return;
+    const name = addingName.trim();
+    if (!name) return;
+    setAddingBusy(true);
+    setAddingError(null);
+    try {
+      const response = await fetch('/api/admin/catalog-registry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: adding.kind, scope: adding.scope || null, name }),
+      });
+      const result = await response.json();
+      if (!result?.success || !result?.item) {
+        throw new Error(result?.error || 'Failed to add');
+      }
+      const item = result.item as RegistryItem;
+      setRegistry((prev) => [...prev, item]);
+      // Select what was just created - that is why it was typed.
+      setPicks((prev) => ({
+        ...prev,
+        ...(item.kind === 'publication' ? { publication: item.code } : {}),
+        ...(item.kind === 'brand' ? { brand: item.code } : {}),
+        ...(item.kind === 'program' ? { program: item.code } : {}),
+        ...(item.kind === 'topic' ? { topic: item.code } : {}),
+      }));
+      setAdding(null);
+      setAddingName('');
+    } catch (err) {
+      setAddingError(err instanceof Error ? err.message : 'Failed to add');
+    } finally {
+      setAddingBusy(false);
+    }
+  };
+
+  /**
+   * Fill in the date an event is missing without leaving the wizard. The id
+   * cannot be built without it, and sending the curator to the project page
+   * loses the batch selection they just made.
+   */
+  const saveEventDate = async () => {
+    if (!project || !/^\d{4}-\d{2}-\d{2}$/.test(dateDraft)) return;
+    setSavingDate(true);
+    setErrors([]);
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_date: dateDraft }),
+      });
+      const result = await response.json();
+      if (!response.ok || result?.error) {
+        throw new Error(result?.error || 'Failed to save the date');
+      }
+      setProjects((prev) =>
+        prev.map((row) => (row.id === project.id ? { ...row, event_date: dateDraft } : row))
+      );
+      setPreview(null);
+    } catch (err) {
+      setErrors([err instanceof Error ? err.message : 'Failed to save the date']);
+    } finally {
+      setSavingDate(false);
+    }
+  };
+
+  /**
+   * The pick that decides the subject, per door. Everything here is a
+   * dropdown; the only escape hatch is the inline add, which stores the card in
+   * the registry so it never has to be typed twice.
+   */
+  const renderSubjectPick = () => {
+    if (!project) return null;
+
+    const select = (params: {
+      value: string;
+      options: Array<{ value: string; label: string }>;
+      placeholder: string;
+      onChange: (next: string) => void;
+    }) => (
+      <span className="flex items-center gap-1.5">
+        <select
+          value={params.value}
+          onChange={(e) => {
+            params.onChange(e.target.value);
+            setPreview(null);
+          }}
+          className={`w-full border bg-black px-3 py-2 font-mono text-xs outline-none focus:border-lmsy-yellow/40 ${
+            params.value ? 'border-white/10 text-ink' : 'border-lmsy-yellow/50 text-lmsy-yellow'
+          }`}
+        >
+          <option value="">{params.placeholder}</option>
+          {params.options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </span>
+    );
+
+    const addRow = (kind: RegistryKind, scope: string, label: string) => {
+      if (adding && adding.kind === kind && adding.scope === scope) {
+        return (
+          <span className="mt-1 flex items-center gap-1.5">
+            <input
+              autoFocus
+              value={addingName}
+              onChange={(e) => setAddingName(e.target.value)}
+              placeholder={label}
+              className="w-full border border-lmsy-yellow/40 bg-white/5 px-2 py-1.5 font-mono text-[11px] text-ink outline-none placeholder:text-ink-2"
+            />
+            <button
+              type="button"
+              onClick={() => void addRegistryItem()}
+              disabled={addingBusy || !addingName.trim()}
+              className="shrink-0 bg-lmsy-yellow px-2 py-1.5 font-mono text-[10px] uppercase tracking-wider text-black disabled:opacity-40"
+            >
+              {addingBusy ? '...' : t('common.save')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAdding(null);
+                setAddingName('');
+                setAddingError(null);
+              }}
+              className="shrink-0 border border-white/15 px-2 py-1.5 font-mono text-[10px] text-ink-2 hover:text-ink"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        );
+      }
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setAdding({ kind, scope });
+            setAddingName('');
+            setAddingError(null);
+          }}
+          className="mt-1 block w-full border border-dashed border-white/20 px-2 py-1.5 text-center font-mono text-[10px] text-ink-2 hover:border-lmsy-yellow/40 hover:text-ink"
+        >
+          ＋ {label}
+        </button>
+      );
+    };
+
+    switch (level) {
+      case 'publication':
+        return (
+          <>
+            {select({
+              value: picks.publication,
+              placeholder: t('d.promote.pickPublication'),
+              options: registered('publication').map((item) => ({
+                value: item.code,
+                label: `${item.name} · ${item.code}`,
+              })),
+              onChange: (next) => setPicks((prev) => ({ ...prev, publication: next })),
+            })}
+            {addRow('publication', '', t('d.promote.addPublication'))}
+            {addingError && (
+              <p className="font-mono text-[10px] text-red-300/80">{addingError}</p>
+            )}
+          </>
+        );
+      case 'brand':
+        return (
+          <>
+            {select({
+              value: picks.brand,
+              placeholder: t('d.promote.pickBrand'),
+              options: registered('brand').map((item) => ({
+                value: item.code,
+                label: `${item.name} · ${item.code}`,
+              })),
+              onChange: (next) => setPicks((prev) => ({ ...prev, brand: next })),
+            })}
+            {addRow('brand', '', t('d.promote.addBrand'))}
+            {addingError && (
+              <p className="font-mono text-[10px] text-red-300/80">{addingError}</p>
+            )}
+          </>
+        );
+      case 'shelf':
+        // The shelf comes first (step 1) - a programme only means something
+        // inside one shelf, so there is nothing to pick until it is chosen.
+        if (!activeCategory) {
+          return (
+            <span className="block font-mono text-[10px] text-ink-2/70">
+              {t('d.promote.pickShelfFirst')}
+            </span>
+          );
+        }
+        return (
+          <>
+            {select({
+              value: picks.program,
+              placeholder: t('d.promote.pickProgram'),
+              options: registered('program', activeCategory).map((item) => ({
+                value: item.code,
+                label: `${item.name} · ${item.code}`,
+              })),
+              onChange: (next) => setPicks((prev) => ({ ...prev, program: next })),
+            })}
+            {addRow('program', activeCategory, t('d.promote.addProgram'))}
+            {addingError && (
+              <p className="font-mono text-[10px] text-red-300/80">{addingError}</p>
+            )}
+          </>
+        );
+      case 'platform':
+        return select({
+          value: picks.platform,
+          placeholder: t('d.promote.pickPlatform'),
+          options: LIVE_PLATFORM_CODES.map((item) => ({
+            value: item.value,
+            label: `${item.label} · ${item.value}`,
+          })),
+          onChange: (next) => setPicks((prev) => ({ ...prev, platform: next })),
+        });
+      case 'topic':
+        return (
+          <>
+            {select({
+              value: picks.topic,
+              placeholder: t('d.promote.pickTopic'),
+              options: registered('topic').map((item) => ({
+                value: item.code,
+                label: `${item.name} · ${item.code}`,
+              })),
+              onChange: (next) => setPicks((prev) => ({ ...prev, topic: next })),
+            })}
+            {addRow('topic', '', t('d.promote.addTopic'))}
+            {addingError && (
+              <p className="font-mono text-[10px] text-red-300/80">{addingError}</p>
+            )}
+          </>
+        );
+      case 'work':
+        // The work was already picked to narrow the event list; showing it here
+        // makes it obvious where the first two segments come from.
+        return (
+          <div className="w-full border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-xs text-ink-2">
+            {dramaSeriesRow ? `${dramaSeriesRow.title} · ${project.subtype ?? '—'}` : '—'}
+          </div>
+        );
+      default:
+        // Live events and appearances: the subtype lives on the row and the
+        // city is picked in its own field, so there is nothing to add here.
+        return null;
+    }
+  };
 
   const createEvent = async () => {
     // The shelf pick doubles as the category for the talks door - without it
@@ -577,6 +923,16 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       setDramaSeries('');
                       setSubtypeFilter('all');
                       setProjectId(null);
+                      // Picks belong to the door: a publication code means
+                      // nothing once the door is live events.
+                      setPicks({
+                        publication: '',
+                        brand: '',
+                        program: '',
+                        platform: '',
+                        topic: '',
+                      });
+                      setAdding(null);
                       setNewEvent((prev) => ({
                         ...prev,
                         // Force an explicit pick; never preselect the first.
@@ -781,16 +1137,18 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreatingEvent(true);
-                        setCreateError(null);
-                      }}
-                      className="w-full border border-dashed border-white/20 px-3 py-2 text-center font-mono text-[11px] text-ink-2 transition-colors hover:border-lmsy-yellow/40 hover:text-ink"
-                    >
-                      ＋ {t('d.promote.newEvent')}
-                    </button>
+                    doorKey !== 'features' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCreatingEvent(true);
+                          setCreateError(null);
+                        }}
+                        className="w-full border border-dashed border-white/20 px-3 py-2 text-center font-mono text-[11px] text-ink-2 transition-colors hover:border-lmsy-yellow/40 hover:text-ink"
+                      >
+                        ＋ {t('d.promote.newEvent')}
+                      </button>
+                    )
                   )}
                 </div>
               </div>
@@ -900,7 +1258,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       )}
                     </label>
 
-                    {picksSubject && (
+                    {level === 'subtype' && (
                       <label className="block space-y-1.5">
                         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                           {t('d.promote.city')}
@@ -947,92 +1305,48 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                         {t('d.promote.subject')}
                       </span>
-                      {picksSubject ? (
-                        <>
-                          <div className="w-full border border-lmsy-yellow/30 bg-lmsy-yellow/[0.08] px-3 py-2 font-mono text-xs tracking-wide text-lmsy-yellow">
-                            {effectiveSubject || '—'}
-                          </div>
-                          <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
-                            {t('d.promote.subjectLocked')} · {t('d.promote.subjectLockedHint')}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                      <input
-                        type="text"
-                        value={subject}
-                        onChange={(e) => {
-                          setSubjectTouched(true);
-                          setSubject(e.target.value);
-                          setPreview(null);
-                        }}
-                        className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none focus:border-lmsy-yellow/40"
-                      />
-                      <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
-                        {t('d.promote.subjectHint')}
-                      </span>
-                      {subjectOptions && (
-                        <span className="flex flex-wrap gap-1 pt-0.5">
-                          {subjectOptions.fromProject && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSubjectTouched(true);
-                                setSubject(subjectOptions.fromProject!);
-                                setPreview(null);
-                              }}
-                              className="border border-lmsy-yellow/40 bg-lmsy-yellow/10 px-2 py-0.5 font-mono text-[10px] text-lmsy-yellow/90 hover:bg-lmsy-yellow/20"
-                            >
-                              {subjectOptions.fromProject} · {t('d.promote.optProject')}
-                            </button>
-                          )}
-                          {subjectOptions.existing.map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => {
-                                setSubjectTouched(true);
-                                setSubject(s);
-                                setPreview(null);
-                              }}
-                              className="border border-white/15 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-ink-2 hover:border-white/30 hover:text-ink"
-                            >
-                              {s} · {t('d.promote.optExisting')}
-                            </button>
-                          ))}
-                          {subjectOptions.fromTitle &&
-                            subjectOptions.fromTitle !== subjectOptions.fromProject && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSubjectTouched(true);
-                                  setSubject(subjectOptions.fromTitle);
-                                  setPreview(null);
-                                }}
-                                className="border border-white/15 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-ink-2 hover:border-white/30 hover:text-ink"
-                              >
-                                {subjectOptions.fromTitle} · {t('d.promote.optTitle')}
-                              </button>
-                            )}
-                          {subjectOptions.peers.slice(0, 8).map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => {
-                                setSubjectTouched(true);
-                                setSubject(s);
-                                setPreview(null);
-                              }}
-                              className="border border-white/10 bg-transparent px-2 py-0.5 font-mono text-[10px] text-ink-2/70 hover:border-white/25 hover:text-ink-2"
-                            >
-                              {s} · {t('d.promote.optPeers')}
-                            </button>
-                          ))}
+                      {renderSubjectPick()}
+                      <div className="w-full border border-lmsy-yellow/30 bg-lmsy-yellow/[0.08] px-3 py-2 font-mono text-xs tracking-wide text-lmsy-yellow">
+                        {effectiveSubject || '—'}
+                      </div>
+                      {project.catalog_id && (
+                        <span className="block break-all font-mono text-[9px] leading-relaxed text-ink-2/70">
+                          #{project.catalog_id}
                         </span>
                       )}
-                        </>
-                      )}
+                      <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
+                        {project.catalog_id
+                          ? t('d.promote.subjectFromEvent')
+                          : t('d.promote.subjectPicked')}
+                      </span>
                     </label>
+
+                    {level !== 'topic' && !project.event_date && (
+                      <label className="block space-y-1.5">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
+                          {t('d.promote.eventDate')}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <input
+                            type="date"
+                            value={dateDraft}
+                            onChange={(e) => setDateDraft(e.target.value)}
+                            className="w-full border border-lmsy-yellow/50 bg-black px-3 py-2 font-mono text-xs text-ink outline-none focus:border-lmsy-yellow"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void saveEventDate()}
+                            disabled={savingDate || !/^\d{4}-\d{2}-\d{2}$/.test(dateDraft)}
+                            className="shrink-0 bg-lmsy-yellow px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-black disabled:opacity-40"
+                          >
+                            {savingDate ? '...' : t('common.save')}
+                          </button>
+                        </span>
+                        <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
+                          {t('d.promote.eventDateHint')}
+                        </span>
+                      </label>
+                    )}
 
                     <label className="block space-y-1.5">
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
@@ -1042,7 +1356,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                         type="text"
                         value={captionPrefix}
                         onChange={(e) => setCaptionPrefix(e.target.value)}
-                        placeholder={assetGroup || subject}
+                        placeholder={assetGroup || effectiveSubject}
                         className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none placeholder:text-ink-2 focus:border-lmsy-yellow/40"
                       />
                     </label>

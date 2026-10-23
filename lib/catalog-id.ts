@@ -281,6 +281,151 @@ export function liveEventSubject(
 }
 
 // ---------------------------------------------------------------------------
+// The other four halls: subject = registry code(s), plus one derived word
+// ---------------------------------------------------------------------------
+
+/**
+ * Talks shelf -> the first SUBJECT segment (spec 4.6). The shelf is the project
+ * category, so this is a pick the curator already makes.
+ */
+export const TALK_SHELF_CODES = {
+  interview: 'INTERVIEW',
+  variety: 'VARIETY',
+  radio: 'RADIO',
+} as const;
+
+/** Live platforms (spec 4.7). The subject is the platform and nothing else. */
+export const LIVE_PLATFORM_CODES = [
+  { value: 'IG', label: 'Instagram' },
+  { value: 'TIKTOK', label: 'TikTok' },
+  { value: 'YOUTUBE', label: 'YouTube' },
+  { value: 'WEIBO', label: 'Weibo' },
+  { value: 'X', label: 'X' },
+  { value: 'FACEBOOK', label: 'Facebook' },
+  { value: 'SHOPEE', label: 'Shopee Live' },
+] as const;
+
+/**
+ * A word derived from a title, for the segments that are new every time:
+ * a magazine theme (`YOUTHCHOICE`), a brand campaign (`COFFEE`).
+ *
+ * NFKC first, because the archive's titles are full of decorative Unicode
+ * (`𝐋𝐌𝐒𝐘 𝐱 ...`) and a plain A-Z filter would return an empty string.
+ * The tail after `in` / `at` / `@` is dropped: it is the venue, not the theme.
+ */
+export function codeFromTitle(title: string | null | undefined, maxLength = 48): string {
+  const raw = (title || '').normalize('NFKC').replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
+  return raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, maxLength);
+}
+
+/** MAG subject: publication (issue folded in) + theme when the title gives one. */
+export function magSubject(
+  publicationCode: string | null | undefined,
+  themeCode?: string | null
+): string | null {
+  const pub = (publicationCode || '').trim().toUpperCase();
+  if (!pub) return null;
+  const theme = (themeCode || '').trim().toUpperCase();
+  return theme && theme !== pub ? `${pub}-${theme}` : pub;
+}
+
+/**
+ * The theme after the title's separator.
+ *
+ * Magazine titles are written `<publication> · <theme>`, so the theme is what
+ * follows the dot. Deriving it from the whole title instead would turn a title
+ * that is only the publication (`KAZZ 2024-10`) into a second, nonsense
+ * segment - and the spec already says an unknown theme is simply omitted.
+ */
+export function themeAfterSeparator(title: string | null | undefined): string {
+  const parts = String(title || '').split(/[·|｜]/);
+  if (parts.length < 2) return '';
+  return codeFromTitle(parts.slice(1).join(' ')).replace(/-/g, '');
+}
+
+/** Words that describe the kind of entry rather than which one (spec 4.1). */
+const GENERIC_EVENT_WORDS = new Set(['THE', 'A', 'AN', 'AWARD', 'AWARDS']);
+
+/**
+ * Event code out of a title: concatenated capitals, generic words dropped,
+ * a trailing four-digit year shortened to two (spec 4.1).
+ *
+ *   "Affair Highlights"      + AFFAIR -> HIGHLIGHTS
+ *   "Y Entertain Awards 2024"         -> YENTERTAIN24
+ *   "Final Episode"                   -> FINALEPISODE
+ *
+ * `prefix` is the work / brand the title usually repeats; it is removed so the
+ * code does not say the same thing twice.
+ */
+export function eventCodeFromTitle(
+  title: string | null | undefined,
+  prefix?: string | null
+): string {
+  const words = codeFromTitle(title).split('-').filter(Boolean);
+  let rest = words.filter((word) => !GENERIC_EVENT_WORDS.has(word));
+  const head = (prefix || '').replace(/-/g, '').toUpperCase();
+  if (head && rest.length > 1 && rest[0] === head) rest = rest.slice(1);
+  if (rest.length > 1 && /^\d{4}$/.test(rest[rest.length - 1])) {
+    rest[rest.length - 1] = rest[rest.length - 1].slice(2);
+  }
+  return rest.join('');
+}
+
+/** BRAND subject: brand + campaign (spec 4.5). Campaign may be unknown. */
+export function brandSubject(
+  brandCode: string | null | undefined,
+  campaignCode?: string | null
+): string | null {
+  const brand = (brandCode || '').trim().toUpperCase();
+  if (!brand) return null;
+  const campaign = (campaignCode || '').trim().toUpperCase();
+  return campaign && campaign !== brand ? `${brand}-${campaign}` : brand;
+}
+
+/** TALK subject: shelf code + programme code (spec 4.6). */
+export function talkSubject(
+  category: string | null | undefined,
+  programCode: string | null | undefined
+): string | null {
+  const shelf = TALK_SHELF_CODES[(category || '') as keyof typeof TALK_SHELF_CODES];
+  if (!shelf) return null;
+  const program = (programCode || '').trim().toUpperCase();
+  return program ? `${shelf}-${program}` : shelf;
+}
+
+/** LIVE subject: the platform, which may be unknown (spec 4.7). */
+export function liveSubject(platform: string | null | undefined): string | null {
+  const value = (platform || '').trim().toUpperCase();
+  return value || null;
+}
+
+/** FEAT subject: the topic code, and no date segment ever (spec 4.9). */
+export function featSubject(topicCode: string | null | undefined): string | null {
+  const topic = (topicCode || '').trim().toUpperCase();
+  return topic || null;
+}
+
+/**
+ * The door a project belongs to, which is not always its category.
+ *
+ * A theme is stored under `early_archive` because there is no `features`
+ * category, and the category list is a database constraint we do not want to
+ * widen just to hold one project kind. Reading `project_kind` first keeps the
+ * door correct: a theme's pictures are FEAT, not EARLY (spec 4.9).
+ */
+export function doorCodeForProject(project: {
+  category?: string | null;
+  project_kind?: string | null;
+}): DoorCode | null {
+  if (project.project_kind === 'theme') return 'FEAT';
+  return CATEGORY_TO_DOOR_CODE[project.category || ''] ?? null;
+}
+
+// ---------------------------------------------------------------------------
 // Shape
 // ---------------------------------------------------------------------------
 

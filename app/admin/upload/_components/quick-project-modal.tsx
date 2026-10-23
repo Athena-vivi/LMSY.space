@@ -14,17 +14,21 @@ interface QuickProjectModalProps {
   onProjectCreated: (project: Project) => void;
 }
 
-// Eight stable values (lib/category-registry.ts). Admin labels are English
-// on purpose: they are operator-facing, not visitor copy.
+// The categories that own a front door (lib/category-registry.ts). The three
+// legacy ones (behind_the_scenes, personal_travel, early_archive) are not
+// offered: a row created here goes live immediately, and they have no page.
+// The prefix is the door code from lib/catalog-id.ts, not the retired
+// STILL / STAGE / TRV / AD / G scheme.
 const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string }[] = [
-  { value: 'drama_work', label: 'Drama & Works', prefix: 'STILL' },
+  { value: 'drama_work', label: 'Drama & Works', prefix: 'DRAMA' },
   { value: 'editorial', label: 'Editorial (Magazine)', prefix: 'MAG' },
-  { value: 'live_event', label: 'Live Events', prefix: 'STAGE' },
-  { value: 'public_appearance', label: 'Public Appearances', prefix: 'TRV' },
-  { value: 'commercial', label: 'Commercial (Ad/Brand)', prefix: 'AD' },
-  { value: 'behind_the_scenes', label: 'Behind the Scenes', prefix: 'BTS' },
-  { value: 'personal_travel', label: 'Personal & Travel', prefix: 'DAILY' },
-  { value: 'early_archive', label: 'Early Archive', prefix: 'G' },
+  { value: 'live_event', label: 'Live Events', prefix: 'EVENT' },
+  { value: 'public_appearance', label: 'Public Appearances', prefix: 'APPEAR' },
+  { value: 'commercial', label: 'Commercial (Brand)', prefix: 'BRAND' },
+  { value: 'interview', label: 'Talks · Interview', prefix: 'TALK' },
+  { value: 'variety', label: 'Talks · Variety', prefix: 'TALK' },
+  { value: 'radio', label: 'Talks · Radio', prefix: 'TALK' },
+  { value: 'live_stream', label: 'Live Stream', prefix: 'LIVE' },
 ];
 
 export default function QuickProjectModal({
@@ -82,6 +86,13 @@ export default function QuickProjectModal({
       return;
     }
 
+    // The catalog id carries a date segment, and the API refuses a row without
+    // one - say so here instead of after a round trip.
+    if (!releaseDate) {
+      alert('Release date is required (the catalog id needs a date)');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -99,63 +110,25 @@ export default function QuickProjectModal({
 
       console.log('[QUICK_PROJECT] ✅ Session verified for user:', session.user.email);
 
-      // 🔍 DEBUG: Log the exact query being executed
-      console.log('[QUICK_PROJECT] ========== Database Insert ==========');
-      console.log('[QUICK_PROJECT] Schema: lmsy_archive');
-      console.log('[QUICK_PROJECT] Table: projects');
-
-      // 🛡️ 防御性编程：只提交数据库中存在的字段
-      const insertData = {
-        title: title.trim(),
-        category,
-        subtype,
-        work_id: workId || null,
-        project_kind: 'event' as const,
-        release_date: releaseDate || null,
-        event_date: releaseDate || null,
-        description: null,
-        cover_url: null,
-        watch_url: null,
-        // A row created here is a front-of-house entry, not a private folder:
-        // it goes live under its hall the moment it exists.
-        portal_visible: true,
-        curation_status: 'published' as const,
-      };
-
-      console.log('[QUICK_PROJECT] Insert data:', insertData);
-
-      // 显式解构 Supabase 返回值（显式指定 schema）
-      const { data, error } = await supabase
-        .schema('lmsy_archive')
-        .from('projects')
-        .insert(insertData)
-        .select()
-        .single();
-
-      // 打印原始 JSON 错误详情
-      if (error) {
-        console.log('[QUICK_PROJECT] ========== DATABASE ERROR DETAILS ==========');
-        console.log('[DB_ERROR_DETAIL]', JSON.stringify(error, null, 2));
-        console.log('[QUICK_PROJECT] Error message:', error.message);
-        console.log('[QUICK_PROJECT] Error hint:', (error as any).hint);
-        console.log('[QUICK_PROJECT] Error details:', (error as any).details);
-        console.log('[QUICK_PROJECT] Error code:', (error as any).code);
-
-        // 检查是否是 schema 错误
-        if (error.message.includes('relation') && error.message.includes('does not exist')) {
-          console.error('[QUICK_PROJECT] 🔴 SCHEMA ERROR: Code is still pointing to wrong schema!');
-          console.error('[QUICK_PROJECT] Expected: lmsy_archive.projects');
-          console.error('[QUICK_PROJECT] Error message suggests:', error.message);
-          alert(`Schema Error: ${error.message}\n\nThe code is not pointing to lmsy_archive schema.`);
-          return;
-        }
-
-        // 显示错误给用户
-        alert(error.message);
+      // The row is created through the API, not the browser client: that route
+      // is where the field whitelist, the slug and the ISR invalidation live.
+      const response = await fetch('/api/admin/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          category,
+          subtype: subtype ?? undefined,
+          event_date: releaseDate,
+          work_id: workId || undefined,
+          portal_visible: true,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result?.success || !result?.project) {
+        alert(result?.error || 'Failed to create the project');
         return;
       }
-
-      console.log('[QUICK_PROJECT] ✅ Insert successful! Project ID:', data?.id);
 
       // Reset form
       setTitle('');
@@ -163,7 +136,7 @@ export default function QuickProjectModal({
       setReleaseDate('');
 
       // Notify parent component
-      onProjectCreated(data as Project);
+      onProjectCreated(result.project as Project);
 
       // Close modal
       onClose();
