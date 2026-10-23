@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { apiServerError } from '@/lib/security/http';
+import { listPortraitProfiles, updateProfileAvatar } from '@/lib/data/profiles';
 
 /**
  * Homepage portraits.
@@ -24,13 +25,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('profiles')
-      .select('id, name, nickname, slug, avatar_url, role_label')
-      .order('nickname', { ascending: true });
 
-    if (error) {
+    let data: Array<Record<string, unknown>>;
+    try {
+      data = await listPortraitProfiles(supabaseAdmin);
+    } catch (error) {
       console.error('[PORTRAIT_API] Failed to load profiles:', error);
       return apiServerError('admin/people/portrait GET', error);
     }
@@ -58,15 +57,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('profiles')
-      .update({ avatar_url: imageUrl ?? null })
-      .eq('id', profileId)
-      .select('id, name, nickname, slug, avatar_url')
-      .single();
 
-    if (error) {
+    let data: Record<string, unknown>;
+    try {
+      data = await updateProfileAvatar(supabaseAdmin, profileId, imageUrl ?? null);
+    } catch (error) {
       console.error('[PORTRAIT_API] Failed to save portrait:', error);
       return apiServerError('admin/people/portrait PATCH', error);
     }
