@@ -14,6 +14,14 @@ import { parseCatalogHead, PERSON_CODES } from '@/lib/catalog-id';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import type { TranslationKey } from '@/lib/languages';
 
+/** Default picture class for a fresh import - the commonest one by far. */
+const DEFAULT_CLASS = '演出图';
+
+/** Pick the class a fresh import starts on; 演出图 wins whenever it exists. */
+function defaultClassOf(groups: string[]): string {
+  return groups.includes(DEFAULT_CLASS) ? DEFAULT_CLASS : groups[0] ?? '';
+}
+
 /**
  * Self-serve promotion wizard (phase 1: live-event door).
  *
@@ -207,7 +215,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     setSubjectTouched(false);
     setSubject(deriveSubject(project));
     const groups = project.asset_groups || [];
-    setAssetGroup(groups[0] || '');
+    setAssetGroup(defaultClassOf(groups));
     setWriteCover(!project.cover_url);
     setPreview(null);
   }, [project]);
@@ -232,11 +240,13 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           if (subjectTouched && prev) return prev;
           return options.fromProject || options.fromTitle || prev;
         });
-        // Default the class dropdown to the most common class in the
-        // category when the project has no preset of its own.
+        // Default the class to 演出图 whenever this category uses it. It is the
+        // commonest class by a wide margin, and leaving the pick to "first
+        // common group" meant a fresh import could silently be filed under a
+        // class nobody read - the previous default was a retired one.
         setAssetGroup((prev) => {
           if (prev || customClass) return prev;
-          return options.commonGroups[0] ?? '';
+          return defaultClassOf(options.commonGroups);
         });
       } catch {
         // Candidates are a convenience; the editable input still works.
@@ -766,8 +776,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                             type="button"
                             onClick={() => {
                               setCustomClass(false);
-                              const groups = mergedClassOptions;
-                              setAssetGroup(groups[0] ?? '');
+                              setAssetGroup(defaultClassOf(mergedClassOptions));
                             }}
                             title={t('common.back')}
                             className="shrink-0 border border-white/15 px-2 py-2 font-mono text-[10px] text-ink-2 hover:border-white/30 hover:text-ink"

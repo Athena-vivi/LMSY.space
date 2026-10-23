@@ -208,17 +208,16 @@ export async function loadSubjectOptions(projectId: string): Promise<SubjectOpti
     for (const s of collectSubjects((siblings || []).map((r) => r.catalog_id as string))) {
       if (!existing.includes(s)) peers.add(s);
     }
-    // Picture classes the category actually uses, most common first.
-    for (const sib of siblings || []) {
-      for (const g of (sib.asset_groups as string[] | null) || []) {
-        groupCount.set(g, (groupCount.get(g) || 0) + 1);
-      }
-    }
+    // Picture classes the category actually uses, most common first. These are
+    // counted from the pictures themselves: the per-project `asset_groups`
+    // array is rarely maintained, and when its counts tie the alphabetical
+    // tiebreak used to lift a retired class ("官方机场图") to the top - which
+    // became the wizard's default and got filed by whoever did not look.
     const siblingIds = (siblings || []).map((r) => r.id as string);
     if (siblingIds.length > 0) {
       const { data: siblingAssets } = await supabaseAdmin
         .from('gallery_assets')
-        .select('catalog_id, project_id')
+        .select('catalog_id, project_id, asset_group')
         .in('project_id', siblingIds)
         .not('catalog_id', 'is', null)
         .limit(1000);
@@ -226,6 +225,18 @@ export async function loadSubjectOptions(projectId: string): Promise<SubjectOpti
         (siblingAssets || []).map((r) => r.catalog_id as string)
       )) {
         if (!existing.includes(s)) peers.add(s);
+      }
+      for (const a of siblingAssets || []) {
+        const group = a.asset_group as string | null;
+        if (group && group.trim()) groupCount.set(group, (groupCount.get(group) || 0) + 1);
+      }
+    }
+    // Fallback only for a category whose pictures carry no class at all.
+    if (groupCount.size === 0) {
+      for (const sib of siblings || []) {
+        for (const g of (sib.asset_groups as string[] | null) || []) {
+          groupCount.set(g, (groupCount.get(g) || 0) + 1);
+        }
       }
     }
   }
