@@ -385,8 +385,17 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
     { value: 'award', labelKey: 'drama.group.award' },
     { value: 'footage', labelKey: 'drama.group.footage' },
   ],
+  // Door 3 is the hall of rooms they stood in, and the shape of the room is
+  // what a visitor is actually picking between (2026-10-23). One `fanmeeting`
+  // shelf used to hold all 42 bookings, so a fan could not tell a ticketed
+  // concert from a two-hour signing session. The split is by event form, not
+  // by scale: concert = FanCon / tour stops; fanmeeting = a meeting; fansign =
+  // a signing. Single-person rooms stay in the same shelf as the duo ones and
+  // are marked by the title, because "solo" is a headcount, not a form.
   live_event: [
+    { value: 'concert', labelKey: 'subtype.concert' },
     { value: 'fanmeeting', labelKey: 'subtype.fanmeeting' },
+    { value: 'fansign', labelKey: 'subtype.fansign' },
     { value: 'brand_event', labelKey: 'subtype.brand_event' },
     { value: 'birthday', labelKey: 'subtype.birthday' },
   ],

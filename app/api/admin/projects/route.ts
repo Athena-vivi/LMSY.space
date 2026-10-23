@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
       subtype?: string;
       event_date?: string;
       portal_visible?: boolean;
+      /** Structured city, picked in the wizard; feeds the subject code. */
+      city?: string | null;
       /** Drama events hang off a work (series row) through this id. */
       work_id?: string | null;
     };
@@ -70,6 +72,7 @@ export async function POST(request: NextRequest) {
         category,
         subtype: body.subtype?.trim() || null,
         event_date: eventDate,
+        city: body.city?.trim() || null,
         slug,
         curation_status: 'draft',
         portal_visible: body.portal_visible !== false,

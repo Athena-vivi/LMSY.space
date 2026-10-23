@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminLang } from '@/lib/admin-i18n';
-import { parseCatalogHead, PERSON_CODES } from '@/lib/catalog-id';
+import { parseCatalogHead, PERSON_CODES, CITY_CODES, liveEventSubject } from '@/lib/catalog-id';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import type { TranslationKey } from '@/lib/languages';
 
@@ -41,6 +41,8 @@ interface ProjectRow {
   work_id: string | null;
   event_date: string | null;
   catalog_id: string | null;
+  /** Structured city; the promote wizard reads it to build the subject code. */
+  city: string | null;
   asset_groups: string[] | null;
   cover_url: string | null;
 }
@@ -132,6 +134,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
 
   const [projectId, setProjectId] = useState<string | null>(null);
   const [subject, setSubject] = useState('');
+  // Live-event subject is not typed any more: the subtype and the city decide
+  // it (spec 4.3, FANMEET-BKK). City is picked, not written, so two curators
+  // cannot produce two spellings of the same place.
+  const [city, setCity] = useState('');
   const [personCode, setPersonCode] = useState<'LMSY' | 'LM' | 'SY'>('LMSY');
   const [assetGroup, setAssetGroup] = useState('');
   const [captionPrefix, setCaptionPrefix] = useState('');
@@ -178,6 +184,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     // Reset everything on open.
     setProjectId(null);
     setSubject('');
+    setCity('');
     setPersonCode('LMSY');
     setAssetGroup('');
     setCaptionPrefix('');
@@ -214,6 +221,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     if (!project) return;
     setSubjectTouched(false);
     setSubject(deriveSubject(project));
+    setCity(project.city ?? '');
     const groups = project.asset_groups || [];
     setAssetGroup(defaultClassOf(groups));
     setWriteCover(!project.cover_url);
@@ -270,6 +278,24 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   // this is the chosen shelf; empty until picked, which also empties the
   // event list and blocks inline creation.
   const activeCategory = doorKey === 'talks' ? shelf : doorKey;
+
+  // Door 3 names its assets by room type + city (spec 4.3). Both halves come
+  // from a pick, so the field is read-only there and editable everywhere else
+  // until those halls get the same treatment.
+  const isLiveEvent = activeCategory === 'live_event';
+  const effectiveSubject = isLiveEvent
+    ? liveEventSubject(project?.subtype, city) ?? ''
+    : subject;
+
+  // Only cities the code table knows can be picked - an unknown name would
+  // silently drop the second segment.
+  const cityOptions = useMemo(() => {
+    const seen = new Set(Object.keys(CITY_CODES));
+    for (const p of projects) {
+      if (p.category === 'live_event' && p.city) seen.add(p.city.trim());
+    }
+    return Array.from(seen).filter((name) => CITY_CODES[name]).sort();
+  }, [projects]);
 
   // The drama hall's second level: the series rows themselves. Events hang
   // off a work through work_id, so the pick gates the event list the same way
@@ -375,7 +401,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   };
 
   const refreshPreview = async () => {
-    if (!project || !subject.trim() || draftIds.length === 0) return;
+    if (!project || !effectiveSubject.trim() || draftIds.length === 0) return;
     setPreviewing(true);
     setErrors([]);
     try {
@@ -385,7 +411,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         body: JSON.stringify({
           draftIds: [draftIds[0]],
           projectId: project.id,
-          subject,
+          subject: effectiveSubject,
           personCode,
           assetGroup: assetGroup || null,
           dryRun: true,
@@ -407,7 +433,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   };
 
   const run = async () => {
-    if (!project || !subject.trim() || draftIds.length === 0) return;
+    if (!project || !effectiveSubject.trim() || draftIds.length === 0) return;
     setRunning(true);
     setPhase('running');
     setProgress({ done: 0, total: draftIds.length });
@@ -426,7 +452,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           body: JSON.stringify({
             draftIds: batch,
             projectId: project.id,
-            subject,
+            subject: effectiveSubject,
             personCode,
             assetGroup: assetGroup || null,
             captionPrefix: captionPrefix || null,
@@ -489,9 +515,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     }
   };
 
-  const canPreview = Boolean(project && subject.trim() && draftIds.length > 0 && !previewing);
+  const canPreview = Boolean(
+    project && effectiveSubject.trim() && draftIds.length > 0 && !previewing &&
+      (!isLiveEvent || city)
+  );
   const canRun = Boolean(
-    project && subject.trim() && preview && !running && draftIds.length > 0
+    project && effectiveSubject.trim() && preview && !running && draftIds.length > 0
   );
 
   return (
@@ -825,10 +854,64 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       </select>
                     </label>
 
+                    {isLiveEvent && (
+                      <label className="block space-y-1.5">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
+                          {t('d.promote.city')}
+                        </span>
+                        <select
+                          value={city}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            setCity(next);
+                            setPreview(null);
+                            // Remember the pick on the event itself, so the
+                            // next batch into the same room needs no answer.
+                            if (project) {
+                              setProjects((prev) =>
+                                prev.map((row) =>
+                                  row.id === project.id ? { ...row, city: next || null } : row
+                                )
+                              );
+                              void fetch(`/api/admin/projects/${project.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ city: next || null }),
+                              }).catch(() => {
+                                // The code is already derived locally; a failed
+                                // save only means the next batch asks again.
+                              });
+                            }
+                          }}
+                          className={`w-full border bg-black px-3 py-2 font-mono text-xs outline-none focus:border-lmsy-yellow/40 ${
+                            city ? 'border-white/10 text-ink' : 'border-lmsy-yellow/50 text-lmsy-yellow'
+                          }`}
+                        >
+                          <option value="">{t('d.promote.pickCity')}</option>
+                          {cityOptions.map((name) => (
+                            <option key={name} value={name}>
+                              {name} · {CITY_CODES[name]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+
                     <label className="block space-y-1.5">
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
                         {t('d.promote.subject')}
                       </span>
+                      {isLiveEvent ? (
+                        <>
+                          <div className="w-full border border-lmsy-yellow/30 bg-lmsy-yellow/[0.08] px-3 py-2 font-mono text-xs tracking-wide text-lmsy-yellow">
+                            {effectiveSubject || '—'}
+                          </div>
+                          <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
+                            {t('d.promote.subjectLocked')} · {t('d.promote.subjectLockedHint')}
+                          </span>
+                        </>
+                      ) : (
+                        <>
                       <input
                         type="text"
                         value={subject}
@@ -900,6 +983,8 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                             </button>
                           ))}
                         </span>
+                      )}
+                        </>
                       )}
                     </label>
 

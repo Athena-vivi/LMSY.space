@@ -134,18 +134,41 @@ LMSY-MAG-KAZZ2410-20241001-001.webp        (主题未知)
 
 ### 4.3 现场活动 `EVENT`
 
-主体 = 子类码 + 场次码（城市或活动简称）。
+主体 = 子类码 + 城市码。两段都由后台下拉决定，**不手填**（2026-10-23 起）。
 
 | 子类（subtype） | 码 |
 |---|---|
+| 演唱会与巡演 `concert` | `CONCERT` |
 | 粉丝见面会 `fanmeeting` | `FANMEET` |
+| 签售会 `fansign` | `FANSIGN` |
 | 品牌活动 `brand_event` | `BRANDDAY` |
 | 生日会 `birthday` | `BIRTHDAY` |
+
+城市码（`projects.city`，固定表，见 `lib/catalog-id.ts` 的 `CITY_CODES`）：
+
+| 城市 | 码 | 城市 | 码 |
+|---|---|---|---|
+| 曼谷 | `BKK` | 上海 | `SHA` |
+| 澳门 | `MFM` | 深圳 | `SZX` |
+| 香港 | `HKG` | 杭州 | `HGH` |
+| 台北 | `TPE` | 武汉 | `WUH` |
+| 高雄 | `KHH` | 福州 | `FOC` |
+| 南宁 | `NNG` | 胡志明市 | `SGN` |
+| 天津 | `TSN` | 马尼拉 | `MNL` |
+| 重庆 | `CKG` | 金边 | `PNH` |
+| 成都 | `CTU` | 新加坡 | `SIN` |
+| 首尔 | `SEL` | 墨西哥城 | `MEX` |
+| 圣保罗 | `SAO` | | |
+
+城市未知时**整段省略**，不是写 `NA`：
 
 ```
 LMSY-EVENT-FANMEET-BKK-20250115-001.webp
 LMSY-EVENT-FANMEET-MNL-20260919-001.webp
+LMSY-EVENT-CONCERT-MEX-20261011-001.webp
+SY-EVENT-FANSIGN-SHA-20260321-001.webp
 LM-EVENT-BIRTHDAY-20250218-001.webp
+LMSY-EVENT-BRANDDAY-20260822-001.webp   (城市未知)
 ```
 
 ### 4.4 公开亮相 `APPEAR`

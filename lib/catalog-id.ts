@@ -103,6 +103,71 @@ export const CATEGORY_TO_DOOR_CODE: Record<string, DoorCode> = {
 export const CATEGORY_TO_CATALOG_PREFIX = CATEGORY_TO_DOOR_CODE;
 
 // ---------------------------------------------------------------------------
+// SUBJECT segments that are decided by a pick, never typed
+// ---------------------------------------------------------------------------
+
+/**
+ * live_event subtype -> the first SUBJECT segment (spec section 4.3).
+ *
+ * The subject of an event asset is "which kind of room" + "which city":
+ *   LMSY-EVENT-FANMEET-BKK-20250115-001
+ * Both halves come from a field the curator picks (subtype / city), so the
+ * wizard shows the result instead of asking for it. Typing this segment by
+ * hand is how the archive ended up with FANMEETING, 1ST-FAN-MEETING and
+ * BEINLOVE all describing the same kind of booking.
+ */
+export const LIVE_EVENT_SUBTYPE_CODES = {
+  concert: 'CONCERT',
+  fanmeeting: 'FANMEET',
+  fansign: 'FANSIGN',
+  brand_event: 'BRANDDAY',
+  birthday: 'BIRTHDAY',
+} as const;
+
+/** City display name (projects.city) -> three-letter SUBJECT segment. */
+export const CITY_CODES: Record<string, string> = {
+  曼谷: 'BKK',
+  澳门: 'MFM',
+  香港: 'HKG',
+  台北: 'TPE',
+  高雄: 'KHH',
+  南宁: 'NNG',
+  天津: 'TSN',
+  重庆: 'CKG',
+  成都: 'CTU',
+  上海: 'SHA',
+  深圳: 'SZX',
+  杭州: 'HGH',
+  武汉: 'WUH',
+  福州: 'FOC',
+  胡志明市: 'SGN',
+  马尼拉: 'MNL',
+  金边: 'PNH',
+  新加坡: 'SIN',
+  首尔: 'SEL',
+  墨西哥城: 'MEX',
+  圣保罗: 'SAO',
+};
+
+/**
+ * The SUBJECT segment for a live-event asset, or null when the pick does not
+ * decide it yet (unknown subtype, or a city outside the table). Null means
+ * "caller must ask", never "invent a value".
+ */
+export function liveEventSubject(
+  subtype: string | null | undefined,
+  city: string | null | undefined
+): string | null {
+  const kind = subtype
+    ? (LIVE_EVENT_SUBTYPE_CODES as Record<string, string>)[subtype]
+    : undefined;
+  if (!kind) return null;
+  const name = city?.trim();
+  const place = name ? CITY_CODES[name] : undefined;
+  return place ? `${kind}-${place}` : kind;
+}
+
+// ---------------------------------------------------------------------------
 // Shape
 // ---------------------------------------------------------------------------
 

@@ -41,7 +41,11 @@ export type ProjectCategory =
 
 /**
  * Sub-class inside a hall, shared by every hall that needs one:
- *   live_event        fanmeeting / brand_event / birthday
+ *   live_event        concert / fanmeeting / fansign / brand_event / birthday
+ *                     (2026-10-23: one fanmeeting shelf held every kind of
+ *                     room, 42 rows deep, so the shape of the room became
+ *                     the second level. concert = ticketed stage shows and
+ *                     tours; fansign = signing sessions.)
  *   public_appearance awards / fashion / brand_stage / industry /
  *                     charity / premiere
  *   interview         feature / press / tv_news
@@ -53,7 +57,9 @@ export type ProjectCategory =
  * things in different halls.
  */
 export type ProjectSubtype =
+  | 'concert'
   | 'fanmeeting'
+  | 'fansign'
   | 'brand_event'
   | 'birthday'
   | 'premiere'

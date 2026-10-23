@@ -73,9 +73,11 @@ alter table lmsy_archive.projects add constraint projects_category_check
 
 | 归属 | 取值 |
 |---|---|
-| `live_event` | `fanmeeting` / `brand_event` / `birthday` |
+| `live_event` | `concert` / `fanmeeting` / `fansign` / `brand_event` / `birthday` |
 | `public_appearance` | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `premiere` |
 | `interview` | `feature` / `press` / `tv_news` |
+
+2026-10-23 拆分 3 号门：`fanmeeting` 一个值装了 42 场，从签售到 EVERAFTER 巡演全在里面，访客分不出「一场签售」和「一场售票演唱会」。按活动形态拆成三个：`concert`（FanCon / 巡演站次）、`fanmeeting`（见面会）、`fansign`（签售）。单人场不单独成类——单人写标题和人物码，形态仍是见面会。同日把 2025-11-01 杭州 FoamDream 从 `fanmeeting` 改回 `brand_event`（官宣原文是品牌代言人活动）。迁移：`supabase/migrations/20261023_live_event_split_and_city.sql`，快照与回滚在 `temp/`。
 
 2026-10-20 更正：4 号门最终是六个值，与 `docs/20261019-lmsy-public-appearance-list.md` 的类型 A–F 一一对应。原表只列了四个（含 `fanday`），建库时发现「Fan Day 与平台活动」装不下清单里的 C（品牌站台 / 商演 / 民俗舞台，10 场）和 E（公益 / 社群 / 书展，6 场）两类，`fanday` 在这一门也没有对应内容，遂取消。定稿第五节同步改过。
 

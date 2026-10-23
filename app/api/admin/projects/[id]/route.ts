@@ -191,6 +191,10 @@ export async function PATCH(
     if (body.release_date !== undefined) updateData.release_date = body.release_date || null;
     // Where the row sits in its hall, and (door 1) which series it hangs under.
     if (body.subtype !== undefined) updateData.subtype = body.subtype || null;
+    // city is the structured half of "where": picked from a fixed list and used
+    // to build the asset subject code (FANMEET-BKK). location stays free text.
+    if (body.city !== undefined) updateData.city = body.city || null;
+    if (body.location !== undefined) updateData.location = body.location || null;
     if (body.work_id !== undefined) updateData.work_id = body.work_id || null;
     if (body.description !== undefined) updateData.description = body.description || null;
     if (body.title_i18n !== undefined) updateData.title_i18n = body.title_i18n || null;

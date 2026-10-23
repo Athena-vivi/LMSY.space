@@ -404,7 +404,9 @@ export const translations = {
 
     // Sub-class tabs inside a hall. Only halls listed in
     // SUBTYPES_BY_CATEGORY render these, and only when two or more have rows.
+    'subtype.concert': 'Concerts & Tours',
     'subtype.fanmeeting': 'Fan Meetings',
+    'subtype.fansign': 'Fan Signs',
     'subtype.brand_event': 'Brand Events',
     'subtype.birthday': 'Birthdays',
     'subtype.premiere': 'Company Events',
@@ -869,7 +871,9 @@ export const translations = {
 
     // 分类内部的子类 Tab。只在 SUBTYPES_BY_CATEGORY 列出的门里出现，
     // 且至少两类有内容时才显示。
+    'subtype.concert': '演唱会与巡演',
     'subtype.fanmeeting': '见面会',
+    'subtype.fansign': '签售会',
     'subtype.brand_event': '品牌活动',
     'subtype.birthday': '生日会',
     'subtype.premiere': '公司活动',
@@ -1333,7 +1337,9 @@ export const translations = {
     'projects.kindTheme': 'ธีม',
 
     // แท็บหมวดย่อยภายในฮอลล์
+    'subtype.concert': 'คอนเสิร์ตและทัวร์',
     'subtype.fanmeeting': 'แฟนมีตติ้ง',
+    'subtype.fansign': 'แฟนไซน์',
     'subtype.brand_event': 'อีเวนต์แบรนด์',
     'subtype.birthday': 'วันเกิด',
     'subtype.premiere': 'กิจกรรมบริษัท',
