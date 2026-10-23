@@ -156,6 +156,7 @@ const DICT: Record<string, [string, string]> = {
   'subtype.lookmhee': ['Lookmhee', 'Lookmhee'],
   'subtype.sonya': ['Sonya', 'Sonya'],
   'drama.group.seriesBody': ['剧集本体', 'The Series'],
+  'drama.group.premiere': ['首映礼', 'Premieres'],
   'drama.group.music': ['音乐作品', 'Music'],
   'drama.group.novel': ['原著小说', 'The Novel'],
   'drama.group.promo': ['宣传节点', 'Announcements'],

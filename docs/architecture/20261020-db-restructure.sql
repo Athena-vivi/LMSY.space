@@ -155,11 +155,13 @@ from pg_constraint where conname = 'projects_subtype_check';
 alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
 alter table lmsy_archive.projects add constraint projects_subtype_check
   check (subtype is null or subtype in (
-    'fanmeeting','brand_event','birthday',
-    'premiere','awards','fashion','brand_stage','industry','charity',
+    'company','awards','fashion','brand_stage','industry','charity',
+    'fanmeeting','concert','fansign','brand_event','birthday',
     'feature','press','tv_news',
     'duo','lookmhee','sonya',
-    'series_body','music','novel','promo','award','footage'
+    -- premiere is a door-1 value since 2026-10-23 (a screening is not the cut);
+    -- door 4's F shelf was renamed to 'company' on the same day.
+    'series_body','premiere','music','novel','promo','award','footage'
   ));
 
 select pg_get_constraintdef(oid) as subtype_check

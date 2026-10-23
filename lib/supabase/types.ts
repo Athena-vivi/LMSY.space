@@ -81,6 +81,9 @@ export type ProjectSubtype =
   | 'lookmhee'
   | 'sonya'
   | 'series_body'
+  // Door 1: a screening with the cast on stage is not part of the cut, so it
+  // left series_body on 2026-10-23 and got its own shelf.
+  | 'premiere'
   | 'music'
   | 'novel'
   | 'promo'

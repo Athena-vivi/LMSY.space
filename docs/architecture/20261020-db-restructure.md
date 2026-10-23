@@ -170,13 +170,14 @@ alter table lmsy_archive.projects add constraint projects_project_kind_check
   check (project_kind in ('event', 'theme', 'series', 'video'));
 
 -- subtype 白名单：去掉三个剧名，加六个组名（2026-10-23 起 4 号门 F 类为 company）
+-- 2026-10-23 同日：1 号门首映礼独立成 premiere，白名单补回该值
 alter table lmsy_archive.projects drop constraint if exists projects_subtype_check;
 alter table lmsy_archive.projects add constraint projects_subtype_check
   check (subtype is null or subtype in (
-    'fanmeeting','brand_event','birthday',
     'company','awards','fashion','brand_stage','industry','charity',
+    'fanmeeting','concert','fansign','brand_event','birthday',
     'feature','press','tv_news','duo','lookmhee','sonya',
-    'series_body','music','novel','promo','award','footage'
+    'series_body','premiere','music','novel','promo','award','footage'
   ));
 
 -- slug 唯一性：全局 → (所属作品, slug)

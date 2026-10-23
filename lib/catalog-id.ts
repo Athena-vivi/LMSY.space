@@ -155,7 +155,7 @@ export const LIVE_EVENT_SUBTYPE_CODES = {
  * both come from a dropdown, and the wizard shows the result instead of
  * asking for it.
  *   LMSY-APPEAR-AWARDS-BKK-20250515-001
- *   SY-APPEAR-FASHION-MNL-20260905-003
+ *   LMSY-APPEAR-FASHION-MNL-20260905-SY-003
  */
 export const APPEARANCE_SUBTYPE_CODES = {
   awards: 'AWARDS',
@@ -165,6 +165,48 @@ export const APPEARANCE_SUBTYPE_CODES = {
   charity: 'CHARITY',
   company: 'COMPANY',
 } as const;
+
+/**
+ * drama_work subtype -> the second SUBJECT segment (spec section 4.1).
+ *
+ * The first segment is the WORK code, carried by the series row itself
+ * (`LMSY-DRAMA-AFFAIR`), so a fourth series needs no entry here - it only
+ * needs its own number. The event code after it says WHICH entry in that
+ * group, because one work has several of each (Affair has four pieces of
+ * footage):
+ *
+ *   LMSY-DRAMA-AFFAIR-PREMIERE                    (one screening per work)
+ *   LMSY-DRAMA-AFFAIR-SERIES-FINALEPISODE
+ *   LMSY-DRAMA-AFFAIR-FOOTAGE-HIGHLIGHTS
+ */
+export const DRAMA_SUBTYPE_CODES = {
+  series_body: 'SERIES',
+  premiere: 'PREMIERE',
+  promo: 'PROMO',
+  footage: 'FOOTAGE',
+  music: 'MUSIC',
+  novel: 'NOVEL',
+  award: 'AWARD',
+} as const;
+
+/**
+ * SUBJECT of a drama event: `<WORK>-<PART>[-<EVENT CODE>]`.
+ *
+ * A part that holds exactly one entry per work (premiere) needs no event code;
+ * everything else does, or two entries would claim the same number. Returns
+ * null for an unknown subtype so the caller asks instead of inventing a code.
+ */
+export function dramaSubject(
+  workCode: string | null | undefined,
+  subtype: string | null | undefined,
+  eventCode?: string | null
+): string | null {
+  const work = (workCode || '').trim().toUpperCase();
+  const part = DRAMA_SUBTYPE_CODES[(subtype || '') as keyof typeof DRAMA_SUBTYPE_CODES];
+  if (!work || !part) return null;
+  const tail = (eventCode || '').trim().toUpperCase();
+  return tail ? `${work}-${part}-${tail}` : `${work}-${part}`;
+}
 
 /**
  * Halls whose SUBJECT is decided by two picks. A hall that is not in this

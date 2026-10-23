@@ -90,28 +90,47 @@ LMSY-EVENT-FANMEET-BKK-20250115-001              双人见面会，没有尾码
 
 ### 4.1 影视作品 `DRAMA`
 
-主体 = 作品码 + 部分码。
+主体 = 作品码 + 部分码 + 事件码。
 
-| 作品 | 码 |
-|---|---|
-| Affair（爱情诡计） | `AFFAIR` |
-| Harmony Secret（和谐密语） | `HARMONY` |
-| Hometown Romance（乡村罗曼史） | `HOMETOWN` |
+| 作品 | 码 | 作品行自己的编号 |
+|---|---|---|
+| Affair（爱情诡计） | `AFFAIR` | `LMSY-DRAMA-AFFAIR` |
+| Harmony Secret（和谐密语） | `HARMONY` | `LMSY-DRAMA-HARMONY` |
+| Hometown Romance（乡村恋人） | `HOMETOWN` | `LMSY-DRAMA-HOMETOWN` |
 
-| 部分（对应 subtype） | 码 |
-|---|---|
-| 剧集正片 / 剧照（`series_body`） | `STILL` |
-| 宣传物料（`promo`） | `PROMO` |
-| 音乐 / MV（`music`） | `MV` |
-| 原著小说（`novel`） | `NOVEL` |
-| 奖项（`award`） | `AWARD` |
-| 花絮影像（`footage`） | `FOOTAGE` |
+作品码由**作品行**（`project_kind = 'series'`）的编号提供，新增剧集只改那一行，不入代码表。
+
+| 部分（对应 subtype） | 码 | 收什么 |
+|---|---|---|
+| 剧集本体 `series_body` | `SERIES` | 正片分集、官方剧照、试播集 |
+| 首映礼 `premiere` | `PREMIERE` | 开播首映场（两人到场、有红毯） |
+| 宣传物料 `promo` | `PROMO` | 官宣、预告、定妆、票务、未剪版 |
+| 音乐 `music` | `MUSIC` | OST / MV |
+| 原著小说 `novel` | `NOVEL` | 原著与改编小说 |
+| 奖项 `award` | `AWARD` | 这部剧去参评的奖项 |
+| 花絮影像 `footage` | `FOOTAGE` | 幕后、Reaction、Highlights、未公开片段 |
+
+**事件码（第三段）**：一个作品的一个部分下往往有多条（Affair 有 4 条花絮），只写「作品 + 部分」会撞号。
+事件码取标题的英文名连写大写，去掉冠词与 `Awards` 这类通用词；年份保留后两位：
 
 ```
-LMSY-DRAMA-AFFAIR-PROMO-20240815-001.webp
-LMSY-DRAMA-HARMONY-STILL-20250726-001.webp
-LMSY-DRAMA-HOMETOWN-AWARD-20260520-001.webp
+LMSY-DRAMA-AFFAIR-FOOTAGE-HIGHLIGHTS
+LMSY-DRAMA-AFFAIR-AWARD-YENTERTAIN24
+LMSY-DRAMA-HARMONY-MUSIC-SECRETDEAL
+LMSY-DRAMA-HOMETOWN-PROMO-FITTING
 ```
+
+- **首映礼省事件码**：一本剧一场首映，`LMSY-DRAMA-AFFAIR-PREMIERE` 已经唯一。同一个作品真出现两场时再加城市码。
+- 泰语标题没有英文副标题的，按第九节给四位以内代号（`KAER`、`FAEN`），并在事件台账登记。
+- 事件码只增不改：它已经写进图片名。
+
+```
+LMSY-DRAMA-AFFAIR-PREMIERE-20240830-001.webp
+LMSY-DRAMA-HARMONY-SERIES-FINALEPISODE-20250914-001.webp
+LMSY-DRAMA-AFFAIR-AWARD-YENTERTAIN24-001.webp
+```
+
+代码唯一入口：`lib/catalog-id.ts` 的 `DRAMA_SUBTYPE_CODES` 与 `dramaSubject()`。
 
 ### 4.2 杂志 `MAG`
 
