@@ -5,9 +5,11 @@ import {
   allocateNextCatalogId,
   isCatalogIdConflict,
   CATEGORY_TO_CATALOG_PREFIX,
+  DOOR_CODES,
   generateCatalogId,
   parseCatalogId,
 } from '../lib/catalog-id.ts';
+import { PROJECT_CATEGORIES } from '../lib/category-registry.ts';
 
 // ---------------------------------------------------------------------------
 // Task 1: source-channel words must never become the formal image tag
@@ -76,22 +78,64 @@ test('allocateNextCatalogId is scoped to the category prefix', async () => {
   assert.equal(id, 'LMSY-AD-20241023-001');
 });
 
-test('CATEGORY_TO_CATALOG_PREFIX keeps the existing production mapping', () => {
+test('CATEGORY_TO_CATALOG_PREFIX maps every real category onto a legal door code', () => {
   // Door codes come from the canonical naming spec
   // (docs/architecture/20261021-asset-naming.md section 3). The previous
   // STILL/STAGE/DAILY/TRV/AD mapping was a different scheme that produced IDs
   // no page could read, so it is intentionally gone.
-  assert.deepEqual(CATEGORY_TO_CATALOG_PREFIX, {
-    drama_work: 'DRAMA',
-    editorial: 'MAG',
-    live_event: 'EVENT',
-    public_appearance: 'APPEAR',
-    commercial: 'BRAND',
-    talks: 'TALK',
-    live: 'LIVE',
-    behind_the_scenes: 'BTS',
-    early_archive: 'EARLY',
-  });
+  //
+  // The key list is pinned to lib/category-registry.ts rather than written out
+  // here: a category added there without a door code (or a leftover key for a
+  // category that no longer exists) has to fail this test, not slip through.
+  assert.deepEqual(
+    Object.keys(CATEGORY_TO_CATALOG_PREFIX).sort(),
+    PROJECT_CATEGORIES.filter((c) => c !== 'personal_travel').sort()
+  );
+
+  for (const [category, door] of Object.entries(CATEGORY_TO_CATALOG_PREFIX)) {
+    assert.ok(
+      (DOOR_CODES as readonly string[]).includes(door),
+      `${category} maps to "${door}", which is not a door code`
+    );
+  }
+
+  // The five homepage entries. A theme is NOT a category: it is
+  // project_kind = 'theme' and reaches the FEAT door through
+  // doorCodeForProject(), so it never appears as a key here.
+  assert.deepEqual(
+    {
+      drama_work: CATEGORY_TO_CATALOG_PREFIX.drama_work,
+      editorial: CATEGORY_TO_CATALOG_PREFIX.editorial,
+      live_event: CATEGORY_TO_CATALOG_PREFIX.live_event,
+      public_appearance: CATEGORY_TO_CATALOG_PREFIX.public_appearance,
+      commercial: CATEGORY_TO_CATALOG_PREFIX.commercial,
+    },
+    {
+      drama_work: 'DRAMA',
+      editorial: 'MAG',
+      live_event: 'EVENT',
+      public_appearance: 'APPEAR',
+      commercial: 'BRAND',
+    }
+  );
+
+  // Two halls store their second level AS the category, so the project
+  // category is the shelf / the platform - never the door name. `talks` and
+  // `live` are door names, not categories, and must not come back as keys.
+  assert.deepEqual(
+    {
+      interview: CATEGORY_TO_CATALOG_PREFIX.interview,
+      variety: CATEGORY_TO_CATALOG_PREFIX.variety,
+      radio: CATEGORY_TO_CATALOG_PREFIX.radio,
+      live_stream: CATEGORY_TO_CATALOG_PREFIX.live_stream,
+    },
+    { interview: 'TALK', variety: 'TALK', radio: 'TALK', live_stream: 'LIVE' }
+  );
+
+  // Legacy halls: the codes stay parseable for the rows that already carry
+  // them, but neither has a front door any more.
+  assert.equal(CATEGORY_TO_CATALOG_PREFIX.behind_the_scenes, 'BTS');
+  assert.equal(CATEGORY_TO_CATALOG_PREFIX.early_archive, 'EARLY');
 });
 
 test('allocated ids satisfy the catalog-id format and round-trip parsing', async () => {
