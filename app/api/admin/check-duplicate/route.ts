@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { listR2Objects, getR2ObjectMetadata } from '@/lib/r2-client';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 
 /**
  * Duplicate Detection API
@@ -12,22 +11,8 @@ import { getAdminEmail } from '@/lib/security/api-auth';
 export async function POST(request: NextRequest) {
   try {
     // Authentication
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      return NextResponse.json(
-        { error: 'Unauthorized', details: authResult.error },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user.email?.toLowerCase() !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     const body = await request.json();
     const { checksum, size } = body;
@@ -103,16 +88,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user?.email?.toLowerCase() !== adminEmail) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     const r2ListResult = await listR2Objects();
 

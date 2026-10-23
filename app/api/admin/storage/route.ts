@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { listR2Objects } from '@/lib/r2-client';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 
 /**
  * Storage Usage API
@@ -27,24 +26,8 @@ function formatBytes(bytes: number): string {
 export async function GET(request: NextRequest) {
   try {
     // Authentication
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      console.error('[STORAGE] ❌ Authentication failed:', authResult.error);
-      return NextResponse.json(
-        { error: 'Unauthorized', details: authResult.error },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user.email?.toLowerCase() !== adminEmail) {
-      console.error('[STORAGE] ❌ Authorization failed: Non-admin user');
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     console.log('[STORAGE] 🔍 Calculating R2 storage usage...');
 

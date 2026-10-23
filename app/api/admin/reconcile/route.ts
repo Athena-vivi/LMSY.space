@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { listR2Objects, BASE_CDN_URL } from '@/lib/r2-client';
 import { generateBlurData } from '@/lib/image-processing';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 
 /**
  * R2 prefixes that hold archive assets.
@@ -42,24 +41,8 @@ interface ReconcileResult {
 export async function POST(request: NextRequest) {
   try {
     // Authentication
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      console.error('[RECONCILE] ❌ Authentication failed:', authResult.error);
-      return NextResponse.json(
-        { error: 'Unauthorized', details: authResult.error },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user.email?.toLowerCase() !== adminEmail) {
-      console.error('[RECONCILE] ❌ Authorization failed: Non-admin user');
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     console.log('[RECONCILE] 🔍 Starting manual reconciliation...');
 
@@ -238,22 +221,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user?.email?.toLowerCase() !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     console.log('[RECONCILE] 🔍 Preview mode - listing R2 objects...');
 

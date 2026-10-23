@@ -1,4 +1,3 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { uploadToR2 } from '@/lib/r2-client';
@@ -7,7 +6,7 @@ import {
   generateMagazinePageCatalogId,
   getR2PathForCatalogId,
 } from '@/lib/catalog-id';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 
 /**
  * Magazine Upload API - Astra 馆长档案标准
@@ -30,49 +29,18 @@ import { getAdminEmail } from '@/lib/security/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+    // Verify admin authentication via the single source of truth for admin access.
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
-    // Auth with SSR client（Schema 锁定到 lmsy_archive）
-    const supabaseAuth = createServerClient(
-      rawUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-        db: {
-          schema: 'lmsy_archive',
-        },
-      }
-    );
+    const supabaseAdmin = getSupabaseAdmin();
 
-    // Verify user authentication
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Double-check admin email
-    const adminEmail = getAdminEmail();
-    if (user.email?.toLowerCase() !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    // Verify admin role
-    const { data: adminCheck, error: adminError } = await supabaseAuth
+    // Preserve the active-admin role gate (requireAdmin only checks the email).
+    const { data: adminCheck, error: adminError } = await supabaseAdmin
       .schema('lmsy_archive')
       .from('admin_users')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', auth.userId)
       .eq('is_active', true)
       .single();
 
@@ -115,9 +83,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Get admin client for database operations
-    const supabaseAdmin = getSupabaseAdmin();
 
     console.log('[MAGAZINE] Event date (local):', eventDate);
 
@@ -278,39 +243,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
-
-    const supabaseAuth = createServerClient(
-      rawUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-        db: {
-          schema: 'lmsy_archive',
-        },
-      }
-    );
-
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (user.email?.toLowerCase() !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     const supabaseAdmin = getSupabaseAdmin();
 

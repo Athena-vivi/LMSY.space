@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 
 /**
  * Projects Management API
@@ -26,22 +25,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      return NextResponse.json(
-        { error: 'Unauthorized', details: authResult.error },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user.email?.toLowerCase() !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     const { id } = await params;
 
@@ -99,24 +84,8 @@ export async function DELETE(
 ) {
   try {
     // Authentication
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      console.error('[PROJECTS_DELETE] ❌ Authentication failed:', authResult.error);
-      return NextResponse.json(
-        { error: 'Unauthorized', details: authResult.error },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user.email?.toLowerCase() !== adminEmail) {
-      console.error('[PROJECTS_DELETE] ❌ Authorization failed: Non-admin user');
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     // Get project ID
     const { id } = await params;
@@ -173,24 +142,8 @@ export async function PATCH(
 ) {
   try {
     // Authentication
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      console.error('[PROJECTS_PATCH] ❌ Authentication failed:', authResult.error);
-      return NextResponse.json(
-        { error: 'Unauthorized', details: authResult.error },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user.email?.toLowerCase() !== adminEmail) {
-      console.error('[PROJECTS_PATCH] ❌ Authorization failed: Non-admin user');
-      return NextResponse.json(
-        { error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     // Get project ID
     const { id } = await params;
