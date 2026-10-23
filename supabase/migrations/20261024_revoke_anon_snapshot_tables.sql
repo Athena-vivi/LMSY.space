@@ -1,6 +1,9 @@
 -- Security hygiene: close anon read on the internal snapshot tables.
 --
--- Status: NOT APPLIED. Needs an explicit go-ahead before it touches prod.
+-- Status: APPLIED to production 2026-10-24 (Supabase management API).
+-- Verified after applying: 71/71 tables have RLS on, 0 left RLS-off; anon
+-- gets 401 on the snapshots and still 200 on project_people / works /
+-- projects / gallery_assets / profiles / site_content_blocks.
 --
 -- Finding (measured 2026-10-24)
 -- -----------------------------

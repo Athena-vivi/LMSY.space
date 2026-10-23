@@ -1,6 +1,9 @@
 -- P1-A / D2: make RLS the second line of defence on `projects`.
 --
--- Status: NOT APPLIED. Needs an explicit go-ahead before it touches prod.
+-- Status: APPLIED to production 2026-10-24 (Supabase management API).
+-- Verified after applying: anon sees 174 / 182 rows, service_role sees 182;
+-- the 8 hidden rows are radar containers, a draft, archived rows and one
+-- test project ("TEMP TALK DOOR TEST") - none of which are public content.
 --
 -- Why this file exists
 -- --------------------

@@ -99,7 +99,7 @@ END $$;
 
 **PII 处理（决策点 D1，已实测修正）**：本文最初建议建 `public_profiles` 视图只暴露 6 个展示列。实测推翻：生产 `profiles` **本来就是整行 anon 可读**（`birthday/bio/bio_i18n/ig_handle/x_handle/slug/role_label` 都能读），而人物页确实要读这些列——改成 6 列视图会把人物页读空。所以按生产现状落地：整行公开读，与 `profiles` 现有 `Allow public read`（`TO anon USING (true)`）一致。见 `supabase/migrations/20261024_public_read_profiles.sql`。
 
-### 4.2 `projects` RLS 收紧到可见性谓词（决策点 D2）——迁移稿已写，**未执行**
+### 4.2 `projects` RLS 收紧到可见性谓词（决策点 D2）——**已执行（2026-10-24）**
 
 > 实况审计（2026-10-24 查 `pg_policies` / `pg_class`）改写了这一节的结论，迁移稿见 `supabase/migrations/20261024_public_read_projects_visibility.sql`。
 
@@ -128,7 +128,7 @@ CREATE POLICY phase1_public_read ON lmsy_archive.projects
 
 **影响面实测（182 行）**：`portal_visible=false` 8 行、`is_container=true` 3 行、`curation_status` 无 NULL；应用层过滤后 174 行，新策略同样 174 行 → anon 今天看到什么，收紧后还是什么，只是拿不到那 8 行隐藏行的**直连**。service_role 全程绕过 RLS，admin 路由、`lib/promote.ts`、`app/admin/preview` 不受影响。
 
-### 4.3 顺带发现：57 张内部快照表 anon 可读（独立迁移稿，**未执行**）
+### 4.3 顺带发现：57 张内部快照表 anon 可读（**已执行，2026-10-24**）
 
 `pg_class` + `information_schema.role_table_grants` 审计结果：`lmsy_archive` 下有 **57 张 `*_snap_*` / `snap_*` 备份表 RLS 关闭且对 `anon`、`authenticated` 授予了 SELECT**，实测 anon 直连 `gallery_assets_snap_m1_20261020?select=*` 返回 200 + 真实行。这些是历次改数据前拍的整表快照（`projects` / `gallery_assets` / `profiles`），里面**包含当时未公开的行、后来删掉的行**。
 
@@ -137,6 +137,26 @@ CREATE POLICY phase1_public_read ON lmsy_archive.projects
 同一批里还有两张**真表**是 RLS 关闭的：`works`、`project_people`。`project_people` 正是人物页公开读的对象（这也是切 anon 后人物页没空的原因）。处理方式是 `ENABLE ROW LEVEL SECURITY` + 补一条 `USING (true)` 读策略——对 SELECT 与今天等价，但表不再是「授权即全开」。
 
 **尚未处理、留给你定**：`publications`（RLS 开、anon 可读、代码无引用）、`catalog_registry`（读策略 `TO public`，实际只有 `/api/admin/catalog-registry` 用）。
+
+### 4.4 两份迁移的执行结果（2026-10-24 02:4x，管理 API 直跑）
+
+先跑快照收口，再跑 D2，顺序是先零风险后动策略。
+
+| 检查项 | 执行前 | 执行后 |
+|---|---|---|
+| RLS 关闭的表 | 59 / 71 | **0 / 71** |
+| anon 读 `gallery_assets_snap_m1_20261020` | 200 + 真实行 | **401** |
+| anon 读 `projects_snap_*` / `profiles_snap_*` / `snap_*` | 200 | **401** |
+| anon 读 `project_people` / `works` | 200 | 200（补 `USING (true)`，SELECT 等价） |
+| anon 读 `projects` 行数 | 182 | **174** |
+| service_role 读 `projects` 行数 | 182 | 182 |
+| anon 按 id 直连隐藏行（`TEMP TALK DOOR TEST`） | 读到 | **`[]`** |
+
+被挡掉的 8 行实为：3 个自动雷达采集容器（`Photo from …Radar`）、1 个 draft（`20261003越南`）、1 个 archived 老条目、`MILESTONES_ARCHIVE`、`Project 2026-03-15/10-19`、以及一个测试项目 `TEMP TALK DOOR TEST` —— 没有一条是访客内容。
+
+公开读回归（anon）：`projects`（含嵌入 `gallery_assets`）、`gallery_assets.category_slot`、`site_content_blocks`、`profiles`、`chronicle_events`（空表返回 `[]`）、`project_people`、`works` 全部 200。
+
+**对线上零影响**：当前部署的代码全部走 service-role（切 anon 的 17 个 commit 还没 push），所以这两次 DDL 对线上页面没有任何行为变化，风险只到「部署之后」才需要再确认一次。
 
 ---
 
@@ -222,3 +242,39 @@ CREATE POLICY phase1_public_read ON lmsy_archive.projects
 先做 **D1（profiles 视图）+ D3 推迟（只切 SSR 页面）**：即阶段 A → B（只加 profiles 视图/policy）→ C（dramas/people/sitemap/门页）。D2 的 projects RLS 收紧单独排一次，作为加固。D4 保留双保险。
 
 这样能在不改写 API、不动 service-role 写路径的前提下，让公开门页真正受 RLS 约束。
+
+---
+
+## 11. 收口评估：到这里就该停了（2026-10-24）
+
+按「不要过度优化」的判断，把这条线分成三档：
+
+### 11.1 已完成，且确实有价值
+
+| 项 | 结果 |
+|---|---|
+| 单一鉴权 `requireAdmin` 收敛 | 41 个路由文件一个入口，`app/api/admin/**` 内联鉴权残留 **0** 处 |
+| `/admin/preview` 服务端授权 | 预览页不再靠前端拦 |
+| gallery 读数分页 | 门/货架不再被 1000 行截断 |
+| 1000 行地雷 ×4 | 含 `reconcile` 那颗（会把已有素材当"缺"再插一遍，直接造重复数据） |
+| 数据访问层收口 | admin 写路由 + 公开读全部进 `lib/data`，错误契约逐字保留 |
+| 构建卫生 | `tsc` 38 → **0**；`eslint` 501 → 139 |
+| 公开读特权分级 | anon 客户端 + 10 个 SSR reader + editorial/cover-slots；**RLS 现在真的在过滤**（D2 已执行，59 张表已收口） |
+
+这条线已经是「做完」的状态。RLS 从「名义上有」变成「真的拦得住」，是本轮唯一有安全意义的净增量。
+
+### 11.2 值得做完的，只剩三件
+
+1. **push + 部署 + 一次线上冒烟**。17 个 commit 全在本地，等于零收益上线前。RLS 现在比代码严，部署后要确认门页/人物页/editorial 不空。**这是唯一还有实际风险的未完成项。**
+2. **`api/admin/magazine` 往 legacy `gallery` 表插图**（该表 0 行）——上传的期页永远不显示。这是功能 bug，优先级高于任何重构。
+3. 部署后如果发现某个公开页空白，回滚 D2 一条 `CREATE POLICY ... USING (true)` 即可，不用回滚代码。
+
+### 11.3 明确不建议再做的
+
+| 项 | 为什么不做 |
+|---|---|
+| 把 `api/home/*`、`milestones`、`project-gallery`、`site-content` 切 anon | 这几个路由的 anon key 不出现在浏览器，切换收益接近 0；代价是首页卡片/作品详情的回归风险（历史上真被这类改动搞挂过） |
+| 剩余 68 条 lint（any 44 + hooks 16 + components 实体 6） | 要动 39 个文件，含你正在编辑的 `components/`；`any` 那条要等 `supabase gen types` 一次解决，纯整洁度 |
+| 内联 `.schema()` 剩下 25 个文件 / 56 处调用（upload/reprocess/sync-covers/integrity/stats/messages，以及 people 两页的 `project_people` 直读） | 都是 R2 混合流程或单表直读，迁移成本高、行为风险大，收益只是"少一处直连" |
+| `publications` / `catalog_registry` 策略 | 一个死表一个只有 admin 用，对访客零影响 |
+| 全站重排、批量改名之类的"顺手整理" | 2026-10-22 已用 13 张图片错位换过这个教训 |
