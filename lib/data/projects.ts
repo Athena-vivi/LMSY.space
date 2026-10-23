@@ -378,3 +378,800 @@ export async function getProjectTalkCoverPicks(
 
   return (data ?? []) as ProjectTalkCoverRow[];
 }
+
+// ---------------------------------------------------------------------------
+// Door 1 - dramas (moved from app/dramas/*)
+//
+// One table, one kind field: a series is a project row (project_kind =
+// 'series') and every entry under it is another row pointing back through
+// work_id. The three pages read that shape three different ways, so each
+// query keeps its own column list rather than sharing a wider one - the
+// detail pages carry the two visibility columns because they run
+// isPublicProject() on the row themselves.
+//
+// Error style per page: all three swallow a read failure (the old code only
+// ever destructured `data`), so a failed query renders an empty door - the
+// same behaviour as every other public page here.
+// ---------------------------------------------------------------------------
+
+/** The uuid test the drama pages share; a key is either a slug or a uuid. */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const DRAMA_SERIES_COLUMNS =
+  'id, work_id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url';
+
+/** The series row plus the two columns isPublicProject() reads. */
+export const DRAMA_SERIES_DETAIL_COLUMNS = `${DRAMA_SERIES_COLUMNS}, curation_status, portal_visible`;
+
+export interface DramaSeriesRow {
+  id: string;
+  work_id: string | null;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  description?: string | null;
+  description_i18n?: LocalizedText | null;
+  subtype: string | null;
+  event_date: string | null;
+  release_date: string | null;
+  cover_url: string | null;
+  /** Present on the detail pages' rows only; isPublicProject() reads them. */
+  curation_status?: string | null;
+  portal_visible?: boolean | null;
+}
+
+/** The three series cards on /dramas. Answers [] on a read failure. */
+export async function listDramaSeries(db: AdminClient): Promise<DramaSeriesRow[]> {
+  const { data } = await applyPublicProjectFilter(
+    db.schema('lmsy_archive').from('projects').select(DRAMA_SERIES_COLUMNS)
+  )
+    .eq('category', 'drama_work')
+    .eq('project_kind', 'series')
+    // Newest series first: a new work appears at the top of the door the day
+    // it is added, which is how every other door is read too.
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
+
+  return (data ?? []) as unknown as DramaSeriesRow[];
+}
+
+/**
+ * Entry count per series, grouped by work_id: an entry carries the same
+ * work_id as its series, so the grouping key is the work, not the series
+ * row. Deliberately NOT public-filtered (verbatim) - /dramas only ever asks
+ * about series it just read through the public filter. Answers {} on a read
+ * failure.
+ */
+export async function countDramaEntriesByWorkId(
+  db: AdminClient,
+  workIds: string[]
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  if (workIds.length === 0) return counts;
+
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('work_id')
+    .in('work_id', workIds)
+    .neq('project_kind', 'series');
+
+  for (const row of (data ?? []) as Array<{ work_id: string | null }>) {
+    if (!row.work_id) continue;
+    counts[row.work_id] = (counts[row.work_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/**
+ * One series by slug, or by id when the slug looks like a uuid. NOT
+ * public-filtered: the page applies isPublicProject() itself, so a draft
+ * series still resolves and 404s through the page's own rule. Answers null
+ * on a read failure (verbatim - the old code only read `data`).
+ */
+export async function getDramaSeriesByKey(
+  db: AdminClient,
+  key: string
+): Promise<DramaSeriesRow | null> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select(DRAMA_SERIES_DETAIL_COLUMNS)
+    .eq('category', 'drama_work')
+    .eq('project_kind', 'series')
+    .eq('slug', key)
+    .maybeSingle();
+
+  if (data) return data as DramaSeriesRow;
+  if (!UUID_PATTERN.test(key)) return null;
+
+  const { data: byId } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select(DRAMA_SERIES_DETAIL_COLUMNS)
+    .eq('category', 'drama_work')
+    .eq('project_kind', 'series')
+    .eq('id', key)
+    .maybeSingle();
+
+  return (byId as DramaSeriesRow | null) ?? null;
+}
+
+export const DRAMA_ENTRY_COLUMNS =
+  'id, work_id, slug, title, title_i18n, event_date, description, description_i18n, watch_url, tags, portal_priority, project_kind, subtype, cover_url, created_at';
+
+export interface DramaEntryRow {
+  id: string;
+  work_id: string | null;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  event_date: string | null;
+  description: string | null;
+  description_i18n: LocalizedText | null;
+  watch_url: string | null;
+  tags: string[] | null;
+  portal_priority: number | null;
+  project_kind: string | null;
+  subtype: string | null;
+  cover_url: string | null;
+  created_at: string | null;
+}
+
+/**
+ * Every entry under one series, newest first. NOT public-filtered (verbatim):
+ * the page resolves the series through the public rule first, and the entry
+ * list follows the work it already trusts. Answers [] on a read failure.
+ */
+export async function listDramaEntries(
+  db: AdminClient,
+  workId: string
+): Promise<DramaEntryRow[]> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select(DRAMA_ENTRY_COLUMNS)
+    .eq('work_id', workId)
+    .neq('project_kind', 'series')
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('portal_priority', { ascending: true });
+
+  return (data ?? []) as unknown as DramaEntryRow[];
+}
+
+export interface DramaSiblingRow {
+  id: string;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  subtype: string | null;
+  event_date: string | null;
+  release_date: string | null;
+  cover_url: string | null;
+}
+
+/**
+ * The sibling strip at the bottom of a series page: the other series cards,
+ * public-filtered. Answers [] on a read failure.
+ */
+export async function listDramaSeriesSiblings(db: AdminClient): Promise<DramaSiblingRow[]> {
+  const { data } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, slug, title, title_i18n, subtype, event_date, release_date, cover_url')
+  )
+    .eq('category', 'drama_work')
+    .eq('project_kind', 'series')
+    .order('event_date', { ascending: false, nullsFirst: false });
+
+  return (data ?? []) as unknown as DramaSiblingRow[];
+}
+
+/**
+ * The series header of /dramas/[slug]/[event]: one query that addresses the
+ * row by id when the slug looks like a uuid, by slug otherwise. NOT
+ * public-filtered (the page runs isPublicProject on the row). Answers null
+ * on a read failure.
+ */
+export async function getDramaEventSeries(
+  db: AdminClient,
+  key: string
+): Promise<DramaSeriesRow | null> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select(
+      'id, work_id, slug, title, title_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible'
+    )
+    .eq('category', 'drama_work')
+    .eq('project_kind', 'series')
+    .eq(UUID_PATTERN.test(key) ? 'id' : 'slug', key)
+    .maybeSingle();
+
+  return (data as DramaSeriesRow | null) ?? null;
+}
+
+/**
+ * One entry of a series, addressed by the work it belongs to plus its own
+ * slug (or uuid). Answers null on a read failure.
+ */
+export async function getDramaEntryByKey(
+  db: AdminClient,
+  workId: string,
+  key: string
+): Promise<DramaEntryRow | null> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select(DRAMA_ENTRY_COLUMNS)
+    .eq('work_id', workId)
+    .neq('project_kind', 'series')
+    .eq(UUID_PATTERN.test(key) ? 'id' : 'slug', key)
+    .maybeSingle();
+
+  return (data as DramaEntryRow | null) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// People (moved from app/people/*)
+// ---------------------------------------------------------------------------
+
+/** Ids of every visitor-visible project, for the per-person counts. Answers [] on a read failure. */
+export async function listPublicProjectIds(db: AdminClient): Promise<string[]> {
+  const { data } = await applyPublicProjectFilter(
+    db.schema('lmsy_archive').from('projects').select('id')
+  );
+
+  return ((data ?? []) as Array<{ id: string }>).map((row) => row.id);
+}
+
+export interface PersonProjectRow {
+  id: string;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  category: string | null;
+  subtype: string | null;
+  project_kind: string | null;
+  work_id: string | null;
+  event_date: string | null;
+  cover_url: string | null;
+}
+
+/**
+ * The projects one person appears in, newest first. The id list comes from
+ * project_people (Phase 3); this is the public-filtered projects half.
+ * Answers [] on a read failure.
+ */
+export async function listPersonProjects(
+  db: AdminClient,
+  ids: string[]
+): Promise<PersonProjectRow[]> {
+  if (ids.length === 0) return [];
+
+  const { data } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, slug, title, title_i18n, category, subtype, project_kind, work_id, event_date, cover_url')
+      .in('id', ids)
+  ).order('event_date', { ascending: false, nullsFirst: false });
+
+  return (data ?? []) as unknown as PersonProjectRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Homepage (moved from app/api/home/*)
+// ---------------------------------------------------------------------------
+
+export interface HomeSummaryProjectRow {
+  id: string;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  category: string | null;
+  event_date: string | null;
+  cover_url: string | null;
+  homepage_featured: boolean | null;
+  portal_priority: number | null;
+}
+
+/**
+ * Every public project with the columns the summary block ranks by.
+ * Returns null on a read failure - the route answers 500 there, so the
+ * failure has to stay distinguishable from an empty archive.
+ */
+export async function listHomeSummaryProjects(
+  db: AdminClient
+): Promise<HomeSummaryProjectRow[] | null> {
+  const { data, error } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, slug, title, title_i18n, category, event_date, cover_url, homepage_featured, portal_priority')
+  );
+
+  if (error) return null;
+  return (data ?? []) as unknown as HomeSummaryProjectRow[];
+}
+
+export interface PortalProjectRow {
+  id: string;
+  cover_url: string | null;
+}
+
+/**
+ * The projects of one homepage hall, in cover-priority order. Returns null
+ * on a read failure - the route answers { cover: null, count: 0 } per hall
+ * there, so an unreadable hall degrades alone instead of failing the page.
+ */
+export async function listPublicPortalProjects(
+  db: AdminClient,
+  category: string
+): Promise<PortalProjectRow[] | null> {
+  const { data, error } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, cover_url')
+      .eq('category', category)
+  )
+    .order('portal_priority', { ascending: false })
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
+
+  if (error) return null;
+  return (data ?? []) as unknown as PortalProjectRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Editorial (moved from lib/editorial-issues.ts and app/api/editorial)
+//
+// One issue is one project row (category = 'editorial') plus its gallery
+// pages. Both readers embed the pages in one request - the embedded select
+// cannot carry an ORDER BY, so the page sort happens in the caller on the
+// catalog plate, which is the page number.
+// ---------------------------------------------------------------------------
+
+/** Columns shared by the /editorial rack and the /features rack. */
+export const EDITORIAL_ISSUE_COLUMNS = `
+  id,
+  slug,
+  title,
+  title_i18n,
+  description,
+  description_i18n,
+  category,
+  cover_url,
+  blur_data,
+  release_date,
+  catalog_id,
+  created_at,
+  gallery_assets (
+    id,
+    image_url,
+    blur_data,
+    caption,
+    catalog_id,
+    created_at
+  )
+`;
+
+export interface EditorialIssueRow {
+  id: string;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  description: string | null;
+  description_i18n: LocalizedText | null;
+  category: string | null;
+  cover_url: string | null;
+  blur_data: string | null;
+  release_date: string | null;
+  catalog_id: string | null;
+  created_at: string | null;
+  gallery_assets: Array<{
+    id: string;
+    image_url: string;
+    blur_data: string | null;
+    caption: string | null;
+    catalog_id: string | null;
+    created_at: string | null;
+  }> | null;
+}
+
+/** Every public issue, newest first - the rack on /editorial. Answers [] on a read failure. */
+export async function listEditorialIssues(db: AdminClient): Promise<EditorialIssueRow[]> {
+  const { data } = await applyPublicProjectFilter(
+    db.schema('lmsy_archive').from('projects').select(EDITORIAL_ISSUE_COLUMNS).eq('category', 'editorial')
+  )
+    // Newest issue first. Issues whose date is still unknown sink to the end
+    // instead of floating to the top on a NULL sort key.
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
+
+  return (data ?? []) as unknown as EditorialIssueRow[];
+}
+
+/** One issue by slug (or uuid), same visibility rule as the rack. Null on a read failure. */
+export async function getEditorialIssueByKey(
+  db: AdminClient,
+  key: string
+): Promise<EditorialIssueRow | null> {
+  const { data } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select(EDITORIAL_ISSUE_COLUMNS)
+      .eq('category', 'editorial')
+      .eq(UUID_PATTERN.test(key) ? 'id' : 'slug', key)
+  ).maybeSingle();
+
+  return (data as EditorialIssueRow | null) ?? null;
+}
+
+/** Every public theme project (project_kind = 'theme'), for the rack on /features. Answers [] on a read failure. */
+export async function listFeatureTopics(db: AdminClient): Promise<EditorialIssueRow[]> {
+  const { data } = await applyPublicProjectFilter(
+    db.schema('lmsy_archive').from('projects').select(EDITORIAL_ISSUE_COLUMNS).eq('project_kind', 'theme')
+  )
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
+
+  return (data ?? []) as unknown as EditorialIssueRow[];
+}
+
+/**
+ * The JSON API's own column list: the rack columns plus the homepage feature
+ * fields. Returns null on a read failure - the route answers 500
+ * EDITORIAL_QUERY_FAILED there.
+ */
+export async function listEditorialIssuesForApi(
+  db: AdminClient
+): Promise<EditorialIssueRow[] | null> {
+  const { data, error } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select(`
+        id,
+        slug,
+        title,
+        title_i18n,
+        description,
+        description_i18n,
+        category,
+        cover_url,
+        homepage_featured,
+        homepage_excerpt,
+        homepage_excerpt_i18n,
+        homepage_cover_url,
+        blur_data,
+        release_date,
+        catalog_id,
+        created_at,
+        gallery_assets (
+          id,
+          image_url,
+          blur_data,
+          caption,
+          catalog_id,
+          created_at
+        )
+      `)
+      .eq('category', 'editorial')
+  ).order('release_date', { ascending: false, nullsFirst: false });
+
+  if (error) return null;
+  return (data ?? []) as unknown as EditorialIssueRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Chronicle (moved from lib/timeline.ts and lib/series-slugs.ts)
+// ---------------------------------------------------------------------------
+
+export interface TimelineProjectRow {
+  id: string;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  category: string;
+  project_kind: string | null;
+  event_date: string | null;
+  release_date: string | null;
+}
+
+/**
+ * Public projects for the chronicle. Deliberately NOT filtered by year: a
+ * project dated 2025 can own assets dated 2026, and filtering the list by
+ * year would orphan those assets. Returns null on a read failure - the
+ * caller logs and answers an empty timeline, keeping the failure visible.
+ */
+export async function listPublicTimelineProjects(
+  db: AdminClient
+): Promise<TimelineProjectRow[] | null> {
+  const { data, error } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, slug, title, title_i18n, category, project_kind, event_date, release_date')
+  );
+
+  if (error) return null;
+  return (data ?? []) as unknown as TimelineProjectRow[];
+}
+
+export interface SeriesSlugRow {
+  id: string;
+  slug: string | null;
+  category: string | null;
+  project_kind: string | null;
+  work_id: string | null;
+}
+
+/**
+ * The three drama series rows behind work_id -> slug. Returns null on a read
+ * failure - the caller answers an empty map, verbatim.
+ */
+export async function listSeriesSlugRows(
+  db: AdminClient
+): Promise<SeriesSlugRow[] | null> {
+  const { data, error } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('id, slug, category, project_kind, work_id')
+    .eq('category', 'drama_work')
+    .eq('project_kind', 'series');
+
+  if (error) return null;
+  return (data ?? []) as unknown as SeriesSlugRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Sitemap (moved from app/sitemap.ts)
+// ---------------------------------------------------------------------------
+
+export interface SitemapProjectRow {
+  id: string;
+  work_id: string | null;
+  slug: string | null;
+  category: string | null;
+  project_kind: string | null;
+  subtype: string | null;
+  created_at: string | null;
+}
+
+/** Every public row the sitemap may advertise. Answers [] on a read failure. */
+export async function listPublicSitemapProjects(
+  db: AdminClient
+): Promise<SitemapProjectRow[]> {
+  const { data } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, work_id, slug, category, project_kind, subtype, created_at')
+  );
+
+  return (data ?? []) as unknown as SitemapProjectRow[];
+}
+
+export interface DramaEventSlugRow {
+  work_id: string | null;
+  slug: string | null;
+  created_at: string | null;
+}
+
+/** Door 1's third level: every entry hanging off the given works. Answers [] on a read failure. */
+export async function listDramaEventSlugRows(
+  db: AdminClient,
+  workIds: string[]
+): Promise<DramaEventSlugRow[]> {
+  if (workIds.length === 0) return [];
+
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('work_id, slug, created_at')
+    .in('work_id', workIds)
+    .neq('project_kind', 'series');
+
+  return (data ?? []) as unknown as DramaEventSlugRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Admin preview (moved from app/admin/preview/[id]/page.tsx)
+// ---------------------------------------------------------------------------
+
+/**
+ * A project by slug, or by id when the key looks like a uuid. NOT
+ * public-filtered: the preview page runs isPublicProject() itself. Answers
+ * null on a read failure (verbatim - the page only read `data`).
+ */
+export async function getProjectBySlugOrId(
+  db: AdminClient,
+  key: string
+): Promise<ProjectRow | null> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('*')
+    .eq('slug', key)
+    .maybeSingle();
+
+  if (data) return data as ProjectRow;
+  if (!UUID_PATTERN.test(key)) return null;
+
+  const { data: byId } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('*')
+    .eq('id', key)
+    .maybeSingle();
+
+  return (byId as ProjectRow | null) ?? null;
+}
+
+export interface RelatedProjectRow {
+  id: string;
+  slug: string | null;
+  title: string;
+  title_i18n: LocalizedText | null;
+  category: string | null;
+  event_date: string | null;
+  release_date: string | null;
+}
+
+/** "More in this category" on the preview page: same hall, other rows. Answers [] on a read failure. */
+export async function listRelatedProjects(
+  db: AdminClient,
+  options: { excludeId: string; category: string; limit: number }
+): Promise<RelatedProjectRow[]> {
+  const { data } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, slug, title, title_i18n, category, event_date, release_date')
+      .neq('id', options.excludeId)
+      .eq('category', options.category)
+      .order('event_date', { ascending: false, nullsFirst: false })
+      .limit(options.limit)
+  );
+
+  return (data ?? []) as unknown as RelatedProjectRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Admin reads (moved from app/api/admin/*)
+// ---------------------------------------------------------------------------
+
+export interface SyncCoverProjectRow {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  release_date: string | null;
+  catalog_id: string | null;
+}
+
+/**
+ * Every row the cover-sync route matches against. Throws on a read failure -
+ * the route wraps the message into its own 500 details, verbatim.
+ */
+export async function listSyncCoverProjects(
+  db: AdminClient
+): Promise<SyncCoverProjectRow[]> {
+  const { data, error } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('id, title, cover_url, release_date, catalog_id');
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as SyncCoverProjectRow[];
+}
+
+/** The projects count for the admin stats badge. Swallows its error and answers 0, verbatim. */
+export async function countAllProjects(db: AdminClient): Promise<number> {
+  const { count, error } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('id', { count: 'exact', head: true });
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
+/** One project's category (the upload route's door code). Null when missing or unreadable, verbatim. */
+export async function getProjectCategory(
+  db: AdminClient,
+  id: string
+): Promise<string | null> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('category')
+    .eq('id', id)
+    .maybeSingle();
+
+  return (data as { category: string | null } | null)?.category ?? null;
+}
+
+/**
+ * Whether a project id exists (the ingest route's 400 guard). A failed read
+ * answers false, verbatim: the route treats error and missing identically.
+ */
+export async function projectExists(db: AdminClient, id: string): Promise<boolean> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle();
+
+  return Boolean(data);
+}
+
+export interface ProjectVisibilityRow {
+  portal_visible: boolean | null;
+  curation_status: string | null;
+}
+
+/**
+ * The two visibility columns /api/project-gallery gates on. Null when the
+ * row is missing or unreadable, verbatim - the route answers 404 either way.
+ */
+export async function getProjectVisibility(
+  db: AdminClient,
+  id: string
+): Promise<ProjectVisibilityRow | null> {
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('projects')
+    .select('portal_visible, curation_status')
+    .eq('id', id)
+    .maybeSingle();
+
+  return (data as ProjectVisibilityRow | null) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Curation tree (moved from lib/curation.ts)
+// ---------------------------------------------------------------------------
+
+export interface CurationProjectRow {
+  id: string;
+  slug: string | null;
+  title: string;
+  category: string | null;
+  subtype: string | null;
+  project_kind: string | null;
+  work_id: string | null;
+  event_date: string | null;
+  release_date: string | null;
+  cover_url: string | null;
+}
+
+/**
+ * The visitor-visible rows of the halls the admin curation page draws. The
+ * category list stays the caller's decision (it duplicates the registry on
+ * purpose); this is only the query. Answers [] on a read failure.
+ */
+export async function listCurationProjects(
+  db: AdminClient,
+  categories: readonly string[]
+): Promise<CurationProjectRow[]> {
+  if (categories.length === 0) return [];
+
+  const { data } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, slug, title, category, subtype, project_kind, work_id, event_date, release_date, cover_url')
+  ).in('category', categories as unknown as string[]);
+
+  return (data ?? []) as unknown as CurationProjectRow[];
+}
