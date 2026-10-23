@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import {
   SUBTYPES_BY_CATEGORY,
   UNFILED_SUBTYPE_SEGMENT,
@@ -109,7 +109,7 @@ export interface DoorEntryGroup {
 export async function loadRows(categories: readonly ProjectCategory[]): Promise<DoorEntryRow[]> {
   if (categories.length === 0) return [];
 
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
   const rows = (await listPublicDoorEntries(db, categories)) as unknown as Omit<
     DoorEntryRow,
     'imageCount' | 'href'
@@ -290,7 +290,7 @@ export async function loadEntry(
     if (segmentOfSubtype(entry.subtype, category) !== segment) return null;
   }
 
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
   const assets = await listEntryAssets(db, entry.id);
 
   return { entry, assets };
@@ -345,7 +345,7 @@ export async function loadTalkResourceCovers(
   if (entries.length === 0) return map;
 
   const ids = entries.map((entry) => entry.id);
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
   const projectRows = await getProjectTalkCoverPicks(db, ids);
 
   // slot -> picked catalog id, per entry.
@@ -401,7 +401,7 @@ async function buildEntryGroups(entries: DoorEntryRow[]): Promise<Map<string, Do
   // declarations are dropped at the end (a box shows only once it has
   // pictures). asset_group_covers: curator-picked cover per class
   // ({ class: catalogId }); a picked cover wins over "first picture".
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
   const ids = entries.map((entry) => entry.id);
   const projectRows = await getProjectGroupMeta(db, ids);
 

@@ -12,14 +12,14 @@
  */
 
 import { cache } from 'react';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import { listSeriesSlugRows } from '@/lib/data/projects';
 import { seriesSlugMapFrom } from '@/lib/entry-path';
 
 export const loadSeriesSlugMap = cache(async (): Promise<Map<string, string>> => {
   // The repository answers null on a read failure; an empty map is what this
   // module has always answered in that case (verbatim).
-  const rows = await listSeriesSlugRows(getSupabaseAdmin());
+  const rows = await listSeriesSlugRows(getSupabasePublic());
   if (!rows) return new Map();
   return seriesSlugMapFrom(rows as never);
 });

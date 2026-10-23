@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { entryPath } from '@/lib/entry-path';
 import { loadSeriesSlugMap } from '@/lib/series-slugs';
@@ -17,7 +17,7 @@ export default async function PersonPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabasePublic();
 
   // Accept both the stable slug and the raw uuid, so nothing that worked
   // before the phase-7 rename stops working now.

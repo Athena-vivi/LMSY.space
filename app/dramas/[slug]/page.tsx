@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSupabaseAdmin } from '@/lib/data/client';
+import { getSupabasePublic } from '@/lib/data/client';
 import { isPublicProject } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
 import { getLocalizedText } from '@/lib/localized-content';
@@ -89,7 +89,7 @@ function toCard(row: EntryRow) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
   const drama = await getDramaSeriesByKey(db, slug);
 
   if (!drama || !isPublicProject(drama)) {
@@ -113,7 +113,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function DramaPage({ params }: PageProps) {
   const { slug } = await params;
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
   const drama = await getDramaSeriesByKey(db, slug);
 
   if (!drama || !isPublicProject(drama)) {

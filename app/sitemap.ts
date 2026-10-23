@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import { listDramaEventSlugRows, listPublicSitemapProjects } from '@/lib/data/projects';
 import {
   SUBTYPES_BY_CATEGORY,
@@ -71,7 +71,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
   try {
-    const data = await listPublicSitemapProjects(getSupabaseAdmin());
+    const data = await listPublicSitemapProjects(getSupabasePublic());
     projectRoutes = (data || [])
       .filter((project: { category?: string | null }) => project.category !== 'drama_work')
       .map(
@@ -122,7 +122,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           ])
       );
       const events = await listDramaEventSlugRows(
-        getSupabaseAdmin(),
+        getSupabasePublic(),
         [...seriesSlugById.keys()]
       );
 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import { listPublicProjectIds } from '@/lib/data/projects';
 import { getImageUrl } from '@/lib/image-url';
 import { t } from '@/lib/languages';
@@ -20,7 +20,7 @@ export const revalidate = 300;
  * disagree with each other.
  */
 export default async function PeoplePage() {
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabasePublic();
   const language = defaultLanguage;
 
   const { data: profiles } = await supabase

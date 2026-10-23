@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSupabaseAdmin } from '@/lib/data/client';
+import { getSupabasePublic } from '@/lib/data/client';
 import { isPublicProject } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
 import { getLocalizedText } from '@/lib/localized-content';
@@ -32,7 +32,7 @@ interface PageProps {
 }
 
 async function resolve(slug: string, eventSlug: string) {
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
 
   const series = await getDramaEventSeries(db, slug);
 

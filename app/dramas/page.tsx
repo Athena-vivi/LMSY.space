@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { pageMetadata } from '@/lib/seo';
-import { getSupabaseAdmin } from '@/lib/data/client';
+import { getSupabasePublic } from '@/lib/data/client';
 import { countDramaEntriesByWorkId, listDramaSeries } from '@/lib/data/projects';
 import { DramasClient, type DramaCardRow } from './dramas-client';
 
@@ -31,7 +31,7 @@ export default async function DramasPage() {
 }
 
 async function loadSeries(): Promise<DramaCardRow[]> {
-  const db = getSupabaseAdmin();
+  const db = getSupabasePublic();
 
   // A series is a project row of its own (project_kind = 'series'); every entry
   // under it is another project row pointing back through work_id. One table,

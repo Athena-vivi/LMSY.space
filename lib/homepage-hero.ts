@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabasePublic } from '@/lib/data/client';
 import { getHeroSectionImageUrl } from '@/app/admin/settings/content-blocks';
 import { getSiteContentBlock } from '@/lib/data/site-content';
 
@@ -23,7 +23,7 @@ const EMPTY: HomepageHeroMedia = { splashImageUrl: '', heroImageUrl: '' };
 
 export async function getHomepageHeroMedia(): Promise<HomepageHeroMedia> {
   try {
-    const rows = await getSiteContentBlock(getSupabaseAdmin(), 'homepage_hero');
+    const rows = await getSiteContentBlock(getSupabasePublic(), 'homepage_hero');
     if (rows.length === 0) return EMPTY;
 
     const block = rows[0];

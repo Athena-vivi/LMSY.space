@@ -103,8 +103,8 @@ export type ChronicleEvent =
  * logging as a failure rather than as an empty archive.
  */
 const loadPublicProjects = cache(async (): Promise<TimelineProjectRow[]> => {
-  const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-  const rows = await listPublicTimelineProjects(getSupabaseAdmin());
+  const { getSupabasePublic } = await import('@/lib/data/client');
+  const rows = await listPublicTimelineProjects(getSupabasePublic());
 
   if (!rows) {
     console.error('[CHRONICLE] Failed to fetch public projects');
@@ -126,8 +126,8 @@ async function loadAssetsForYear(
   projectIds: string[],
   year: string | undefined
 ): Promise<TimelineAssetRow[] | null> {
-  const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-  const walk = await listTimelineAssetsForYear(getSupabaseAdmin(), projectIds, year);
+  const { getSupabasePublic } = await import('@/lib/data/client');
+  const walk = await listTimelineAssetsForYear(getSupabasePublic(), projectIds, year);
 
   if (!walk) {
     console.error('[CHRONICLE] Failed to fetch public assets');
@@ -152,8 +152,8 @@ async function loadAssetsForYear(
  * that transfer no rows.
  */
 export async function getChronicleYears(): Promise<string[]> {
-  const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-  const supabase = getSupabaseAdmin();
+  const { getSupabasePublic } = await import('@/lib/data/client');
+  const supabase = getSupabasePublic();
 
   const years = new Set<string>();
 
