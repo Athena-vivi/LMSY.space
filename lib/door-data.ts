@@ -23,6 +23,7 @@ import {
   countAssetsByProject,
   listEntryAssets,
   listEntryGroupAssets,
+  listTalkCoverAssets,
   type DoorAssetRow,
 } from '@/lib/data/gallery-assets';
 
@@ -372,17 +373,9 @@ export async function loadTalkResourceCovers(
   if (picks.size === 0) return map;
 
   // Resolve every picked catalog id to its image URL for its project.
-  const { data: assets } = await getSupabaseAdmin()
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select('project_id, catalog_id, image_url')
-    .in('project_id', [...picks.keys()]);
+  const assets = await listTalkCoverAssets(db, [...picks.keys()]);
 
-  for (const asset of (assets ?? []) as Array<{
-    project_id: string | null;
-    catalog_id: string | null;
-    image_url: string | null;
-  }>) {
+  for (const asset of assets) {
     if (!asset.project_id || !asset.catalog_id || !asset.image_url) continue;
     const slotMap = picks.get(asset.project_id);
     if (!slotMap) continue;

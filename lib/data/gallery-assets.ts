@@ -396,6 +396,42 @@ export async function listEntryGroupAssets(
   return assets;
 }
 
+export interface TalkCoverAssetRow {
+  project_id: string | null;
+  catalog_id: string | null;
+  image_url: string | null;
+}
+
+/**
+ * The pictures of the talk entries that pinned a resource box, so a picked
+ * catalog id can be resolved to its image URL. First consumer:
+ * lib/door-data.ts loadTalkResourceCovers (Bilibili / YouTube / photos /
+ * transcript boxes). Answers [] on a read failure - verbatim, the caller only
+ * destructured `data`.
+ *
+ * A single .in() on purpose, not paged: the set is the entries of ONE talk
+ * category that actually pinned a box, and the talks door is small - three
+ * entries in total (interview / variety / radio), one of them with picks,
+ * 29 asset rows today. That is two orders of magnitude under PostgREST's
+ * 1000-row cap, and the URL would break long before the row count does. A
+ * talks archive that grows to hundreds of pinned entries needs the paged
+ * walk of listEntryGroupAssets instead.
+ */
+export async function listTalkCoverAssets(
+  db: AdminClient,
+  projectIds: string[]
+): Promise<TalkCoverAssetRow[]> {
+  if (projectIds.length === 0) return [];
+
+  const { data } = await db
+    .schema('lmsy_archive')
+    .from('gallery_assets')
+    .select('project_id, catalog_id, image_url')
+    .in('project_id', projectIds);
+
+  return (data ?? []) as unknown as TalkCoverAssetRow[];
+}
+
 // ---------------------------------------------------------------------------
 // Door 1 - drama pages (moved from app/dramas/[slug]/*)
 // ---------------------------------------------------------------------------
