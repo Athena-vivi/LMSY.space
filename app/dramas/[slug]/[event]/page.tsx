@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseAdmin } from '@/lib/data/client';
 import { isPublicProject } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
 import { getLocalizedText } from '@/lib/localized-content';
+import { getDramaEntryByKey, getDramaEventSeries } from '@/lib/data/projects';
+import { listEventPageAssets } from '@/lib/data/gallery-assets';
 import {
   DramaEventPageClient,
   type DramaEventPageAsset,
@@ -29,37 +31,16 @@ interface PageProps {
   params: Promise<{ slug: string; event: string }>;
 }
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 async function resolve(slug: string, eventSlug: string) {
-  const supabaseAdmin = getSupabaseAdmin();
+  const db = getSupabaseAdmin();
 
-  const { data: series } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select(
-      'id, work_id, slug, title, title_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible'
-    )
-    .eq('category', 'drama_work')
-    .eq('project_kind', 'series')
-    .eq(UUID_PATTERN.test(slug) ? 'id' : 'slug', slug)
-    .maybeSingle();
+  const series = await getDramaEventSeries(db, slug);
 
   if (!series || !isPublicProject(series)) return null;
 
   // The entry is a project row too: same table, addressed by the work it
   // belongs to plus its own slug.
-  const { data: entry } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select(
-      'id, work_id, slug, title, title_i18n, event_date, description, description_i18n, watch_url, tags, portal_priority, project_kind, subtype, cover_url'
-    )
-    .eq('work_id', series.work_id ?? series.id)
-    .neq('project_kind', 'series')
-    .eq(UUID_PATTERN.test(eventSlug) ? 'id' : 'slug', eventSlug)
-    .maybeSingle();
+  const entry = await getDramaEntryByKey(db, series.work_id ?? series.id, eventSlug);
 
   if (!entry) return null;
 
@@ -77,14 +58,9 @@ async function resolve(slug: string, eventSlug: string) {
     media_kind: entry.project_kind === 'video' ? 'video' : 'picture',
   };
 
-  const { data: assets } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('gallery_assets')
-    .select('id, image_url, caption, catalog_id, rotation, width, height')
-    .eq('project_id', entry.id)
-    .order('created_at', { ascending: true });
+  const assets = await listEventPageAssets(db, entry.id);
 
-  return { series, event, assets: assets ?? [] };
+  return { series, event, assets };
 }
 
 function awardResult(tags: string[] | null): string | null {

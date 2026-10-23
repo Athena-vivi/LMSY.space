@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { pageMetadata } from '@/lib/seo';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { getSupabaseAdmin } from '@/lib/data/client';
+import { countDramaEntriesByWorkId, listDramaSeries } from '@/lib/data/projects';
 import { DramasClient, type DramaCardRow } from './dramas-client';
 
 /**
@@ -31,28 +31,12 @@ export default async function DramasPage() {
 }
 
 async function loadSeries(): Promise<DramaCardRow[]> {
-  const supabaseAdmin = getSupabaseAdmin();
+  const db = getSupabaseAdmin();
 
   // A series is a project row of its own (project_kind = 'series'); every entry
   // under it is another project row pointing back through work_id. One table,
   // one kind field - the door never talks to a second list.
-  const { data } = await applyPublicProjectFilter(
-    supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select(
-        'id, work_id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url'
-      )
-  )
-    .eq('category', 'drama_work')
-    .eq('project_kind', 'series')
-    // Newest series first: a new work appears at the top of the door the day
-    // it is added, which is how every other door is read too.
-    .order('event_date', { ascending: false, nullsFirst: false })
-    .order('release_date', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false });
-
-  const dramas = (data ?? []) as unknown as Array<
+  const dramas = (await listDramaSeries(db)) as unknown as Array<
     Omit<DramaCardRow, 'entryCount'> & { work_id: string | null }
   >;
   if (dramas.length === 0) return [];
@@ -64,21 +48,7 @@ async function loadSeries(): Promise<DramaCardRow[]> {
     .map((drama) => drama.work_id)
     .filter((id): id is string => Boolean(id));
 
-  const { data: events } = workIds.length
-    ? await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('work_id')
-        .in('work_id', workIds)
-        .neq('project_kind', 'series')
-    : { data: [] as Array<{ work_id: string | null }> };
-
-  const counts: Record<string, number> = {};
-  for (const row of events ?? []) {
-    const id = (row as { work_id: string | null }).work_id;
-    if (!id) continue;
-    counts[id] = (counts[id] ?? 0) + 1;
-  }
+  const counts = await countDramaEntriesByWorkId(db, workIds);
 
   return dramas.map((drama) => ({
     ...drama,

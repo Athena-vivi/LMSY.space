@@ -1,9 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
+import { getSupabaseAdmin } from '@/lib/data/client';
+import { isPublicProject } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
 import { getLocalizedText } from '@/lib/localized-content';
+import {
+  getDramaSeriesByKey,
+  listDramaEntries,
+  listDramaSeriesSiblings,
+} from '@/lib/data/projects';
+import { listDramaEntryAssets } from '@/lib/data/gallery-assets';
 import {
   DramaDetailClient,
   type DramaAssetRow,
@@ -30,38 +36,6 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const SERIES_COLUMNS =
-  'id, work_id, slug, title, title_i18n, description, description_i18n, subtype, event_date, release_date, cover_url, curation_status, portal_visible';
-
-async function resolveSeries(slug: string) {
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select(SERIES_COLUMNS)
-    .eq('category', 'drama_work')
-    .eq('project_kind', 'series')
-    .eq('slug', slug)
-    .maybeSingle();
-
-  if (data) return data;
-  if (!UUID_PATTERN.test(slug)) return null;
-
-  const { data: byId } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select(SERIES_COLUMNS)
-    .eq('category', 'drama_work')
-    .eq('project_kind', 'series')
-    .eq('id', slug)
-    .maybeSingle();
-
-  return byId ?? null;
-}
-
 /**
  * The entry table is the project table. A row under a series carries the same
  * columns any other door uses, so the cards are read straight from it and only
@@ -69,9 +43,6 @@ async function resolveSeries(slug: string) {
  * project_kind tells a video from a picture, and the award outcome rides in
  * tags as award-won / award-nominated.
  */
-const ENTRY_COLUMNS =
-  'id, work_id, slug, title, title_i18n, event_date, description, description_i18n, watch_url, tags, portal_priority, project_kind, subtype, cover_url, created_at';
-
 interface EntryRow {
   id: string;
   work_id: string | null;
@@ -118,7 +89,8 @@ function toCard(row: EntryRow) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const drama = await resolveSeries(slug);
+  const db = getSupabaseAdmin();
+  const drama = await getDramaSeriesByKey(db, slug);
 
   if (!drama || !isPublicProject(drama)) {
     return { title: 'Series Not Found' };
@@ -141,8 +113,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function DramaPage({ params }: PageProps) {
   const { slug } = await params;
-  const supabaseAdmin = getSupabaseAdmin();
-  const drama = await resolveSeries(slug);
+  const db = getSupabaseAdmin();
+  const drama = await getDramaSeriesByKey(db, slug);
 
   if (!drama || !isPublicProject(drama)) {
     notFound();
@@ -150,42 +122,14 @@ export default async function DramaPage({ params }: PageProps) {
 
   const seriesWorkId = (drama as { work_id?: string | null }).work_id ?? null;
 
-  const [{ data: events }, { data: allSeries }] = await Promise.all([
-    supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select(ENTRY_COLUMNS)
-      .eq('work_id', seriesWorkId ?? drama.id)
-      .neq('project_kind', 'series')
-      .order('event_date', { ascending: false, nullsFirst: false })
-      .order('release_date', { ascending: false, nullsFirst: false })
-      .order('portal_priority', { ascending: true }),
-    applyPublicProjectFilter(
-      supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('id, slug, title, title_i18n, subtype, event_date, release_date, cover_url')
-    )
-      .eq('category', 'drama_work')
-      .eq('project_kind', 'series')
-      .order('event_date', { ascending: false, nullsFirst: false }),
-  ]);
+  const events = await listDramaEntries(db, seriesWorkId ?? drama.id);
+  const allSeries = await listDramaSeriesSiblings(db);
 
-  const entryRows = ((events ?? []) as unknown as EntryRow[]).map(toCard);
+  const entryRows = (events as unknown as EntryRow[]).map(toCard);
 
   // Pictures are filed on the entry row itself, so one read over the entry ids
   // is enough to fill every card's first frame and every image count.
-  const { data: assets } = entryRows.length
-    ? await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .select('id, image_url, caption, catalog_id, rotation, project_id')
-        .in(
-          'project_id',
-          entryRows.map((entry) => entry.id)
-        )
-        .order('created_at', { ascending: true })
-    : { data: [] as Array<DramaAssetRow & { project_id: string | null }> };
+  const assets = await listDramaEntryAssets(db, entryRows.map((entry) => entry.id));
 
   const assetsByEvent: Record<string, DramaAssetRow[]> = {};
   for (const asset of (assets ?? []) as Array<DramaAssetRow & { project_id: string | null }>) {
