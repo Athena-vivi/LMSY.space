@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { listDramaEventSlugRows, listPublicSitemapProjects } from '@/lib/data/projects';
 import {
   SUBTYPES_BY_CATEGORY,
   TALK_CATEGORIES,
@@ -71,12 +71,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
   try {
-    const { data } = await applyPublicProjectFilter(
-      getSupabaseAdmin()
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('id, work_id, slug, category, project_kind, subtype, created_at')
-    );
+    const data = await listPublicSitemapProjects(getSupabaseAdmin());
     projectRoutes = (data || [])
       .filter((project: { category?: string | null }) => project.category !== 'drama_work')
       .map(
@@ -126,14 +121,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             project.slug || project.id,
           ])
       );
-      const { data: events } = seriesSlugById.size
-        ? await getSupabaseAdmin()
-            .schema('lmsy_archive')
-            .from('projects')
-            .select('work_id, slug, created_at')
-            .in('work_id', [...seriesSlugById.keys()])
-            .neq('project_kind', 'series')
-        : { data: [] as Array<{ work_id: string | null; slug: string | null; created_at: string | null }> };
+      const events = await listDramaEventSlugRows(
+        getSupabaseAdmin(),
+        [...seriesSlugById.keys()]
+      );
 
       dramaEventRoutes = (events ?? [])
         .map((event) => {

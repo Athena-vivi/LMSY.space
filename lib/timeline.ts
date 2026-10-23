@@ -42,17 +42,19 @@
  * only be ordered by the cursor column.
  */
 import { cache } from 'react';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { normalizeLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { isThemeProject } from '@/lib/project-kind';
+import { listPublicTimelineProjects, type TimelineProjectRow } from '@/lib/data/projects';
+import {
+  countAssetsInYear,
+  getAssetEventDateBounds,
+  listTimelineAssetsForYear,
+  TIMELINE_ASSET_MAX_PAGES,
+  type TimelineAssetRow,
+} from '@/lib/data/gallery-assets';
 
 // Pure helpers live in an alias-free module so they are directly testable.
 export { formatChronicleDate, extractYears } from '@/lib/chronicle-dates';
-
-/** Rows per PostgREST request. Matches the server-side db-max-rows ceiling. */
-const ASSET_PAGE_SIZE = 1000;
-/** Hard stop far past any plausible single year; logs if it is ever reached. */
-const MAX_ASSET_PAGES = 30;
 
 export interface TimelineImageRef {
   id: string;
@@ -87,27 +89,6 @@ export type ChronicleEvent =
       images: TimelineImageRef[];
     };
 
-interface PublicProjectRow {
-  id: string;
-  slug: string | null;
-  title: string;
-  title_i18n: LocalizedText | null;
-  category: string;
-  project_kind: string | null;
-  event_date: string | null;
-  release_date: string | null;
-}
-
-interface AssetRow {
-  id: string;
-  image_url: string;
-  event_date: string;
-  caption: string | null;
-  caption_i18n: LocalizedText | null;
-  catalog_id: string | null;
-  project_id: string;
-}
-
 /**
  * Public projects, fetched once per request.
  *
@@ -116,34 +97,27 @@ interface AssetRow {
  * project list by year would orphan those assets - the grouping step drops any
  * asset whose project is missing. 171 rows sit far below the 1000-row ceiling,
  * so reading them whole is both safe and cheaper than a second query per year.
+ *
+ * The query (and its public-visibility rule) lives in lib/data/projects.ts;
+ * the repository answers null on a read failure, which this module keeps
+ * logging as a failure rather than as an empty archive.
  */
-const loadPublicProjects = cache(async (): Promise<PublicProjectRow[]> => {
+const loadPublicProjects = cache(async (): Promise<TimelineProjectRow[]> => {
   const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-  const supabase = getSupabaseAdmin();
+  const rows = await listPublicTimelineProjects(getSupabaseAdmin());
 
-  const { data, error } = await applyPublicProjectFilter(
-    supabase
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('id, slug, title, title_i18n, category, project_kind, event_date, release_date')
-  );
-
-  if (error) {
-    console.error('[CHRONICLE] Failed to fetch public projects:', error);
+  if (!rows) {
+    console.error('[CHRONICLE] Failed to fetch public projects');
     return [];
   }
-  return (data ?? []) as unknown as PublicProjectRow[];
+  return rows;
 });
-
-/** First and last day of a calendar year, as the half-open range PostgREST wants. */
-function yearRange(year: string): { from: string; to: string } {
-  const start = Number(year);
-  return { from: `${year}-01-01`, to: `${start + 1}-01-01` };
-}
 
 /**
  * Every dated asset of the given projects for one year, read in full.
  *
+ * The id-cursored walk (and its page size) lives in lib/data/gallery-assets.ts
+ * - see listTimelineAssetsForYear for why it is year-scoped and id-cursored.
  * Returns null when a page fails, so the caller can distinguish "no assets"
  * from "the query broke" - the old code returned [] for both, which turned a
  * failed read into a silently empty timeline.
@@ -151,54 +125,22 @@ function yearRange(year: string): { from: string; to: string } {
 async function loadAssetsForYear(
   projectIds: string[],
   year: string | undefined
-): Promise<AssetRow[] | null> {
+): Promise<TimelineAssetRow[] | null> {
   const { getSupabaseAdmin } = await import('@/lib/supabase/admin');
-  const supabase = getSupabaseAdmin();
+  const walk = await listTimelineAssetsForYear(getSupabaseAdmin(), projectIds, year);
 
-  const baseQuery = () =>
-    supabase
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select(
-        'id, image_url, event_date, caption, caption_i18n, catalog_id, project_id, width, height'
-      )
-      .in('project_id', projectIds)
-      .not('event_date', 'is', null);
-
-  const rows: AssetRow[] = [];
-  let cursor: string | null = null;
-
-  for (let page = 0; page < MAX_ASSET_PAGES; page += 1) {
-    let query: ReturnType<typeof baseQuery> = baseQuery();
-
-    if (year) {
-      const { from, to } = yearRange(year);
-      query = query.gte('event_date', from).lt('event_date', to);
-    }
-
-    // Ordered by the cursor column only - a cursor cannot step through a
-    // composite sort. The display order is rebuilt in memory below.
-    query = query.order('id', { ascending: true }).limit(ASSET_PAGE_SIZE);
-    if (cursor) query = query.gt('id', cursor);
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('[CHRONICLE] Failed to fetch public assets:', error);
-      return null;
-    }
-
-    const batch = (data ?? []) as unknown as AssetRow[];
-    rows.push(...batch);
-    if (batch.length < ASSET_PAGE_SIZE) return rows;
-
-    cursor = batch[batch.length - 1].id;
+  if (!walk) {
+    console.error('[CHRONICLE] Failed to fetch public assets');
+    return null;
   }
 
-  console.error(
-    `[CHRONICLE] Asset walk hit MAX_ASSET_PAGES (${MAX_ASSET_PAGES}) for year ${year ?? 'all'}; collecting fewer rows than exist`
-  );
-  return rows;
+  if (walk.truncated) {
+    console.error(
+      `[CHRONICLE] Asset walk hit MAX_ASSET_PAGES (${TIMELINE_ASSET_MAX_PAGES}) for year ${year ?? 'all'}; collecting fewer rows than exist`
+    );
+  }
+
+  return walk.rows;
 }
 
 /**
@@ -223,25 +165,9 @@ export async function getChronicleYears(): Promise<string[]> {
   }
 
   // Asset event dates define the span the year filter has to cover.
-  const [earliest, latest] = await Promise.all([
-    supabase
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('event_date')
-      .not('event_date', 'is', null)
-      .order('event_date', { ascending: true })
-      .limit(1),
-    supabase
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('event_date')
-      .not('event_date', 'is', null)
-      .order('event_date', { ascending: false })
-      .limit(1),
-  ]);
-
-  const first = (earliest.data?.[0] as { event_date?: string } | undefined)?.event_date;
-  const last = (latest.data?.[0] as { event_date?: string } | undefined)?.event_date;
+  const bounds = await getAssetEventDateBounds(supabase);
+  const first = bounds.earliest;
+  const last = bounds.latest;
 
   if (first && last) {
     const firstYear = Number(first.slice(0, 4));
@@ -252,14 +178,7 @@ export async function getChronicleYears(): Promise<string[]> {
     const counts = await Promise.all(
       Array.from({ length: Math.max(0, lastYear - firstYear + 1) }, (_, offset) => {
         const year = String(firstYear + offset);
-        const { from, to } = yearRange(year);
-        return supabase
-          .schema('lmsy_archive')
-          .from('gallery_assets')
-          .select('id', { count: 'exact', head: true })
-          .gte('event_date', from)
-          .lt('event_date', to)
-          .then((result) => ({ year, count: result.count ?? 0 }));
+        return countAssetsInYear(supabase, year).then((count) => ({ year, count }));
       })
     );
 

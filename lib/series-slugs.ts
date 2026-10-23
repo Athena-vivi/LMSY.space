@@ -13,16 +13,13 @@
 
 import { cache } from 'react';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { listSeriesSlugRows } from '@/lib/data/projects';
 import { seriesSlugMapFrom } from '@/lib/entry-path';
 
 export const loadSeriesSlugMap = cache(async (): Promise<Map<string, string>> => {
-  const { data, error } = await getSupabaseAdmin()
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('id, slug, category, project_kind, work_id')
-    .eq('category', 'drama_work')
-    .eq('project_kind', 'series');
-
-  if (error || !data) return new Map();
-  return seriesSlugMapFrom(data as never);
+  // The repository answers null on a read failure; an empty map is what this
+  // module has always answered in that case (verbatim).
+  const rows = await listSeriesSlugRows(getSupabaseAdmin());
+  if (!rows) return new Map();
+  return seriesSlugMapFrom(rows as never);
 });
