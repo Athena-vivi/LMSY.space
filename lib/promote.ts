@@ -104,6 +104,12 @@ export interface PromoteResult {
 
 function normalizeSubject(raw: string): string {
   return raw
+    // Curators write event titles with "fancy" letters (𝐋𝐌𝐒𝐘 𝐱 𝐈𝐧𝐓𝐡𝐞𝟖𝐢𝐠𝐡𝐭 is
+    // U+1D400 Mathematical Bold, not ASCII). Those are compatibility
+    // characters, so NFKC folds them back to ASCII before anything is
+    // stripped - otherwise a title-only segment would normalise to nothing
+    // and the batch would be refused.
+    .normalize('NFKC')
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9-]+/g, '-')
@@ -123,7 +129,9 @@ export function deriveSubjectSegment(project: {
 }): string {
   const headSubject = parseCatalogHead(project.catalog_id);
   if (headSubject) return headSubject;
-  const cut = (project.title || '').replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
+  const cut = (project.title || '')
+    .normalize('NFKC')
+    .replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
   return (
     cut
       .toUpperCase()
@@ -161,6 +169,7 @@ export async function loadSubjectOptions(projectId: string): Promise<SubjectOpti
   // guess for the reference chip.
   const titleGuess =
     (project.title || '')
+      .normalize('NFKC')
       .replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '')
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '-')
@@ -255,7 +264,11 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
 
   const subject = normalizeSubject(params.subject);
   if (!subject) {
-    return { success: false, error: 'Subject segment is empty after normalisation' };
+    // Name the value: "empty after normalisation" alone cannot be acted on.
+    return {
+      success: false,
+      error: `Subject segment "${params.subject}" has no A-Z / 0-9 left after normalisation`,
+    };
   }
   const personCode = params.personCode || 'LMSY';
 

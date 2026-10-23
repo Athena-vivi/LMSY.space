@@ -65,7 +65,12 @@ interface PromoteWizardModalProps {
 function deriveSubject(project: ProjectRow): string {
   const headSubject = parseCatalogHead(project.catalog_id);
   if (headSubject) return headSubject;
-  const cut = project.title.replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
+  // Event titles are often written in decorative Unicode (𝐋𝐌𝐒𝐘 𝐱 ...). NFKC
+  // folds those compatibility characters back to ASCII first, or the segment
+  // would come out empty and the server would refuse the batch.
+  const cut = project.title
+    .normalize('NFKC')
+    .replace(/\s+(?:in|at|@)\s+[\s\S]*$/i, '');
   return (
     cut
       .toUpperCase()
@@ -242,6 +247,14 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
+
+  // A rejection belongs to the value that produced it. Editing the subject (or
+  // the class / person) makes the notice below the button stale - it sat there
+  // describing a segment that was no longer in the field, which read like the
+  // current input was being refused.
+  useEffect(() => {
+    setErrors([]);
+  }, [subject, assetGroup, personCode, projectId]);
 
   // The real DB category the wizard currently works on. For the talks door
   // this is the chosen shelf; empty until picked, which also empties the
