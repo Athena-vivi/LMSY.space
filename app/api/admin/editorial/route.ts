@@ -3,6 +3,13 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import {
+  listEditorialSeriesProjects,
+  clearEditorialHomepageFeatured,
+  updateProject,
+  deleteProject,
+} from '@/lib/data/projects';
+import { deleteGalleryAssetsByProjectId } from '@/lib/data/gallery-admin';
 
 /**
  * GET /api/admin/editorial - Fetch all editorial projects (Admin Only)
@@ -23,35 +30,18 @@ export async function GET(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 🔥 FORCED: Explicit schema + category filter matching database
-    const { data, error, status, statusText } = await supabaseAdmin
-      .schema('lmsy_archive')  // 🚨 MANDATORY EXPLICIT SCHEMA
-      .from('projects')
-      .select('*')
-      .or('category.eq.editorial,category.eq.series')  // Match confirmed 7+2 projects
-      .order('release_date', { ascending: false });
-
-    console.log('[ADMIN_FORCED_ALIGNMENT] ========== QUERY RESULT ==========');
-    console.log('[ADMIN_FORCED_ALIGNMENT] 📊 HTTP Status:', status, statusText);
-    console.log('[ADMIN_FORCED_ALIGNMENT] 📊 Data Length:', data?.length || 0);
-    console.log('[ADMIN_FORCED_ALIGNMENT] 📊 Error:', error ? JSON.stringify(error, null, 2) : 'NO_ERROR');
-
-    if (data && data.length > 0) {
-      console.log('[ADMIN_FORCED_ALIGNMENT] ✅ SUCCESS - Found projects:', data.map(p => ({
-        id: p.id,
-        title: p.title,
-        category: p.category
-      })));
-    }
-
-    if (error) {
-      console.error('[ADMIN_FORCED_ALIGNMENT] ❌ CRITICAL ERROR:', JSON.stringify(error, null, 2));
+    let data: Array<Record<string, unknown>>;
+    try {
+      data = await listEditorialSeriesProjects(supabaseAdmin);
+    } catch (error) {
+      console.error('[ADMIN_FORCED_ALIGNMENT] ❌ CRITICAL ERROR:', error);
       return NextResponse.json(
-        { error: 'FORCED_ALIGNMENT_FAILED', details: error.message, code: error.code, fullError: JSON.stringify(error, null, 2) },
+        { error: 'FORCED_ALIGNMENT_FAILED', details: (error as Error).message },
         { status: 500 }
       );
     }
 
+    console.log('[ADMIN_FORCED_ALIGNMENT] 📊 Data Length:', data?.length || 0);
     console.log('[ADMIN_FORCED_ALIGNMENT] ✅ Fetched', data?.length || 0, 'projects');
 
     return NextResponse.json({
@@ -116,17 +106,11 @@ export async function PUT(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin();
 
     if (homepage_featured === true) {
-      const { error: clearError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .update({ homepage_featured: false })
-        .eq('category', 'editorial')
-        .eq('homepage_featured', true)
-        .neq('id', id);
-
-      if (clearError) {
+      try {
+        await clearEditorialHomepageFeatured(supabaseAdmin, id);
+      } catch (clearError) {
         return NextResponse.json(
-          { error: 'Failed to clear previous homepage feature', details: clearError.message },
+          { error: 'Failed to clear previous homepage feature', details: (clearError as Error).message },
           { status: 500 }
         );
       }
@@ -139,10 +123,9 @@ export async function PUT(request: NextRequest) {
       homepage_excerpt || ''
     );
 
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .update({
+    let updated: Array<Record<string, unknown>>;
+    try {
+      updated = await updateProject(supabaseAdmin, id, {
         title: normalizedTitle.en || title || '',
         title_i18n: normalizedTitle,
         description: normalizedDescription.en || description || '',
@@ -152,15 +135,11 @@ export async function PUT(request: NextRequest) {
         homepage_excerpt: normalizedHomepageExcerpt.en || homepage_excerpt || null,
         homepage_excerpt_i18n: normalizedHomepageExcerpt,
         homepage_cover_url: homepage_cover_url || null,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
+      });
+    } catch (error) {
       console.error('[ADMIN_EDITORIAL_API] ❌ Update failed:', error);
       return NextResponse.json(
-        { error: 'Failed to update project', details: error.message },
+        { error: 'Failed to update project', details: (error as Error).message },
         { status: 500 }
       );
     }
@@ -171,7 +150,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      project: data,
+      project: updated[0] ?? null,
     });
 
   } catch (error) {
@@ -213,28 +192,22 @@ export async function DELETE(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // First, delete associated gallery assets
-    const { error: galleryError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .delete()
-      .eq('project_id', id);
-
-    if (galleryError) {
+    // First, delete associated gallery assets. A failure here is non-fatal in
+    // the original route (it only warns), so swallow it and continue to the
+    // project delete.
+    try {
+      await deleteGalleryAssetsByProjectId(supabaseAdmin, id);
+    } catch (galleryError) {
       console.error('[ADMIN_EDITORIAL_API] ⚠️ Failed to delete gallery images:', galleryError);
     }
 
     // Then delete the project
-    const { error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
+    try {
+      await deleteProject(supabaseAdmin, id);
+    } catch (error) {
       console.error('[ADMIN_EDITORIAL_API] ❌ Delete failed:', error);
       return NextResponse.json(
-        { error: 'Failed to delete project', details: error.message },
+        { error: 'Failed to delete project', details: (error as Error).message },
         { status: 500 }
       );
     }

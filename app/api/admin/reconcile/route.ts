@@ -4,6 +4,10 @@ import { listR2Objects, BASE_CDN_URL } from '@/lib/r2-client';
 import { generateBlurData } from '@/lib/image-processing';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import {
+  walkAllGalleryCatalogRefs,
+  insertReconciledAsset,
+} from '@/lib/data/gallery-admin';
 
 /**
  * R2 prefixes that hold archive assets.
@@ -55,24 +59,26 @@ export async function POST(request: NextRequest) {
     // Phase 3 fix: this used to read the legacy `gallery` table (0 rows), so
     // the dedupe set was always empty and everything was treated as missing.
     // gallery_assets is the live asset table (ADR-001 D2).
-    const { data: existingRecords, error: fetchError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('catalog_id, image_url');
-
-    if (fetchError) {
+    // 1000-row fix: the dedupe set must cover every row - a single unpaged
+    // select() truncates at the PostgREST cap and would mark ~1500 real assets
+    // as missing, re-inserting them as duplicates. walkAllGalleryCatalogRefs
+    // pages through the whole table.
+    let existingRecords: Array<{ catalog_id: string | null; image_url: string | null }>;
+    try {
+      existingRecords = await walkAllGalleryCatalogRefs(supabaseAdmin);
+    } catch (fetchError) {
       console.error('[RECONCILE] ❌ Failed to fetch existing records:', fetchError);
       return NextResponse.json(
-        { error: 'Failed to fetch existing records', details: fetchError.message },
+        { error: 'Failed to fetch existing records', details: (fetchError as Error).message },
         { status: 500 }
       );
     }
 
     const existingCatalogIds = new Set(
-      (existingRecords || []).map(r => r.catalog_id)
+      existingRecords.map(r => r.catalog_id)
     );
     const existingImageUrls = new Set(
-      (existingRecords || []).map(r => r.image_url)
+      existingRecords.map(r => r.image_url)
     );
 
     console.log('[RECONCILE] Found', existingCatalogIds.size, 'existing records in database');
@@ -147,26 +153,17 @@ export async function POST(request: NextRequest) {
       // (the live asset table), not the legacy 0-row `gallery` table. All
       // inserted columns exist on gallery_assets.
       try {
-        const { data: insertData, error: insertError } = await supabaseAdmin
-          .schema('lmsy_archive')
-          .from('gallery_assets')
-          .insert({
-            image_url: imageUrl,
-            caption: null,
-            tag: null,
-            is_featured: false,
-            catalog_id: catalogId,
-            is_editorial: true, // Assume editorial for magazines
-            curator_note: '[RECONCILED] Backfilled from R2 scan',
-            blur_data: blurData,
-            event_date: eventDate,
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          throw insertError;
-        }
+        const insertData = await insertReconciledAsset(supabaseAdmin, {
+          image_url: imageUrl,
+          caption: null,
+          tag: null,
+          is_featured: false,
+          catalog_id: catalogId,
+          is_editorial: true, // Assume editorial for magazines
+          curator_note: '[RECONCILED] Backfilled from R2 scan',
+          blur_data: blurData,
+          event_date: eventDate,
+        });
 
         if (!insertData) {
           throw new Error('Insert returned no data');
@@ -233,14 +230,12 @@ export async function GET(request: NextRequest) {
 
     // Get existing catalog IDs. Phase 3 fix: gallery_assets is the live
     // asset table; the legacy `gallery` table has 0 rows and made every
-    // object look missing in preview.
-    const { data: existingRecords } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('catalog_id');
+    // object look missing in preview. 1000-row fix: paged so the set covers
+    // the whole table (see walkAllGalleryCatalogRefs).
+    const existingRecords = await walkAllGalleryCatalogRefs(supabaseAdmin);
 
     const existingCatalogIds = new Set(
-      (existingRecords || []).map(r => r.catalog_id)
+      existingRecords.map(r => r.catalog_id)
     );
 
     // List R2 objects (canonical + legacy directories)
