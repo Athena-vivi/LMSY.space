@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Dev-only scratch dirs: draft scripts, DB/R2 backups and one-off tooling.
+    // They are run standalone (node ..., scripts/*.mjs) and must not block the
+    // app typecheck / lint / next build.
+    "temp/**",
+    "backups/**",
+    "scripts/**",
   ]),
 ]);
 
