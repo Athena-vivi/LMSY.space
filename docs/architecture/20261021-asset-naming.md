@@ -490,3 +490,20 @@ lmsy/feat/LMSY-FEAT-BACKVIEW-001.webp
 
 代码侧：`buildProjectCatalogId()` / `assetIdPrefixFor()` 成为唯一构造入口，
 `subjectFromProjectId()` 同时剥日期与尾码；后台「人物码」在事件已有编号后锁定，不再逐批手选。
+
+---
+
+## 十二、2026-10-24 影视门编号（执行记录）
+
+第一门原有 4 个编号覆盖 46 行：`LMSY-DRAMA-PREMIERE` 被两场不同首映共用、
+`DRAMA-AFFAIR-STILL` 缺站点前缀、39 行干脆没有编号。按 4.1 的「作品 + 部分 + 事件码」一次补全。
+
+| 项 | 结果 |
+|---|---|
+| 事件编号 | **46 条**（43 个事件/视频 + 3 个作品行）；`projects.catalog_id` 重复数 0 |
+| 首映撞号 | 拆成 `HARMONY-PREMIERE` / `HOMETOWN-PREMIERE`；`LMSY-DRAMA-FINAL` → `HARMONY-SERIES-FINALEPISODE` |
+| 图片改名 | **68 张**（`FINAL` 31、`AFFAIR-STILL` 18、两条 `PREMIERE` 19） |
+| 扩展名 | 其中 9 张 `AFFAIR-STILL` 原本是 `.jpg`，重新编码为 `.webp`，让键可以从编号统一推导 |
+| 尺寸表 | 18 个 key 重写；另 50 张的宽高存在 `gallery_assets.width/height`，无需进尺寸表 |
+| 校验 | 78/78 图片名 = 事件编号 + 日期 + 序号；旧编号在 `projects` / `gallery_assets` / 指针列中 0 引用 |
+| 备份 | `projects_snap_drama_ids_20261023`、`gallery_assets_snap_drama_ids_20261023`，回滚 `temp/20261024_drama_ids_rollback.sql` |
