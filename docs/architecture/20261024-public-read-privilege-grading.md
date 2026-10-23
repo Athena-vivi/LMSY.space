@@ -97,18 +97,46 @@ BEGIN
 END $$;
 ```
 
-**PII 处理（决策点 D1）**：`profiles` 只有展示字段（`name/nickname/slug/avatar_url/role_label`）。若担心存在隐藏列（如 email/内部备注），更安全的做法是建 `public_profiles` 视图只暴露公开列，anon 只读视图。默认建议视图方案，成本略高。
+**PII 处理（决策点 D1，已实测修正）**：本文最初建议建 `public_profiles` 视图只暴露 6 个展示列。实测推翻：生产 `profiles` **本来就是整行 anon 可读**（`birthday/bio/bio_i18n/ig_handle/x_handle/slug/role_label` 都能读），而人物页确实要读这些列——改成 6 列视图会把人物页读空。所以按生产现状落地：整行公开读，与 `profiles` 现有 `Allow public read`（`TO anon USING (true)`）一致。见 `supabase/migrations/20261024_public_read_profiles.sql`。
 
-### 4.2 可选：`projects` RLS 收紧到可见性谓词（决策点 D2）
+### 4.2 `projects` RLS 收紧到可见性谓词（决策点 D2）——迁移稿已写，**未执行**
+
+> 实况审计（2026-10-24 查 `pg_policies` / `pg_class`）改写了这一节的结论，迁移稿见 `supabase/migrations/20261024_public_read_projects_visibility.sql`。
+
+**坑一：`projects` 上有两条 `USING (true)` 的策略。** PostgREST 的 permissive 策略是 OR 关系，只改 `phase1_public_read` 等于没改：
+
+| 策略名 | roles | qual |
+|---|---|---|
+| `Public read access on projects` | `public` | `true` |
+| `phase1_public_read` | `anon, authenticated` | `true` |
+
+所以必须**同一事务里先删掉 `Public read access on projects`**，否则收紧无效。同样的双策略存在于 `gallery_assets`、`gallery`、`chronicle_events`、`profiles`（后者只有 `Allow public read` 一条，`phase1_public_read` 是迁移稿里才加的，执行顺序要注意）。
+
+**坑二：谓词要当下限，不能当等号。** 应用层 `applyPublicProjectFilter()` 是 `portal_visible = true AND is_container = false AND curation_status <> 'archived'`，其中后两个在 SQL 里 `<>` / `=` 都会把 NULL 排除。若 RLS 写成同样形状，将来出现 NULL 行时 **RLS 会比应用层更严**，页面会无故空白。因此策略用 NULL-safe 形式，只保证「不藏掉应用层本来会显示的行」：
 
 ```sql
+DROP POLICY IF EXISTS "Public read access on projects" ON lmsy_archive.projects;
 DROP POLICY IF EXISTS phase1_public_read ON lmsy_archive.projects;
 CREATE POLICY phase1_public_read ON lmsy_archive.projects
   FOR SELECT TO anon, authenticated
-  USING (portal_visible = true AND curation_status <> 'archived');
+  USING (
+    portal_visible IS TRUE
+    AND is_container IS NOT TRUE
+    AND curation_status IS DISTINCT FROM 'archived'
+  );
 ```
 
-效果：anon 即使绕过应用层也读不到隐藏/归档事件（第二道防线）。风险：任何**依赖 anon 读隐藏行**的路径会变空；但公开路径本就经 `applyPublicProjectFilter` 过滤，理论上一致，仍需实测。
+**影响面实测（182 行）**：`portal_visible=false` 8 行、`is_container=true` 3 行、`curation_status` 无 NULL；应用层过滤后 174 行，新策略同样 174 行 → anon 今天看到什么，收紧后还是什么，只是拿不到那 8 行隐藏行的**直连**。service_role 全程绕过 RLS，admin 路由、`lib/promote.ts`、`app/admin/preview` 不受影响。
+
+### 4.3 顺带发现：57 张内部快照表 anon 可读（独立迁移稿，**未执行**）
+
+`pg_class` + `information_schema.role_table_grants` 审计结果：`lmsy_archive` 下有 **57 张 `*_snap_*` / `snap_*` 备份表 RLS 关闭且对 `anon`、`authenticated` 授予了 SELECT**，实测 anon 直连 `gallery_assets_snap_m1_20261020?select=*` 返回 200 + 真实行。这些是历次改数据前拍的整表快照（`projects` / `gallery_assets` / `profiles`），里面**包含当时未公开的行、后来删掉的行**。
+
+代码里没有任何 `_snap_` / `snap_` 引用（lib、app、components、scripts 全 grep 为空），所以关掉公开读是纯收益。迁移稿 `supabase/migrations/20261024_revoke_anon_snapshot_tables.sql`：显式列出 57 个表名（不用 `like '%snap%'` 通配，避免误伤将来有意暴露的表）→ `REVOKE SELECT` + `ENABLE ROW LEVEL SECURITY` 且不建策略。
+
+同一批里还有两张**真表**是 RLS 关闭的：`works`、`project_people`。`project_people` 正是人物页公开读的对象（这也是切 anon 后人物页没空的原因）。处理方式是 `ENABLE ROW LEVEL SECURITY` + 补一条 `USING (true)` 读策略——对 SELECT 与今天等价，但表不再是「授权即全开」。
+
+**尚未处理、留给你定**：`publications`（RLS 开、anon 可读、代码无引用）、`catalog_registry`（读策略 `TO public`，实际只有 `/api/admin/catalog-registry` 用）。
 
 ---
 
@@ -122,8 +150,8 @@ CREATE POLICY phase1_public_read ON lmsy_archive.projects
 | `lib/timeline.ts` | 时间线公开读（projects） |
 | `lib/series-slugs.ts` | 系列 slug（projects） |
 | `lib/homepage-hero.ts` | 首页 hero（site_content_blocks，已在 public_read） |
-| `lib/editorial-issues.ts` | 公开 editorial 读；若同时被 admin API 用，改成「由调用方传 client」 |
-| `lib/cover-slots.ts` | 封面解析；被 portal(admin) 与公开共用 → 改「由调用方传 client」 |
+| `lib/editorial-issues.ts` | 公开 editorial / features 读；四个 loader 全部只被公开页用 → 直接改用 anon |
+| `lib/cover-slots.ts` | 槽位封面；与 admin 策展树共用 → 已改成「由调用方传 client」，门页传 anon、`lib/curation.ts` 传 service-role |
 | `app/dramas/page.tsx`、`app/dramas/[slug]/page.tsx`、`app/dramas/[slug]/[event]/page.tsx` | 公开门页 |
 | `app/people/page.tsx`、`app/people/[slug]/page.tsx` | 公开人物页（依赖 D1 的 profiles policy） |
 | `app/sitemap.ts` | 站点地图 |
@@ -138,6 +166,9 @@ CREATE POLICY phase1_public_read ON lmsy_archive.projects
 ### 5.3 公开 API 路由（第二阶段，可选，决策点 D3）
 
 `app/api/home/portals`、`home/summary`、`editorial`、`milestones`、`project-gallery`、`site-content` —— 都是公开读接口。可一并切 anon，但它们是服务端路由（anon key 不直接暴露），风险低于 SSR 页面，可放第二期。
+
+**已切**：`editorial`（与 `lib/editorial-issues.ts` 同一个仓储函数，页面与接口一起切，避免出现「页面能读、接口不能读」的错位）。
+**未切**：其余五个，仍在 service-role；`api/home/*` 与 `api/project-gallery` 是首页卡片和作品详情的数据源，切之前要先确认 anon 读结果与现在逐字段一致。
 
 ---
 
