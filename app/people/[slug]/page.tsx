@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { entryPath } from '@/lib/entry-path';
 import { loadSeriesSlugMap } from '@/lib/series-slugs';
+import { listPersonProjects } from '@/lib/data/projects';
+import { listCoverCandidates } from '@/lib/data/gallery-assets';
 import PersonClient, { type PersonProject } from './person-client';
 
 export const revalidate = 300;
@@ -53,14 +54,7 @@ export default async function PersonPage({
   let projects: PersonProject[] = [];
 
   if (linkedIds.length > 0) {
-    const { data: projectRows } = await applyPublicProjectFilter(
-      supabase
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('id, slug, title, title_i18n, category, subtype, project_kind, work_id, event_date, cover_url')
-        .in('id', linkedIds)
-    )
-      .order('event_date', { ascending: false, nullsFirst: false });
+    const projectRows = await listPersonProjects(supabase, linkedIds);
 
     const rows = (projectRows ?? []) as unknown as Array<{
       id: string;
@@ -75,15 +69,9 @@ export default async function PersonPage({
       cover_url: string | null;
     }>;
 
-    const { data: assets } = await supabase
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('project_id, image_url, is_cover, catalog_id')
-      .in('project_id', rows.map((project) => project.id))
-      .order('is_cover', { ascending: false })
-      .order('created_at', { ascending: true, nullsFirst: false });
+    const assets = await listCoverCandidates(supabase, rows.map((project) => project.id));
 
-    const covers = pickCoversByProject(assets ?? []);
+    const covers = pickCoversByProject(assets);
     // A drama entry is addressed under its series, so the map is resolved
     // here, once, and every card receives its own address.
     const seriesSlugs = await loadSeriesSlugMap();

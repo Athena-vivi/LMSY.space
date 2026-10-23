@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
+import { listPublicProjectIds } from '@/lib/data/projects';
 import { getImageUrl } from '@/lib/image-url';
 import { t } from '@/lib/languages';
 import { defaultLanguage } from '@/lib/languages';
@@ -29,10 +29,8 @@ export default async function PeoplePage() {
     .select('id, name, nickname, slug, avatar_url, role_label, bio, birthday, ig_handle, x_handle')
     .order('nickname', { ascending: true });
 
-  const { data: publicProjects } = await applyPublicProjectFilter(
-    supabase.schema('lmsy_archive').from('projects').select('id')
-  );
-  const publicIds = new Set((publicProjects ?? []).map((row) => (row as { id: string }).id));
+  const publicIdList = await listPublicProjectIds(supabase);
+  const publicIds = new Set(publicIdList);
 
   const { data: links } = await supabase
     .schema('lmsy_archive')

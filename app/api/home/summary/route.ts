@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { milestonePriorityToYear } from '@/lib/milestone-years';
 import { STREAM_CATEGORIES, TALK_CATEGORIES } from '@/lib/category-registry';
+import { listHomeSummaryProjects } from '@/lib/data/projects';
+import {
+  listCoverCandidates,
+  listPinnedInterviewCovers,
+  listMilestoneCoverAssets,
+} from '@/lib/data/gallery-assets';
 
 /**
  * GET /api/home/summary
@@ -60,35 +65,25 @@ export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data: projectRows, error: projectError } = await applyPublicProjectFilter(
-      supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select(
-          'id, slug, title, title_i18n, category, event_date, cover_url, homepage_featured, portal_priority'
-        )
-    );
+    const summaryProjects = await listHomeSummaryProjects(supabaseAdmin);
 
-    if (projectError) {
-      console.error('[HOME_SUMMARY] project query failed:', projectError);
+    // The repo answers null only on a read failure (diagnostic-only
+    // deviation: it no longer surfaces the PostgREST error object here, the
+    // message now lives inside the repository).
+    if (summaryProjects === null) {
+      console.error('[HOME_SUMMARY] project query failed:', null);
       return NextResponse.json({ error: 'Failed to load summary' }, { status: 500 });
     }
 
-    const projects = (projectRows ?? []) as unknown as FeaturedRow[];
+    const projects = summaryProjects as unknown as FeaturedRow[];
     const ids = projects.map((project) => project.id);
 
     // One asset query for the per-project cover fallback.
     const coverByProject: Record<string, string> = {};
     if (ids.length > 0) {
-      const { data: assets } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .select('project_id, image_url, is_cover, catalog_id')
-        .in('project_id', ids)
-        .order('is_cover', { ascending: false })
-        .order('created_at', { ascending: true, nullsFirst: false });
+      const assets = await listCoverCandidates(supabaseAdmin, ids);
 
-      for (const asset of assets ?? []) {
+      for (const asset of assets) {
         const pid = (asset as { project_id: string | null }).project_id;
         if (!pid) continue;
         const url = (asset as { image_url: string | null }).image_url;
@@ -171,17 +166,10 @@ export async function GET() {
     // A door can be pinned to an image from the vault (Asset Vault -> PORTALS).
     // That choice wins over whatever the projects happen to carry, and it
     // stands even while the hall is still empty.
-    const { data: pinnedDoors } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('image_url, interview_slot')
-      .not('interview_slot', 'is', null);
+    const pinnedDoors = await listPinnedInterviewCovers(supabaseAdmin);
 
     const pinnedCover: Record<string, string | null> = {};
-    for (const row of (pinnedDoors ?? []) as unknown as Array<{
-      image_url: string;
-      interview_slot: string;
-    }>) {
+    for (const row of pinnedDoors) {
       pinnedCover[row.interview_slot] = row.image_url;
     }
 
@@ -211,12 +199,7 @@ export async function GET() {
     //      rows hang off the collection container, not off a public project,
     //      which is why they are read separately.
     //   2. the most recent public project of that year that has any image.
-    const { data: milestoneRows } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('milestone_priority, image_url')
-      .not('milestone_priority', 'is', null)
-      .order('milestone_priority', { ascending: true });
+    const milestoneRows = await listMilestoneCoverAssets(supabaseAdmin);
 
     // The admin grid offers one slot per year from 2022 up to the current
     // year, and the slot number is the year (priority 5 = 2026). This used to
@@ -224,7 +207,7 @@ export async function GET() {
     // project cover instead of the photo the curator had picked.
     const currentYear = new Date().getFullYear();
     const milestoneCover: Record<number, string> = {};
-    for (const row of milestoneRows ?? []) {
+    for (const row of milestoneRows) {
       const typed = row as { milestone_priority: number; image_url: string | null };
       const year = Number(milestonePriorityToYear(typed.milestone_priority));
       if (!Number.isFinite(year) || !typed.image_url) continue;

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { applyPublicProjectFilter } from '@/lib/project-visibility';
 import { HOME_CATEGORIES } from '@/lib/category-registry';
+import { listPublicPortalProjects } from '@/lib/data/projects';
+import { getPinnedPortalCover, getPortalCoverCandidate } from '@/lib/data/gallery-assets';
 
 /**
  * GET /api/home/portals
@@ -40,32 +41,20 @@ export async function GET() {
       cover: PortalCover | null;
       count: number;
     }> {
-      const { data: projects, error } = await applyPublicProjectFilter(
-        supabaseAdmin
-          .schema('lmsy_archive')
-          .from('projects')
-          .select('id, cover_url')
-          .eq('category', category)
-      )
-        .order('portal_priority', { ascending: false })
-        .order('event_date', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
+      const projects = await listPublicPortalProjects(supabaseAdmin, category);
 
-      if (error) {
+      // The repo answers null only on a read failure - the old branch degraded
+      // this hall alone, exactly as before.
+      if (projects === null) {
         return { cover: null, count: 0 };
       }
 
-      const count = projects?.length ?? 0;
+      const count = projects.length;
 
       // A pinned cover is the curator's decision, not a fallback: use it even
       // when the hall has no public project yet, so an empty door can still
       // carry the photo they chose for it.
-      const { data: pinned } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .select('image_url, blur_data')
-        .eq('portal_slot', category)
-        .maybeSingle();
+      const pinned = await getPinnedPortalCover(supabaseAdmin, category);
 
       if (pinned?.image_url) {
         return {
@@ -74,65 +63,44 @@ export async function GET() {
         };
       }
 
-      if (!projects || projects.length === 0) {
+      if (projects.length === 0) {
         return { cover: null, count: 0 };
       }
 
       // First project in priority order that actually resolves to an image.
       for (const project of projects) {
         if (project.cover_url) {
-          return { cover: { imageUrl: project.cover_url, blurData: null }, count: projects.length };
+          return { cover: { imageUrl: project.cover_url, blurData: null }, count };
         }
 
-        for (const [column, value] of [
-          ['catalog_id', undefined],
-          ['is_featured', true],
-        ] as const) {
-          let assetQuery = supabaseAdmin
-            .schema('lmsy_archive')
-            .from('gallery_assets')
-            .select('image_url, blur_data')
-            .eq('project_id', project.id);
-
-          if (column === 'catalog_id') {
-            assetQuery = assetQuery.like('catalog_id', '%-000');
-          } else {
-            assetQuery = assetQuery.eq('is_featured', value as boolean);
-          }
-
-          const { data: asset } = await assetQuery
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (asset?.image_url) {
-            return {
-              cover: { imageUrl: asset.image_url, blurData: asset.blur_data ?? null },
-              count: projects.length,
-            };
-          }
+        const catalogAsset = await getPortalCoverCandidate(supabaseAdmin, project.id, 'catalog');
+        if (catalogAsset?.image_url) {
+          return {
+            cover: { imageUrl: catalogAsset.image_url, blurData: catalogAsset.blur_data ?? null },
+            count,
+          };
         }
 
-        const { data: anyAsset } = await supabaseAdmin
-          .schema('lmsy_archive')
-          .from('gallery_assets')
-          .select('image_url, blur_data')
-          .eq('project_id', project.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const featuredAsset = await getPortalCoverCandidate(supabaseAdmin, project.id, 'featured');
+        if (featuredAsset?.image_url) {
+          return {
+            cover: { imageUrl: featuredAsset.image_url, blurData: featuredAsset.blur_data ?? null },
+            count,
+          };
+        }
 
+        const anyAsset = await getPortalCoverCandidate(supabaseAdmin, project.id, 'any');
         if (anyAsset?.image_url) {
           return {
             cover: { imageUrl: anyAsset.image_url, blurData: anyAsset.blur_data ?? null },
-            count: projects.length,
+            count,
           };
         }
       }
 
       // Projects exist but none has an image yet: the count is real, the
       // cover is not. The card uses its gradient.
-      return { cover: null, count: projects.length };
+      return { cover: null, count };
     }
 
     const results = await Promise.all(
