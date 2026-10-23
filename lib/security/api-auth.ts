@@ -16,6 +16,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getAdminEmail, isAdminEmail } from './admin-email';
 
@@ -80,4 +82,48 @@ export async function requireAdmin(request: NextRequest): Promise<AdminGuardResu
     userId: authResult.user.id,
     method: authResult.method === 'bearer' ? 'bearer' : 'cookie',
   };
+}
+
+/**
+ * Server-side admin guard for React Server Components (admin pages / layouts),
+ * where there is no NextRequest to hand to requireAdmin. Reads the Supabase
+ * session straight from cookies and applies the same single-source admin-email
+ * rule as requireAdmin. Returns the admin email when the caller is an
+ * authenticated admin, otherwise null (fail-closed, including when ADMIN_EMAIL
+ * is not configured).
+ *
+ * Accessing cookies() opts the calling route into dynamic rendering, which is
+ * correct for admin pages: they must be authorized per request instead of being
+ * cached at the edge.
+ */
+export async function getAdminFromCookies(): Promise<string | null> {
+  const adminEmail = getAdminEmail();
+  if (!adminEmail) return null;
+
+  const cookieStore = await cookies();
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
+
+  const supabaseAuth = createServerClient(
+    rawUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        // RSC render cannot write cookies; no-op so a token refresh does not throw.
+        set() {},
+        remove() {},
+      },
+      db: {
+        schema: 'lmsy_archive',
+      },
+    }
+  );
+
+  const { data: { user }, error } = await supabaseAuth.auth.getUser();
+  if (error || !user) return null;
+
+  const email = (user.email || '').trim().toLowerCase();
+  return isAdminEmail(email) ? email : null;
 }

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAdminFromCookies } from '@/lib/security/api-auth';
 import { isPublicProject, applyPublicProjectFilter } from '@/lib/project-visibility';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { aggregateProjectSpans } from '@/lib/project-span';
@@ -16,9 +17,12 @@ import ProjectDetailClient from './project-detail-client';
  * where "project" is still the right word: the workbench creates one folder of
  * pictures per row and publishes it.
  *
- * It is not a second public address. /admin/* is behind the admin layout, is
- * never linked from a public page and is served with `X-Robots-Tag: noindex`
- * by next.config.ts.
+ * It is not a second public address. It is admin-only and now enforced on the
+ * server: getAdminFromCookies() runs at the top of both the page and its
+ * metadata generator, so an anonymous request never reaches the service-role
+ * reads below (a client-side redirect in the admin layout cannot do this - the
+ * server has already streamed the RSC payload by then). It is never linked from
+ * a public page and is served with `X-Robots-Tag: noindex` by next.config.ts.
  */
 
 interface PageProps {
@@ -42,10 +46,11 @@ interface ProjectGalleryImage {
   sequence?: number | null;
 }
 
-// The page renders a shell plus the project's own images. Cache it at the edge
-// and refresh every 5 minutes, so publishing in the admin panel shows up
-// shortly without re-querying the database on every single page view.
-export const revalidate = 300;
+// The page renders a shell plus the project's own images. It is admin-only:
+// getAdminFromCookies() runs per request (cookies() opts into dynamic
+// rendering), so no unpublished row is ever cached at the edge for anonymous
+// visitors. The previous `revalidate = 300` is intentionally gone - an
+// auth-gated page must not be served from the ISR cache.
 
 // Only the columns the detail view renders (the previous select('*') pulled
 // excerpt/credits/i18n blobs the gallery grid never shows).
@@ -64,6 +69,12 @@ export type CategoryType = typeof CATEGORIES[number]['value'];
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  // Server-side admin gate: no DB read (and no title/description leak) for
+  // anonymous callers.
+  if (!(await getAdminFromCookies())) {
+    return { title: 'Preview Not Found | LMSY', robots: { index: false, follow: false } };
+  }
+
   const { id } = await params;
   const supabaseAdmin = getSupabaseAdmin();
 
@@ -116,6 +127,13 @@ async function resolveProject(
 }
 
 export default async function ProjectPage({ params }: PageProps) {
+  // Server-side admin gate (fail-closed): anonymous / non-admin requests 404
+  // before any service-role read, closing the hole the client-only admin
+  // layout left open.
+  if (!(await getAdminFromCookies())) {
+    notFound();
+  }
+
   const { id } = await params;
   const supabaseAdmin = getSupabaseAdmin();
 
