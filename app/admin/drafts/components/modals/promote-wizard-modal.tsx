@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminLang } from '@/lib/admin-i18n';
-import { parseCatalogHead, PERSON_CODES, CITY_CODES, pickedSubject, hasPickedSubject } from '@/lib/catalog-id';
+import { subjectFromProjectId, PERSON_CODES, CITY_CODES, pickedSubject, hasPickedSubject } from '@/lib/catalog-id';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import type { TranslationKey } from '@/lib/languages';
 
@@ -73,7 +73,9 @@ interface PromoteWizardModalProps {
 
 /** Derive the SUBJECT segment: catalog head first, else a normalised title. */
 function deriveSubject(project: ProjectRow): string {
-  const headSubject = parseCatalogHead(project.catalog_id);
+  // subjectFromProjectId strips the date that EVENT / APPEAR event numbers end
+  // with, so the segment does not come out as FANMEET-BKK-20250115.
+  const headSubject = subjectFromProjectId(project.catalog_id);
   if (headSubject) return headSubject;
   // Event titles are often written in decorative Unicode (𝐋𝐌𝐒𝐘 𝐱 ...). NFKC
   // folds those compatibility characters back to ASCII first, or the segment

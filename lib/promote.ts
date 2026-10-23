@@ -5,7 +5,7 @@ import {
   allocateNextCatalogId,
   r2KeyForCatalogId,
   parseCatalogId,
-  parseCatalogHead,
+  subjectFromProjectId,
   isCatalogIdConflict,
   CATALOG_ID_MAX_ATTEMPTS,
   CATEGORY_TO_DOOR_CODE,
@@ -127,7 +127,9 @@ export function deriveSubjectSegment(project: {
   catalog_id?: string | null;
   title?: string | null;
 }): string {
-  const headSubject = parseCatalogHead(project.catalog_id);
+  // subjectFromProjectId, not parseCatalogHead: EVENT / APPEAR event numbers
+  // end with the date, which must not come back as part of the subject.
+  const headSubject = subjectFromProjectId(project.catalog_id);
   if (headSubject) return headSubject;
   const cut = (project.title || '')
     .normalize('NFKC')
@@ -164,7 +166,7 @@ export async function loadSubjectOptions(projectId: string): Promise<SubjectOpti
 
   // "From project" is only the stamped catalog head - a title guess must not
   // masquerade as the project's authoritative code.
-  const fromProject = parseCatalogHead(project.catalog_id);
+  const fromProject = subjectFromProjectId(project.catalog_id);
   // deriveSubjectSegment prefers the catalog head, so recompute a pure title
   // guess for the reference chip.
   const titleGuess =

@@ -171,6 +171,8 @@ LM-EVENT-BIRTHDAY-20250218-001.webp
 LMSY-EVENT-BRANDDAY-20260822-001.webp   (城市未知)
 ```
 
+对应的事件编号在后面接日期，见第六节的例外说明。
+
 ### 4.4 公开亮相 `APPEAR`
 
 主体 = 子类码 + 城市码。两段都由后台下拉决定，**不手填**（2026-10-23 起，与 4.3 同一机制）。
@@ -266,6 +268,29 @@ LMSY-FEAT-BACKVIEW-010.webp
 | PERLA Lookmhee | `LMSY-MAG-PERLA-MODERNSHOW-LM` | `LM-MAG-PERLA-MODERNSHOW-20250914-001` |
 | Affair 宣传 | `LMSY-DRAMA-AFFAIR-PROMO` | `LMSY-DRAMA-AFFAIR-PROMO-20240815-001` |
 
+**例外：现场活动 `EVENT` 与公开亮相 `APPEAR` 带日期（2026-10-23 定）。**
+
+这两门的主体只有「类型 + 城市」，不含活动身份——两门 105 个事件里 69 个会撞号
+（曼谷 15 场颁奖礼都叫 `LMSY-APPEAR-AWARDS-BKK`）。所以这两门的事件编号在后面接日期，
+把「哪一天办的那一场」作为事件身份：
+
+```
+LMSY-EVENT-FANMEET-BKK-20250115        双人见面会
+LMSY-EVENT-CONCERT-MNL-20260919        马尼拉 FanCon
+LMSY-APPEAR-AWARDS-BKK-20250515        曼谷颁奖礼
+LMSY-EVENT-BRANDDAY-20260822           城市未知，城市段整段省略
+```
+
+**只有同一天、同类型、同城市确实存在两场单人活动时才加 `-LM` / `-SY` 尾码**
+（沿用本节的单人事件后缀规则）。目前全站仅两处：
+
+```
+LMSY-EVENT-FANMEET-NNG-20241221-LM  →  LM-EVENT-FANMEET-NNG-20241221-001
+LMSY-EVENT-FANMEET-NNG-20241221-SY  →  SY-EVENT-FANMEET-NNG-20241221-001
+```
+
+其余门（`MAG` / `DRAMA` / `BRAND` / `TALK` / `LIVE` / `FEAT`）仍按上表，编号里不带日期。
+
 **事件编号一律以 `LMSY-` 开头**（2026-10-22 用户定：网站以 LMSY 为核心，编号必须带）。
 这里的前缀是站名，和图片名第一段的人物码不是一回事——单人刊的图片名仍然以 `LM-` / `SY-` 起头。
 
@@ -273,6 +298,14 @@ LMSY-FEAT-BACKVIEW-010.webp
 
 **关系式**：取事件编号，把开头的 `LMSY` 换成该页的人物码（双人页仍是 `LMSY`）、去掉末尾的 `-LM` / `-SY`，
 再接日期和序号。`gallery_assets.catalog_id` 存文件名主干（不含扩展名），与 R2 对象名逐字一致。
+
+`EVENT` / `APPEAR` 两门的编号里**已经含日期**，所以不再接日期，只接序号：
+
+```
+LMSY-EVENT-FANMEET-BKK-20250115      →  LMSY-EVENT-FANMEET-BKK-20250115-001
+LMSY-EVENT-FANMEET-NNG-20241221-LM   →  LM-EVENT-FANMEET-NNG-20241221-001
+LMSY-APPEAR-AWARDS-BKK-20250515      →  LMSY-APPEAR-AWARDS-BKK-20250515-001
+```
 
 | 事件编号 | 人物 | 文件名 |
 |---|---|---|

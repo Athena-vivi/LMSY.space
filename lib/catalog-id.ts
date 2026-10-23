@@ -370,6 +370,9 @@ export function getR2PathForCatalogId(catalogId: string): string {
  * Parse a project catalog HEAD (`<PERSON>-<DOOR>-<SUBJECT>`, no date or
  * sequence - projects.catalog_id stores exactly that shape, e.g.
  * LMSY-EVENT-BEINLOVE). Full asset ids go through parseCatalogId instead.
+ *
+ * Note that EVENT and APPEAR event numbers also carry the date (spec section
+ * 6); use subjectFromProjectId to get the bare subject for those two.
  */
 export function parseCatalogHead(head: string | null | undefined): string | null {
   if (!head) return null;
@@ -380,6 +383,23 @@ export function parseCatalogHead(head: string | null | undefined): string | null
   if (!(DOOR_CODES as readonly string[]).includes(door)) return null;
   const subject = parts.slice(2).join('-');
   return subject || null;
+}
+
+/**
+ * SUBJECT segment of an event number, for any door.
+ *
+ * EVENT / APPEAR event numbers end with the date (and, for the two Nanning
+ * single events, a `-LM` / `-SY` tail). Feeding that back as an asset subject
+ * would write the date twice - `LMSY-EVENT-FANMEET-BKK-20250115-20250115-001`
+ * - so the tail is stripped here rather than at every call site.
+ */
+export function subjectFromProjectId(head: string | null | undefined): string | null {
+  const subject = parseCatalogHead(head);
+  if (!subject) return null;
+  const door = String(head).split('-')[1];
+  if (door !== 'EVENT' && door !== 'APPEAR') return subject;
+  const bare = subject.replace(/-\d{8}(?:-(?:LM|SY))?$/, '');
+  return bare || null;
 }
 
 // ---------------------------------------------------------------------------
