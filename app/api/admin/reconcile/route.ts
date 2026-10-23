@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { listR2Objects, BASE_CDN_URL } from '@/lib/r2-client';
 import { generateBlurData } from '@/lib/image-processing';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 /**
  * R2 prefixes that hold archive assets.
@@ -193,6 +194,8 @@ export async function POST(request: NextRequest) {
       exists,
       errored,
     });
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 /**
  * Database Alignment Patch - Auto-sync covers from gallery
@@ -136,6 +137,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[SYNC_COVERS] ✅ Sync complete: ${updatedCount} projects updated`);
+
+    if (updatedCount > 0) {
+      revalidateContentSurfaces();
+    }
 
     return NextResponse.json({
       success: true,

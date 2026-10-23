@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { apiServerError } from '@/lib/security/http';
 
 /**
@@ -71,6 +72,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     console.log('[PORTRAIT_API] Saved portrait:', { profileId, imageUrl });
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 export async function POST(
   request: NextRequest,
@@ -61,6 +62,8 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

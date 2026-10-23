@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 /**
  * POST /api/admin/gallery/transfer - Batch transfer gallery items to project
@@ -87,6 +88,8 @@ export async function POST(request: NextRequest) {
         .eq('id', projectId);
       console.log('[IRON_CURTAIN] ✅ Project cover updated');
     }
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

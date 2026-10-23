@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 export async function PATCH(
   request: NextRequest,
@@ -91,6 +92,8 @@ export async function PATCH(
       );
     }
 
+    revalidateContentSurfaces();
+
     return NextResponse.json({
       success: true,
       data: {
@@ -149,6 +152,8 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({ success: true, data: { projectId: id, cover_url: null } });
   } catch (error) {

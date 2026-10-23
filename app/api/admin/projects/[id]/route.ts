@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 /**
  * Projects Management API
@@ -116,6 +117,8 @@ export async function DELETE(
     }
 
     console.log('[PROJECTS_DELETE] ✅ Project deleted:', id);
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,
@@ -272,6 +275,8 @@ export async function PATCH(
     }
 
     console.log('[PROJECTS_PATCH] ✅ Project updated:', id, '| Rows:', data.length);
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

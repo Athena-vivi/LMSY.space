@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { apiServerError } from '@/lib/security/http';
 import { MILESTONE_START_YEAR, milestonePriorityToYear, yearToMilestonePriority } from '@/lib/milestone-years';
 
@@ -125,6 +126,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     console.log('[MILESTONE_API] Set milestone:', { imageId, year, priority: newPriority });
+
+    // The asset is re-linked to the milestone project, which also removes it
+    // from the door it used to hang under - the doors need the fresh read.
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

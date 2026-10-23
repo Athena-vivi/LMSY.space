@@ -10,6 +10,7 @@ import {
   CATALOG_ID_MAX_ATTEMPTS,
 } from '@/lib/catalog-id';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { apiServerError } from '@/lib/security/http';
 
 interface RouteContext {
@@ -195,6 +196,8 @@ export async function POST(
     if (!insertedAsset) {
       return apiServerError('admin/drafts/[id]/to-gallery POST', lastError);
     }
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

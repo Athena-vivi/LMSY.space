@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { apiServerError } from '@/lib/security/http';
 
 // Remediation B2-T2 (audit P2-1): this route previously only checked that the
@@ -64,6 +65,8 @@ export async function POST(request: NextRequest) {
       console.error('Batch update errors:', errors);
       return apiServerError('admin/gallery/batch-update', errors[0].error);
     }
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

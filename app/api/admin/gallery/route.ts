@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 /**
  * GET - Retrieve one project's gallery images.
@@ -177,6 +178,8 @@ export async function POST(request: NextRequest) {
 
     console.log('[ADMIN_GALLERY_API] ✅ Inserted', results.length, 'items');
 
+    revalidateContentSurfaces();
+
     return NextResponse.json({
       success: true,
       count: results.length,
@@ -236,6 +239,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log('[ADMIN_GALLERY_API] ✅ Deleted', idArray.length, 'images');
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,
@@ -306,6 +311,8 @@ export async function PATCH(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

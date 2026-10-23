@@ -5,6 +5,7 @@ import { purgeCdnUrls } from '@/lib/cloudflare-purge';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
 import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS, allocateNextCatalogId as allocateSharedCatalogId, CATEGORY_TO_DOOR_CODE } from '@/lib/catalog-id';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { validateUploadFile } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
 
@@ -234,6 +235,9 @@ export async function POST(request: NextRequest) {
   if (!canRetryWithNewId) {
     await purgeCdnUrls([r2Path]);
   }
+
+  // The new asset changes the issue/event pages that read gallery_assets.
+  revalidateContentSurfaces();
 
   // Success response
   return NextResponse.json({

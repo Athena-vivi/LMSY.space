@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 
 /**
  * GET /api/admin/editorial - Fetch all editorial projects (Admin Only)
@@ -166,6 +167,8 @@ export async function PUT(request: NextRequest) {
 
     console.log('[ADMIN_EDITORIAL_API] ✅ Updated project:', id);
 
+    revalidateContentSurfaces();
+
     return NextResponse.json({
       success: true,
       project: data,
@@ -237,6 +240,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log('[ADMIN_EDITORIAL_API] ✅ Deleted project:', id);
+
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,
