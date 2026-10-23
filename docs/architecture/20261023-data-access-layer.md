@@ -4,7 +4,8 @@
 - **来源**：架构评审 P1-3（`reports/ARCHITECTURE_REVIEW_2026-10-23.md`）——"无数据访问层"是多处问题的总根因。
 - **日期**：2026-10-23
 - **状态**：**v2（2026-10-23 修订）**——§5 gallery 契约按真实调用方重新裁定；原「方案 A/B」建立在错误前提上（误判 gallery GET 调用方），已作废。按 Phase 增量实施，**每个 Phase 一个 commit**。
-- **进度（2026-10-23 深夜）**：Phase 0 ✅（`5c1c0ae`，client.ts + keyset.ts）；Phase 1 ✅（`7b574d7`，gallery-assets.ts 仓储 + vault/assets 迁入，实时等价 17/17）。Phase 2 进行中：2/1 ✅（projects.ts 全量契约 + gallery-assets 追加 vault 负载/封面/door 助手 + vault 路由迁入，实时等价 1/1 整包 JSON 逐字节一致）；admin projects CRUD（projects/、projects/[id]、cover/merge/split）与 door-data 公开读迁入随后。RLS 部分仍暂缓。
+- **进度（2026-10-23 深夜）**：Phase 0 ✅（`5c1c0ae`，client.ts + keyset.ts）；Phase 1 ✅（`7b574d7`，gallery-assets.ts 仓储 + vault/assets 迁入，实时等价 17/17）。Phase 2 进行中：1/4 ✅（`70219f9`，projects.ts 全量契约 + gallery-assets 追加 + vault 路由，整包 JSON 等价 1/1）；2/4 ✅（`0c47cff`，admin projects CRUD 三路由，读路径等价 6/6）；4/4 ✅（`f93cb64`，merge/split，写路径逐字迁移）；3/4 进行中（door-data 公开读层，含全量等价证明）。RLS 部分仍暂缓。
+- **并行冲突记录（2026-10-23 21:34）**：用户在此期间自行提交了 `1dc185b`（live-events subtype 拆分 + city 列 + DB migration），动过 projects 两个路由。CRUD 迁移已按 city 入库后的版本对齐（createProject 增加 city 入参）；用户另有在途未提交编辑（promote-wizard-modal / category-registry / catalog-id / 两个 public_appearance migration），所有提交一律显式路径，禁 `git add -A`。
 - **性质**：纯读/写路径重构，**不改数据库 schema、不改展示层结构**。所有 Phase 可单独 `git revert` 回滚。
 
 ---
