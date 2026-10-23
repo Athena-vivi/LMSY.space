@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { apiServerError } from '@/lib/security/http';
+import { setGalleryAssetSequence } from '@/lib/data/gallery-admin';
 
 // Remediation B2-T2 (audit P2-1): this route previously only checked that the
 // caller was logged in - any authenticated user could rewrite gallery ordering.
@@ -52,10 +53,7 @@ export async function POST(request: NextRequest) {
 
     const results = await Promise.all(
       updates.map(({ id, sequence }: SequenceUpdate) =>
-        supabaseAdmin
-          .from('gallery_assets')
-          .update({ sequence })
-          .eq('id', id)
+        setGalleryAssetSequence(supabaseAdmin, id, sequence)
       )
     );
 

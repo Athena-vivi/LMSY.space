@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import {
+  getProjectForTransfer,
+  transferGalleryAssetsToProject,
+  setProjectCoverUrl,
+} from '@/lib/data/gallery-admin';
 
 /**
  * POST /api/admin/gallery/transfer - Batch transfer gallery items to project
@@ -38,14 +43,20 @@ export async function POST(request: NextRequest) {
 
     // Verify project exists
     console.log('[IRON_CURTAIN] 🔍 Verifying project exists...');
-    const { data: project, error: projectError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('id, title')
-      .eq('id', projectId)
-      .maybeSingle();
+    let project: { id: string; title: string | null } | null;
+    try {
+      project = await getProjectForTransfer(supabaseAdmin, projectId);
+    } catch (error) {
+      // Mirror the original verbatim behaviour: a lookup error also returned 404
+      // "Project not found" (it checked `projectError || !project`).
+      console.error('[IRON_CURTAIN] ❌ Project lookup failed:', error);
+      return NextResponse.json(
+        { error: 'Project not found', projectId },
+        { status: 404 }
+      );
+    }
 
-    if (projectError || !project) {
+    if (!project) {
       console.error('[IRON_CURTAIN] ❌ Project not found:', projectId);
       return NextResponse.json(
         { error: 'Project not found', projectId },
@@ -59,17 +70,13 @@ export async function POST(request: NextRequest) {
     // NOTE: must target gallery_assets (the live asset table). The legacy
     // `gallery` table has 0 rows and previously made this call a silent no-op.
     console.log('[IRON_CURTAIN] 📝 Updating gallery assets...');
-    const { data: updatedItems, error: updateError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .update({ project_id: projectId })
-      .in('id', ids)
-      .select();
-
-    if (updateError) {
-      console.error('[IRON_CURTAIN] ❌ Update failed:', updateError);
+    let updatedItems: Array<Record<string, unknown>>;
+    try {
+      updatedItems = await transferGalleryAssetsToProject(supabaseAdmin, ids, projectId);
+    } catch (error) {
+      console.error('[IRON_CURTAIN] ❌ Update failed:', error);
       return NextResponse.json(
-        { error: 'Failed to transfer items', details: updateError.message },
+        { error: 'Failed to transfer items', details: (error as Error).message },
         { status: 500 }
       );
     }
@@ -78,14 +85,10 @@ export async function POST(request: NextRequest) {
 
     // Auto-set project cover if an explicit cover or -000 image is in the batch
     const coverImage = updatedItems?.find(item => item.is_cover) ||
-      updatedItems?.find(item => item.catalog_id?.endsWith('-000'));
+      updatedItems?.find(item => (item.catalog_id as string | undefined)?.endsWith('-000'));
     if (coverImage) {
       console.log('[IRON_CURTAIN] 🎯 Cover image in batch, updating project cover...');
-      await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .update({ cover_url: coverImage.image_url })
-        .eq('id', projectId);
+      await setProjectCoverUrl(supabaseAdmin, projectId, coverImage.image_url as string | null);
       console.log('[IRON_CURTAIN] ✅ Project cover updated');
     }
 

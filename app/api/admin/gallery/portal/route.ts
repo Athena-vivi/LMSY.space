@@ -4,6 +4,11 @@ import { requireAdmin } from '@/lib/security/api-auth';
 import { apiServerError } from '@/lib/security/http';
 import { HOME_CATEGORIES, type ProjectCategory } from '@/lib/category-registry';
 import { isSecondLevelPath } from '@/lib/cover-slots';
+import {
+  clearDoorSlot,
+  setDoorSlot,
+  getDoorSlotRows,
+} from '@/lib/data/gallery-admin';
 
 /**
  * Homepage door covers.
@@ -102,33 +107,26 @@ export async function PATCH(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
-    const table = () => supabaseAdmin.schema('lmsy_archive').from('gallery_assets');
 
     if (target.value !== null) {
       // Release the door from whoever held it, otherwise the unique index
       // rejects the write.
-      const { error: clearError } = await table()
-        .update({ [target.column]: null })
-        .eq(target.column, target.value);
-
-      if (clearError) {
-        console.error('[HOME_DOOR_API] Failed to release previous holder:', clearError);
-        return apiServerError('admin/gallery/portal PATCH', clearError);
+      try {
+        await clearDoorSlot(supabaseAdmin, target.column, target.value);
+      } catch (error) {
+        console.error('[HOME_DOOR_API] Failed to release previous holder:', error);
+        return apiServerError('admin/gallery/portal PATCH', error);
       }
     }
 
-    const { data, error } = await table()
-      .update({ [target.column]: target.value })
-      .eq('id', imageId)
-      .select(`id, image_url, blur_data, ${target.column}`)
-      .single();
-
-    if (error) {
+    let saved: Record<string, unknown>;
+    try {
+      saved = await setDoorSlot(supabaseAdmin, target.column, imageId, target.value);
+    } catch (error) {
       console.error('[HOME_DOOR_API] Failed to set slot:', error);
       return apiServerError('admin/gallery/portal PATCH', error);
     }
 
-    const saved = data as unknown as Record<string, unknown>;
     const savedValue = saved[target.column] as string | null;
 
     console.log('[HOME_DOOR_API] Set door:', {
@@ -162,40 +160,22 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    const table = () => supabaseAdmin.schema('lmsy_archive').from('gallery_assets');
 
     // Two queries instead of one OR filter: `not.is.null` inside `.or()` is
     // easy to get wrong, and this runs on an admin page, not a hot path.
-    const [portalResult, interviewResult, categoryResult] = await Promise.all([
-      table().select('id, image_url, blur_data, portal_slot').not('portal_slot', 'is', null),
-      table().select('id, image_url, blur_data, interview_slot').not('interview_slot', 'is', null),
-      table().select('id, image_url, blur_data, category_slot').not('category_slot', 'is', null),
-    ]);
-
-    const error = portalResult.error ?? interviewResult.error ?? categoryResult.error;
-    if (error) {
+    let portalRows: Array<Record<string, unknown>>;
+    let interviewRows: Array<Record<string, unknown>>;
+    let categoryRows: Array<Record<string, unknown>>;
+    try {
+      [portalRows, interviewRows, categoryRows] = await Promise.all([
+        getDoorSlotRows(supabaseAdmin, 'portal_slot', 'id, image_url, blur_data, portal_slot'),
+        getDoorSlotRows(supabaseAdmin, 'interview_slot', 'id, image_url, blur_data, interview_slot'),
+        getDoorSlotRows(supabaseAdmin, 'category_slot', 'id, image_url, blur_data, category_slot'),
+      ]);
+    } catch (error) {
       console.error('[HOME_DOOR_API] Failed to fetch slots:', error);
       return apiServerError('admin/gallery/portal GET', error);
     }
-
-    const portalRows = (portalResult.data ?? []) as unknown as Array<{
-      id: string;
-      image_url: string;
-      blur_data: string | null;
-      portal_slot: string | null;
-    }>;
-    const interviewRows = (interviewResult.data ?? []) as unknown as Array<{
-      id: string;
-      image_url: string;
-      blur_data: string | null;
-      interview_slot: string | null;
-    }>;
-    const categoryRows = (categoryResult.data ?? []) as unknown as Array<{
-      id: string;
-      image_url: string;
-      blur_data: string | null;
-      category_slot: string | null;
-    }>;
 
     return NextResponse.json({
       success: true,

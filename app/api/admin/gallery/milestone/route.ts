@@ -4,43 +4,40 @@ import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import { apiServerError } from '@/lib/security/http';
 import { MILESTONE_START_YEAR, milestonePriorityToYear, yearToMilestonePriority } from '@/lib/milestone-years';
+import {
+  findProjectByTitle,
+  createProjectRow,
+  linkAssetToProject,
+  clearMilestonePriorityByValue,
+  setMilestonePriority,
+  listMilestoneAssets,
+} from '@/lib/data/gallery-admin';
 
 const MILESTONE_PROJECT_TITLE = 'MILESTONES_ARCHIVE';
 
-async function ensureMilestoneProject() {
+async function ensureMilestoneProject(): Promise<Record<string, unknown>> {
   const supabaseAdmin = getSupabaseAdmin();
 
-  let { data: project, error } = await supabaseAdmin
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('*')
-    .eq('title', MILESTONE_PROJECT_TITLE)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
+  let project: Record<string, unknown> | null;
+  try {
+    project = await findProjectByTitle(supabaseAdmin, MILESTONE_PROJECT_TITLE);
+  } catch (error) {
+    throw new Error((error as Error).message);
   }
 
   if (!project) {
-    const { data: createdProject, error: createError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .insert({
+    try {
+      project = await createProjectRow(supabaseAdmin, {
         title: MILESTONE_PROJECT_TITLE,
         category: 'personal_travel',
         description: 'Unified project for homepage milestone assets',
         curation_status: 'published',
         portal_visible: false,
         portal_priority: 0,
-      })
-      .select('*')
-      .single();
-
-    if (createError || !createdProject) {
-      throw new Error(createError?.message || 'Failed to create milestone project');
+      });
+    } catch (error) {
+      throw new Error((error as Error).message || 'Failed to create milestone project');
     }
-
-    project = createdProject;
   }
 
   return project;
@@ -86,41 +83,28 @@ export async function PATCH(request: NextRequest) {
 
     if (newPriority !== null) {
       const milestoneProject = await ensureMilestoneProject();
-      const { error: linkError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .update({ project_id: milestoneProject.id })
-        .eq('id', imageId);
-
-      if (linkError) {
-        return apiServerError('admin/gallery/milestone PATCH', linkError);
+      try {
+        await linkAssetToProject(supabaseAdmin, imageId, milestoneProject.id as string);
+      } catch (error) {
+        return apiServerError('admin/gallery/milestone PATCH', error);
       }
     }
 
     // First, clear existing milestone for this year (if setting a new milestone)
     if (newPriority !== null) {
-      const { error: clearError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .update({ milestone_priority: null })
-        .eq('milestone_priority', newPriority);
-
-      if (clearError) {
-        console.error('[MILESTONE_API] Failed to clear existing milestone:', clearError);
-        return apiServerError('admin/gallery/milestone PATCH', clearError);
+      try {
+        await clearMilestonePriorityByValue(supabaseAdmin, newPriority);
+      } catch (error) {
+        console.error('[MILESTONE_API] Failed to clear existing milestone:', error);
+        return apiServerError('admin/gallery/milestone PATCH', error);
       }
     }
 
     // Set new milestone
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .update({ milestone_priority: newPriority })
-      .eq('id', imageId)
-      .select('id, image_url, milestone_priority')
-      .single();
-
-    if (error) {
+    let data: Record<string, unknown>;
+    try {
+      data = await setMilestonePriority(supabaseAdmin, imageId, newPriority);
+    } catch (error) {
       console.error('[MILESTONE_API] Failed to set milestone:', error);
       return apiServerError('admin/gallery/milestone PATCH', error);
     }
@@ -156,25 +140,21 @@ export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('id, image_url, milestone_priority, caption, tag')
-      .not('milestone_priority', 'is', null)
-      .order('milestone_priority', { ascending: true });
-
-    if (error) {
+    let rows: Array<Record<string, unknown>>;
+    try {
+      rows = await listMilestoneAssets(supabaseAdmin);
+    } catch (error) {
       console.error('[MILESTONE_API] Failed to fetch milestones:', error);
       return apiServerError('admin/gallery/milestone GET', error);
     }
 
-    const milestones = data?.map(item => ({
+    const milestones = rows.map((item) => ({
       id: item.id,
       image_url: item.image_url,
-      year: milestonePriorityToYear(item.milestone_priority),
+      year: milestonePriorityToYear(item.milestone_priority as number | null),
       caption: item.caption,
       tag: item.tag,
-    })) || [];
+    }));
 
     return NextResponse.json({
       success: true,

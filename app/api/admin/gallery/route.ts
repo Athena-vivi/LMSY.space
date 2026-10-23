@@ -3,6 +3,14 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import {
+  listGalleryAssetsByProject,
+  getProjectIdIfExists,
+  findGalleryAssetsByImageUrls,
+  insertGalleryAsset,
+  deleteGalleryAssetsByIds,
+  updateGalleryAsset,
+} from '@/lib/data/gallery-admin';
 
 /**
  * GET - Retrieve one project's gallery images.
@@ -20,8 +28,6 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('project_id');
 
@@ -32,27 +38,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    let images: Array<Record<string, unknown>>;
+    try {
+      images = await listGalleryAssetsByProject(getSupabaseAdmin(), projectId);
+    } catch (error) {
       console.error('[ADMIN_GALLERY_API] ❌ Fetch failed:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch gallery', details: error.message },
+        { error: 'Failed to fetch gallery', details: (error as Error).message },
         { status: 500 }
       );
     }
 
-    console.log('[ADMIN_GALLERY_API] ✅ Fetched', data?.length || 0, 'images');
+    console.log('[ADMIN_GALLERY_API] ✅ Fetched', images.length || 0, 'images');
 
     return NextResponse.json({
       success: true,
-      count: data?.length || 0,
-      data: data || [],
+      count: images.length || 0,
+      data: images,
     });
   } catch (error) {
     console.error('[ADMIN_GALLERY_API] ❌ Error:', error);
@@ -94,20 +96,16 @@ export async function POST(request: NextRequest) {
     // instead of a foreign-key 500 after the first items were inserted.
     const firstProjectId = items.find(item => item.project_id)?.project_id;
     if (firstProjectId) {
-      const { data: projectRow, error: projectError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('id')
-        .eq('id', firstProjectId)
-        .maybeSingle();
-
-      if (projectError) {
+      let projectId: string | null;
+      try {
+        projectId = await getProjectIdIfExists(supabaseAdmin, firstProjectId);
+      } catch (error) {
         return NextResponse.json(
-          { error: 'Failed to verify project', details: projectError.message },
+          { error: 'Failed to verify project', details: (error as Error).message },
           { status: 500 }
         );
       }
-      if (!projectRow) {
+      if (!projectId) {
         return NextResponse.json(
           { error: 'Project not found', projectId: firstProjectId },
           { status: 404 }
@@ -119,11 +117,16 @@ export async function POST(request: NextRequest) {
     // Pre-check the whole batch and treat already-existing urls as idempotent
     // successes (created: false) instead of inserting duplicate rows.
     const requestedUrls = items.map(item => item.image_url).filter(Boolean);
-    const { data: existingRows } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('id, image_url')
-      .in('image_url', requestedUrls);
+    let existingRows: Array<{ id: string; image_url: string | null }>;
+    try {
+      existingRows = await findGalleryAssetsByImageUrls(supabaseAdmin, requestedUrls);
+    } catch (error) {
+      console.error('[ADMIN_GALLERY_API] ❌ Dedupe check failed:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch gallery', details: (error as Error).message },
+        { status: 500 }
+      );
+    }
     const existingByUrl = new Map(
       (existingRows || []).map(row => [row.image_url, row])
     );
@@ -137,38 +140,36 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const { data, error } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .insert({
-          image_url: item.image_url,
-          title: item.title,
-          title_i18n: normalizeLocalizedText(item.title_i18n, item.title || ''),
-          excerpt: item.description || null,
-          excerpt_i18n: normalizeLocalizedText(item.excerpt_i18n, item.description || ''),
-          tag: item.tag || null,
-          caption: item.caption || '',
-          caption_i18n: normalizeLocalizedText(item.caption_i18n, item.caption || ''),
-          is_featured: item.is_featured || false,
-          event_date: item.event_date || null,
-          project_id: item.project_id || null,
-          blur_data: item.blur_data || null,
-          credits: item.credits || null,
-          catalog_id: item.catalog_id || null,
-          magazine_issue: item.magazine_issue || null,
-          integrity_status: item.integrity_status || 'ok',
-          display_role: item.display_role || 'regular',
-          is_cover: item.is_cover || false,
-          is_portal_candidate: item.is_portal_candidate || false,
-          rotation: item.rotation || 0,
-        })
-        .select()
-        .single();
+      const row = {
+        image_url: item.image_url,
+        title: item.title,
+        title_i18n: normalizeLocalizedText(item.title_i18n, item.title || ''),
+        excerpt: item.description || null,
+        excerpt_i18n: normalizeLocalizedText(item.excerpt_i18n, item.description || ''),
+        tag: item.tag || null,
+        caption: item.caption || '',
+        caption_i18n: normalizeLocalizedText(item.caption_i18n, item.caption || ''),
+        is_featured: item.is_featured || false,
+        event_date: item.event_date || null,
+        project_id: item.project_id || null,
+        blur_data: item.blur_data || null,
+        credits: item.credits || null,
+        catalog_id: item.catalog_id || null,
+        magazine_issue: item.magazine_issue || null,
+        integrity_status: item.integrity_status || 'ok',
+        display_role: item.display_role || 'regular',
+        is_cover: item.is_cover || false,
+        is_portal_candidate: item.is_portal_candidate || false,
+        rotation: item.rotation || 0,
+      };
 
-      if (error) {
+      let data: Record<string, unknown>;
+      try {
+        data = await insertGalleryAsset(supabaseAdmin, row);
+      } catch (error) {
         console.error('[ADMIN_GALLERY_API] ❌ Insert failed:', error);
         return NextResponse.json(
-          { error: 'Failed to insert item', details: error.message },
+          { error: 'Failed to insert item', details: (error as Error).message },
           { status: 500 }
         );
       }
@@ -222,18 +223,12 @@ export async function DELETE(request: NextRequest) {
     const idArray = ids.split(',');
     console.log('[ADMIN_GALLERY_API] Deleting', idArray.length, 'images:', idArray);
 
-    const supabaseAdmin = getSupabaseAdmin();
-
-    const { error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .delete()
-      .in('id', idArray);
-
-    if (error) {
+    try {
+      await deleteGalleryAssetsByIds(getSupabaseAdmin(), idArray);
+    } catch (error) {
       console.error('[ADMIN_GALLERY_API] ❌ Delete failed:', error);
       return NextResponse.json(
-        { error: 'Failed to delete images', details: error.message },
+        { error: 'Failed to delete images', details: (error as Error).message },
         { status: 500 }
       );
     }
@@ -296,18 +291,12 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const supabaseAdmin = getSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
+    let data: Record<string, unknown>;
+    try {
+      data = await updateGalleryAsset(getSupabaseAdmin(), id, updateData);
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Failed to update asset', details: error.message },
+        { error: 'Failed to update asset', details: (error as Error).message },
         { status: 500 }
       );
     }
