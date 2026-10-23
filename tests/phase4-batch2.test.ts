@@ -151,7 +151,14 @@ describe('single event detail surface', () => {
     // 2026-10-21: the public site has no /projects namespace. The rich detail
     // renderer survives as the admin preview; "project" is an admin word.
     const pageSrc = src('app/admin/preview/[id]/page.tsx');
-    assert.ok(pageSrc.includes('resolveProject'), 'slug and uuid both resolve');
+    // The slug-then-uuid lookup moved into lib/data/projects.ts
+    // (getProjectBySlugOrId); both layers are pinned here so the guarantee
+    // survives either file being edited.
+    assert.ok(pageSrc.includes('getProjectBySlugOrId'), 'the page resolves through the repository');
+    const repoSrc = src('lib/data/projects.ts');
+    assert.ok(repoSrc.includes('getProjectBySlugOrId'), 'the repository owns the lookup');
+    assert.ok(repoSrc.includes("eq('slug'"), 'slug is tried first');
+    assert.ok(repoSrc.includes("eq('id'"), 'uuid is tried when the key looks like one');
     assert.ok(!pageSrc.includes('redirect('), 'a preview does not jump elsewhere');
     assert.throws(() => src('app/projects/[id]/page.tsx'), 'the public detail route is deleted');
   });
@@ -204,7 +211,13 @@ describe('homepage fixed category entries', () => {
   test('API serves the five registry entries plus real counts', () => {
     const routeSrc = src('app/api/home/portals/route.ts');
     assert.ok(routeSrc.includes('HOME_CATEGORIES'), 'entry list comes from the registry');
-    assert.ok(routeSrc.includes('applyPublicProjectFilter'), 'uses the shared visibility rule');
+    // The visibility rule moved with the query into lib/data/projects.ts
+    // (listPublicPortalProjects), so it is pinned in the repository too -
+    // one layer without the other would silently drop the rule.
+    assert.ok(routeSrc.includes('listPublicPortalProjects'), 'per-hall rows come from the repository');
+    const repoSrc = src('lib/data/projects.ts');
+    assert.ok(repoSrc.includes('listPublicPortalProjects'), 'the repository owns the read');
+    assert.ok(repoSrc.includes('applyPublicProjectFilter'), 'uses the shared visibility rule');
     assert.ok(routeSrc.includes('counts'), 'response carries per-entry counts');
     assert.ok(!routeSrc.includes('hasWork'), 'the hide-empty-cards gate is gone');
   });
