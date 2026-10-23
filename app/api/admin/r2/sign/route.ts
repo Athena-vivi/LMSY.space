@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 import { validateObjectKey, isAllowedMimeType, UPLOAD_POLICY } from '@/lib/security/upload-guard';
 import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId } from '@/lib/catalog-id';
 import { apiServerError } from '@/lib/security/http';
@@ -34,23 +33,9 @@ const ALLOWED_R2_PREFIXES = ['lmsy/', 'lm/', 'sy/', 'magazines/', 'draft/', 'gal
  * }
  */
 export async function POST(request: NextRequest) {
-  // Authentication check
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return NextResponse.json(
-      { error: 'Unauthorized', details: authResult.error },
-      { status: 401 }
-    );
-  }
-
-  const adminEmail = getAdminEmail();
-  if (authResult.user.email !== adminEmail) {
-    return NextResponse.json(
-      { error: 'Forbidden: Admin access required' },
-      { status: 403 }
-    );
-  }
+  // 统一鉴权：要求登录且为配置的 admin 邮箱
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
 
   try {
     const body = await request.json();
@@ -153,7 +138,7 @@ export async function POST(request: NextRequest) {
       // Add metadata for debugging
       Metadata: {
         'catalog-id': catalogId,
-        'uploaded-by': authResult.user.email!,
+        'uploaded-by': auth.email,
         'uploaded-at': new Date().toISOString(),
       },
     });
@@ -195,22 +180,8 @@ export async function POST(request: NextRequest) {
  * GET - Get R2 configuration status (for debugging)
  */
 export async function GET(request: NextRequest) {
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
-  const adminEmail = getAdminEmail();
-  if (authResult.user.email !== adminEmail) {
-    return NextResponse.json(
-      { error: 'Forbidden' },
-      { status: 403 }
-    );
-  }
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
 
   const endpoint = process.env.R2_ENDPOINT;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;

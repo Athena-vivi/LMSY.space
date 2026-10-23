@@ -1,64 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 
 // GET - 获取所有留言（包括待审核的）
 // 使用馆长客户端进行管理操作
 export async function GET(request: NextRequest) {
   try {
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, '') || '';
-
-    // 使用 SSR 客户端进行身份验证（Schema 锁定到 lmsy_archive）
-    const supabaseAuth = createServerClient(
-      rawUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-        },
-        db: {
-          schema: 'lmsy_archive',
-        },
-      }
-    );
-
-    // 验证用户是否为管理员
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // 检查是否为管理员（两种方式：admin_users 表或邮箱匹配）
-    const adminEmail = getAdminEmail();
-
-    // 方式1: 检查 admin_users 表
-    const { data: adminCheck, error: adminError } = await supabaseAuth
-      .schema('lmsy_archive')
-      .from('admin_users')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single();
-
-    // 方式2: 邮箱匹配（作为后备方案）
-    const isEmailAdmin = adminEmail && (user.email || '').toLowerCase() === adminEmail;
-
-    if (adminError || !adminCheck) {
-      // 如果 admin_users 检查失败，尝试邮箱匹配
-      if (!isEmailAdmin) {
-        return NextResponse.json(
-          { error: 'Forbidden: Admin access required' },
-          { status: 403 }
-        );
-      }
-    }
+    // 统一鉴权：要求登录且为配置的 admin 邮箱（单一事实来源）
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     // 获取所有留言（显式指定 schema）
     const supabaseAdmin = getSupabaseAdmin();

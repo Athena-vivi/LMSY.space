@@ -1,29 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { getAdminEmail } from '@/lib/security/api-auth';
-
-function ensureAdminEmail(email: string | undefined | null) {
-  const adminEmail = getAdminEmail();
-  return typeof email === 'string' && email.toLowerCase() === adminEmail;
-}
+import { requireAdmin } from '@/lib/security/api-auth';
 
 export async function GET(request: NextRequest) {
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return NextResponse.json(
-      { error: 'Unauthorized', details: authResult.error },
-      { status: 401 }
-    );
-  }
-
-  if (!ensureAdminEmail(authResult.user.email)) {
-    return NextResponse.json(
-      { error: 'Forbidden: Admin access required' },
-      { status: 403 }
-    );
-  }
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -65,21 +46,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return NextResponse.json(
-      { error: 'Unauthorized', details: authResult.error },
-      { status: 401 }
-    );
-  }
-
-  if (!ensureAdminEmail(authResult.user.email)) {
-    return NextResponse.json(
-      { error: 'Forbidden: Admin access required' },
-      { status: 403 }
-    );
-  }
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
 
   try {
     const body = await request.json();

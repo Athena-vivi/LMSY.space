@@ -1,31 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { uploadToR2 } from '@/lib/r2-client';
 import { convertToWebP, type ProcessedImageResult } from '@/lib/image-processing';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 import { validateUploadFile } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
 import { buildManualDraftRecord } from '@/lib/manual-draft';
 import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId } from '@/lib/catalog-id';
 
 export async function POST(request: NextRequest) {
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return NextResponse.json(
-      { error: 'Unauthorized', details: authResult.error },
-      { status: 401 }
-    );
-  }
-
-  const adminEmail = getAdminEmail();
-  if (authResult.user.email !== adminEmail) {
-    return NextResponse.json(
-      { error: 'Forbidden: Admin access required' },
-      { status: 403 }
-    );
-  }
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
 
   try {
     const formData = await request.formData();

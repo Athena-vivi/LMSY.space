@@ -1,31 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { uploadToR2, deleteFromR2 } from '@/lib/r2-client';
 import { convertToWebP, generateBlurData } from '@/lib/image-processing';
 import { getR2PathForCatalogId, isValidCatalogId, parseCatalogId, isCatalogIdConflict, CATALOG_ID_MAX_ATTEMPTS, allocateNextCatalogId as allocateSharedCatalogId, CATEGORY_TO_DOOR_CODE } from '@/lib/catalog-id';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 import { validateUploadFile } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
 
 export async function POST(request: NextRequest) {
-  // Authentication
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return NextResponse.json(
-      { error: 'Unauthorized', details: authResult.error },
-      { status: 401 }
-    );
-  }
-
-  const adminEmail = getAdminEmail();
-  if (authResult.user.email !== adminEmail) {
-    return NextResponse.json(
-      { error: 'Forbidden: Admin access required' },
-      { status: 403 }
-    );
-  }
+  // 统一鉴权：要求登录且为配置的 admin 邮箱
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
 
   // Parse form data
   const formData = await request.formData();
@@ -270,22 +255,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await getAuthenticatedUser(request);
-
-    if (!authResult.user || authResult.error) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const adminEmail = getAdminEmail();
-    if (authResult.user?.email !== adminEmail) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth.response;
 
     const supabaseAdmin = getSupabaseAdmin();
     const today = new Date().toISOString().split('T')[0];

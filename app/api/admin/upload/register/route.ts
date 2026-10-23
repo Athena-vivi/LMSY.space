@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { getAuthenticatedUser } from '@/lib/supabase/server-auth';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getAdminEmail } from '@/lib/security/api-auth';
+import { requireAdmin } from '@/lib/security/api-auth';
 import { validateObjectKey } from '@/lib/security/upload-guard';
 import { apiServerError } from '@/lib/security/http';
 import { buildManualDraftRecord } from '@/lib/manual-draft';
@@ -47,22 +46,8 @@ async function verifyR2FileExists(imageUrl: string): Promise<boolean> {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await getAuthenticatedUser(request);
-
-  if (!authResult.user || authResult.error) {
-    return NextResponse.json(
-      { error: 'Unauthorized', details: authResult.error },
-      { status: 401 }
-    );
-  }
-
-  const adminEmail = getAdminEmail();
-  if (authResult.user.email !== adminEmail) {
-    return NextResponse.json(
-      { error: 'Forbidden: Admin access required' },
-      { status: 403 }
-    );
-  }
+  const auth = await requireAdmin(request);
+  if (!auth.ok) return auth.response;
 
   let draftRecordId: string | null = null;
 
