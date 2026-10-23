@@ -3,12 +3,16 @@
  *
  * The Asset Vault used to dodge a stale edge copy by re-keying an R2 object
  * under a brand new name, because there was no way to purge the old URL (no
- * Cloudflare API token). With CLOUDFLARE_API_TOKEN + CLOUDFLARE_ZONE_ID set,
+ * Cloudflare API token). With LMSY_CLOUDFLARE_API_TOKEN + LMSY_CLOUDFLARE_ZONE_ID set,
  * an overwritten object can be purged in place and its key stays stable.
  *
  * Fail-safe by design: a purge failure must never break the caller's write.
  * When the token/zone are not configured this module is a logged no-op, so the
  * app keeps working (falling back to the old re-key behaviour) without them.
+ *
+ * The LMSY_ prefix is deliberate: a bare CLOUDFLARE_API_TOKEN collides easily
+ * with another project's global token (and env loaders won't let .env.local
+ * override an already-set variable), so this project owns its namespaced pair.
  *
  * Server-only. Reads process.env directly; never import from a client module.
  */
@@ -18,7 +22,7 @@ const CF_API_BASE = 'https://api.cloudflare.com/client/v4';
 const MAX_FILES_PER_REQUEST = 30;
 
 export interface PurgeResult {
-  /** False when CLOUDFLARE_API_TOKEN / CLOUDFLARE_ZONE_ID are not set. */
+  /** False when LMSY_CLOUDFLARE_API_TOKEN / LMSY_CLOUDFLARE_ZONE_ID are not set. */
   configured: boolean;
   /** Distinct URLs the caller asked to purge. */
   requested: number;
@@ -44,7 +48,7 @@ export function cdnUrlForKey(keyOrUrl: string): string {
 }
 
 export function isPurgeConfigured(): boolean {
-  return Boolean(process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ZONE_ID);
+  return Boolean(process.env.LMSY_CLOUDFLARE_API_TOKEN && process.env.LMSY_CLOUDFLARE_ZONE_ID);
 }
 
 interface PurgeFilesResponse {
@@ -53,8 +57,8 @@ interface PurgeFilesResponse {
 }
 
 async function purgeFiles(urls: string[]): Promise<{ ok: boolean; error?: string }> {
-  const token = process.env.CLOUDFLARE_API_TOKEN;
-  const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+  const token = process.env.LMSY_CLOUDFLARE_API_TOKEN;
+  const zoneId = process.env.LMSY_CLOUDFLARE_ZONE_ID;
 
   const res = await fetch(`${CF_API_BASE}/zones/${zoneId}/purge_cache`, {
     method: 'POST',
@@ -87,7 +91,7 @@ export async function purgeCdnUrls(keysOrUrls: string[]): Promise<PurgeResult> {
 
   if (!isPurgeConfigured()) {
     console.warn(
-      `[CDN_PURGE] CLOUDFLARE_API_TOKEN / CLOUDFLARE_ZONE_ID not set; skipping purge of ${urls.length} url(s)`
+      `[CDN_PURGE] LMSY_CLOUDFLARE_API_TOKEN / LMSY_CLOUDFLARE_ZONE_ID not set; skipping purge of ${urls.length} url(s)`
     );
     return { configured: false, requested: urls.length, purged: 0, errors: [] };
   }
