@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import { setProjectCover } from '@/lib/data/projects';
+import { getAssetById, clearCoverFlags, setCoverFlag } from '@/lib/data/gallery-assets';
 
+/**
+ * PATCH /api/admin/projects/[id]/cover - point a project at one picture.
+ *
+ * P1-3 Phase 2: the reads and writes moved to lib/data. The repositories
+ * throw on a db error, and the catch-all at the bottom answers with the
+ * same { success: false, error: <message> } 500 the per-query branches
+ * used to return, so the responses are unchanged.
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -24,19 +34,7 @@ export async function PATCH(
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data: asset, error: assetError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .select('id, image_url, project_id')
-      .eq('id', imageId)
-      .maybeSingle();
-
-    if (assetError) {
-      return NextResponse.json(
-        { success: false, error: assetError.message },
-        { status: 500 }
-      );
-    }
+    const asset = await getAssetById(supabaseAdmin, imageId);
 
     if (!asset) {
       return NextResponse.json(
@@ -52,45 +50,11 @@ export async function PATCH(
     const sameBatch = asset.project_id === id;
 
     if (sameBatch) {
-      const { error: clearCoverError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .update({ is_cover: false })
-        .eq('project_id', id);
-
-      if (clearCoverError) {
-        return NextResponse.json(
-          { success: false, error: clearCoverError.message },
-          { status: 500 }
-        );
-      }
-
-      const { error: setAssetError } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('gallery_assets')
-        .update({ is_cover: true })
-        .eq('id', imageId);
-
-      if (setAssetError) {
-        return NextResponse.json(
-          { success: false, error: setAssetError.message },
-          { status: 500 }
-        );
-      }
+      await clearCoverFlags(supabaseAdmin, id);
+      await setCoverFlag(supabaseAdmin, imageId);
     }
 
-    const { error: updateProjectError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .update({ cover_url: asset.image_url })
-      .eq('id', id);
-
-    if (updateProjectError) {
-      return NextResponse.json(
-        { success: false, error: updateProjectError.message },
-        { status: 500 }
-      );
-    }
+    await setProjectCover(supabaseAdmin, id, asset.image_url);
 
     revalidateContentSurfaces();
 
@@ -130,28 +94,8 @@ export async function DELETE(
     const { id } = await params;
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { error: clearFlagError } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('gallery_assets')
-      .update({ is_cover: false })
-      .eq('project_id', id);
-
-    if (clearFlagError) {
-      return NextResponse.json(
-        { success: false, error: clearFlagError.message },
-        { status: 500 }
-      );
-    }
-
-    const { error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .update({ cover_url: null })
-      .eq('id', id);
-
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
+    await clearCoverFlags(supabaseAdmin, id);
+    await setProjectCover(supabaseAdmin, id, null);
 
     revalidateContentSurfaces();
 

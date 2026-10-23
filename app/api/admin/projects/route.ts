@@ -2,21 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
-
-function slugifyAscii(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+import { createProject, listAllProjectsByReleaseDate } from '@/lib/data/projects';
 
 /**
  * POST /api/admin/projects - create an event from the promote wizard.
  *
- * Minimal on purpose: title + date + category (+ subtype for live events).
- * The slug gets the same <YYYYMMDD>-<name> shape the existing entries use;
- * the wizard files pictures into the new project right away, so it starts
- * portal-visible unless the curator unticks that.
+ * Minimal on purpose: title + date + category (+ subtype and city for live
+ * events). The slug gets the same <YYYYMMDD>-<name> shape the existing
+ * entries use; the wizard files pictures into the new project right away,
+ * so it starts portal-visible unless the curator unticks that.
+ *
+ * P1-3 Phase 2: slug dedup + insert moved to lib/data/projects.ts
+ * (createProject); this route is validation, auth and response shaping.
  */
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
@@ -49,42 +46,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'event_date must be YYYY-MM-DD' }, { status: 400 });
     }
 
-    // Slug: <YYYYMMDD>-<ascii-title>, deduped with a numeric suffix.
-    const compact = eventDate.replace(/-/g, '');
-    const base = `${compact}-${slugifyAscii(title) || 'event'}`;
-    let slug = base;
-    for (let i = 2; ; i++) {
-      const { data: taken } = await supabaseAdmin
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('id')
-        .eq('slug', slug)
-        .maybeSingle();
-      if (!taken) break;
-      slug = `${base}-${i}`;
-    }
-
-    const { data: project, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .insert({
+    let project;
+    try {
+      project = await createProject(supabaseAdmin, {
         title,
         category,
         subtype: body.subtype?.trim() || null,
-        event_date: eventDate,
+        eventDate,
         city: body.city?.trim() || null,
-        slug,
-        curation_status: 'draft',
-        portal_visible: body.portal_visible !== false,
-        portal_priority: 0,
-        work_id: body.work_id?.trim() || null,
-      })
-      .select('*')
-      .single();
-
-    if (error) {
+        portalVisible: body.portal_visible !== false,
+        workId: body.work_id?.trim() || null,
+      });
+    } catch (error) {
+      // The repository throws on an insert error; the old route answered
+      // this exact branch with 'Failed to create project'.
       return NextResponse.json(
-        { error: 'Failed to create project', details: error.message },
+        {
+          error: 'Failed to create project',
+          details: error instanceof Error ? error.message : String(error),
+        },
         { status: 500 }
       );
     }
@@ -106,23 +86,27 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .order('release_date', { ascending: false });
 
-    if (error) {
+    // P1-3 Phase 2: the list moved to lib/data/projects.ts. Ordering is
+    // verbatim - PostgREST sorts DESC NULLs FIRST by default and 136 of the
+    // 183 rows have no release_date, so "nulls last" would reshuffle it.
+    let projects;
+    try {
+      projects = await listAllProjectsByReleaseDate(supabaseAdmin);
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch projects', details: error.message },
+        {
+          error: 'Failed to fetch projects',
+          details: error instanceof Error ? error.message : String(error),
+        },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      projects: data || [],
-      count: data?.length || 0,
+      projects,
+      count: projects.length,
     });
   } catch (error) {
     return NextResponse.json(

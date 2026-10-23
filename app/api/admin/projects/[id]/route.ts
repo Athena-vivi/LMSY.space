@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import {
+  getProjectById,
+  updateProject,
+  deleteProject,
+  type ProjectRow,
+} from '@/lib/data/projects';
 
 /**
  * Projects Management API
@@ -40,16 +46,17 @@ export async function GET(
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
+    // P1-3 Phase 2: the read moved to lib/data/projects.ts. The repository
+    // throws on a db error; null means "no such row", same as maybeSingle.
+    let data: ProjectRow | null;
+    try {
+      data = await getProjectById(supabaseAdmin, id);
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch project', details: error.message },
+        {
+          error: 'Failed to fetch project',
+          details: error instanceof Error ? error.message : String(error),
+        },
         { status: 500 }
       );
     }
@@ -102,16 +109,20 @@ export async function DELETE(
     // Delete project using admin client
     const supabaseAdmin = getSupabaseAdmin();
 
-    const { error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('[PROJECTS_DELETE] ❌ Delete failed:', error.message, '| Code:', error.code);
+    // P1-3 Phase 2: the delete moved to lib/data/projects.ts; the
+    // repository throws on a db error (the route logs and answers 500).
+    try {
+      await deleteProject(supabaseAdmin, id);
+    } catch (error) {
+      console.error(
+        '[PROJECTS_DELETE] ❌ Delete failed:',
+        error instanceof Error ? error.message : String(error)
+      );
       return NextResponse.json(
-        { error: 'Failed to delete project', details: error.message },
+        {
+          error: 'Failed to delete project',
+          details: error instanceof Error ? error.message : String(error),
+        },
         { status: 500 }
       );
     }
@@ -253,18 +264,22 @@ export async function PATCH(
     // Update project using admin client
     const supabaseAdmin = getSupabaseAdmin();
 
-    // ❌ DON'T use .single() - it's too fragile and throws PGRST116 if no rows match
-    const { data, error } = await supabaseAdmin
-      .schema('lmsy_archive')
-      .from('projects')
-      .update(updateData)
-      .eq('id', id)
-      .select();
-
-    if (error) {
-      console.error('[PROJECTS_PATCH] ❌ Update failed:', error.message, '| Code:', error.code);
+    // P1-3 Phase 2: the update moved to lib/data/projects.ts. It returns
+    // the selected rows (deliberately never .single(), which throws
+    // PGRST116 when zero rows match) and throws on a db error.
+    let data: ProjectRow[];
+    try {
+      data = await updateProject(supabaseAdmin, id, updateData);
+    } catch (error) {
+      console.error(
+        '[PROJECTS_PATCH] ❌ Update failed:',
+        error instanceof Error ? error.message : String(error)
+      );
       return NextResponse.json(
-        { error: 'Failed to update project', details: error.message },
+        {
+          error: 'Failed to update project',
+          details: error instanceof Error ? error.message : String(error),
+        },
         { status: 500 }
       );
     }

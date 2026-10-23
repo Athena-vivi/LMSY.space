@@ -170,6 +170,8 @@ export interface CreateProjectInput {
   category: string;
   subtype: string | null;
   eventDate: string;
+  /** Structured city (live events); feeds the subject code. */
+  city: string | null;
   portalVisible: boolean;
   workId: string | null;
 }
@@ -211,6 +213,7 @@ export async function createProject(
     category: input.category,
     subtype: input.subtype,
     event_date: input.eventDate,
+    city: input.city,
     slug,
     curation_status: 'draft',
     portal_visible: input.portalVisible,
