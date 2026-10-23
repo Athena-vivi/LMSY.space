@@ -61,6 +61,9 @@ export default async function AppearanceEntryPage({ params, searchParams }: Page
       doorHref="/appearances"
       shelfTitleKey={subtypeLabelKey('public_appearance', subtype)}
       shelfHref={`/appearances/${subtype}`}
+      // Same id the timeline gives this row, so the breadcrumb returns the
+      // visitor to it instead of the top of the shelf.
+      shelfAnchor={`entry-${found.entry.slug || found.entry.id}`}
     />
   );
 }

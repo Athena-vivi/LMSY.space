@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
 import { useLanguage } from '@/components/language-provider';
 import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
@@ -38,6 +39,28 @@ export function LiveTimelinePage({
 }) {
   const { language } = useLanguage();
   const title = titleKey ? t(language, titleKey) : t(language, 'door.unfiled');
+
+  // Arriving from an entry's breadcrumb carries that row's id as a hash. A
+  // client-side route change does not reliably replay a hash, and the row only
+  // exists once the timeline has laid out, so put the visitor on it here.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+
+    const frame = requestAnimationFrame(() => {
+      const row = document.getElementById(id);
+      if (!row) return;
+      // The global `scroll-behavior: smooth` would animate a jump of several
+      // thousand pixels; this is a return to where they were, not a tour.
+      const root = document.documentElement;
+      const previous = root.style.scrollBehavior;
+      root.style.scrollBehavior = 'auto';
+      row.scrollIntoView({ block: 'start' });
+      root.style.scrollBehavior = previous;
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -119,7 +142,11 @@ function TimelineNode({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.25) }}
-      className="relative pl-12 md:pl-16"
+      // The node answers its own anchor, so the detail page can send the
+      // visitor back to this exact row instead of the top of the shelf.
+      // `scroll-mt-24` keeps the date from sliding under the sticky header.
+      id={`entry-${entry.slug || entry.id}`}
+      className="relative scroll-mt-24 pl-12 md:pl-16"
     >
       {/* Node dot, sitting on the spine. */}
       <span

@@ -62,6 +62,9 @@ export default async function LiveEventEntryPage({ params, searchParams }: PageP
       doorHref="/live-events"
       shelfTitleKey={subtypeLabelKey('live_event', subtype)}
       shelfHref={`/live-events/${subtype}`}
+      // Same id the timeline gives this row, so the breadcrumb returns the
+      // visitor to it instead of the top of the shelf.
+      shelfAnchor={`entry-${found.entry.slug || found.entry.id}`}
     />
   );
 }

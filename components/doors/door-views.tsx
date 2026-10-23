@@ -415,6 +415,7 @@ export function DoorEntryPage({
   doorHref,
   shelfTitleKey,
   shelfHref,
+  shelfAnchor,
   filterLabel,
 }: {
   entry: DoorEntryRow;
@@ -423,6 +424,12 @@ export function DoorEntryPage({
   doorHref: string;
   shelfTitleKey: TranslationKey | null;
   shelfHref: string | null;
+  /**
+   * Element id of this entry's row on the shelf above. When the shelf is a
+   * timeline, the breadcrumb carries it as a hash so going back lands on the
+   * row the visitor came from rather than the top of the list.
+   */
+  shelfAnchor?: string | null;
   /**
    * Set when the page answers a ?group=<class> filter: a chip naming the
    * class, linking back to the unfiltered entry. Null renders nothing.
@@ -453,7 +460,10 @@ export function DoorEntryPage({
             {shelfHref && shelfTitleKey ? (
               <>
                 <span className="text-ink-2/40">/</span>
-                <Link href={shelfHref} className="transition-colors hover:text-lmsy-blue">
+                <Link
+                  href={shelfAnchor ? `${shelfHref}#${shelfAnchor}` : shelfHref}
+                  className="transition-colors hover:text-lmsy-blue"
+                >
                   {t(language, shelfTitleKey)}
                 </Link>
               </>
