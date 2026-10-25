@@ -17,10 +17,10 @@ const mono = GeistMono;
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://lmsy.space'),
   title: {
-    default: "LMSY | Lookmhee & Sonya Official Fan Site",
-    template: "%s | LMSY Official Fan Site"
+    default: "LMSY Fan Archive | Lookmhee & Sonya",
+    template: "%s | LMSY Fan Archive"
   },
-  description: "Welcome to the official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, projects, and schedule updates.",
+  description: "Welcome to the fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, projects, and schedule updates.",
   keywords: ["LMSY", "Lookmhee", "Sonya", "Affair", "Thai GL", "Girl's Love", "Lookmhee Sonya", "Affair Series", "Thai Drama", "GL Series"],
   authors: [{ name: "Astra", url: "https://lmsy.space" }],
   creator: "Astra",
@@ -29,9 +29,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    title: 'LMSY | Lookmhee & Sonya Official Fan Site',
-    description: 'Official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series',
-    siteName: 'LMSY Fan Site',
+    title: 'LMSY Fan Archive | Lookmhee & Sonya',
+    description: 'Fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series',
+    siteName: 'LMSY Fan Archive',
     images: [
       {
         url: '/lmsy-main-visual.png',
@@ -43,8 +43,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LMSY | Lookmhee & Sonya Official Fan Site',
-    description: 'Official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series',
+    title: 'LMSY Fan Archive | Lookmhee & Sonya',
+    description: 'Fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series',
     images: ['/lmsy-main-visual.png'],
     creator: '@lmsyofficial',
   },

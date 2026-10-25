@@ -1,7 +1,7 @@
 {
-  "name": "LMSY Official Fan Site - Lookmhee & Sonya",
+  "name": "LMSY Fan Archive - Lookmhee & Sonya",
   "short_name": "LMSY",
-  "description": "Official fan website for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Profiles, gallery, projects, and schedule.",
+  "description": "Fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Profiles, gallery, projects, and schedule.",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],

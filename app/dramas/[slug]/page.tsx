@@ -96,7 +96,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Series Not Found' };
   }
 
-  // The layout already appends "| LMSY Official Fan Site"; pageMetadata sets
+  // The layout already appends "| LMSY Fan Archive"; pageMetadata sets
   // the bare name plus the canonical path, so a series never carries the site
   // name twice and never competes with its own redirect target.
   const title = getLocalizedText(drama.title_i18n, 'en', drama.title);
