@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { resolveFeaturedExcerpt } from '@/lib/featured-excerpt';
-import { DEFAULT_LONGFORM_CONTENT, normalizeLongformContent } from '@/app/admin/settings/content-blocks';
+import { DEFAULT_LONGFORM_CONTENT, normalizeLongformContent, pickContentBlock } from '@/app/admin/settings/content-blocks';
 
 interface FeaturedEditorial {
   id: string;
@@ -70,7 +70,7 @@ export function LongformSection() {
     fetchLongformContent();
   }, []);
 
-  const currentLongformContent = longformContent[language] || longformContent.en;
+  const currentLongformContent = pickContentBlock(longformContent, language);
 
   const featuredTitle = featuredEditorial
     ? getLocalizedText(featuredEditorial.title_i18n, language, featuredEditorial.title)

@@ -10,12 +10,14 @@ const languageLabels: Record<Language, string> = {
   en: 'EN',
   zh: '中',
   th: 'TH',
+  es: 'ES',
 };
 
 const languageNames: Record<Language, string> = {
   en: 'English',
   zh: '中文',
   th: 'ไทย',
+  es: 'Español',
 };
 
 /**

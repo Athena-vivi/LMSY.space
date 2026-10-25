@@ -11,6 +11,7 @@ import {
   DEFAULT_HERO_CONTENT,
   getHeroSectionImageUrl,
   normalizeHeroContent,
+  pickContentBlock,
 } from '@/app/admin/settings/content-blocks';
 import { resolveImageUrl } from '@/lib/image-url';
 
@@ -56,7 +57,7 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
     return () => clearTimeout(timer);
   }, [imageLoaded, heroImageUrl]);
 
-  const currentHeroContent = heroContent[language] || heroContent.en;
+  const currentHeroContent = pickContentBlock(heroContent, language);
   const heroSrc = heroImageUrl ? resolveImageUrl(heroImageUrl) : '';
 
   return (

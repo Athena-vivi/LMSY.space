@@ -11,7 +11,7 @@ import { useLanguage } from '@/components/language-provider';
 import { getLocalizedText } from '@/lib/localized-content';
 import { getImageUrl } from '@/lib/image-url';
 import { getAssetDimensions } from '@/lib/image-dimensions';
-import { t } from '@/lib/languages';
+import { t, type Language } from '@/lib/languages';
 import { categoryMeta } from '@/lib/category-meta';
 
 interface ChronicleTimelineProps {
@@ -249,7 +249,7 @@ export function ChronicleTimeline({
 
 interface TimelineItemProps {
   event: ChronicleEvent;
-  language: 'en' | 'zh' | 'th';
+  language: Language;
   isHovered: boolean;
   onHover: () => void;
   onHoverEnd: () => void;

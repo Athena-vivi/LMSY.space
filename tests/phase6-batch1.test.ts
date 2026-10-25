@@ -116,7 +116,8 @@ describe('asset tags reuse the gallery filter vocabulary', () => {
   });
 
   test('gallery card and lightbox both localize the badge', () => {
-    assert.ok(src('app/gallery/page.tsx').includes('assetTagLabelKey(item.tag)'));
+    // 2026-10-25: gallery rendering moved to the client island of the SSR page.
+    assert.ok(src('app/gallery/gallery-client.tsx').includes('assetTagLabelKey(item.tag)'));
     assert.ok(src('app/gallery/lightbox.tsx').includes('assetTagLabelKey(currentImage.tag)'));
   });
 });
@@ -228,7 +229,10 @@ describe('project detail tabs only offer real facets', () => {
 });
 
 describe('new copy exists in all three languages', () => {
-  const languages = src('lib/languages.ts');
+  // 2026-10-25: locale strings split into per-language files (en/zh/th/es).
+  const languages = ['en', 'zh', 'th', 'es']
+    .map((locale) => src(`lib/languages/${locale}.ts`))
+    .join('\n');
   const keys = [
     'common.viewDetails',
     'common.watch',
@@ -297,7 +301,7 @@ describe('new copy exists in all three languages', () => {
   for (const key of keys) {
     test(`${key} is defined once per language`, () => {
       const count = languages.split(`'${key}':`).length - 1;
-      assert.equal(count, 3, `${key} present in en/zh/th`);
+      assert.equal(count, 4, `${key} present in en/zh/th/es`);
     });
   }
 });
@@ -341,7 +345,9 @@ describe('the event index is gone', () => {
 });
 
 describe('gallery', () => {
-  const page = src('app/gallery/page.tsx');
+  // 2026-10-25: gallery went SSR-first — copy and interaction moved to the
+  // client island (gallery-client.tsx), the server page fetches first paint.
+  const page = src('app/gallery/gallery-client.tsx');
   const lightbox = src('app/gallery/lightbox.tsx');
 
   test('empty state tells the truth instead of claiming construction', () => {
@@ -358,9 +364,9 @@ describe('gallery', () => {
   });
 
   test('visibility gate and anchor behaviour are untouched', () => {
-    assert.ok(page.includes("fetchPublicProjectIds"));
+    assert.ok(src('app/gallery/page.tsx').includes('fetchPublicProjectIds'));
     assert.ok(page.includes("addEventListener('hashchange'"));
-    assert.ok(page.includes("window.history.replaceState"));
+    assert.ok(page.includes('window.history.replaceState'));
   });
 
   test('lightbox copy is localized', () => {
@@ -473,7 +479,7 @@ describe('chronicle', () => {
 describe('shared page intro', () => {
   test('the doors and the gallery use the same header component', () => {
     assert.ok(src('components/doors/door-views.tsx').includes('<PageIntro'));
-    assert.ok(src('app/gallery/page.tsx').includes('<PageIntro'));
+    assert.ok(src('app/gallery/gallery-client.tsx').includes('<PageIntro'));
     const intro = src('components/page-intro.tsx');
     assert.ok(intro.includes('font-serif'));
     // The intro starts directly with the title: no logo row, no extra top

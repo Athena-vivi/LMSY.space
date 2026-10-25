@@ -138,24 +138,29 @@ describe('resonance coming soon', () => {
   });
 
   test('keeps the route honest: Coming Soon in three languages', () => {
-    const languages = src('lib/languages.ts');
+    // 2026-10-25: locale strings split into per-language files (en/zh/th/es).
+    const languages = ['en', 'zh', 'th', 'es']
+      .map((locale) => src(`lib/languages/${locale}.ts`))
+      .join('\n');
     assert.ok(languages.includes("'resonance.comingSoon': 'Coming Soon'"));
     assert.ok(languages.includes("'resonance.comingSoon': '即将上线'"));
     assert.ok(languages.includes("'resonance.comingSoon': 'เร็วๆ นี้'"));
+    assert.ok(languages.includes("'resonance.comingSoon': 'Próximamente'"));
   });
 });
 
 // ---- Gallery visibility gate ------------------------------------------------
 describe('gallery visibility gate', () => {
   test('asset query is constrained to publicly visible projects', () => {
-    const gallerySrc = src('app/gallery/page.tsx');
+    // 2026-10-25: gallery went SSR-first; the query lives in lib/gallery-data.ts.
+    const gallerySrc = src('lib/gallery-data.ts');
     assert.ok(gallerySrc.includes('applyPublicProjectFilter'), 'reuses the shared visibility filter');
     assert.ok(gallerySrc.includes(".in('project_id', projectIds)"), 'assets filtered by visible project ids');
     assert.ok(gallerySrc.includes('fetchPublicProjectIds'), 'id set fetched through the rule');
   });
 
   test('fail-closed when the id set cannot be resolved', () => {
-    const gallerySrc = src('app/gallery/page.tsx');
+    const gallerySrc = src('lib/gallery-data.ts');
     assert.ok(gallerySrc.includes('projectIds.length === 0'), 'empty id set short-circuits to an empty result');
   });
 });

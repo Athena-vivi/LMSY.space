@@ -4,10 +4,12 @@ export interface LocalizedText {
   en?: string | null;
   zh?: string | null;
   th?: string | null;
+  /** Spanish content is filled in progressively; missing values fall back to en. */
+  es?: string | null;
 }
 
 export function emptyLocalizedText(): LocalizedText {
-  return { en: '', zh: '', th: '' };
+  return { en: '', zh: '', th: '', es: '' };
 }
 
 export function normalizeLocalizedText(value: unknown, fallback = ''): LocalizedText {
@@ -16,6 +18,7 @@ export function normalizeLocalizedText(value: unknown, fallback = ''): Localized
       en: fallback,
       zh: '',
       th: '',
+      es: '',
     };
   }
 
@@ -24,6 +27,7 @@ export function normalizeLocalizedText(value: unknown, fallback = ''): Localized
     en: typeof input.en === 'string' ? input.en : fallback,
     zh: typeof input.zh === 'string' ? input.zh : '',
     th: typeof input.th === 'string' ? input.th : '',
+    es: typeof input.es === 'string' ? input.es : '',
   };
 }
 

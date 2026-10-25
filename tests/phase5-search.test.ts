@@ -343,7 +343,10 @@ describe('search frontend', () => {
   });
 
   test('all copy goes through the three-language keys', () => {
-    const languages = src('lib/languages.ts');
+    // 2026-10-25: locale strings split into per-language files (en/zh/th/es).
+    const languages = ['en', 'zh', 'th', 'es']
+      .map((locale) => src(`lib/languages/${locale}.ts`))
+      .join('\n');
     for (const key of [
       'search.placeholder',
       'search.open',
@@ -362,7 +365,7 @@ describe('search frontend', () => {
       const en = languages.includes(`'${key}': '`);
       assert.ok(en, `key ${key} exists`);
       const count = languages.split(`'${key}':`).length - 1;
-      assert.equal(count, 3, `key ${key} present in all three language blocks`);
+      assert.equal(count, 4, `key ${key} present in all four language blocks`);
     }
   });
 
@@ -381,7 +384,9 @@ describe('search frontend', () => {
 
 describe('related routing fixes', () => {
   test('sitemap advertises every entry at its own address', () => {
-    const sitemapSrc = src('app/sitemap.ts');
+    // 2026-10-25: the sitemap became an index with per-door sub-sitemaps; the
+    // entry assembly lives in lib/sitemap-entries.ts.
+    const sitemapSrc = src('lib/sitemap-entries.ts');
     assert.ok(
       sitemapSrc.includes('doorEntryPath(project)'),
       'an entry is submitted at the door that owns it'
@@ -411,7 +416,8 @@ describe('related routing fixes', () => {
   });
 
   test('gallery handles hash navigation after the page is already mounted', () => {
-    const gallerySrc = src('app/gallery/page.tsx');
+    // 2026-10-25: gallery interaction lives in the client island.
+    const gallerySrc = src('app/gallery/gallery-client.tsx');
     assert.ok(gallerySrc.includes("window.addEventListener('hashchange'"));
     assert.ok(gallerySrc.includes("setSelectedTag('All')"));
     assert.ok(gallerySrc.includes('setPendingAnchor(decodeURIComponent'));

@@ -1,6 +1,7 @@
 import type {
   HeroContent,
   HeroFields,
+  Lang,
   LongformContent,
   LongformFields,
   MilestonesContent,
@@ -8,6 +9,18 @@ import type {
   PrefaceContent,
   PrefaceFields,
 } from './types';
+import type { Language } from '@/lib/languages';
+
+/**
+ * Literary homepage blocks (preface/hero/longform/milestones) ship en/zh/th
+ * copy only — Spanish literary translations await curator review, so es reads
+ * the English block instead of showing an empty string.
+ */
+export function pickContentBlock<T>(content: Record<Lang, T>, language: Language): T {
+  return language === 'en' || language === 'zh' || language === 'th'
+    ? content[language]
+    : content.en;
+}
 
 export const EMPTY_PREFACE_FIELDS: PrefaceFields = {
   title: '',

@@ -109,7 +109,8 @@ describe('the second level is decided by the registry', () => {
 
 describe('search and the sitemap see the new shelves', () => {
   test('the sitemap submits both doors and every shelf under them', () => {
-    const sitemap = src('app/sitemap.ts');
+    // 2026-10-25: the sitemap became an index; entry assembly lives in lib/sitemap-entries.ts.
+    const sitemap = src('lib/sitemap-entries.ts');
     assert.ok(sitemap.includes('/talks'), 'the door is advertised');
     assert.ok(sitemap.includes('TALK_CATEGORIES'), 'one page per talk category');
     assert.ok(sitemap.includes('SUBTYPES_BY_CATEGORY.live_stream'), 'one page per live shelf');

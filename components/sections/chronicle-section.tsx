@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { DEFAULT_MILESTONES_CONTENT, normalizeMilestonesContent } from '@/app/admin/settings/content-blocks';
+import { DEFAULT_MILESTONES_CONTENT, normalizeMilestonesContent, pickContentBlock } from '@/app/admin/settings/content-blocks';
 
 interface MilestoneContent {
   sectionTitle: string;
@@ -200,7 +200,7 @@ export function ChronicleSection() {
     fetchMilestonesContent();
   }, []);
 
-  const currentContent: MilestoneContent = content[language] || content.en;
+  const currentContent: MilestoneContent = pickContentBlock(content, language);
 
   const milestones = [
     { year: '2022', title: currentContent.year2022 },
