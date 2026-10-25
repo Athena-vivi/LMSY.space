@@ -179,11 +179,17 @@ export interface CreateProjectInput {
   title: string;
   category: string;
   subtype: string | null;
-  eventDate: string;
+  /**
+   * Null for a FEAT topic: a topic is a long-lived set and carries no date
+   * segment in its ids (spec 4.9), so the wizard does not ask for one.
+   */
+  eventDate: string | null;
   /** Structured city (live events); feeds the subject code. */
   city: string | null;
   portalVisible: boolean;
   workId: string | null;
+  /** 'theme' for a /features topic; null keeps the column's own default. */
+  projectKind?: string | null;
 }
 
 function slugifyAscii(title: string): string {
@@ -204,8 +210,11 @@ export async function createProject(
   db: AdminClient,
   input: CreateProjectInput
 ): Promise<ProjectRow> {
-  const compact = input.eventDate.replace(/-/g, '');
-  const base = `${compact}-${slugifyAscii(input.title) || 'event'}`;
+  const ascii = slugifyAscii(input.title);
+  // A topic has no date, so its slug is the plain ascii title - the same
+  // shape the existing theme row uses (`back-view`).
+  const compact = input.eventDate ? input.eventDate.replace(/-/g, '') : '';
+  const base = compact ? `${compact}-${ascii || 'event'}` : ascii || 'topic';
   let slug = base;
   for (let i = 2; ; i++) {
     const { data: taken } = await db
@@ -229,6 +238,7 @@ export async function createProject(
     portal_visible: input.portalVisible,
     portal_priority: 0,
     work_id: input.workId,
+    ...(input.projectKind ? { project_kind: input.projectKind } : {}),
   });
 }
 

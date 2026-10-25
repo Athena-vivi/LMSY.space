@@ -126,8 +126,13 @@ const DICT: Record<string, [string, string]> = {
   'd.promote.newEventTitle': ['活动名称（如：LMSY × For Dream 品牌活动）', 'Event title, e.g. LMSY x For Dream'],
   'd.promote.newEventVisible': ['创建后前台立即可见', 'Visible on the site right away'],
   'd.promote.newEventCreate': ['创建并选中', 'Create and select'],
+  'd.promote.newTopic': ['新建专题', 'New topic'],
+  'd.promote.newTopicTitle': ['专题名称（如：Back View 背影）', 'Topic title, e.g. Back View'],
   // Category + subtype labels mirror lib/languages.ts (the front-site
   // registry) so the wizard speaks the same taxonomy as the halls.
+  // `features.title` is the one door label the site dictionary owns and this
+  // one did not - without it the door dropdown printed the raw key.
+  'features.title': ['特色专题', 'Features'],
   'category.dramaWork': ['剧集作品', 'Drama & Works'],
   'category.editorial': ['杂志特辑', 'Editorial'],
   'category.liveEvent': ['现场活动', 'Live Events'],
