@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/components/language-provider';
 import { languages, type Language } from '@/lib/languages';
+import { languageHref } from '@/lib/i18n-path';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Globe } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -28,11 +31,19 @@ const languageNames: Record<Language, string> = {
  * It used to render all three codes side by side in the header. With four nav
  * entries now sharing that bar, three always-visible codes competed with them
  * for attention; the trigger is a single globe that expands on click.
+ *
+ * Each option is a real link to the same page under the target language
+ * prefix (/editorial -> /pt/editorial), so the language lives in the URL and
+ * crawlers can follow it. Choosing a language also stores the preference, so
+ * unprefixed (English) routes remember it too. /admin has no language routes,
+ * so there the switcher only stores the choice and stays put.
  */
 export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isAdmin = Boolean(pathname && pathname.startsWith('/admin'));
 
   // Close on outside click and on Escape.
   useEffect(() => {
@@ -82,11 +93,14 @@ export function LanguageSwitcher() {
           >
             {(Object.keys(languages) as Language[]).map((lang) => (
               <li key={lang}>
-                <button
-                  type="button"
+                <Link
+                  href={isAdmin ? pathname : languageHref(lang, pathname ?? '/')}
                   role="option"
                   aria-selected={language === lang}
+                  prefetch={false}
                   onClick={() => {
+                    // Remember the choice; on prefixed routes the URL keeps
+                    // the language, on unprefixed routes this is what drives it.
                     setLanguage(lang);
                     setOpen(false);
                   }}
@@ -96,7 +110,7 @@ export function LanguageSwitcher() {
                 >
                   <span className="font-sans tracking-wide">{languageNames[lang]}</span>
                   {language === lang && <Check className="h-3.5 w-3.5" />}
-                </button>
+                </Link>
               </li>
             ))}
           </motion.ul>

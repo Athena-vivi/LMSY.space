@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
 import { Language, defaultLanguage } from '@/lib/languages';
+import { langFromPath } from '@/lib/i18n-path';
 
 type LanguageProviderProps = {
   children: React.ReactNode;
@@ -26,14 +27,6 @@ const LanguageProviderContext = React.createContext<LanguageProviderState>(initi
 // localStorage only matters on unprefixed (English) routes, where it remembers
 // the visitor's choice. Note: usePathname works during SSR too, so the very
 // first server render of /zh/editorial is already Chinese.
-const LANG_PREFIX_RE = /^\/(zh|th|es|pt)(\/|$)/;
-
-function langFromPathname(pathname: string | null): Language | null {
-  if (!pathname) return null;
-  const match = LANG_PREFIX_RE.exec(pathname);
-  return match ? (match[1] as Language) : null;
-}
-
 // Runs synchronously after render but BEFORE the browser paints, so a visitor
 // with a stored language never sees a flash of the default language. On the
 // server it falls back to useEffect (useLayoutEffect warns during SSR).
@@ -45,7 +38,7 @@ export function LanguageProvider({
   defaultLanguage: defaultLang = defaultLanguage,
 }: LanguageProviderProps) {
   const pathname = usePathname();
-  const routeLang = langFromPathname(pathname);
+  const routeLang = langFromPath(pathname);
   const [language, setLanguageState] = React.useState<Language>(routeLang ?? defaultLang);
 
   useIsomorphicLayoutEffect(() => {
