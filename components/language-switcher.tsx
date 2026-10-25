@@ -11,6 +11,7 @@ const languageLabels: Record<Language, string> = {
   zh: '中',
   th: 'TH',
   es: 'ES',
+  pt: 'PT',
 };
 
 const languageNames: Record<Language, string> = {
@@ -18,6 +19,7 @@ const languageNames: Record<Language, string> = {
   zh: '中文',
   th: 'ไทย',
   es: 'Español',
+  pt: 'Português',
 };
 
 /**

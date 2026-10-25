@@ -8,7 +8,7 @@
  * Pure functions, no path aliases, so node --test can exercise them directly.
  */
 
-export type DisplayLanguage = 'en' | 'zh' | 'th' | 'es';
+export type DisplayLanguage = 'en' | 'zh' | 'th' | 'es' | 'pt';
 
 const LOCALES: Record<DisplayLanguage, string> = {
   en: 'en-US',
@@ -17,6 +17,7 @@ const LOCALES: Record<DisplayLanguage, string> = {
   // convention already used by the chapter titles.
   th: 'th-TH',
   es: 'es-ES',
+  pt: 'pt-BR',
 };
 
 export function localeFor(language: DisplayLanguage): string {

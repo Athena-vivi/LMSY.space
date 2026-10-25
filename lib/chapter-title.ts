@@ -12,6 +12,7 @@ const LOCALES: Record<Language, string> = {
   zh: 'zh-CN',
   th: 'th-TH',
   es: 'es-ES',
+  pt: 'pt-BR',
 };
 
 // monthKey format: "YYYY-MM" (as produced by groupImagesIntoChapters).

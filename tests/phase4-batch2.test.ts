@@ -137,15 +137,16 @@ describe('resonance coming soon', () => {
     assert.ok(!resonanceSrc.includes('audio-player'), 'does not borrow the audio player component');
   });
 
-  test('keeps the route honest: Coming Soon in three languages', () => {
-    // 2026-10-25: locale strings split into per-language files (en/zh/th/es).
-    const languages = ['en', 'zh', 'th', 'es']
+  test('keeps the route honest: Coming Soon in all languages', () => {
+    // 2026-10-25: locale strings split into per-language files; pt-BR added.
+    const languages = ['en', 'zh', 'th', 'es', 'pt']
       .map((locale) => src(`lib/languages/${locale}.ts`))
       .join('\n');
     assert.ok(languages.includes("'resonance.comingSoon': 'Coming Soon'"));
     assert.ok(languages.includes("'resonance.comingSoon': '即将上线'"));
     assert.ok(languages.includes("'resonance.comingSoon': 'เร็วๆ นี้'"));
     assert.ok(languages.includes("'resonance.comingSoon': 'Próximamente'"));
+    assert.ok(languages.includes("'resonance.comingSoon': 'Em breve'"));
   });
 });
 

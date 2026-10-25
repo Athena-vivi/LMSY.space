@@ -228,9 +228,10 @@ describe('project detail tabs only offer real facets', () => {
   });
 });
 
-describe('new copy exists in all three languages', () => {
-  // 2026-10-25: locale strings split into per-language files (en/zh/th/es).
-  const languages = ['en', 'zh', 'th', 'es']
+describe('new copy exists in all languages', () => {
+  // 2026-10-25: locale strings split into per-language files.
+  // 2026-10-25: pt-BR added (Brazil is the top traffic region in GSC).
+  const languages = ['en', 'zh', 'th', 'es', 'pt']
     .map((locale) => src(`lib/languages/${locale}.ts`))
     .join('\n');
   const keys = [
@@ -301,7 +302,7 @@ describe('new copy exists in all three languages', () => {
   for (const key of keys) {
     test(`${key} is defined once per language`, () => {
       const count = languages.split(`'${key}':`).length - 1;
-      assert.equal(count, 4, `${key} present in en/zh/th/es`);
+      assert.equal(count, 5, `${key} present in en/zh/th/es/pt`);
     });
   }
 });

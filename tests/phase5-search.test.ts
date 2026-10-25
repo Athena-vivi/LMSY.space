@@ -342,9 +342,10 @@ describe('search frontend', () => {
     assert.ok(commandSrc.includes('requestId !== requestIdRef.current'));
   });
 
-  test('all copy goes through the three-language keys', () => {
-    // 2026-10-25: locale strings split into per-language files (en/zh/th/es).
-    const languages = ['en', 'zh', 'th', 'es']
+  test('all copy goes through the language keys', () => {
+    // 2026-10-25: locale strings split into per-language files.
+    // 2026-10-25: pt-BR added (Brazil is the top traffic region in GSC).
+    const languages = ['en', 'zh', 'th', 'es', 'pt']
       .map((locale) => src(`lib/languages/${locale}.ts`))
       .join('\n');
     for (const key of [
@@ -365,7 +366,7 @@ describe('search frontend', () => {
       const en = languages.includes(`'${key}': '`);
       assert.ok(en, `key ${key} exists`);
       const count = languages.split(`'${key}':`).length - 1;
-      assert.equal(count, 4, `key ${key} present in all four language blocks`);
+      assert.equal(count, 5, `key ${key} present in all five language blocks`);
     }
   });
 

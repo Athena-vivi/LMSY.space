@@ -13,7 +13,7 @@ import type { Language } from '@/lib/languages';
 
 /**
  * Literary homepage blocks (preface/hero/longform/milestones) ship en/zh/th
- * copy only — Spanish literary translations await curator review, so es reads
+ * copy only — es/pt literary translations await curator review, so es/pt read
  * the English block instead of showing an empty string.
  */
 export function pickContentBlock<T>(content: Record<Lang, T>, language: Language): T {

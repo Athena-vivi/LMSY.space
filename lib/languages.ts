@@ -1,21 +1,23 @@
 // Locale index. UI strings live in per-language files under lib/languages/ —
-// en.ts is the source of truth for TranslationKey; zh/th/es must cover it.
+// en.ts is the source of truth for TranslationKey; zh/th/es/pt must cover it.
 // Exports here are unchanged from the pre-split module, so no import site
 // needs to move.
 import { en, type TranslationKey } from './languages/en.ts';
 import { zh } from './languages/zh.ts';
 import { th } from './languages/th.ts';
 import { es } from './languages/es.ts';
+import { pt } from './languages/pt.ts';
 
 export type { TranslationKey } from './languages/en.ts';
 
-export type Language = 'en' | 'zh' | 'th' | 'es';
+export type Language = 'en' | 'zh' | 'th' | 'es' | 'pt';
 
 export const languages: Record<Language, { name: string; nativeName: string }> = {
   en: { name: 'English', nativeName: 'English' },
   zh: { name: 'Chinese', nativeName: '中文' },
   th: { name: 'Thai', nativeName: 'ไทย' },
   es: { name: 'Spanish', nativeName: 'Español' },
+  pt: { name: 'Portuguese', nativeName: 'Português' },
 };
 
 export const defaultLanguage: Language = 'en';
@@ -25,6 +27,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
   zh,
   th,
   es,
+  pt,
 };
 
 export function getTranslation(lang: Language, key: TranslationKey): string {

@@ -6,10 +6,12 @@ export interface LocalizedText {
   th?: string | null;
   /** Spanish content is filled in progressively; missing values fall back to en. */
   es?: string | null;
+  /** Same progressive-fill rule for Brazilian Portuguese; falls back to en. */
+  pt?: string | null;
 }
 
 export function emptyLocalizedText(): LocalizedText {
-  return { en: '', zh: '', th: '', es: '' };
+  return { en: '', zh: '', th: '', es: '', pt: '' };
 }
 
 export function normalizeLocalizedText(value: unknown, fallback = ''): LocalizedText {
@@ -19,6 +21,7 @@ export function normalizeLocalizedText(value: unknown, fallback = ''): Localized
       zh: '',
       th: '',
       es: '',
+      pt: '',
     };
   }
 
@@ -28,6 +31,7 @@ export function normalizeLocalizedText(value: unknown, fallback = ''): Localized
     zh: typeof input.zh === 'string' ? input.zh : '',
     th: typeof input.th === 'string' ? input.th : '',
     es: typeof input.es === 'string' ? input.es : '',
+    pt: typeof input.pt === 'string' ? input.pt : '',
   };
 }
 
