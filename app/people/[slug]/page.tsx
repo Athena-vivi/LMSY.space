@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getSupabasePublic } from '@/lib/data/client';
 import { pageMetadata } from '@/lib/seo';
+import { getTranslation } from '@/lib/languages';
+import { routeLanguage } from '@/lib/i18n-path';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { entryPath } from '@/lib/entry-path';
 import { loadSeriesSlugMap } from '@/lib/series-slugs';
@@ -16,9 +18,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ lang?: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { lang: rawLang, slug } = await params;
+  const lang = routeLanguage(rawLang);
+  const door = getTranslation(lang, 'people.title');
   const supabase = getSupabasePublic();
 
   // The page also resolves raw uuids; metadata only needs the slug lookup —
@@ -34,9 +38,13 @@ export async function generateMetadata({
 
   if (!profile) {
     return pageMetadata({
-      title: 'People',
-      description: 'The two people this archive is built around.',
+      title: door,
+      description:
+        lang === 'en'
+          ? 'The two people this archive is built around.'
+          : getTranslation(lang, 'people.description'),
       path: `/people/${slug}`,
+      lang,
     });
   }
 
@@ -44,15 +52,19 @@ export async function generateMetadata({
 
   return pageMetadata({
     title: `${profile.name}${suffix}`,
-    description: `Projects, appearances and records for ${profile.name}${suffix} in the archive.`,
+    description:
+      lang === 'en'
+        ? `Projects, appearances and records for ${profile.name}${suffix} in the archive.`
+        : `${profile.name}${suffix} · ${getTranslation(lang, 'people.description')}`,
     path: `/people/${slug}`,
+    lang,
   });
 }
 
 export default async function PersonPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ lang?: string; slug: string }>;
 }) {
   const { slug } = await params;
   const supabase = getSupabasePublic();

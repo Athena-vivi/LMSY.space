@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
 import { getLocalizedText } from '@/lib/localized-content';
+import { routeLanguage } from '@/lib/i18n-path';
 import { loadEntry } from '@/lib/door-data';
 import { DoorEntryPage } from '@/components/doors/door-views';
 import { TALK_CATEGORIES, categoryDefinition, normalizeCategory } from '@/lib/category-registry';
@@ -18,7 +19,8 @@ import { TALK_CATEGORIES, categoryDefinition, normalizeCategory } from '@/lib/ca
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ category: string; entry: string }>;
+  // `lang` is absent on the root route and set on every /<lang>/... shell.
+  params: Promise<{ lang?: string; category: string; entry: string }>;
 }
 
 function talksCategoryOf(segment: string) {
@@ -28,22 +30,24 @@ function talksCategoryOf(segment: string) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { category: segment, entry } = await params;
+  const { lang: rawLang, category: segment, entry } = await params;
+  const lang = routeLanguage(rawLang);
   const category = talksCategoryOf(segment);
   if (!category) return { title: 'Entry Not Found' };
 
   const found = await loadEntry(category, entry);
   if (!found) return { title: 'Entry Not Found' };
 
-  const title = getLocalizedText(found.entry.title_i18n, 'en', found.entry.title);
-  const shelf = getTranslation('en', categoryDefinition(category)!.labelKey);
+  const title = getLocalizedText(found.entry.title_i18n, lang, found.entry.title);
+  const shelf = getTranslation(lang, categoryDefinition(category)!.labelKey);
 
   return pageMetadata({
     title: `${title} · ${shelf}`,
     description:
-      getLocalizedText(found.entry.description_i18n, 'en', found.entry.description) ||
-      `${title} — ${shelf}, with Lookmhee & Sonya.`,
+      getLocalizedText(found.entry.description_i18n, lang, found.entry.description) ||
+      (lang === 'en' ? `${title} — ${shelf}, with Lookmhee & Sonya.` : `${title} · ${shelf}`),
     path: `/talks/${category}/${found.entry.slug || found.entry.id}`,
+    lang,
   });
 }
 

@@ -20,6 +20,19 @@ export function langFromPath(pathname: string | null): Language | null {
   return match ? (match[1] as Language) : null;
 }
 
+/**
+ * Resolve a raw `[lang]` route param to a language: the root route passes no
+ * param at all (English), a language shell passes zh/th/es/pt. Anything else
+ * (a typo, a stray segment) is English, never an unvalidated string reaching
+ * the translation lookup.
+ */
+export function routeLanguage(raw: string | string[] | undefined | null): Language {
+  if (typeof raw === 'string' && (ROUTE_LANGUAGES as readonly string[]).includes(raw)) {
+    return raw as Language;
+  }
+  return 'en';
+}
+
 /** '/zh/editorial' -> '/editorial'; '/editorial' -> '/editorial'. */
 export function stripLangPrefix(pathname: string): string {
   const stripped = pathname.replace(LANG_PREFIX_RE, '');

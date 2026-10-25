@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
+import { routeLanguage } from '@/lib/i18n-path';
 import { loadCategoryEntryGroups, loadRows, loadTalkResourceCovers } from '@/lib/door-data';
 import { TalksTimelinePage } from '@/components/doors/talks-timeline';
 import { TALK_CATEGORIES, categoryDefinition, normalizeCategory } from '@/lib/category-registry';
@@ -20,7 +21,7 @@ import { TALK_CATEGORIES, categoryDefinition, normalizeCategory } from '@/lib/ca
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ category: string }>;
+  params: Promise<{ lang?: string; category: string }>;
 }
 
 function talksCategoryOf(segment: string) {
@@ -30,15 +31,23 @@ function talksCategoryOf(segment: string) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { category: segment } = await params;
+  const { lang: rawLang, category: segment } = await params;
+  const lang = routeLanguage(rawLang);
   const category = talksCategoryOf(segment);
   const definition = category ? categoryDefinition(category) : null;
-  const name = definition ? getTranslation('en', definition.labelKey) : 'Conversations';
+  const name = definition
+    ? getTranslation(lang, definition.labelKey)
+    : getTranslation(lang, 'talks.title');
+  const door = getTranslation(lang, 'talks.title');
 
   return pageMetadata({
-    title: `${name} · Conversations`,
-    description: `${name} — every conversation Lookmhee & Sonya had in this shelf, each with its own page.`,
+    title: `${name} · ${door}`,
+    description:
+      lang === 'en'
+        ? `${name} — every conversation Lookmhee & Sonya had in this shelf, each with its own page.`
+        : `${name} · ${door} · ${getTranslation(lang, 'talks.description')}`,
     path: `/talks/${segment}`,
+    lang,
   });
 }
 

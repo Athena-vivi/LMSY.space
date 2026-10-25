@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
+import { routeLanguage } from '@/lib/i18n-path';
 import { loadSegmentEntries } from '@/lib/door-data';
 import { DoorEntriesPage } from '@/components/doors/door-views';
 import { subtypeLabelKey } from '@/lib/category-registry';
@@ -16,18 +17,24 @@ import { subtypeLabelKey } from '@/lib/category-registry';
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ subtype: string }>;
+  params: Promise<{ lang?: string; subtype: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { subtype } = await params;
+  const { lang: rawLang, subtype } = await params;
+  const lang = routeLanguage(rawLang);
   const key = subtypeLabelKey('live_stream', subtype);
-  const name = key ? getTranslation('en', key) : 'Not filed yet';
+  const name = key ? getTranslation(lang, key) : 'Not filed yet';
+  const door = getTranslation(lang, 'live.title');
 
   return pageMetadata({
-    title: `${name} · Live`,
-    description: `${name} — the streams Lookmhee & Sonya opened themselves, each with its own page.`,
+    title: `${name} · ${door}`,
+    description:
+      lang === 'en'
+        ? `${name} — the streams Lookmhee & Sonya opened themselves, each with its own page.`
+        : `${name} · ${door} · ${getTranslation(lang, 'live.description')}`,
     path: `/live/${subtype}`,
+    lang,
   });
 }
 

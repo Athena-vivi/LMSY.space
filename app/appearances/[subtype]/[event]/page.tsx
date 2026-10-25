@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
 import { getLocalizedText } from '@/lib/localized-content';
+import { routeLanguage } from '@/lib/i18n-path';
 import { loadEntry } from '@/lib/door-data';
 import { DoorEntryPage } from '@/components/doors/door-views';
 import { subtypeLabelKey } from '@/lib/category-registry';
@@ -16,26 +17,28 @@ import { subtypeLabelKey } from '@/lib/category-registry';
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ subtype: string; event: string }>;
+  params: Promise<{ lang?: string; subtype: string; event: string }>;
   /** ?group=<asset_group> opens the entry filtered to one picture class. */
   searchParams: Promise<{ group?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { subtype, event } = await params;
+  const { lang: rawLang, subtype, event } = await params;
+  const lang = routeLanguage(rawLang);
   const found = await loadEntry('public_appearance', event, subtype);
   if (!found) return { title: 'Entry Not Found' };
 
-  const title = getLocalizedText(found.entry.title_i18n, 'en', found.entry.title);
+  const title = getLocalizedText(found.entry.title_i18n, lang, found.entry.title);
   const labelKey = subtypeLabelKey('public_appearance', subtype);
-  const shelf = labelKey ? getTranslation('en', labelKey) : 'Public Appearances';
+  const shelf = labelKey ? getTranslation(lang, labelKey) : 'Public Appearances';
 
   return pageMetadata({
     title: `${title} · ${shelf}`,
     description:
-      getLocalizedText(found.entry.description_i18n, 'en', found.entry.description) ||
-      `${title} — ${shelf}, kept as pictures.`,
+      getLocalizedText(found.entry.description_i18n, lang, found.entry.description) ||
+      (lang === 'en' ? `${title} — ${shelf}, kept as pictures.` : `${title} · ${shelf}`),
     path: `/appearances/${subtype}/${found.entry.slug || found.entry.id}`,
+    lang,
   });
 }
 

@@ -7,6 +7,7 @@ import { MuseumPreface } from '@/components/museum-preface';
 import { HomeHeader } from '@/components/home-header';
 import { LoadingWrapper } from '@/components/loading/loading-wrapper';
 import { getHomepageHeroMedia } from '@/lib/homepage-hero';
+import { pageLanguageAlternates } from '@/lib/seo';
 
 /**
  * Reading the hero photos on the server is what keeps the page from painting
@@ -16,6 +17,16 @@ import { getHomepageHeroMedia } from '@/lib/homepage-hero';
  * next deploy.
  */
 export const dynamic = 'force-dynamic';
+
+/**
+ * Self-canonical plus the full hreflang cluster. The title and the description
+ * stay the ones the root layout declares — the site name and the intro
+ * sentence have no language versions yet — but without a canonical every
+ * /<lang> homepage would read as a duplicate of this one.
+ */
+export function generateMetadata() {
+  return pageLanguageAlternates('en', '/');
+}
 
 /**
  * Homepage. Six content blocks, each with one job:

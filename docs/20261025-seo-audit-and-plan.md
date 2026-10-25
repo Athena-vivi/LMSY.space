@@ -117,7 +117,8 @@ nav 是客户端组件 → 内链需渲染后验证；门→货架→事件三�
 ## 执行进度（一项一推送）
 - ✅ **#1（0.3 canonical + 顺带品牌修正）**：`timeline`/`people` 改用 `pageMetadata()`（title 去掉写死的 "| LMSY Archive"，description 原文保留）；新增 `app/copyright/layout.tsx`（复用页内既有英文文案 `copyright.title`/`copyright.intro`，无新造文案）。typecheck 通过。
 - ✅ **#2（阶段 0 剩余 + 阶段 1 的 1.1/1.3）**：品牌统一 "LMSY Fan Archive"、About 页、JSON-LD、gallery 改 SSR 首屏、图片站地图（2459 image）、裂图修复（关闭 Vercel 优化器直连 R2）。详见 git log 3727ff8…646590c。
-- ✅ **#3（1.2 i18n 架构 · 进行中）**：方案定稿 `docs/20261026-i18n-routing-plan.md`（路径式，root=英文零迁移）；语言 en/zh/th/es/**pt**（GSC 巴西 78%，pt-BR 升为一线语言）。步骤 1/6 ✅ 语言层 es+pt 词条拆分；步骤 2/6 ✅ `[lang]` 基建 + Provider 路径感知（SSR 直出目标语言）+ 3 示范页本地实测；步骤 3/6 ✅ 全部公开页薄壳铺开（首页+14 顶层+15 详情 = 29 壳，详情页正文本地化留步骤 6）。待做：步骤 4 hreflang+localized meta、步骤 5 切换器改 URL 跳转、步骤 6 DB 文本消费点穿 lang + 详情页 metadata。
+- ✅ **#3（1.2 i18n 架构 · 进行中）**：方案定稿 `docs/20261026-i18n-routing-plan.md`（路径式，root=英文零迁移）；语言 en/zh/th/es/**pt**（GSC 巴西 78%，pt-BR 升为一线语言）。步骤 1/6 ✅ 语言层 es+pt 词条拆分；步骤 2/6 ✅ `[lang]` 基建 + Provider 路径感知（SSR 直出目标语言）+ 3 示范页本地实测；步骤 3/6 ✅ 全部公开页薄壳铺开（首页+14 顶层+15 详情 = 29 壳，详情页正文本地化留步骤 6）。步骤 4/6 ✅ 全站 hreflang 五语互链（lib/seo.ts 一处生效，各语言 self-canonical）。步骤 5/6 ✅ 切换器改 Link 路由跳转（新增 lib/i18n-path.ts 统一前缀逻辑）。步骤 6/6 ✅ 详情/货架页 metadata 本地化 + 全站 canonical 补齐：15 个根页面（9 详情 + 4 货架 + timeline/[year] + people/[slug]）从自身 `[lang]` 参数取语言（`routeLanguage`），DB 文本 `getLocalizedText(..., lang, ...)`、门类/货架名走 `getTranslation(lang, ...)`、canonical 随语言加前缀；15 个详情壳改为 `export { default, generateMetadata }` 双导出（此前 `/zh/talks/<entry>` 完全没有 canonical 和 hreflang）；首页 `/` 与 `/<lang>` 补 self-canonical（否则 /zh 会被判为 / 的重复页）。**i18n 路径式改造 6/6 完成。**
+遗留（非阻塞）：① SSR 的 `html lang` 仍为 `en`（根布局持有 `<html>`），语言信号靠 hreflang；② 无 DB 译文的条目在 `/zh`、`/pt` 下仍显示英文 description（回退，未机翻）；③ 首页 title/description 沿用根布局英文（无各语版本文案，需审后补）。
 
 ## 阶段 1 · 核心修复（决定排不排得上）
 | # | 动作 | 难度 |

@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { ChronicleTimeline } from '@/components/chronicle-timeline';
 import { ChronicleChrome } from '@/components/chronicle-chrome';
+import { getTranslation } from '@/lib/languages';
+import { routeLanguage } from '@/lib/i18n-path';
 import { getChronicleEvents, getChronicleYears } from '@/lib/timeline';
 import { pageMetadata } from '@/lib/seo';
 
@@ -10,23 +12,33 @@ export const revalidate = 300;
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ year: string }>;
+  params: Promise<{ lang?: string; year: string }>;
 }): Promise<Metadata> {
-  const { year } = await params;
+  const { lang: rawLang, year } = await params;
+  const lang = routeLanguage(rawLang);
+  const door = getTranslation(lang, 'timeline.title');
+
   // A malformed year is a bad URL, not an empty year.
   if (!/^\d{4}$/.test(year)) {
     return pageMetadata({
-      title: 'Timeline',
+      title: door,
       description:
-        'Every dated record in the archive, ordered by when it actually happened.',
+        lang === 'en'
+          ? 'Every dated record in the archive, ordered by when it actually happened.'
+          : getTranslation(lang, 'timeline.description'),
       path: '/timeline',
+      lang,
     });
   }
 
   return pageMetadata({
-    title: `Timeline ${year}`,
-    description: `Every dated record from ${year} in the archive, ordered by when it actually happened.`,
+    title: `${door} ${year}`,
+    description:
+      lang === 'en'
+        ? `Every dated record from ${year} in the archive, ordered by when it actually happened.`
+        : `${year} · ${getTranslation(lang, 'timeline.description')}`,
     path: `/timeline/${year}`,
+    lang,
   });
 }
 

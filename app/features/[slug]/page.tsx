@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
+import { getTranslation } from '@/lib/languages';
 import { getLocalizedText } from '@/lib/localized-content';
+import { routeLanguage } from '@/lib/i18n-path';
 import { loadFeatureTopic } from '@/lib/editorial-issues';
 import { EditorialDetailContent } from '@/app/editorial/[id]/editorial-detail-content';
 
@@ -14,22 +16,27 @@ import { EditorialDetailContent } from '@/app/editorial/[id]/editorial-detail-co
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ lang?: string; slug: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { lang: rawLang, slug } = await params;
+  const lang = routeLanguage(rawLang);
   const topic = await loadFeatureTopic(slug);
   if (!topic) return { title: 'Topic Not Found' };
 
-  const title = getLocalizedText(topic.title_i18n, 'en', topic.title);
+  const title = getLocalizedText(topic.title_i18n, lang, topic.title);
+  const door = getTranslation(lang, 'features.title');
 
   return pageMetadata({
-    title: `${title} · Features`,
+    title: `${title} · ${door}`,
     description:
-      getLocalizedText(topic.description_i18n, 'en', topic.description) ||
-      `${title} — a curated special topic, kept with every image in it.`,
+      getLocalizedText(topic.description_i18n, lang, topic.description) ||
+      (lang === 'en'
+        ? `${title} — a curated special topic, kept with every image in it.`
+        : `${title} · ${door}`),
     path: `/features/${topic.slug || topic.id}`,
+    lang,
   });
 }
 

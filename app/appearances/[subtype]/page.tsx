@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
+import { routeLanguage } from '@/lib/i18n-path';
 import { loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
 import { LiveTimelinePage } from '@/components/doors/live-timeline';
 import { subtypeLabelKey } from '@/lib/category-registry';
@@ -15,18 +16,24 @@ import { subtypeLabelKey } from '@/lib/category-registry';
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ subtype: string }>;
+  params: Promise<{ lang?: string; subtype: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { subtype } = await params;
+  const { lang: rawLang, subtype } = await params;
+  const lang = routeLanguage(rawLang);
   const key = subtypeLabelKey('public_appearance', subtype);
-  const name = key ? getTranslation('en', key) : 'Not filed yet';
+  const name = key ? getTranslation(lang, key) : 'Not filed yet';
+  const door = getTranslation(lang, 'category.publicAppearance');
 
   return pageMetadata({
-    title: `${name} · Public Appearances`,
-    description: `${name} — every appearance Lookmhee & Sonya have in this shelf, each with its own pictures.`,
+    title: `${name} · ${door}`,
+    description:
+      lang === 'en'
+        ? `${name} — every appearance Lookmhee & Sonya have in this shelf, each with its own pictures.`
+        : `${name} · ${door}`,
     path: `/appearances/${subtype}`,
+    lang,
   });
 }
 

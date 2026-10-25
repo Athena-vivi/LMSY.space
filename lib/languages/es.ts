@@ -205,7 +205,7 @@ export const es: Record<TranslationKey, string> = {
     'err.retry': 'Reintentar',
 
     // Editorial
-    'editorial.title': 'Editorial',
+    'editorial.title': 'Revistas',
     'editorial.subtitle': 'Revistas y publicaciones',
     'editorial.viewIssue': 'Ver número',
     'editorial.photographer': 'Fotografía',

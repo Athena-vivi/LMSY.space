@@ -8,15 +8,36 @@ import type { Language } from '@/lib/languages';
  */
 const HREFLANG_LANGS: readonly Language[] = ['zh', 'th', 'es', 'pt'];
 
+/** '/talks' -> '/zh/talks'; '/' -> '/zh' (no trailing slash on the homepage). */
+function prefixed(path: string, lang: Language): string {
+  return path === '/' ? `/${lang}` : `/${lang}${path}`;
+}
+
 function hreflangAlternates(path: string): NonNullable<Metadata['alternates']>['languages'] {
   const languages: Record<string, string> = {
     en: path,
     'x-default': path,
   };
   for (const lang of HREFLANG_LANGS) {
-    languages[lang] = `/${lang}${path}`;
+    languages[lang] = prefixed(path, lang);
   }
   return languages;
+}
+
+/**
+ * Canonical + hreflang only. For routes that keep the title and description
+ * the root layout declares (the homepage): no language version of the site
+ * name or of the intro sentence has been written yet, but each language still
+ * needs its own canonical and its place in the hreflang cluster, or /zh reads
+ * as a duplicate of /.
+ */
+export function pageLanguageAlternates(lang: Language, path: string): Metadata {
+  return {
+    alternates: {
+      canonical: lang === 'en' ? path : prefixed(path, lang),
+      languages: hreflangAlternates(path),
+    },
+  };
 }
 
 /**
@@ -34,12 +55,21 @@ export function pageMetadata(opts: {
   title: string;
   description: string;
   path: string;
+  /**
+   * The language the route is served in. Dynamic pages (one per entry, per
+   * year, per person) read it from their own `[lang]` param, so the same
+   * function covers the root page and every language shell: en keeps the bare
+   * canonical, the rest get their own prefix, and the hreflang cluster is
+   * always built from the bare path.
+   */
+  lang?: Language;
 }): Metadata {
+  const lang = opts.lang ?? 'en';
   return {
     title: opts.title,
     description: opts.description,
     alternates: {
-      canonical: opts.path,
+      canonical: lang === 'en' ? opts.path : prefixed(opts.path, lang),
       languages: hreflangAlternates(opts.path),
     },
   };

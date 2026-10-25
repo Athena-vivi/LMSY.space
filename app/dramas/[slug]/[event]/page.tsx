@@ -4,6 +4,7 @@ import { getSupabasePublic } from '@/lib/data/client';
 import { isPublicProject } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
 import { getLocalizedText } from '@/lib/localized-content';
+import { routeLanguage } from '@/lib/i18n-path';
 import { getDramaEntryByKey, getDramaEventSeries } from '@/lib/data/projects';
 import { listEventPageAssets } from '@/lib/data/gallery-assets';
 import {
@@ -28,7 +29,7 @@ import {
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ slug: string; event: string }>;
+  params: Promise<{ lang?: string; slug: string; event: string }>;
 }
 
 async function resolve(slug: string, eventSlug: string) {
@@ -71,20 +72,24 @@ function awardResult(tags: string[] | null): string | null {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug, event: eventSlug } = await params;
+  const { lang: rawLang, slug, event: eventSlug } = await params;
+  const lang = routeLanguage(rawLang);
   const found = await resolve(slug, eventSlug);
 
   if (!found) return { title: 'Entry Not Found' };
 
-  const episode = getLocalizedText(found.event.title_i18n, 'en', found.event.title);
-  const seriesName = getLocalizedText(found.series.title_i18n, 'en', found.series.title);
+  const episode = getLocalizedText(found.event.title_i18n, lang, found.event.title);
+  const seriesName = getLocalizedText(found.series.title_i18n, lang, found.series.title);
 
   return pageMetadata({
     title: `${episode} · ${seriesName}`,
     description:
-      getLocalizedText(found.event.description_i18n, 'en', found.event.description) ||
-      `${episode}, filed under ${seriesName}.`,
+      getLocalizedText(found.event.description_i18n, lang, found.event.description) ||
+      (lang === 'en'
+        ? `${episode}, filed under ${seriesName}.`
+        : `${episode} · ${seriesName}`),
     path: `/dramas/${found.series.slug || found.series.id}/${found.event.slug}`,
+    lang,
   });
 }
 

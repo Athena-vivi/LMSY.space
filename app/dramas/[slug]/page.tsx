@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 import { getSupabasePublic } from '@/lib/data/client';
 import { isPublicProject } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
+import { getTranslation } from '@/lib/languages';
 import { getLocalizedText } from '@/lib/localized-content';
+import { routeLanguage } from '@/lib/i18n-path';
 import {
   getDramaSeriesByKey,
   listDramaEntries,
@@ -33,7 +35,7 @@ import {
 export const revalidate = 300;
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ lang?: string; slug: string }>;
 }
 
 /**
@@ -88,7 +90,8 @@ function toCard(row: EntryRow) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { lang: rawLang, slug } = await params;
+  const lang = routeLanguage(rawLang);
   const db = getSupabasePublic();
   const drama = await getDramaSeriesByKey(db, slug);
 
@@ -99,15 +102,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // The layout already appends "| LMSY Fan Archive"; pageMetadata sets
   // the bare name plus the canonical path, so a series never carries the site
   // name twice and never competes with its own redirect target.
-  const title = getLocalizedText(drama.title_i18n, 'en', drama.title);
+  const title = getLocalizedText(drama.title_i18n, lang, drama.title);
   const description =
-    getLocalizedText(drama.description_i18n, 'en', drama.description) ||
-    `Everything archived under ${title}.`;
+    getLocalizedText(drama.description_i18n, lang, drama.description) ||
+    (lang === 'en' ? `Everything archived under ${title}.` : `${title} · ${getTranslation(lang, 'dramas.description')}`);
 
   return pageMetadata({
     title,
     description,
     path: `/dramas/${drama.slug || drama.id}`,
+    lang,
   });
 }
 
