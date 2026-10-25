@@ -111,7 +111,7 @@ nav 是客户端组件 → 内链需渲染后验证；门→货架→事件三�
 | 0.3 | 补自引用 canonical：`/timeline`、`/people`、`/copyright` 改用/接入 `pageMetadata()` | 低 | ✅ 已完成 |
 | 0.4 | 加 About 页（谁运营、是否粉丝站、图片来源/致谢）——`/about` 服务端组件 + 页脚入口，文案已审 | 低 | ✅ 已完成 |
 | 0.5 | GSC + Bing 已验证（用户侧完成，GSC 已有 28 天数据）；sitemap 提交待新架构部署后一次提交 | 低 | 待提交 |
-| 0.6 | 加 JSON-LD：Organization / WebSite(+SearchAction) / Person(Lookmhee,Sonya) / BreadcrumbList | 低-中 | 待做 |
+| 0.6 | 加 JSON-LD：WebSite + Person(Lookmhee,Sonya) 全站地基已上线（99194ba）；BreadcrumbList / 详情页 CreativeWork 页面级标记待续 | 低-中 | 地基 ✅ |
 | 0.7 | **sitemap index 架构落地**：`/sitemap.xml` 为索引，子表 `/sitemaps/<门>.xml`（pages/dramas/editorial/live-events/appearances/commercial，talks/live 空时自动不列）；支持 `-N` 分页后缀；图片站地图（image:image）预留到阶段 1 | 中 | ✅ 已完成 |
 
 ## 执行进度（一项一推送）
