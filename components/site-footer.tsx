@@ -63,6 +63,13 @@ export function SiteFooter() {
             </button>
             <span className="text-[10px] text-ink-2/50">·</span>
             <Link
+              href="/about"
+              className="text-[10px] font-light uppercase tracking-wider text-ink-2 transition-colors hover:text-ink"
+            >
+              {t(language, 'nav.about')}
+            </Link>
+            <span className="text-[10px] text-ink-2/50">·</span>
+            <Link
               href="/copyright"
               className="text-[10px] font-light uppercase tracking-wider text-ink-2 transition-colors hover:text-ink"
             >

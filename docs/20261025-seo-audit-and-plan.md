@@ -109,7 +109,7 @@ nav 是客户端组件 → 内链需渲染后验证；门→货架→事件三�
 | 0.1 | 给缺 metadata 的页面补齐（v3.1 核实后真实范围：`people/[slug]`、`timeline/[year]` 两处 `generateMetadata`；resonance/whispers 低优先） | 低 | ✅ 已完成 |
 | 0.2 | 统一品牌：去 "Official"，全站统一 "LMSY Fan Archive"（用户拍板，调研后选定；layout/manifest 已改） | 低 | ✅ 已完成 |
 | 0.3 | 补自引用 canonical：`/timeline`、`/people`、`/copyright` 改用/接入 `pageMetadata()` | 低 | ✅ 已完成 |
-| 0.4 | 加 About 页（谁运营、是否粉丝站、图片来源/致谢） | 低 | 待做 |
+| 0.4 | 加 About 页（谁运营、是否粉丝站、图片来源/致谢）——`/about` 服务端组件 + 页脚入口，文案已审 | 低 | ✅ 已完成 |
 | 0.5 | 注册验证 **Google Search Console + Bing Webmaster**，提交 sitemap | 低 | 待做 |
 | 0.6 | 加 JSON-LD：Organization / WebSite(+SearchAction) / Person(Lookmhee,Sonya) / BreadcrumbList | 低-中 | 待做 |
 | 0.7 | **搭 sitemap index 架构**（按门拆子表 + 预留图片站地图分片），先用公开数据跑通 | 中 | 待做 |
