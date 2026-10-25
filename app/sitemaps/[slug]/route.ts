@@ -40,13 +40,20 @@ export async function GET(
   const slice = entries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const items = slice
-    .map(
-      (entry) =>
-        `  <url><loc>${escapeXml(entry.url)}</loc><lastmod>${entry.lastModified.toISOString()}</lastmod><changefreq>${entry.changeFrequency}</changefreq><priority>${entry.priority}</priority></url>`
-    )
+    .map((entry) => {
+      const images = (entry.images ?? [])
+        .map((image) => {
+          const title = image.title
+            ? `<image:title>${escapeXml(image.title)}</image:title>`
+            : '';
+          return `<image:image><image:loc>${escapeXml(image.loc)}</image:loc>${title}</image:image>`;
+        })
+        .join('');
+      return `  <url><loc>${escapeXml(entry.url)}</loc><lastmod>${entry.lastModified.toISOString()}</lastmod><changefreq>${entry.changeFrequency}</changefreq><priority>${entry.priority}</priority>${images}</url>`;
+    })
     .join('\n');
 
-  const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n</urlset>`;
+  const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${items}\n</urlset>`;
 
   return new Response(body, {
     headers: { 'Content-Type': 'application/xml; charset=utf-8' },

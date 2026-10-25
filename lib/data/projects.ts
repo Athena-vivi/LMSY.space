@@ -1005,6 +1005,7 @@ export async function listPublicSitemapProjects(
 }
 
 export interface DramaEventSlugRow {
+  id: string;
   work_id: string | null;
   slug: string | null;
   created_at: string | null;
@@ -1020,7 +1021,7 @@ export async function listDramaEventSlugRows(
   const { data } = await db
     .schema('lmsy_archive')
     .from('projects')
-    .select('work_id, slug, created_at')
+    .select('id, work_id, slug, created_at')
     .in('work_id', workIds)
     .neq('project_kind', 'series');
 
