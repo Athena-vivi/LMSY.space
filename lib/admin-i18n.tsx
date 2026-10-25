@@ -193,6 +193,8 @@ const DICT: Record<string, [string, string]> = {
   'd.promote.addTopic': ['新增专题', 'New topic'],
   'd.promote.subjectFromEvent': ['该事件已有编号，此处显示编号里的主体段，不可修改', 'This event already has a number; the segment shown comes from it and is not editable'],
   'd.promote.subjectPicked': ['由上面的选择自动拼出，不可手填', 'Assembled from the picks above; not typed by hand'],
+  'd.promote.subjectFromTopic': ['由专题名自动生成；入库后固定不变', 'Derived from the topic title; fixed once promoted'],
+  'd.promote.topicNeedsAscii': ['专题名里没有 A-Z / 0-9，编码无法生成——请用英文字母命名', 'The topic title has no A-Z / 0-9, so no code can be derived - name it in Latin letters'],
   'd.promote.eventDate': ['活动日期', 'Event date'],
   'd.promote.eventDateHint': ['编号需要日期；这个事件还没有，补上后即可入库', 'The number needs a date and this event has none - save one to continue'],
   'd.promote.optProject': ['本项目编码', 'this project'],

@@ -720,19 +720,23 @@ export function assetIdPrefixFor(
 export async function allocateNextCatalogId(
   supabase: CatalogIdClient,
   doorCode: string,
-  eventDate: string,
+  eventDate: string | null,
   options: { person?: PersonCode; subject?: string; tableName?: string; head?: string } = {}
 ): Promise<string> {
   const person = options.person ?? 'LMSY';
   const subject = options.subject;
   const tableName = options.tableName ?? 'gallery_assets';
-  const compacted = formatDateToCompact(eventDate);
+  // A FEAT topic carries no date by design (spec 4.9), so the date can be
+  // absent here - formatting a null date threw and turned the whole preview
+  // into a 500. The date segment is simply left out when there is none.
+  const compacted = eventDate ? formatDateToCompact(eventDate) : null;
+  const withDate = (base: string) => (compacted ? `${base}-${compacted}` : base);
 
   const head =
     options.head ??
     (subject
-      ? `${person}-${doorCode}-${subject}-${compacted}`
-      : `${person}-${doorCode}-${compacted}`);
+      ? withDate(`${person}-${doorCode}-${subject}`)
+      : withDate(`${person}-${doorCode}`));
 
   const { data, error } = await supabase
     .schema('lmsy_archive')

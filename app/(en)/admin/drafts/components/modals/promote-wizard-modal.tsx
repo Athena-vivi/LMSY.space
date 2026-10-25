@@ -433,7 +433,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         return magSubject(picks.publication, themeAfterSeparator(project.title)) ?? '';
       }
       case 'topic':
-        return featSubject(picks.topic) ?? '';
+        // A topic's subject IS its own name - one topic is one project, so
+        // there is no reusable vocabulary to pick from. Derived from the
+        // title exactly like a drama event's code (spec 4.9), which is what
+        // makes a new topic bind its number without a second step.
+        return featSubject(eventCodeFromTitle(project.title)) ?? '';
       case 'brand': {
         if (!picks.brand) return '';
         return brandSubject(picks.brand, eventCodeFromTitle(project.title, picks.brand)) ?? '';
@@ -686,23 +690,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           onChange: (next) => setPicks((prev) => ({ ...prev, platform: next })),
         });
       case 'topic':
-        return (
-          <>
-            {select({
-              value: picks.topic,
-              placeholder: t('d.promote.pickTopic'),
-              options: registered('topic').map((item) => ({
-                value: item.code,
-                label: `${item.name} · ${item.code}`,
-              })),
-              onChange: (next) => setPicks((prev) => ({ ...prev, topic: next })),
-            })}
-            {addRow('topic', '', t('d.promote.addTopic'))}
-            {addingError && (
-              <p className="font-mono text-[10px] text-red-300/80">{addingError}</p>
-            )}
-          </>
-        );
+        // No picker: the subject is the topic's own name, already shown in
+        // the plate underneath. The other doors pick a brand / publication
+        // because those are shared by many events; a topic is the event.
+        return null;
       case 'work':
         // The work was already picked to narrow the event list; showing it here
         // makes it obvious where the first two segments come from.
@@ -1328,8 +1319,15 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
                         {project.catalog_id
                           ? t('d.promote.subjectFromEvent')
-                          : t('d.promote.subjectPicked')}
+                          : level === 'topic'
+                            ? t('d.promote.subjectFromTopic')
+                            : t('d.promote.subjectPicked')}
                       </span>
+                      {level === 'topic' && !effectiveSubject && (
+                        <span className="block font-mono text-[9px] leading-relaxed text-red-300/80">
+                          {t('d.promote.topicNeedsAscii')}
+                        </span>
+                      )}
                     </label>
 
                     {level !== 'topic' && !project.event_date && (
