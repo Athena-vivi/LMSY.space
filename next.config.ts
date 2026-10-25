@@ -44,8 +44,22 @@ const STATIC_PUBLIC = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
-    // Every stored image_url points at the CDN; a `'**'` wildcard was both
-    // unnecessary and risky (it would let any remote URL through the optimizer).
+    // 2026-10-25: Vercel's image optimizer started returning 402
+    // (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) for every remote source once
+    // its optimization quota ran out — cached entries kept working as they
+    // expired one by one, which looked like "random broken images" (worse
+    // right after any URL change, e.g. the asset renaming). Diagnosis: the
+    // CDN objects themselves were always 200; only /_next/image 402'd, for
+    // small and large sources alike.
+    //
+    // Fix: bypass the optimizer entirely. Every stored image is already
+    // WebP on Cloudflare R2 (cdn.lmsy.space), and R2 egress is free — the
+    // browser loads the original directly. Cost: heavy magazine scans load
+    // at full size; display-size processing is a separate follow-up
+    // (re-encode to ~2000px) if page weight becomes a problem.
+    unoptimized: true,
+    // Kept for when optimization returns (a custom loader or re-enabled
+    // optimizer): only the media CDN may pass through.
     remotePatterns: [
       {
         protocol: 'https',
