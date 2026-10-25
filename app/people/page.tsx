@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getSupabasePublic } from '@/lib/data/client';
@@ -5,11 +6,13 @@ import { listPublicProjectIds } from '@/lib/data/projects';
 import { getImageUrl } from '@/lib/image-url';
 import { t } from '@/lib/languages';
 import { defaultLanguage } from '@/lib/languages';
+import { pageMetadata } from '@/lib/seo';
 
-export const metadata = {
-  title: 'People | LMSY Archive',
+export const metadata: Metadata = pageMetadata({
+  title: 'People',
   description: 'The two people this archive is built around.',
-};
+  path: '/people',
+});
 
 export const revalidate = 300;
 

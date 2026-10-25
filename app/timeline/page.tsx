@@ -1,12 +1,15 @@
+import type { Metadata } from 'next';
 import { ChronicleTimeline } from '@/components/chronicle-timeline';
 import { ChronicleChrome } from '@/components/chronicle-chrome';
 import { getChronicleEvents, getChronicleYears } from '@/lib/timeline';
+import { pageMetadata } from '@/lib/seo';
 
-export const metadata = {
-  title: 'Timeline | LMSY Archive',
+export const metadata: Metadata = pageMetadata({
+  title: 'Timeline',
   description:
     'Every dated record in the archive, ordered by when it actually happened.',
-};
+  path: '/timeline',
+});
 
 export const revalidate = 300;
 
