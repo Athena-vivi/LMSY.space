@@ -116,6 +116,8 @@ nav 是客户端组件 → 内链需渲染后验证；门→货架→事件三�
 
 ## 执行进度（一项一推送）
 - ✅ **#1（0.3 canonical + 顺带品牌修正）**：`timeline`/`people` 改用 `pageMetadata()`（title 去掉写死的 "| LMSY Archive"，description 原文保留）；新增 `app/copyright/layout.tsx`（复用页内既有英文文案 `copyright.title`/`copyright.intro`，无新造文案）。typecheck 通过。
+- ✅ **#2（阶段 0 剩余 + 阶段 1 的 1.1/1.3）**：品牌统一 "LMSY Fan Archive"、About 页、JSON-LD、gallery 改 SSR 首屏、图片站地图（2459 image）、裂图修复（关闭 Vercel 优化器直连 R2）。详见 git log 3727ff8…646590c。
+- ✅ **#3（1.2 i18n 架构 · 进行中）**：方案定稿 `docs/20261026-i18n-routing-plan.md`（路径式，root=英文零迁移）；语言 en/zh/th/es/**pt**（GSC 巴西 78%，pt-BR 升为一线语言）。步骤 1/6 ✅ 语言层 es+pt 词条拆分；步骤 2/6 ✅ `[lang]` 基建 + Provider 路径感知（SSR 直出目标语言）+ 3 示范页本地实测；步骤 3/6 ✅ 全部公开页薄壳铺开（首页+14 顶层+15 详情 = 29 壳，详情页正文本地化留步骤 6）。待做：步骤 4 hreflang+localized meta、步骤 5 切换器改 URL 跳转、步骤 6 DB 文本消费点穿 lang + 详情页 metadata。
 
 ## 阶段 1 · 核心修复（决定排不排得上）
 | # | 动作 | 难度 |
