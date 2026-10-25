@@ -76,11 +76,13 @@ export const metadata: Metadata = {
 };
 
 /**
- * Runs before paint to align <html lang> with the visitor's stored language,
- * so non-English visitors do not get an English-configured document (a11y,
- * hyphenation, screen readers) nor a flash of the wrong language.
+ * Runs before paint to align <html lang> with the page's language. On prefixed
+ * routes (/zh/..., /pt/...) the URL decides; on unprefixed routes the stored
+ * preference does. (The SSR HTML still carries lang="en" because the root
+ * layout owns <html> - hreflang alternates carry the language signal for
+ * crawlers, this script fixes the live document before paint.)
  */
-const LANGUAGE_INIT_SCRIPT = `try{var l=localStorage.getItem('lmsy-language');if(l==='zh'||l==='th'||l==='en'){document.documentElement.lang=l;}}catch(e){}`;
+const LANGUAGE_INIT_SCRIPT = `try{var m=location.pathname.match(/^\\/(zh|th|es|pt)(\\/|$)/);var l=m?m[1]:localStorage.getItem('lmsy-language');if(l==='zh'||l==='th'||l==='es'||l==='pt'||l==='en'){document.documentElement.lang=l;}}catch(e){}`;
 
 export default function RootLayout({
   children,

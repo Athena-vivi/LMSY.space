@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Language } from '@/lib/languages';
 
 /**
  * Build page metadata with a correct self-referential canonical.
@@ -18,4 +19,16 @@ export function pageMetadata(opts: {
     description: opts.description,
     alternates: { canonical: opts.path },
   };
+}
+
+/**
+ * Same contract for a language-prefixed route: the canonical points at the
+ * prefixed URL itself (each language version is self-canonical; hreflang
+ * alternates come in step 4 of the i18n routing plan).
+ */
+export function langPageMetadata(
+  lang: Language,
+  opts: { title: string; description: string; path: string }
+): Metadata {
+  return pageMetadata({ ...opts, path: `/${lang}${opts.path}` });
 }
