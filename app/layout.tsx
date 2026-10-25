@@ -11,6 +11,8 @@ import { LanguageProvider } from "@/components/language-provider";
 import { ServiceWorkerProvider } from "@/components/service-worker-provider";
 import { FrontendChrome } from "@/components/frontend-chrome";
 import { AuthProvider } from "@/components/auth-provider";
+import { JsonLd } from "@/components/json-ld";
+import { websiteJsonLd } from "@/lib/json-ld";
 
 const mono = GeistMono;
 
@@ -92,6 +94,8 @@ export default function RootLayout({
         style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
         <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INIT_SCRIPT }} />
+        {/* Structured data for rich results — every page's SSR HTML carries it */}
+        <JsonLd data={websiteJsonLd()} />
         <ServiceWorkerProvider />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="lmsy-theme">
