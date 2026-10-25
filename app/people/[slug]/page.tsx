@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { getSupabasePublic } from '@/lib/data/client';
+import { pageMetadata } from '@/lib/seo';
 import { pickCoversByProject } from '@/lib/project-covers';
 import { entryPath } from '@/lib/entry-path';
 import { loadSeriesSlugMap } from '@/lib/series-slugs';
@@ -10,6 +12,42 @@ import PersonClient, { type PersonProject } from './person-client';
 export const revalidate = 300;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = getSupabasePublic();
+
+  // The page also resolves raw uuids; metadata only needs the slug lookup —
+  // a uuid hit falls back to the generic People title.
+  const { data } = await supabase
+    .schema('lmsy_archive')
+    .from('profiles')
+    .select('name, nickname')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  const profile = data as { name: string; nickname: string | null } | null;
+
+  if (!profile) {
+    return pageMetadata({
+      title: 'People',
+      description: 'The two people this archive is built around.',
+      path: `/people/${slug}`,
+    });
+  }
+
+  const suffix = profile.nickname && profile.nickname !== profile.name ? ` (${profile.nickname})` : '';
+
+  return pageMetadata({
+    title: `${profile.name}${suffix}`,
+    description: `Projects, appearances and records for ${profile.name}${suffix} in the archive.`,
+    path: `/people/${slug}`,
+  });
+}
 
 export default async function PersonPage({
   params,

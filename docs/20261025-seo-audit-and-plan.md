@@ -106,7 +106,7 @@ nav 是客户端组件 → 内链需渲染后验证；门→货架→事件三�
 ## 阶段 0 · 立即可做（低风险、高回报）
 | # | 动作 | 难度 | 状态 |
 |---|------|------|------|
-| 0.1 | 给缺 metadata 的页面补齐（v3.1 核实后真实范围：`people/[slug]`、`timeline/[year]` 两处 `generateMetadata`；resonance/whispers 低优先） | 低 | 待做 |
+| 0.1 | 给缺 metadata 的页面补齐（v3.1 核实后真实范围：`people/[slug]`、`timeline/[year]` 两处 `generateMetadata`；resonance/whispers 低优先） | 低 | ✅ 已完成 |
 | 0.2 | 统一品牌：去 "Official"，全站统一 "LMSY Archive"（timeline/people 两处已随 0.3 顺带修掉） | 低 | 部分 |
 | 0.3 | 补自引用 canonical：`/timeline`、`/people`、`/copyright` 改用/接入 `pageMetadata()` | 低 | ✅ 已完成 |
 | 0.4 | 加 About 页（谁运营、是否粉丝站、图片来源/致谢） | 低 | 待做 |

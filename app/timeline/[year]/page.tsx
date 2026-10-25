@@ -1,9 +1,34 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { ChronicleTimeline } from '@/components/chronicle-timeline';
 import { ChronicleChrome } from '@/components/chronicle-chrome';
 import { getChronicleEvents, getChronicleYears } from '@/lib/timeline';
+import { pageMetadata } from '@/lib/seo';
 
 export const revalidate = 300;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ year: string }>;
+}): Promise<Metadata> {
+  const { year } = await params;
+  // A malformed year is a bad URL, not an empty year.
+  if (!/^\d{4}$/.test(year)) {
+    return pageMetadata({
+      title: 'Timeline',
+      description:
+        'Every dated record in the archive, ordered by when it actually happened.',
+      path: '/timeline',
+    });
+  }
+
+  return pageMetadata({
+    title: `Timeline ${year}`,
+    description: `Every dated record from ${year} in the archive, ordered by when it actually happened.`,
+    path: `/timeline/${year}`,
+  });
+}
 
 export function generateStaticParams() {
   // Years are generated at build time; a year with no records still works
