@@ -440,8 +440,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         // makes a new topic bind its number without a second step.
         return featSubject(eventCodeFromTitle(project.title)) ?? '';
       case 'brand': {
+        // No title derivation: the brand code the curator picks (or an existing
+        // event's own number, handled above) is the only subject segment. The
+        // event title must never be re-encoded into a trailing segment.
         if (!picks.brand) return '';
-        return brandSubject(picks.brand, eventCodeFromTitle(project.title, picks.brand)) ?? '';
+        return brandSubject(picks.brand) ?? '';
       }
       case 'shelf':
         return talkSubject(activeCategory, picks.program) ?? '';
