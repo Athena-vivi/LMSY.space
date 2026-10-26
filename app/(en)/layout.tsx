@@ -8,6 +8,7 @@ import '../globals.css';
 import { SiteChrome } from '@/components/site-chrome';
 import { siteMetadata } from '@/lib/site-metadata';
 import { SPLASH_INIT_SCRIPT } from '@/lib/splash-intro';
+import { SCROLL_RESTORE_SCRIPT } from '@/lib/scroll-memory';
 
 const mono = GeistMono;
 
@@ -42,6 +43,7 @@ export default function RootLayout({
       >
         <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INIT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: SPLASH_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SCROLL_RESTORE_SCRIPT }} />
         <SiteChrome lang="en">{children}</SiteChrome>
       </body>
     </html>

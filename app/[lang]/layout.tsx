@@ -7,6 +7,7 @@ import { SiteChrome } from '@/components/site-chrome';
 import { siteMetadata } from '@/lib/site-metadata';
 import { ROUTE_LANGUAGES, routeLanguage } from '@/lib/i18n-path';
 import { SPLASH_INIT_SCRIPT } from '@/lib/splash-intro';
+import { SCROLL_RESTORE_SCRIPT } from '@/lib/scroll-memory';
 
 const mono = GeistMono;
 
@@ -60,6 +61,7 @@ export default async function LangLayout({
         style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
         <script dangerouslySetInnerHTML={{ __html: SPLASH_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SCROLL_RESTORE_SCRIPT }} />
         <SiteChrome lang={language}>{children}</SiteChrome>
       </body>
     </html>

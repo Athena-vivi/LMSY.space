@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/components/language-provider';
 import { languages, type Language } from '@/lib/languages';
 import { languageHref } from '@/lib/i18n-path';
+import { rememberScrollPosition } from '@/lib/scroll-memory';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Globe } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -103,6 +104,15 @@ export function LanguageSwitcher() {
                     // the language, on unprefixed routes this is what drives it.
                     setLanguage(lang);
                     setOpen(false);
+
+                    // Choosing a different language is a full document load
+                    // (two root layouts), which would otherwise open the new
+                    // page at the top. Only worth remembering when the page
+                    // actually changes; re-picking the current language on
+                    // /admin does not navigate at all.
+                    if (!isAdmin && lang !== language) {
+                      rememberScrollPosition(pathname ?? '/');
+                    }
                   }}
                   className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs transition-colors hover:bg-white/5 ${
                     language === lang ? 'text-lmsy-yellow' : 'text-ink-2'
