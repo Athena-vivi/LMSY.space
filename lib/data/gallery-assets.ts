@@ -993,19 +993,29 @@ export async function getAssetEventDateBounds(
 /**
  * How many assets fall in a calendar year - a HEAD count that transfers no
  * rows, so the year filter can price every year in the span cheaply.
+ *
+ * `projectIds` narrows the count to the projects the caller can actually
+ * show. The chronicle passes its public set: a year counted over the whole
+ * table once offered a year the timeline then rendered empty, because the
+ * only picture in it belonged to a project this surface does not read.
  * Swallows its error and answers 0, verbatim.
  */
 export async function countAssetsInYear(
   db: AdminClient,
-  year: string
+  year: string,
+  projectIds?: string[]
 ): Promise<number> {
   const { from, to } = yearRange(year);
-  const { count, error } = await db
+  let query = db
     .schema('lmsy_archive')
     .from('gallery_assets')
     .select('id', { count: 'exact', head: true })
     .gte('event_date', from)
     .lt('event_date', to);
+
+  if (projectIds) query = query.in('project_id', projectIds);
+
+  const { count, error } = await query;
 
   if (error) return 0;
   return count ?? 0;

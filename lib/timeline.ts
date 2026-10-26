@@ -89,7 +89,11 @@ export interface ChronicleEvent {
   title: string;
   titleI18n: LocalizedText;
   category: string;
-  href: string;
+  /**
+   * Where the card leads, or null when the project behind it has no page of
+   * its own. The card is still shown - see the image-group loop below.
+   */
+  href: string | null;
   images: TimelineImageRef[];
 }
 
@@ -160,9 +164,10 @@ export async function getChronicleYears(): Promise<string[]> {
   const supabase = getSupabasePublic();
 
   const years = new Set<string>();
+  const projects = await loadPublicProjects();
 
   // Project events: 171 rows, cheap to fold in whole.
-  for (const p of await loadPublicProjects()) {
+  for (const p of projects) {
     if (isThemeProject(p as { project_kind?: unknown })) continue;
     const date = p.event_date || p.release_date;
     if (date) years.add(date.slice(0, 4));
@@ -177,12 +182,16 @@ export async function getChronicleYears(): Promise<string[]> {
     const firstYear = Number(first.slice(0, 4));
     const lastYear = Number(last.slice(0, 4));
 
-    // One HEAD count per year in the span. A year with no rows is left out,
-    // so the filter never offers a year that opens empty.
+    // One HEAD count per year in the span, scoped to the public projects the
+    // timeline reads. A year with no countable row is left out, so the filter
+    // never offers a year that opens empty - counting the whole table did:
+    // 2023 held one picture filed under a subject folder, and the year opened
+    // on the empty state while the filter kept advertising it.
+    const publicIds = projects.map((p) => p.id);
     const counts = await Promise.all(
       Array.from({ length: Math.max(0, lastYear - firstYear + 1) }, (_, offset) => {
         const year = String(firstYear + offset);
-        return countAssetsInYear(supabase, year).then((count) => ({ year, count }));
+        return countAssetsInYear(supabase, year, publicIds).then((count) => ({ year, count }));
       })
     );
 
@@ -232,7 +241,9 @@ export async function getChronicleEvents(year?: string): Promise<ChronicleEvent[
     if (!date) continue; // undated projects have no timeline slot
     if (!inYear(date)) continue;
     const href = entryPath(p as never, seriesSlugs);
-    if (!href) continue; // nowhere to send the visitor
+    // A dated record whose hall has no page still contributes its pictures:
+    // the asset loop below opens the day's card without this one.
+    if (!href) continue;
     byKey.set(keyOf(p.id, date), {
       id: `project-${p.id}`,
       date,
@@ -295,8 +306,16 @@ export async function getChronicleEvents(year?: string): Promise<ChronicleEvent[
 
     // Pictures dated apart from the project's record - a separate day, so a
     // separate card. A theme project (no date of its own) lands here too.
+    //
+    // The card is kept whether or not the project answers at a public address.
+    // The three legacy halls (behind the scenes, personal travel, early
+    // archive) have no page, and neither does a subject folder like "Daily" -
+    // it is a subject, not a happening. Dropping those groups is what emptied
+    // 2023: the year filter counted the picture, the timeline threw it away,
+    // and the year opened on an empty state. A picture with no page behind it
+    // is still a dated record, so it gets a card that shows the pictures and
+    // links nowhere.
     const href = entryPath(project as never, seriesSlugs);
-    if (!href) continue; // nowhere to send the visitor
     byKey.set(key, {
       id: `assets-${projectId}-${date}`,
       date,

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { LocalizedLink as Link } from '@/components/localized-link';
-import { X, ZoomIn, Calendar, Film, ArrowRight } from 'lucide-react';
+import { X, ZoomIn, Calendar, Film, ImageIcon, ArrowRight } from 'lucide-react';
 import type { ChronicleEvent, TimelineImageRef } from '@/lib/timeline';
 import { formatChronicleDate } from '@/lib/timeline';
 import { useLanguage } from '@/components/language-provider';
@@ -24,7 +24,8 @@ interface ChronicleTimelineProps {
 interface LightboxState {
   images: TimelineImageRef[];
   projectTitle: string;
-  href: string;
+  /** Null for a picture group whose project has no page of its own. */
+  href: string | null;
   date: string;
 }
 
@@ -192,13 +193,15 @@ export function ChronicleTimeline({
                   <p className="mb-3 font-mono text-xs text-ink-2">
                     {formatChronicleDate(lightbox.date)}
                   </p>
-                  <Link
-                    href={lightbox.href}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-5 py-2 text-xs font-medium uppercase tracking-widest text-ink-2 transition-colors hover:border-lmsy-blue hover:text-lmsy-blue"
-                  >
-                    {t(language, 'chronicle.viewProject')}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                  {lightbox.href && (
+                    <Link
+                      href={lightbox.href}
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-5 py-2 text-xs font-medium uppercase tracking-widest text-ink-2 transition-colors hover:border-lmsy-blue hover:text-lmsy-blue"
+                    >
+                      {t(language, 'chronicle.viewProject')}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -264,6 +267,11 @@ function TimelineItem({ event, language, isHovered, onHover, onHoverEnd, onOpenI
   const categoryLabel = t(language, categoryMeta(event.category).labelKey);
   const title = getLocalizedText(event.titleI18n, language, event.title);
   const hasImages = event.images.length > 0;
+  // A group whose project answers nowhere (a subject folder, a legacy hall)
+  // is a set of pictures, not a work: it says so on the badge and its title
+  // does not pretend to be a link.
+  const isLinked = event.href !== null;
+  const href = event.href;
 
   return (
     <motion.div
@@ -285,23 +293,27 @@ function TimelineItem({ event, language, isHovered, onHover, onHoverEnd, onOpenI
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-lmsy-blue/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-lmsy-blue">
-            <Film className="h-3 w-3" />
-            {t(language, 'chronicle.eventProject')}
+            {isLinked ? <Film className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
+            {t(language, isLinked ? 'chronicle.eventProject' : 'chronicle.eventImages')}
           </span>
           <time dateTime={event.date} className="font-mono text-xs text-ink-2">
             {dateLabel}
           </time>
         </div>
 
-        <Link href={event.href} className="block">
-          <h3
-            className={`font-serif text-base font-semibold transition-colors duration-300 ${
-              isHovered ? 'text-lmsy-blue' : 'text-foreground'
-            }`}
-          >
-            {title}
-          </h3>
-        </Link>
+        {href ? (
+          <Link href={href} className="block">
+            <h3
+              className={`font-serif text-base font-semibold transition-colors duration-300 ${
+                isHovered ? 'text-lmsy-blue' : 'text-foreground'
+              }`}
+            >
+              {title}
+            </h3>
+          </Link>
+        ) : (
+          <h3 className="font-serif text-base font-semibold text-foreground">{title}</h3>
+        )}
         <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
           {categoryLabel}
         </p>

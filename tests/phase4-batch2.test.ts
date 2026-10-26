@@ -81,6 +81,25 @@ describe('chronicle data source', () => {
     assert.ok(timelineSrc.includes('if (!href) continue;'), 'a row with no page is skipped');
   });
 
+  test('a picture group is kept even when its project has no public page', () => {
+    // 2026-10-27: the asset loop dropped any group whose project answered
+    // nowhere, so a year could open empty while the filter advertised it -
+    // 2023 held one picture filed under "Daily", a subject folder with no
+    // page of its own. The card stays, without a link.
+    const assetLoop = timelineSrc.slice(
+      timelineSrc.indexOf('for (const [key, images] of groups)')
+    );
+    assert.ok(!assetLoop.includes('if (!href) continue'), 'the group is no longer dropped');
+    assert.ok(timelineSrc.includes('href: string | null'), 'a card may carry no address');
+  });
+
+  test('the year filter only counts pictures the timeline can show', () => {
+    // The count used to run over the whole table, so a year whose only
+    // picture sat under a project this surface does not read was offered
+    // and then rendered empty.
+    assert.ok(timelineSrc.includes('countAssetsInYear(supabase, year, publicIds)'));
+  });
+
   test('dates come from event_date, with release_date only as a fallback', () => {
     assert.ok(timelineSrc.includes('(p.event_date || p.release_date)'), 'event_date first');
     assert.ok(!timelineSrc.includes('const date = (p.release_date'),
