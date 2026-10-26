@@ -210,3 +210,39 @@ describe('hover emphasis uses the site gradient', () => {
     }
   });
 });
+
+/**
+ * One nav bar per page, in every language.
+ *
+ * /zh, /th, /es and /pt are not separate homepages: app/[lang]/page.tsx
+ * re-exports the English one, which renders its own <HomeHeader>. The global
+ * SiteHeader in FrontendChrome is supposed to step aside there, and it did -
+ * but only for '/', because it compared the raw pathname. Four languages
+ * ended up with two stacked 65px bars (130px of header above the hero).
+ *
+ * The rule this pins down: anything that compares `pathname` against an
+ * unprefixed path must strip the language prefix first. The same rule applies
+ * to lib/i18n-path.ts consumers elsewhere.
+ */
+describe('the global header steps aside on every homepage', () => {
+  test('homepage check strips the language prefix before comparing', () => {
+    const code = src('components/site-header.tsx');
+    assert.ok(
+      /stripLangPrefix\(pathname\)\s*===\s*'\/'/.test(code),
+      'the homepage guard must use stripLangPrefix, otherwise /zh keeps a second bar'
+    );
+    assert.ok(
+      !/if \(pathname === '\/'/.test(code),
+      'a raw pathname comparison only recognises the English homepage'
+    );
+    assert.ok(code.includes("from '@/lib/i18n-path'"), 'the shared prefix helper is what keeps it in sync');
+  });
+
+  test('prefixed homepages really do reuse the component that renders HomeHeader', () => {
+    assert.ok(
+      src('app/[lang]/page.tsx').includes("export { default } from '../(en)/page'"),
+      'if this re-export ever stops, the guard above becomes moot - revisit both'
+    );
+    assert.ok(src('app/(en)/page.tsx').includes('<HomeHeader />'), 'the reused page renders its own header');
+  });
+});
