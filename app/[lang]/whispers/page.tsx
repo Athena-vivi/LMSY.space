@@ -21,4 +21,4 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export { default } from '../../whispers/page';
+export { default } from '../../(en)/whispers/page';

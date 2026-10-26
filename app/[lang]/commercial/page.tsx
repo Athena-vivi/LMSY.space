@@ -1,12 +1,17 @@
 import type { Metadata } from 'next';
-import type { Language } from '@/lib/languages';
 import { t } from '@/lib/languages';
 import { langPageMetadata } from '@/lib/seo';
+import { routeLanguage } from '@/lib/i18n-path';
 
 /**
- * /<lang>/commercial — the same door as /commercial, re-exported from the
- * root route; the provider seeds the language from the URL prefix. Metadata
- * is per-language: self-canonical on the prefixed URL, localized title.
+ * /<lang>/commercial — the same door as /commercial, re-exported from the root route;
+ * the provider seeds the language from the URL prefix, so the body is already
+ * in that language.
+ *
+ * Metadata is per-language too: the title and the description come from the
+ * translation keys (never a hardcoded English sentence), and langPageMetadata
+ * makes the prefixed URL self-canonical while the whole five-language hreflang
+ * cluster still points at the bare path.
  */
 export const revalidate = 300;
 
@@ -14,13 +19,12 @@ type Props = { params: Promise<{ lang: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const language = lang as Language;
+  const language = routeLanguage(lang);
   return langPageMetadata(language, {
     title: t(language, 'portal.commercial'),
-    description:
-      'Campaigns, endorsements and brand films Lookmhee & Sonya made — kept here with the pictures behind them.',
+    description: t(language, 'meta.commercial'),
     path: '/commercial',
   });
 }
 
-export { default } from '../../commercial/page';
+export { default } from '../../(en)/commercial/page';

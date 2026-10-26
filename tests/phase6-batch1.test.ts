@@ -117,8 +117,8 @@ describe('asset tags reuse the gallery filter vocabulary', () => {
 
   test('gallery card and lightbox both localize the badge', () => {
     // 2026-10-25: gallery rendering moved to the client island of the SSR page.
-    assert.ok(src('app/gallery/gallery-client.tsx').includes('assetTagLabelKey(item.tag)'));
-    assert.ok(src('app/gallery/lightbox.tsx').includes('assetTagLabelKey(currentImage.tag)'));
+    assert.ok(src('app/(en)/gallery/gallery-client.tsx').includes('assetTagLabelKey(item.tag)'));
+    assert.ok(src('app/(en)/gallery/lightbox.tsx').includes('assetTagLabelKey(currentImage.tag)'));
   });
 });
 
@@ -132,10 +132,10 @@ describe('shared navigation copy is not hardcoded', () => {
     const surfaces = [
       'components/page-intro.tsx',
       'components/chronicle-chrome.tsx',
-      'app/admin/preview/[id]/project-detail-client.tsx',
-      'app/schedule/page.tsx',
-      'app/resonance/page.tsx',
-      'app/whispers/page.tsx',
+      'app/(en)/admin/preview/[id]/project-detail-client.tsx',
+      'app/(en)/schedule/page.tsx',
+      'app/(en)/resonance/page.tsx',
+      'app/(en)/whispers/page.tsx',
     ];
     for (const file of surfaces) {
       assert.ok(!src(file).includes('BackButton'), `${file} has no back logo`);
@@ -348,8 +348,8 @@ describe('the event index is gone', () => {
 describe('gallery', () => {
   // 2026-10-25: gallery went SSR-first — copy and interaction moved to the
   // client island (gallery-client.tsx), the server page fetches first paint.
-  const page = src('app/gallery/gallery-client.tsx');
-  const lightbox = src('app/gallery/lightbox.tsx');
+  const page = src('app/(en)/gallery/gallery-client.tsx');
+  const lightbox = src('app/(en)/gallery/lightbox.tsx');
 
   test('empty state tells the truth instead of claiming construction', () => {
     assert.ok(!page.includes('>Gallery Under Construction<'));
@@ -365,7 +365,7 @@ describe('gallery', () => {
   });
 
   test('visibility gate and anchor behaviour are untouched', () => {
-    assert.ok(src('app/gallery/page.tsx').includes('fetchPublicProjectIds'));
+    assert.ok(src('app/(en)/gallery/page.tsx').includes('fetchPublicProjectIds'));
     assert.ok(page.includes("addEventListener('hashchange'"));
     assert.ok(page.includes('window.history.replaceState'));
   });
@@ -384,7 +384,7 @@ describe('gallery', () => {
 });
 
 describe('editorial', () => {
-  const list = src('app/editorial/page.tsx');
+  const list = src('app/(en)/editorial/page.tsx');
   const api = src('app/api/editorial/route.ts');
 
   // The magazine rack is its own surface: covers, catalog ids and the
@@ -435,7 +435,7 @@ describe('editorial', () => {
 
 describe('chronicle', () => {
   const timeline = src('components/chronicle-timeline.tsx');
-  const chroniclePage = src('app/timeline/page.tsx');
+  const chroniclePage = src('app/(en)/timeline/page.tsx');
 
   test('no position-by-percentage dots that never lined up with cards', () => {
     assert.ok(!timeline.includes('(index / Math.max(events.length - 1, 1)) * 100'));
@@ -480,7 +480,7 @@ describe('chronicle', () => {
 describe('shared page intro', () => {
   test('the doors and the gallery use the same header component', () => {
     assert.ok(src('components/doors/door-views.tsx').includes('<PageIntro'));
-    assert.ok(src('app/gallery/gallery-client.tsx').includes('<PageIntro'));
+    assert.ok(src('app/(en)/gallery/gallery-client.tsx').includes('<PageIntro'));
     const intro = src('components/page-intro.tsx');
     assert.ok(intro.includes('font-serif'));
     // The intro starts directly with the title: no logo row, no extra top
@@ -492,12 +492,12 @@ describe('shared page intro', () => {
 
 describe('no database writes were introduced', () => {
   const touched = [
-    'app/admin/preview/[id]/page.tsx',
-    'app/admin/preview/[id]/project-detail-client.tsx',
-    'app/gallery/page.tsx',
-    'app/gallery/lightbox.tsx',
-    'app/editorial/page.tsx',
-    'app/editorial/[id]/editorial-detail-content.tsx',
+    'app/(en)/admin/preview/[id]/page.tsx',
+    'app/(en)/admin/preview/[id]/project-detail-client.tsx',
+    'app/(en)/gallery/page.tsx',
+    'app/(en)/gallery/lightbox.tsx',
+    'app/(en)/editorial/page.tsx',
+    'app/(en)/editorial/[id]/editorial-detail-content.tsx',
     'components/chronicle-timeline.tsx',
     'components/sections/chronicle-section.tsx',
     'components/sections/portals-section.tsx',

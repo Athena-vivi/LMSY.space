@@ -9,9 +9,9 @@ import { routeLanguage } from '@/lib/i18n-path';
  * segment config.
  *
  * Metadata here is canonical + hreflang only: the title and the site
- * description still come from the root layout, because no language version of
- * the site name and intro sentence has been written yet. The alternates are
- * not optional though — without them /zh reads as a duplicate of /.
+ * description come from this segment's root layout (siteMetadata(lang)), which
+ * already writes them in the language of the URL. The alternates are not
+ * optional though — without them /zh reads as a duplicate of /.
  */
 export const dynamic = 'force-dynamic';
 
@@ -24,4 +24,4 @@ export async function generateMetadata({
   return pageLanguageAlternates(routeLanguage(rawLang), '/');
 }
 
-export { default } from '../page';
+export { default } from '../(en)/page';

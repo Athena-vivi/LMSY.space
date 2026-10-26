@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import { DEFAULT_MILESTONES_CONTENT, normalizeMilestonesContent, pickContentBlock } from '@/app/admin/settings/content-blocks';
+import { DEFAULT_MILESTONES_CONTENT, normalizeMilestonesContent, pickContentBlock } from '@/app/(en)/admin/settings/content-blocks';
 
 interface MilestoneContent {
   sectionTitle: string;

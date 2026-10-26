@@ -1,13 +1,17 @@
 import type { Metadata } from 'next';
-import type { Language } from '@/lib/languages';
 import { t } from '@/lib/languages';
 import { langPageMetadata } from '@/lib/seo';
+import { routeLanguage } from '@/lib/i18n-path';
 
 /**
- * /<lang>/gallery — the same SSR first screen as /gallery, re-exported from
- * the root route; the provider seeds the language from the URL prefix.
- * Metadata is per-language: self-canonical on the prefixed URL, localized
- * title. (Localized meta descriptions land in step 4 of the routing plan.)
+ * /<lang>/gallery — the same door as /gallery, re-exported from the root route;
+ * the provider seeds the language from the URL prefix, so the body is already
+ * in that language.
+ *
+ * Metadata is per-language too: the title and the description come from the
+ * translation keys (never a hardcoded English sentence), and langPageMetadata
+ * makes the prefixed URL self-canonical while the whole five-language hreflang
+ * cluster still points at the bare path.
  */
 export const revalidate = 300;
 
@@ -15,13 +19,12 @@ type Props = { params: Promise<{ lang: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const language = lang as Language;
+  const language = routeLanguage(lang);
   return langPageMetadata(language, {
     title: t(language, 'gallery.title'),
-    description:
-      'Every photo in the archive — magazine editorials, advertising, stage and stills — browsable and filterable by tag.',
+    description: t(language, 'meta.gallery'),
     path: '/gallery',
   });
 }
 
-export { default } from '../../gallery/page';
+export { default } from '../../(en)/gallery/page';

@@ -3,18 +3,18 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload as UploadIcon } from 'lucide-react';
-import { useIngestion } from '../app/admin/upload/_hooks/use-ingestion';
-import { useUploadState } from '../app/admin/upload/_hooks/use-upload-state';
+import { useIngestion } from '../app/(en)/admin/upload/_hooks/use-ingestion';
+import { useUploadState } from '../app/(en)/admin/upload/_hooks/use-upload-state';
 import { validateBatch, checkBatchDimensions } from '@/lib/security/file-validator';
 
 // Reuse upload components
-import UploadZone from '../app/admin/upload/_components/upload-zone';
-import EditorialHeader from '../app/admin/upload/_components/editorial-header';
-import GalleryGrid from '../app/admin/upload/_components/gallery-grid';
-import CuratorSidebar from '../app/admin/upload/_components/curator-sidebar';
-import ImageLightbox from '../app/admin/upload/_components/image-lightbox';
-import { Toast } from '../app/admin/upload/_components/toast';
-import IngestionMonitor from '../app/admin/upload/_components/ingestion-monitor';
+import UploadZone from '../app/(en)/admin/upload/_components/upload-zone';
+import EditorialHeader from '../app/(en)/admin/upload/_components/editorial-header';
+import GalleryGrid from '../app/(en)/admin/upload/_components/gallery-grid';
+import CuratorSidebar from '../app/(en)/admin/upload/_components/curator-sidebar';
+import ImageLightbox from '../app/(en)/admin/upload/_components/image-lightbox';
+import { Toast } from '../app/(en)/admin/upload/_components/toast';
+import IngestionMonitor from '../app/(en)/admin/upload/_components/ingestion-monitor';
 
 interface BulkUploadModalProps {
   isOpen: boolean;

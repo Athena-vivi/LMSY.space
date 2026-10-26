@@ -25,11 +25,11 @@ function hreflangAlternates(path: string): NonNullable<Metadata['alternates']>['
 }
 
 /**
- * Canonical + hreflang only. For routes that keep the title and description
- * the root layout declares (the homepage): no language version of the site
- * name or of the intro sentence has been written yet, but each language still
- * needs its own canonical and its place in the hreflang cluster, or /zh reads
- * as a duplicate of /.
+ * Canonical + hreflang only, for routes whose title and description come from
+ * the root layout (the homepage). The layout already writes them per language
+ * — siteMetadata(lang) — so this adds the two things a layout cannot know:
+ * each language version is its own canonical, and all five are one hreflang
+ * cluster. Without it /zh reads as a duplicate of /.
  */
 export function pageLanguageAlternates(lang: Language, path: string): Metadata {
   return {

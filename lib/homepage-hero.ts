@@ -1,5 +1,5 @@
 import { getSupabasePublic } from '@/lib/data/client';
-import { getHeroSectionImageUrl } from '@/app/admin/settings/content-blocks';
+import { getHeroSectionImageUrl } from '@/app/(en)/admin/settings/content-blocks';
 import { getSiteContentBlock } from '@/lib/data/site-content';
 
 /**

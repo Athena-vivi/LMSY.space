@@ -418,14 +418,14 @@ describe('related routing fixes', () => {
 
   test('gallery handles hash navigation after the page is already mounted', () => {
     // 2026-10-25: gallery interaction lives in the client island.
-    const gallerySrc = src('app/gallery/gallery-client.tsx');
+    const gallerySrc = src('app/(en)/gallery/gallery-client.tsx');
     assert.ok(gallerySrc.includes("window.addEventListener('hashchange'"));
     assert.ok(gallerySrc.includes("setSelectedTag('All')"));
     assert.ok(gallerySrc.includes('setPendingAnchor(decodeURIComponent'));
   });
 
   test('schedule route itself is untouched (only the search entry was removed)', () => {
-    const scheduleSrc = src('app/schedule/page.tsx');
+    const scheduleSrc = src('app/(en)/schedule/page.tsx');
     assert.ok(scheduleSrc.includes('scheduleItems'), 'page keeps its (empty) data contract');
     assert.ok(scheduleSrc.includes("t(language, 'schedule.noEvents')"), 'honest empty state stays');
   });

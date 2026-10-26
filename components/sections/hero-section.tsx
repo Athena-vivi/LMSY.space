@@ -12,7 +12,7 @@ import {
   getHeroSectionImageUrl,
   normalizeHeroContent,
   pickContentBlock,
-} from '@/app/admin/settings/content-blocks';
+} from '@/app/(en)/admin/settings/content-blocks';
 import { resolveImageUrl } from '@/lib/image-url';
 
 export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string }) {

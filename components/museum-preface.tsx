@@ -20,7 +20,7 @@ interface MuseumPrefaceLanguageContent {
   date: string;
 }
 
-type MuseumPrefaceContentMap = Record<'en' | 'zh' | 'th', MuseumPrefaceLanguageContent>;
+type MuseumPrefaceContentMap = Record<'en' | 'zh' | 'th' | 'es' | 'pt', MuseumPrefaceLanguageContent>;
 
 export function MuseumPreface() {
   const ref = useRef(null);
@@ -112,6 +112,48 @@ export function MuseumPreface() {
       curatorSignature: '— Astra',
       date: '2025.12.31',
     },
+    es: {
+      title: 'LMSY.SPACE: La primera órbita',
+      subtitle: 'The First Orbit',
+      prefaceLabel: 'Prefacio / Preface',
+      paragraphs: [
+        'En un universo tan vasto, hay encuentros entre estrellas que son inevitables.',
+        'Cuando las trayectorias de Lookmhee y Sonya se cruzaron en 2022, no nacieron solo unas cuantas series, un par de canciones o un sinfín de pósters preciosos. Detrás de esas luces y sombras entrelazadas se activó en silencio una gravedad llamada <span class="text-lmsy-yellow font-semibold">"lazo"</span>. Esa fuerza cruzó fronteras e idiomas hasta converger en este punto del mapa llamado lmsy.space.',
+        'Las redes sociales son una lluvia de meteoros que no se detiene: brillante, apresurada, facilísima de olvidar.',
+        'Como curadora de este archivo digital, no quiero que esas miradas sinceras, esos instantes hermosos o esas formas valientes de decir las cosas queden sepultadas por el algoritmo. Elegí construir aquí un faro. Aquí el tiempo se detiene. Cada foto cuidada, cada traducción hecha con esmero, cada hito registrado es un arma contra el olvido.',
+        'Como curadora de este espacio, me gustaría que aquí no vieras solo "contenido", sino una <span class="text-lmsy-blue font-semibold">"mirada"</span>.',
+        'Aquí el amarillo no es solo un color: es el resplandor cálido que Lookmhee lleva en lo más hondo. El azul no es solo un tono: es la luz de estrella silenciosa que Sonya guarda detrás de su sensibilidad. Voy tejiendo estos fragmentos con cuidado, intentando devolverte esa sensación cálida de brillar en la oscuridad.',
+      ],
+      bestiesMessage: 'Para todas las Besties:',
+      welcome:
+        'Te damos la bienvenida a este universo de amor. Sin discusiones ruidosas, sin información partida en pedazos: solo el registro más limpio de ellas.',
+      siteName: 'Este es lmsy.space.',
+      siteDesc: '',
+      curatorTitle: 'CURADORA Y ARCHIVISTA',
+      curatorSignature: '— Astra',
+      date: '2025.12.31',
+    },
+    pt: {
+      title: 'LMSY.SPACE: A primeira órbita',
+      subtitle: 'The First Orbit',
+      prefaceLabel: 'Prefácio / Preface',
+      paragraphs: [
+        'Num universo tão vasto, alguns encontros entre estrelas são inevitáveis.',
+        'Quando as trajetórias de Lookmhee e Sonya se cruzaram em 2022, não nasceram só algumas séries, um par de músicas ou um sem-fim de pôsteres bonitos. Por trás daquela luz e sombra entrelaçadas, uma gravidade chamada <span class="text-lmsy-yellow font-semibold">"laço"</span> foi acionada em silêncio. Essa força atravessou fronteiras e idiomas até convergir neste ponto do mapa chamado lmsy.space.',
+        'As redes sociais são uma chuva de meteoros que não para: brilhante, apressada, fácil demais de esquecer.',
+        'Como curadora deste arquivo digital, não quero que aqueles olhares sinceros, aqueles instantes bonitos ou aquelas formas corajosas de dizer as coisas fiquem soterrados pelo algoritmo. Escolhi construir aqui um farol. Aqui o tempo para. Cada foto cuidada, cada tradução feita com esmero, cada marco registrado é uma arma contra o esquecimento.',
+        'Como curadora deste espaço, queria que você visse aqui não só "conteúdo", mas um <span class="text-lmsy-blue font-semibold">"jeito de olhar"</span>.',
+        'Aqui o amarelo não é só uma cor: é o brilho morno que a Lookmhee carrega lá no fundo. O azul não é só um tom: é a luz de estrela silenciosa que a Sonya guarda por trás da sensibilidade dela. Vou tecendo esses fragmentos com cuidado, tentando te devolver aquela sensação morna de brilhar no escuro.',
+      ],
+      bestiesMessage: 'Para todas as Besties:',
+      welcome:
+        'Boas-vindas a este universo de amor. Sem discussões barulhentas, sem informação picada em pedaços: só o registro mais limpo delas.',
+      siteName: 'Este é o lmsy.space.',
+      siteDesc: '',
+      curatorTitle: 'CURADORA E ARQUIVISTA',
+      curatorSignature: '— Astra',
+      date: '2025.12.31',
+    },
   };
 
   const [content, setContent] = useState<MuseumPrefaceContentMap>(fallbackContent);
@@ -133,6 +175,8 @@ export function MuseumPreface() {
           en: { ...fallbackContent.en, ...(remote.en || {}) },
           zh: { ...fallbackContent.zh, ...(remote.zh || {}) },
           th: { ...fallbackContent.th, ...(remote.th || {}) },
+          es: { ...fallbackContent.es, ...(remote.es || {}) },
+          pt: { ...fallbackContent.pt, ...(remote.pt || {}) },
         });
       } catch (error) {
         console.error('[SITE_CONTENT] Failed to fetch homepage_preface:', error);

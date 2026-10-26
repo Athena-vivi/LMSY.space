@@ -100,14 +100,14 @@ describe('chronicle data source', () => {
 // ---- Chronicle page year filter -------------------------------------------
 describe('timeline page year filter', () => {
   test('accepts only a strict 4-digit year', () => {
-    const pageSrc = src('app/timeline/page.tsx');
+    const pageSrc = src('app/(en)/timeline/page.tsx');
     assert.ok(pageSrc.includes("/^\\d{4}$/"), 'year param must be validated');
     assert.ok(pageSrc.includes('searchParams'), 'page must consume searchParams');
     assert.ok(pageSrc.includes('availableYears'), 'page passes available years to chrome');
   });
 
   test('/timeline/[year] validates the segment and 404s otherwise', () => {
-    const yearSrc = src('app/timeline/[year]/page.tsx');
+    const yearSrc = src('app/(en)/timeline/[year]/page.tsx');
     assert.ok(yearSrc.includes("notFound()"), 'malformed year is a 404');
   });
 
@@ -122,7 +122,7 @@ describe('timeline page year filter', () => {
 
 // ---- Resonance Coming Soon -------------------------------------------------
 describe('resonance coming soon', () => {
-  const resonanceSrc = src('app/resonance/page.tsx');
+  const resonanceSrc = src('app/(en)/resonance/page.tsx');
 
   test('no fabricated track data', () => {
     assert.ok(!resonanceSrc.includes('musicTracks'), 'mock track array removed');
@@ -171,7 +171,7 @@ describe('single event detail surface', () => {
   test('the workbench renderer moved behind /admin', () => {
     // 2026-10-21: the public site has no /projects namespace. The rich detail
     // renderer survives as the admin preview; "project" is an admin word.
-    const pageSrc = src('app/admin/preview/[id]/page.tsx');
+    const pageSrc = src('app/(en)/admin/preview/[id]/page.tsx');
     // The slug-then-uuid lookup moved into lib/data/projects.ts
     // (getProjectBySlugOrId); both layers are pinned here so the guarantee
     // survives either file being edited.
@@ -187,13 +187,13 @@ describe('single event detail surface', () => {
   test('/editorial/<slug> opens the issue itself', () => {
     // Until 2026-10-21 this forwarded to /projects/<id>. An issue is an entry,
     // and an entry owns an address under its door.
-    const legacy = src('app/editorial/[id]/page.tsx');
+    const legacy = src('app/(en)/editorial/[id]/page.tsx');
     assert.ok(legacy.includes('loadEditorialIssue'), 'reads the issue instead of forwarding');
     assert.ok(!legacy.includes('redirect('), 'no second address for the same issue');
   });
 
   test('preview related cards stay inside the preview', () => {
-    const clientSrc = src('app/admin/preview/[id]/project-detail-client.tsx');
+    const clientSrc = src('app/(en)/admin/preview/[id]/project-detail-client.tsx');
     assert.ok(clientSrc.includes('`/admin/preview/${related.id}`'));
   });
 
@@ -211,12 +211,12 @@ describe('single event detail surface', () => {
   });
 
   test('no fictional collection numbers on editorial surfaces', () => {
-    assert.ok(!src('app/editorial/page.tsx').includes('VOL_001'), 'fake volume number removed');
-    assert.ok(!src('app/editorial/[id]/editorial-detail-content.tsx').includes("'LMSY-ED'"), 'fake catalog fallback removed');
+    assert.ok(!src('app/(en)/editorial/page.tsx').includes('VOL_001'), 'fake volume number removed');
+    assert.ok(!src('app/(en)/editorial/[id]/editorial-detail-content.tsx').includes("'LMSY-ED'"), 'fake catalog fallback removed');
   });
 
   test('no visitor-facing red debug banner remains', () => {
-    const pageSrc = src('app/editorial/page.tsx');
+    const pageSrc = src('app/(en)/editorial/page.tsx');
     assert.ok(!pageSrc.includes('DATABASE_MISMATCH'), 'red debug banner removed');
     assert.ok(!pageSrc.includes('debugInfo'), 'debug state removed');
   });

@@ -466,4 +466,25 @@ export const zh: Record<TranslationKey, string> = {
     'copyright.contactItem4': '• 善意信念声明',
     'copyright.contactEmail': '联系邮箱：',
     'copyright.responseTime': '我们将在 48 小时内回复有效申诉，并删除或适当归属相关内容。',
+
+    // Site-level copy (root layout metadata, loading state)
+    'site.description': '欢迎来到泰国 GL 组合 LMSY（Lookmhee & Sonya）的粉丝档案馆——《Affair》系列主演。收录人物档案、图库、作品与日程更新。',
+    'site.keywords': 'LMSY, Lookmhee, Sonya, Affair, 泰国GL, 百合, 泰剧, LMSY粉丝, Affair系列',
+    'site.loading': '正在载入档案',
+    // Door meta descriptions (SEO snippets) — see en.ts for the note.
+    'meta.about': '关于 LMSY Fan Archive —— 一个由粉丝运营的非官方档案馆，记录泰国 GL 组合 LMSY（Lookmhee & Sonya）。',
+    'meta.appearances': '颁奖礼、时装周、品牌活动、企业活动 —— 每一次 Lookmhee & Sonya 出门被看见。',
+    'meta.commercial': 'Lookmhee & Sonya 拍过的广告、代言与品牌短片 —— 连同背后的照片一起留在这里。',
+    'meta.copyright': 'lmsy.space 是 non-profit 的粉丝项目，致力于保存并与全世界粉丝分享 Lookmhee & Sonya 的美好瞬间。',
+    'meta.dramas': 'Lookmhee & Sonya 讲过的每一个故事，收在一处 —— 剧集本身、其中的音乐、背后的原作小说，以及官宣与奖项。',
+    'meta.editorial': 'Lookmhee & Sonya 出现过的每一本杂志与刊物，连同封面与内页一起留存。',
+    'meta.features': '常规门类之外的特辑 —— 按主题编成的图集，连同封面与内页一起留存。',
+    'meta.gallery': '馆内每一张照片 —— 杂志大片、广告、舞台与剧照 —— 可按标签浏览与筛选。',
+    'meta.live': 'Lookmhee & Sonya 自己开的直播 —— 没有剪辑，没有主持人，最接近她们自己讲话的样子。',
+    'meta.liveEvents': '粉丝见面会、品牌之夜与生日会 —— 她们站过的每一个现场，都以照片留存。',
+    'meta.people': '这座档案馆围绕的两个人。',
+    'meta.schedule': 'Lookmhee & Sonya 的日程，将到来的与过去的 —— 活动、播出与出席。',
+    'meta.talks': '访谈、综艺与电台 —— 每一次别人去问她们，再把回答剪出来。',
+    'meta.timeline': '馆内每一条带日期的记录，按它真正发生的顺序排列。',
+
 };

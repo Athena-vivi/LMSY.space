@@ -8,4 +8,4 @@
  */
 export const revalidate = 300;
 
-export { default, generateMetadata } from '../../../live-events/[subtype]/page';
+export { default, generateMetadata } from '../../../(en)/live-events/[subtype]/page';

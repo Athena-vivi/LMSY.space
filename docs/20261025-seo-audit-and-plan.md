@@ -120,6 +120,13 @@ nav 是客户端组件 → 内链需渲染后验证；门→货架→事件三�
 - ✅ **#3（1.2 i18n 架构 · 进行中）**：方案定稿 `docs/20261026-i18n-routing-plan.md`（路径式，root=英文零迁移）；语言 en/zh/th/es/**pt**（GSC 巴西 78%，pt-BR 升为一线语言）。步骤 1/6 ✅ 语言层 es+pt 词条拆分；步骤 2/6 ✅ `[lang]` 基建 + Provider 路径感知（SSR 直出目标语言）+ 3 示范页本地实测；步骤 3/6 ✅ 全部公开页薄壳铺开（首页+14 顶层+15 详情 = 29 壳，详情页正文本地化留步骤 6）。步骤 4/6 ✅ 全站 hreflang 五语互链（lib/seo.ts 一处生效，各语言 self-canonical）。步骤 5/6 ✅ 切换器改 Link 路由跳转（新增 lib/i18n-path.ts 统一前缀逻辑）。步骤 6/6 ✅ 详情/货架页 metadata 本地化 + 全站 canonical 补齐：15 个根页面（9 详情 + 4 货架 + timeline/[year] + people/[slug]）从自身 `[lang]` 参数取语言（`routeLanguage`），DB 文本 `getLocalizedText(..., lang, ...)`、门类/货架名走 `getTranslation(lang, ...)`、canonical 随语言加前缀；15 个详情壳改为 `export { default, generateMetadata }` 双导出（此前 `/zh/talks/<entry>` 完全没有 canonical 和 hreflang）；首页 `/` 与 `/<lang>` 补 self-canonical（否则 /zh 会被判为 / 的重复页）。**i18n 路径式改造 6/6 完成。**
 遗留（非阻塞）：① SSR 的 `html lang` 仍为 `en`（根布局持有 `<html>`），语言信号靠 hreflang；② 无 DB 译文的条目在 `/zh`、`/pt` 下仍显示英文 description（回退，未机翻）；③ 首页 title/description 沿用根布局英文（无各语版本文案，需审后补）。
 
+- ✅ **#4（收尾：三处遗留 + 去英文硬编码）**：
+  - ① `html lang` 解决 —— 英文路由整体移进 `app/(en)/` 路由组（URL 不变），`app/[lang]/` 成为第二个根布局并自己输出 `<html lang="zh|th|es|pt">`；两套根布局共用 `components/site-chrome.tsx`，不会漂移。
+  - ③ 首页与布局文案 —— 新增 `lib/site-metadata.ts`（`siteMetadata(lang)`），title 模板固定，description / keywords / OG locale / og:url 随语言；词条新增 `site.description|keywords|loading` 五语。
+  - 首页文学块 es/pt —— `Lang` 扩到五语，`museum-preface.tsx` 与 `content-blocks.ts` 的 hero/longform/milestones 全部补西/葡首版（后期可逐句改）；后台两台语言面板各加 Español / Português 两个可编辑面板。
+  - ② 去硬编码 —— 新增 `meta.*` 词条（14 个门 × 5 语），14 个 `[lang]` 顶层壳与 15 个根路由统一读词条，`/es`、`/pt` 的 SERP 描述不再是英文句子；壳页的 `lang as Language` 强转一并换成 `routeLanguage()`。
+  - 仍未做：DB 正文（标题/描述）没有西/葡译文的条目继续回退英文——那是数据，不是词条，机翻会毁掉馆长的语气。
+
 ## 阶段 1 · 核心修复（决定排不排得上）
 | # | 动作 | 难度 |
 |---|------|------|

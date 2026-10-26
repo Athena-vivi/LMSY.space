@@ -473,4 +473,25 @@ export const pt: Record<TranslationKey, string> = {
     'copyright.contactItem4': '• Declaração de boa-fé',
     'copyright.contactEmail': 'E-mail de contato:',
     'copyright.responseTime': 'Respondemos a reclamações válidas em até 48 horas e removemos ou atribuímos corretamente o conteúdo.',
+
+    // Site-level copy (root layout metadata, loading state)
+    'site.description': 'Arquivo de fãs da dupla GL tailandesa LMSY (Lookmhee & Sonya), protagonistas da série Affair. Perfis, galeria, projetos e agenda em dia.',
+    'site.keywords': 'LMSY, Lookmhee, Sonya, Affair, GL tailandesa, girls love, drama tailandês, série Affair',
+    'site.loading': 'Carregando o acervo',
+    // Door meta descriptions (SEO snippets) — see en.ts for the note.
+    'meta.about': 'Sobre o LMSY Fan Archive: um arquivo não oficial feito por fãs da dupla GL tailandesa LMSY (Lookmhee & Sonya).',
+    'meta.appearances': 'Prêmios, semanas de moda, palcos de marca, eventos de empresa: cada vez que Lookmhee & Sonya saíram e foram vistas.',
+    'meta.commercial': 'Campanhas, contratos de imagem e filmes de marca que Lookmhee & Sonya fizeram, guardados aqui com as fotos por trás deles.',
+    'meta.copyright': 'O lmsy.space é um projeto de fãs sem fins lucrativos, dedicado a preservar e compartilhar os momentos bonitos de Lookmhee & Sonya com fãs do mundo todo.',
+    'meta.dramas': 'Toda história que Lookmhee & Sonya contaram, num lugar só: as séries, a música delas, os livros por trás, os anúncios e os prêmios.',
+    'meta.editorial': 'Cada edição de revista e publicação em que Lookmhee & Sonya apareceram, com as capas e as páginas.',
+    'meta.features': 'Temas especiais fora das portas de sempre: coleções de fotos por tema, com as capas e as páginas.',
+    'meta.gallery': 'Todas as fotos do acervo: editoriais de revista, publicidade, palco e stills, com navegação e filtro por tag.',
+    'meta.live': 'As lives que Lookmhee & Sonya abriram sozinhas: sem corte, sem entrevistador, o mais perto de ouvir elas falando por conta própria.',
+    'meta.liveEvents': 'Fan meetings, noites de marca e aniversários: cada lugar onde Lookmhee & Sonya estiveram, guardado em fotos.',
+    'meta.people': 'As duas pessoas em volta de quem este arquivo foi feito.',
+    'meta.schedule': 'A agenda de Lookmhee & Sonya, o que vem e o que passou: eventos, transmissões e aparições.',
+    'meta.talks': 'Entrevistas, programas de variedade e rádio: cada vez que alguém perguntou a Lookmhee & Sonya e publicou a resposta.',
+    'meta.timeline': 'Cada registro com data do acervo, na ordem em que realmente aconteceu.',
+
 };

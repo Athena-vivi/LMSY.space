@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
 import { resolveFeaturedExcerpt } from '@/lib/featured-excerpt';
-import { DEFAULT_LONGFORM_CONTENT, normalizeLongformContent, pickContentBlock } from '@/app/admin/settings/content-blocks';
+import { DEFAULT_LONGFORM_CONTENT, normalizeLongformContent, pickContentBlock } from '@/app/(en)/admin/settings/content-blocks';
 
 interface FeaturedEditorial {
   id: string;

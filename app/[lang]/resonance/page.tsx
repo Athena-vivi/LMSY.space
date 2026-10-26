@@ -20,4 +20,4 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export { default } from '../../resonance/page';
+export { default } from '../../(en)/resonance/page';

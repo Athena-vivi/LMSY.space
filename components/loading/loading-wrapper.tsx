@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState, ReactNode } from 'react';
 import ImmersiveLoading from './immersive-loading';
 
@@ -24,28 +24,39 @@ interface LoadingWrapperProps {
 
 const MAX_SPLASH_MS = 1200;
 
+/**
+ * Intro splash over the homepage.
+ *
+ * The children are always rendered — on the server too. They used to sit
+ * behind a `showContent` flag that only flipped after mount, so the page's
+ * first HTML (the hero, the preface, the five halls, the timeline) contained
+ * none of the page. Every word of the introduction only existed after
+ * hydration, which is the worst possible shape for a page whose whole job is
+ * to be found. The splash is a fixed, opaque, z-9999 layer, so painting under
+ * it costs nothing visually: it covers the content while it animates, then
+ * fades away and reveals a page that was there all along.
+ */
 export function LoadingWrapper({
   children,
   minDuration = 500,
   splashImageUrl = '',
 }: LoadingWrapperProps) {
   const [loading, setLoading] = useState(true);
-  const [showContent, setShowContent] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(true);
 
   useEffect(() => {
     const delay = Math.min(Math.max(minDuration, 0), MAX_SPLASH_MS);
     const timer = setTimeout(() => {
       setLoading(false);
-      setShowContent(true);
+      setSplashVisible(false);
     }, delay);
     return () => clearTimeout(timer);
   }, [minDuration]);
 
   return (
     <>
-      {/* Immersive Loading Screen */}
       <AnimatePresence>
-        {!showContent && (
+        {splashVisible && (
           <ImmersiveLoading
             loading={loading}
             initialImageUrl={splashImageUrl}
@@ -54,19 +65,7 @@ export function LoadingWrapper({
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <AnimatePresence mode="wait">
-        {showContent && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            className="min-h-screen"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="min-h-screen">{children}</div>
     </>
   );
 }

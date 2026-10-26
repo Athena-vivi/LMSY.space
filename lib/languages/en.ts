@@ -471,6 +471,29 @@ export const en = {
     'copyright.contactItem4': '• Statement of good faith belief',
     'copyright.contactEmail': 'Contact Email:',
     'copyright.responseTime': 'We will respond to valid claims within 48 hours and remove or properly attribute the content.',
+
+    // Site-level copy (root layout metadata, loading state)
+    'site.description': 'Welcome to the fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, projects, and schedule updates.',
+    'site.keywords': "LMSY, Lookmhee, Sonya, Affair, Thai GL, Girl's Love, Lookmhee Sonya, Affair Series, Thai Drama, GL Series",
+    'site.loading': 'Loading archive',
+    // Door meta descriptions (SEO snippets). One source per door: the root
+    // route and its /<lang> shell both read these, so a Spanish or Portuguese
+    // search result is never an English sentence.
+    'meta.about': 'About LMSY Fan Archive — an unofficial fan-run archive for Thai GL duo LMSY (Lookmhee & Sonya).',
+    'meta.appearances': 'Awards, fashion weeks, brand stages, company events — every time Lookmhee & Sonya stepped out and were seen.',
+    'meta.commercial': 'Campaigns, endorsements and brand films Lookmhee & Sonya made — kept here with the pictures behind them.',
+    'meta.copyright': 'lmsy.space is a non-profit fan project dedicated to preserving and sharing the beautiful moments of Lookmhee & Sonya with their fans worldwide.',
+    'meta.dramas': 'Every story Lookmhee & Sonya have told, kept in one place — the series themselves, their music, the novels behind them, the announcements and the awards.',
+    'meta.editorial': 'Every magazine issue and publication Lookmhee & Sonya have appeared in, kept with its covers and catalog plates.',
+    'meta.features': 'Special curated topics beyond the regular doors — themed photo collections, kept with their covers and catalog plates.',
+    'meta.gallery': 'Every photo in the archive — magazine editorials, advertising, stage and stills — browsable and filterable by tag.',
+    'meta.live': 'Live streams Lookmhee & Sonya opened themselves — no cuts, no interviewer, the closest thing to them talking on their own.',
+    'meta.liveEvents': 'Fan meetings, brand nights and birthdays — every room Lookmhee & Sonya stood in, kept as pictures.',
+    'meta.people': 'The two people this archive is built around.',
+    'meta.schedule': 'Upcoming and past schedule for Lookmhee & Sonya — events, broadcasts and appearances.',
+    'meta.talks': 'Interviews, variety spots and radio — every time somebody else asked Lookmhee & Sonya, and cut the answer.',
+    'meta.timeline': 'Every dated record in the archive, ordered by when it actually happened.',
+
 } as const;
 
 export type TranslationKey = keyof typeof en;

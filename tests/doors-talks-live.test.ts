@@ -24,15 +24,15 @@ function src(path: string): string {
 }
 
 const TALK_ROUTES = [
-  'app/talks/page.tsx',
-  'app/talks/[category]/page.tsx',
-  'app/talks/[category]/[entry]/page.tsx',
+  'app/(en)/talks/page.tsx',
+  'app/(en)/talks/[category]/page.tsx',
+  'app/(en)/talks/[category]/[entry]/page.tsx',
 ];
 
 const LIVE_ROUTES = [
-  'app/live/page.tsx',
-  'app/live/[subtype]/page.tsx',
-  'app/live/[subtype]/[entry]/page.tsx',
+  'app/(en)/live/page.tsx',
+  'app/(en)/live/[subtype]/page.tsx',
+  'app/(en)/live/[subtype]/[entry]/page.tsx',
 ];
 
 describe('the two soul-resonance doors have three levels', () => {
@@ -53,24 +53,24 @@ describe('the two soul-resonance doors have three levels', () => {
   });
 
   test('no client list is left behind', () => {
-    assert.ok(!existsSync('app/talks/talks-client.tsx'));
-    assert.ok(!existsSync('app/live/live-client.tsx'));
+    assert.ok(!existsSync('app/(en)/talks/talks-client.tsx'));
+    assert.ok(!existsSync('app/(en)/live/live-client.tsx'));
   });
 
   test('an entry page resolves the row through its own address', () => {
-    const talks = src('app/talks/[category]/[entry]/page.tsx');
+    const talks = src('app/(en)/talks/[category]/[entry]/page.tsx');
     assert.ok(talks.includes("loadEntry(category, entry)"));
     assert.ok(talks.includes('notFound()'), 'an unknown key is a 404, not an empty page');
 
-    const live = src('app/live/[subtype]/[entry]/page.tsx');
+    const live = src('app/(en)/live/[subtype]/[entry]/page.tsx');
     assert.ok(live.includes("loadEntry('live_stream', entry, subtype)"));
     assert.ok(live.includes('notFound()'));
   });
 
   test('a segment the door does not define is a 404', () => {
-    const talks = src('app/talks/[category]/page.tsx');
+    const talks = src('app/(en)/talks/[category]/page.tsx');
     assert.ok(talks.includes('TALK_CATEGORIES'), 'only the three categories are shelves');
-    const live = src('app/live/[subtype]/page.tsx');
+    const live = src('app/(en)/live/[subtype]/page.tsx');
     assert.ok(live.includes("loadSegmentEntries('live_stream', subtype)"));
   });
 });

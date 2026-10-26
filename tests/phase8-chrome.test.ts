@@ -126,7 +126,7 @@ describe('homepage blocks are picture doors', () => {
       assert.ok(!code.includes("'∞'"), `${file} has no infinity slot left`);
     }
 
-    const constants = src('app/admin/gallery/constants.ts');
+    const constants = src('app/(en)/admin/gallery/constants.ts');
     assert.ok(constants.includes('milestoneYears()'), 'admin grid is generated');
   });
 
@@ -140,24 +140,24 @@ describe('homepage blocks are picture doors', () => {
     assert.ok(repo.includes("from('profiles')"), 'writes the profiles table');
     assert.ok(repo.includes('avatar_url'), 'stores the portrait on avatar_url');
 
-    const view = src('app/admin/gallery/components/views/portraits-view.tsx');
+    const view = src('app/(en)/admin/gallery/components/views/portraits-view.tsx');
     assert.ok(view.includes('HOMEPAGE_PORTRAITS'), 'portrait grid has its own view');
     assert.ok(view.includes('/api/admin/people/portrait'), 'calls the portrait api');
     assert.ok(view.includes('VaultImagePicker'), 'reuses the shared vault picker');
 
-    const milestones = src('app/admin/gallery/components/views/milestones-view.tsx');
+    const milestones = src('app/(en)/admin/gallery/components/views/milestones-view.tsx');
     assert.ok(!milestones.includes('HOMEPAGE_PORTRAITS'), 'portraits are not stacked under the year grid');
 
-    const constants = src('app/admin/gallery/constants.ts');
+    const constants = src('app/(en)/admin/gallery/constants.ts');
     assert.ok(constants.includes("id: 'portraits'"), 'portraits is a vault tab');
     assert.ok(constants.includes("label: 'PORTRAITS'"), 'tab is labelled PORTRAITS');
 
-    const page = src('app/admin/gallery/page.tsx');
+    const page = src('app/(en)/admin/gallery/page.tsx');
     assert.ok(page.includes("activeTab === 'portraits'"), 'the tab renders its view');
   });
 
   test('the vault picker can be closed and its thumbnails cannot collapse', () => {
-    const picker = src('app/admin/gallery/components/vault-image-picker.tsx');
+    const picker = src('app/(en)/admin/gallery/components/vault-image-picker.tsx');
     assert.ok(picker.includes("event.key === 'Escape'"), 'Escape closes the dialog');
     assert.ok(picker.includes('aria-label="Close picker"'), 'visible close button');
     assert.ok(picker.includes('h-40 w-full'), 'thumbnails have a definite height');
@@ -166,8 +166,8 @@ describe('homepage blocks are picture doors', () => {
 
   test('saving a slot updates in place instead of reloading the page', () => {
     for (const file of [
-      'app/admin/gallery/components/views/milestones-view.tsx',
-      'app/admin/gallery/components/views/portraits-view.tsx',
+      'app/(en)/admin/gallery/components/views/milestones-view.tsx',
+      'app/(en)/admin/gallery/components/views/portraits-view.tsx',
     ]) {
       assert.ok(
         !src(file).includes('window.location.reload'),
