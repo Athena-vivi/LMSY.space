@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 /**
  * 🔒 ARCHIVE DISCLAIMER
@@ -16,6 +18,8 @@ import { motion } from 'framer-motion';
  * Usage: Simply import and place in the masthead or intro section
  */
 export function ArchiveDisclaimer({ variant = 'default' }: { variant?: 'default' | 'compact' | 'minimal' }) {
+  const { language } = useLanguage();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -60,7 +64,7 @@ export function ArchiveDisclaimer({ variant = 'default' }: { variant?: 'default'
           variant === 'compact' ? 'leading-relaxed' : 'leading-relaxed'
         }`}
       >
-        Special thanks to the Besties who captured these fleeting moments.
+        {t(language, 'credit.fan')}
       </p>
 
       {/* Decorative Separator (only for default variant) */}
