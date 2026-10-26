@@ -55,7 +55,19 @@ async function getAuthHeaders() {
   return headers;
 }
 
-export function TalkSettingsPanel({ mode }: { mode: 'videos' | 'transcript' }) {
+const TALK_CATEGORIES = ['interview', 'variety', 'radio', 'press'];
+
+export function TalkSettingsPanel({
+  mode,
+  categories = TALK_CATEGORIES,
+  kind = 'talks',
+}: {
+  mode: 'videos' | 'transcript';
+  /** Project categories the panel lists. Defaults to the talk program set. */
+  categories?: string[];
+  /** Copy switch: "live" retitles the selector and empty state for live events. */
+  kind?: 'talks' | 'live';
+}) {
   const [projects, setProjects] = useState<TalkProject[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -101,9 +113,8 @@ export function TalkSettingsPanel({ mode }: { mode: 'videos' | 'transcript' }) {
           throw new Error(result.error || 'Failed to load talk programs');
         }
 
-        const talkCategories = ['interview', 'variety', 'radio', 'press'];
         const talkProjects: TalkProject[] = (result.projects || []).filter(
-          (p: TalkProject) => talkCategories.includes(p.category || '')
+          (p: TalkProject) => categories.includes(p.category || '')
         );
         if (!cancelled) {
           setProjects(talkProjects);
@@ -200,7 +211,9 @@ export function TalkSettingsPanel({ mode }: { mode: 'videos' | 'transcript' }) {
   if (projects.length === 0) {
     return (
       <div className="rounded-xl border border-white/10 bg-black/30 p-8 text-center text-sm text-ink-2">
-        No talk programs yet. Ingest interview / variety / radio events first.
+        {kind === 'live'
+          ? 'No live events yet. Ingest live-stream events first.'
+          : 'No talk programs yet. Ingest interview / variety / radio events first.'}
       </div>
     );
   }
@@ -210,7 +223,7 @@ export function TalkSettingsPanel({ mode }: { mode: 'videos' | 'transcript' }) {
       {/* Program selector - one specific talk at a time */}
       <div className="rounded-xl border border-white/10 bg-black/30 p-6">
         <label className="block text-xs font-mono uppercase tracking-wider text-ink-2">
-          Talk Program
+          {kind === 'live' ? 'Live Event' : 'Talk Program'}
         </label>
         <select
           value={selectedId}

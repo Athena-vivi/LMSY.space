@@ -270,8 +270,8 @@ export default function AdminSettingsPage() {
       <div className="mb-8">
         <h1 className="mb-2 font-serif text-4xl font-bold text-foreground">Settings</h1>
         <p className="text-ink-2">
-          Tabs 1-2 edit homepage content blocks. Tabs 3-4 edit a specific talk program&apos;s video
-          links and transcript.
+          Tabs 1-2 edit homepage content blocks. Tabs 3-5 edit video links and transcripts for talk
+          programs and live events.
         </p>
       </div>
 
@@ -303,6 +303,9 @@ export default function AdminSettingsPage() {
               </TabButton>
               <TabButton active={activeTab === 'talk-videos'} color="blue" onClick={() => setActiveTab('talk-videos')}>
                 Talk Video Links
+              </TabButton>
+              <TabButton active={activeTab === 'live-videos'} color="blue" onClick={() => setActiveTab('live-videos')}>
+                Live Video Links
               </TabButton>
               <TabButton active={activeTab === 'talk-transcript'} color="blue" onClick={() => setActiveTab('talk-transcript')}>
                 Talk Transcript
@@ -469,6 +472,18 @@ export default function AdminSettingsPage() {
                 blockKey="projects.video_url_bilibili / video_url_youtube"
               />
               <TalkSettingsPanel mode="videos" />
+            </>
+          )}
+
+          {activeTab === 'live-videos' && (
+            <>
+              <SectionIntro
+                iconColor="text-lmsy-blue"
+                title="Live Video Links"
+                description="Pick a live event and set its Bilibili / YouTube video URLs. Saved to"
+                blockKey="projects.video_url_bilibili / video_url_youtube"
+              />
+              <TalkSettingsPanel mode="videos" categories={['live_stream']} kind="live" />
             </>
           )}
 
