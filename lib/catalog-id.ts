@@ -176,11 +176,13 @@ export const APPEARANCE_SUBTYPE_CODES = {
  * footage):
  *
  *   LMSY-DRAMA-AFFAIR-PREMIERE                    (one screening per work)
- *   LMSY-DRAMA-AFFAIR-SERIES-FINALEPISODE
+ *   LMSY-DRAMA-AFFAIR-FINALEPISODE
  *   LMSY-DRAMA-AFFAIR-FOOTAGE-HIGHLIGHTS
  */
 export const DRAMA_SUBTYPE_CODES = {
-  series_body: 'SERIES',
+  // series_body folds straight into WORK-EVENTCODE (no SERIES segment): the
+  // work already groups its entries, so a second "series" level is redundant.
+  series_body: '',
   premiere: 'PREMIERE',
   promo: 'PROMO',
   footage: 'FOOTAGE',
@@ -202,10 +204,11 @@ export function dramaSubject(
   eventCode?: string | null
 ): string | null {
   const work = (workCode || '').trim().toUpperCase();
+  if (!work) return null;
   const part = DRAMA_SUBTYPE_CODES[(subtype || '') as keyof typeof DRAMA_SUBTYPE_CODES];
-  if (!work || !part) return null;
   const tail = (eventCode || '').trim().toUpperCase();
-  return tail ? `${work}-${part}-${tail}` : `${work}-${part}`;
+  if (!tail) return null;
+  return part ? `${work}-${part}-${tail}` : `${work}-${tail}`;
 }
 
 /**

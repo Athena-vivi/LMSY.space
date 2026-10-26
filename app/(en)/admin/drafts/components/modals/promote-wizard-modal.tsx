@@ -421,12 +421,13 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         const work = subjectFromProjectId(dramaSeriesRow?.catalog_id ?? null);
         const part =
           DRAMA_SUBTYPE_CODES[project.subtype as keyof typeof DRAMA_SUBTYPE_CODES];
-        if (!work || !part) return '';
         // A premiere is one per work, so it is already unique; every other part
-        // holds several entries and needs the event code (spec 4.1).
-        if (project.subtype === 'premiere') return `${work}-${part}`;
+        // holds several entries and needs the event code (spec 4.1). series_body
+        // has no part segment, so it folds straight into WORK-EVENTCODE.
+        if (project.subtype === 'premiere') return part ? `${work}-${part}` : work;
         const eventCode = eventCodeFromTitle(project.title, work);
-        return eventCode ? `${work}-${part}-${eventCode}` : '';
+        if (!eventCode) return '';
+        return part ? `${work}-${part}-${eventCode}` : `${work}-${eventCode}`;
       }
       case 'publication': {
         if (!picks.publication) return '';

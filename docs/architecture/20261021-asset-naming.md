@@ -102,7 +102,7 @@ LMSY-EVENT-FANMEET-BKK-20250115-001              双人见面会，没有尾码
 
 | 部分（对应 subtype） | 码 | 收什么 |
 |---|---|---|
-| 剧集本体 `series_body` | `SERIES` | 正片分集、官方剧照、试播集 |
+| 剧集本体 `series_body` | （无，直接接事件码） | 正片分集、官方剧照、试播集 |
 | 首映礼 `premiere` | `PREMIERE` | 开播首映场（两人到场、有红毯） |
 | 宣传物料 `promo` | `PROMO` | 官宣、预告、定妆、票务、未剪版 |
 | 音乐 `music` | `MUSIC` | OST / MV |
@@ -126,7 +126,7 @@ LMSY-DRAMA-HOMETOWN-PROMO-FITTING
 
 ```
 LMSY-DRAMA-AFFAIR-PREMIERE-20240830-001.webp
-LMSY-DRAMA-HARMONY-SERIES-FINALEPISODE-20250914-001.webp
+LMSY-DRAMA-HARMONY-FINALEPISODE-20250913-001.webp
 LMSY-DRAMA-AFFAIR-AWARD-YENTERTAIN24-001.webp
 ```
 
