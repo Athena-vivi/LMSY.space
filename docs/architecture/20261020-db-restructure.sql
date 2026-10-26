@@ -166,3 +166,24 @@ alter table lmsy_archive.projects add constraint projects_subtype_check
 
 select pg_get_constraintdef(oid) as subtype_check
 from pg_constraint where conname = 'projects_subtype_check';
+
+-- ============================================================
+-- Round 4 - 2026-10-26 - category: + press (媒体群访)
+--
+-- Owner's decision: 媒体群访 (red-carpet / group scrum) and 深度访谈
+-- (sit-down in-depth interview) are produced and watched for different
+-- reasons, so press stops being folded into `interview` and becomes its
+-- own shelf in the /talks door.
+--
+-- `interview` keeps the in-depth interviews + online talk shows; the 15
+-- press rows that were seeded as `interview` moved to `press` (id-targeted,
+-- title LIKE '%媒体群访'). Full statement + rollback:
+-- supabase/migrations/20261026_add_press_category.sql
+-- ============================================================
+alter table lmsy_archive.projects drop constraint if exists projects_category_check;
+alter table lmsy_archive.projects add constraint projects_category_check
+  check (category is null or category in (
+    'drama_work','editorial','live_event','public_appearance','commercial',
+    'interview','variety','radio','press','live_stream',
+    'behind_the_scenes','personal_travel','early_archive'
+  ));

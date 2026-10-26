@@ -101,7 +101,7 @@ export function TalkSettingsPanel({ mode }: { mode: 'videos' | 'transcript' }) {
           throw new Error(result.error || 'Failed to load talk programs');
         }
 
-        const talkCategories = ['interview', 'variety', 'radio'];
+        const talkCategories = ['interview', 'variety', 'radio', 'press'];
         const talkProjects: TalkProject[] = (result.projects || []).filter(
           (p: TalkProject) => talkCategories.includes(p.category || '')
         );

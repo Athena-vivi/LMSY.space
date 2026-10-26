@@ -28,6 +28,7 @@ const CATEGORY_OPTIONS: { value: ProjectCategory; label: string; prefix: string 
   { value: 'interview', label: 'Talks · Interview', prefix: 'TALK' },
   { value: 'variety', label: 'Talks · Variety', prefix: 'TALK' },
   { value: 'radio', label: 'Talks · Radio', prefix: 'TALK' },
+  { value: 'press', label: 'Talks · Press', prefix: 'TALK' },
   { value: 'live_stream', label: 'Live Stream', prefix: 'LIVE' },
 ];
 

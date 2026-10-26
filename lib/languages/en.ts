@@ -269,6 +269,7 @@ export const en = {
     'category.interview': 'Interviews',
     'category.variety': 'Variety',
     'category.radio': 'Radio',
+    'category.press': 'Press Interviews',
     'talks.bilibili': 'Bilibili Video',
     'talks.youtube': 'YouTube Video',
     'talks.photos': 'Photos',

@@ -138,7 +138,7 @@ const WIZARD_DOORS: Array<{
   {
     key: 'talks',
     labelKey: 'door.talks',
-    categories: ['interview', 'variety', 'radio'],
+    categories: ['interview', 'variety', 'radio', 'press'],
     level: 'shelf',
   },
   { key: 'live', labelKey: 'door.live', categories: ['live_stream'], level: 'platform' },
@@ -149,6 +149,7 @@ const TALK_SHELVES: Array<{ value: string; labelKey: TranslationKey }> = [
   { value: 'interview', labelKey: 'category.interview' },
   { value: 'variety', labelKey: 'category.variety' },
   { value: 'radio', labelKey: 'category.radio' },
+  { value: 'press', labelKey: 'category.press' },
 ];
 
 const BATCH_SIZE = 3;

@@ -184,7 +184,7 @@ export function assembleCurationTree({
 
   for (const key of SHELVED) {
     if (key === 'talks') {
-      const shelves = (['interview', 'variety', 'radio'] as const).map((category) =>
+      const shelves = (['interview', 'variety', 'radio', 'press'] as const).map((category) =>
         makeShelf(
           `/talks/${category}`,
           category,

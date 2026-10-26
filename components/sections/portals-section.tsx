@@ -47,6 +47,7 @@ const ENTRY_COPY: Record<
   interview: { titleKey: 'category.interview', descKey: 'category.interview', span: 'lg:col-span-6' },
   variety: { titleKey: 'category.variety', descKey: 'category.variety', span: 'lg:col-span-6' },
   radio: { titleKey: 'category.radio', descKey: 'category.radio', span: 'lg:col-span-6' },
+  press: { titleKey: 'category.press', descKey: 'category.press', span: 'lg:col-span-6' },
   live_stream: { titleKey: 'category.liveStream', descKey: 'category.liveStream', span: 'lg:col-span-6' },
   behind_the_scenes: { titleKey: 'category.behindTheScenes', descKey: 'category.behindTheScenes', span: 'lg:col-span-6' },
   personal_travel: { titleKey: 'category.personalTravel', descKey: 'category.personalTravel', span: 'lg:col-span-6' },

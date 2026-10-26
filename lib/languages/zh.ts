@@ -270,6 +270,7 @@ export const zh: Record<TranslationKey, string> = {
     'category.interview': '访谈',
     'category.variety': '综艺',
     'category.radio': '电台',
+    'category.press': '媒体群访',
     'talks.bilibili': 'B站视频',
     'talks.youtube': 'YouTube 视频',
     'talks.photos': '图片',

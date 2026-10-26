@@ -144,6 +144,7 @@ const DICT: Record<string, [string, string]> = {
   'category.interview': ['访谈', 'Interviews'],
   'category.variety': ['综艺', 'Variety'],
   'category.radio': ['电台', 'Radio'],
+  'category.press': ['媒体群访', 'Press Interviews'],
   'subtype.concert': ['演唱会与巡演', 'Concerts & Tours'],
   'subtype.fanmeeting': ['见面会', 'Fan Meetings'],
   'subtype.fansign': ['签售会', 'Fan Signs'],

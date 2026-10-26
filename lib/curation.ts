@@ -38,6 +38,7 @@ const DOOR_CATEGORIES = [
   'interview',
   'variety',
   'radio',
+  'press',
   'live_stream',
 ];
 

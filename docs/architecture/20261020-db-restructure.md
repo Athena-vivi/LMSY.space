@@ -56,9 +56,10 @@ alter table lmsy_archive.projects add constraint projects_category_check
 
 | 值 | 含义 | 归到哪个门 |
 |---|---|---|
-| `interview` | 访谈（深度 / 群访 / 电视 / 新闻） | 6 号门 |
+| `interview` | 深度访谈（电视 / 新闻） | 6 号门 |
 | `variety` | 综艺 | 6 号门 |
 | `radio` | 电台 | 6 号门 |
+| `press` | 媒体群访（2026-10-26 从 `interview` 拆出，`/talks` 第 4 个货架） | 6 号门 |
 | `live_stream` | 自开直播 | 7 号门 |
 
 `personal_travel` **暂时保留在约束里**。它现在只剩 2 行已归档的残留，等这些行清理掉再删约束，否则会撞约束。

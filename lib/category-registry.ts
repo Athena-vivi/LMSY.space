@@ -26,6 +26,7 @@ export const PROJECT_CATEGORIES = [
   'interview',
   'variety',
   'radio',
+  'press',
   'live_stream',
   'behind_the_scenes',
   'personal_travel',
@@ -118,6 +119,17 @@ const DEFINITIONS: Record<ProjectCategory, Omit<CategoryDefinition, 'value' | 'o
     cardTitleKey: 'category.radio',
     accent: 'text-ink-2 border-border bg-muted',
     gradient: 'from-cyan-500/25 via-sky-400/15 to-blue-600/25',
+  },
+  // Split out of `interview` (2026-10-26): a red-carpet / group scrum is shot
+  // on the fly by many outlets, while an in-depth interview is a sit-down
+  // conversation - produced and watched for different reasons, so it is its
+  // own shelf in the /talks door.
+  press: {
+    labelKey: 'category.press',
+    homeEntry: false,
+    cardTitleKey: 'category.press',
+    accent: 'text-ink border-white/20 bg-white/5',
+    gradient: 'from-slate-500/25 via-zinc-400/15 to-gray-600/25',
   },
   // -- soul-resonance door 2: no edit, nobody asking -------------------------
   live_stream: {
@@ -255,7 +267,7 @@ export function doorEntryPath(project: {
   return `${door}/${segment}/${key}`;
 }
 
-export const TALK_CATEGORIES = ['interview', 'variety', 'radio'] as const;
+export const TALK_CATEGORIES = ['interview', 'variety', 'radio', 'press'] as const;
 export const STREAM_CATEGORIES = ['live_stream'] as const;
 
 /**
@@ -311,6 +323,7 @@ const DOOR_PATHS: Partial<Record<ProjectCategory, string>> = {
   interview: '/talks',
   variety: '/talks',
   radio: '/talks',
+  press: '/talks',
   live_stream: '/live',
 };
 

@@ -264,7 +264,7 @@ export default function CurationPage() {
         });
 
         // Talk events get the four resource-box slots instead of class rows.
-        const talkCategories = ['interview', 'variety', 'radio'];
+        const talkCategories = ['interview', 'variety', 'radio', 'press'];
         if (talkCategories.includes(proj?.data?.category ?? '')) {
           setTalkCovers({
             covers:

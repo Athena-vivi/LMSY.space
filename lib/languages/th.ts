@@ -270,6 +270,7 @@ export const th: Record<TranslationKey, string> = {
     'category.interview': 'บทสัมภาษณ์',
     'category.variety': 'รายการวาไรตี้',
     'category.radio': 'วิทยุ',
+    'category.press': 'สัมภาษณ์กลุ่มสื่อ',
     'talks.bilibili': 'วิดีโอ Bilibili',
     'talks.youtube': 'วิดีโอ YouTube',
     'talks.photos': 'ภาพถ่าย',

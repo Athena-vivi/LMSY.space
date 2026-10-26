@@ -271,6 +271,7 @@ export const pt: Record<TranslationKey, string> = {
     'category.interview': 'Entrevistas',
     'category.variety': 'Variedades',
     'category.radio': 'Rádio',
+    'category.press': 'Coletivas de imprensa',
     'talks.bilibili': 'Vídeo do Bilibili',
     'talks.youtube': 'Vídeo do YouTube',
     'talks.photos': 'Fotos',

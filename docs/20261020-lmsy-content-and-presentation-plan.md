@@ -169,9 +169,10 @@
 | `live_event` | 线下活动 | 3 |
 | `public_appearance` | 公开活动 | 4 |
 | `commercial` | 商务 | 5 |
-| `interview` | 访谈（深度 / 群访 / 电视 / 新闻） | 6 |
+| `interview` | 深度访谈（电视 / 新闻） | 6 |
 | `variety` | 综艺 | 6 |
 | `radio` | 电台 | 6 |
+| `press` | 媒体群访（2026-10-26 从 `interview` 拆出） | 6 |
 | `live_stream` | 直播 | 7 |
 | `behind_the_scenes` | 幕后（含原 personal_travel） | — |
 | `early_archive` | 早期档案 | — |
@@ -239,7 +240,7 @@
 
 ### 8.2 新建两个落地页
 
-- **`/talks`**：读 `interview` / `variety` / `radio` 三类公开项目，客户端 Tab 切换（全部 / 访谈 / 综艺 / 电台）。建议按作品宣传期分组，期内按日期倒序。
+- **`/talks`**：读 `interview` / `variety` / `radio` / `press` 四类公开项目，客户端 Tab 切换（全部 / 访谈 / 综艺 / 电台 / 媒体群访）。建议按作品宣传期分组，期内按日期倒序。
 - **`/live`**：读 `live_stream`，按年月排，可选挂外链播放。
 
 ### 8.3 封面槽位

@@ -35,6 +35,7 @@ export type ProjectCategory =
   | 'interview'
   | 'variety'
   | 'radio'
+  | 'press'
   | 'live_stream'
   | 'behind_the_scenes'
   | 'personal_travel'
