@@ -472,6 +472,27 @@ export const en = {
     'copyright.contactEmail': 'Contact Email:',
     'copyright.responseTime': 'We will respond to valid claims within 48 hours and remove or properly attribute the content.',
 
+    // About page (E-E-A-T: who runs the site, the disclaimer, the contact).
+    // Was hardcoded English until 2026-10-26 and stayed English on /zh, /th,
+    // /es, /pt - the one page a rights holder or a journalist is most likely
+    // to open. Copy is unchanged; only the source of the strings moved.
+    'about.title': 'About',
+    'about.whatTitle': 'What this site is',
+    'about.whatText1':
+      'LMSY Fan Archive is an unofficial fan-run archive for the Thai GL duo LMSY — Lookmhee Punyapat Wangpongsathaporn and Sonya Saranphat Pedersen.',
+    'about.whatText2':
+      'This site is a collection effort: photos, magazine editorials, events and records are organized into a browsable archive, with each entry catalogued by date and source.',
+    'about.disclaimerTitle': 'Unofficial disclaimer',
+    'about.disclaimerText':
+      'This site is maintained by Astra and is not affiliated with, endorsed by, or connected to LMSY, their agency (CHANGE2561), or any official fan club.',
+    'about.contactTitle': 'Copyright & contact',
+    'about.contactText1':
+      'All photographs and content belong to their respective copyright holders. Images are credited to their original sources wherever possible and are presented here for archival and appreciation purposes only.',
+    'about.contactText2':
+      'If you are a rights holder and would like something removed or credited differently, please reach out:',
+    /** Leads into the link that reuses `copyright.title` as its own text. */
+    'about.seeAlso': 'See also: ',
+
     // Site-level copy (root layout metadata, loading state)
     'site.description': 'Welcome to the fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, projects, and schedule updates.',
     'site.keywords': "LMSY, Lookmhee, Sonya, Affair, Thai GL, Girl's Love, Lookmhee Sonya, Affair Series, Thai Drama, GL Series",

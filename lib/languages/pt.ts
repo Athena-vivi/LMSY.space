@@ -474,6 +474,23 @@ export const pt: Record<TranslationKey, string> = {
     'copyright.contactEmail': 'E-mail de contato:',
     'copyright.responseTime': 'Respondemos a reclamações válidas em até 48 horas e removemos ou atribuímos corretamente o conteúdo.',
 
+    // Página Sobre
+    'about.title': 'Sobre',
+    'about.whatTitle': 'O que é este site',
+    'about.whatText1':
+      'O LMSY Fan Archive é um arquivo não oficial feito por fãs da dupla GL tailandesa LMSY — Lookmhee Punyapat Wangpongsathaporn e Sonya Saranphat Pedersen.',
+    'about.whatText2':
+      'Este site é um esforço de coleta: fotos, editoriais de revista, eventos e registros são organizados em um arquivo navegável, com cada entrada catalogada por data e fonte.',
+    'about.disclaimerTitle': 'Aviso de não oficialidade',
+    'about.disclaimerText':
+      'Este site é mantido por Astra e não é afiliado, endossado ou ligado ao LMSY, à sua agência (CHANGE2561) ou a qualquer fã-clube oficial.',
+    'about.contactTitle': 'Direitos autorais e contato',
+    'about.contactText1':
+      'Todas as fotografias e conteúdos pertencem aos seus respectivos detentores de direitos. As imagens são creditadas às fontes originais sempre que possível e são apresentadas aqui apenas para fins de arquivo e apreciação.',
+    'about.contactText2':
+      'Se você é titular de direitos e deseja que algo seja removido ou creditado de outra forma, entre em contato:',
+    'about.seeAlso': 'Ver também: ',
+
     // Site-level copy (root layout metadata, loading state)
     'site.description': 'Arquivo de fãs da dupla GL tailandesa LMSY (Lookmhee & Sonya), protagonistas da série Affair. Perfis, galeria, projetos e agenda em dia.',
     'site.keywords': 'LMSY, Lookmhee, Sonya, Affair, GL tailandesa, girls love, drama tailandês, série Affair',

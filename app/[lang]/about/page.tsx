@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
   const language = routeLanguage(lang);
   return langPageMetadata(language, {
-    title: t(language, 'nav.about'),
+    title: t(language, 'about.title'),
     description: t(language, 'meta.about'),
     path: '/about',
   });

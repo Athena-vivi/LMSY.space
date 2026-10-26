@@ -1,22 +1,30 @@
-import type { Metadata } from 'next';
-import { getTranslation } from '@/lib/languages';
+'use client';
+
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 import Link from 'next/link';
 import { Mail } from 'lucide-react';
-import { pageMetadata } from '@/lib/seo';
-
-export const metadata: Metadata = pageMetadata({
-  title: 'About',
-  description: getTranslation('en', 'meta.about'),
-  path: '/about',
-});
 
 /**
- * About page — intentionally a server component (no 'use client').
- * Its whole purpose is E-E-A-T for search engines: who runs the site,
- * the unofficial disclaimer, and the rights-holder contact must be in
- * the SSR HTML. Copy is static English, matching the SSR language.
+ * About page.
+ *
+ * Client component for one reason only: the copy has to follow the reader's
+ * language, and `useLanguage()` is where a route's language lives. Nothing
+ * here is fetched or interactive - the provider seeds the language from the
+ * URL prefix during SSR, so /zh/about arrives as Chinese in the HTML a crawler
+ * sees, which is what this page exists for (E-E-A-T: who runs the site, the
+ * unofficial disclaimer, the rights-holder contact).
+ *
+ * Metadata cannot be exported from a client module, so the sibling layout.tsx
+ * carries it - the same arrangement /copyright uses.
+ *
+ * Was hardcoded English until 2026-10-26, which meant the one page a rights
+ * holder or a journalist is most likely to open stayed English on all five
+ * language routes.
  */
 export default function AboutPage() {
+  const { language } = useLanguage();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -27,9 +35,10 @@ export default function AboutPage() {
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold mb-6">
               <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
-                About
+                {t(language, 'about.title')}
               </span>
             </h1>
+            {/* The site's own name is a proper noun - it is not translated. */}
             <p className="text-lg md:text-xl text-ink-2 font-light">
               LMSY Fan Archive
             </p>
@@ -43,28 +52,22 @@ export default function AboutPage() {
           <div className="max-w-4xl mx-auto space-y-10">
             <div className="bg-muted/20 rounded-2xl p-8 md:p-12 border border-border/50">
               <h2 className="font-serif text-2xl md:text-3xl font-bold mb-6">
-                What this site is
+                {t(language, 'about.whatTitle')}
               </h2>
               <p className="text-ink-2 leading-relaxed">
-                LMSY Fan Archive is an unofficial fan-run archive for the Thai
-                GL duo LMSY — Lookmhee Punyapat Wangpongsathaporn and Sonya
-                Saranphat Pedersen.
+                {t(language, 'about.whatText1')}
               </p>
               <p className="text-ink-2 leading-relaxed mt-4">
-                This site is a collection effort: photos, magazine editorials,
-                events and records are organized into a browsable archive, with
-                each entry catalogued by date and source.
+                {t(language, 'about.whatText2')}
               </p>
             </div>
 
             <div className="bg-muted/20 rounded-2xl p-8 md:p-12 border border-border/50">
               <h2 className="font-serif text-2xl md:text-3xl font-bold mb-6">
-                Unofficial disclaimer
+                {t(language, 'about.disclaimerTitle')}
               </h2>
               <p className="text-ink-2 leading-relaxed">
-                This site is maintained by Astra and is not affiliated with,
-                endorsed by, or connected to LMSY, their agency (CHANGE2561),
-                or any official fan club.
+                {t(language, 'about.disclaimerText')}
               </p>
             </div>
 
@@ -74,19 +77,15 @@ export default function AboutPage() {
                   <Mail className="w-6 h-6 text-lmsy-blue" />
                 </div>
                 <h2 className="font-serif text-2xl md:text-3xl font-bold pt-2">
-                  Copyright &amp; contact
+                  {t(language, 'about.contactTitle')}
                 </h2>
               </div>
               <div className="pl-16 space-y-4">
                 <p className="text-ink-2 leading-relaxed">
-                  All photographs and content belong to their respective
-                  copyright holders. Images are credited to their original
-                  sources wherever possible and are presented here for archival
-                  and appreciation purposes only.
+                  {t(language, 'about.contactText1')}
                 </p>
                 <p className="text-ink-2 leading-relaxed">
-                  If you are a rights holder and would like something removed
-                  or credited differently, please reach out:
+                  {t(language, 'about.contactText2')}
                 </p>
                 <a
                   href="mailto:copyright@lmsy.space"
@@ -95,14 +94,16 @@ export default function AboutPage() {
                   copyright@lmsy.space
                 </a>
                 <p className="text-sm text-ink-2 pt-2">
-                  See also the{' '}
+                  {/* `about.seeAlso` ends with the space the sentence needs in
+                      that language (Chinese does not take one), so the link
+                      text can be the already-translated policy title. */}
+                  {t(language, 'about.seeAlso')}
                   <Link
                     href="/copyright"
                     className="underline hover:text-ink transition-colors"
                   >
-                    Copyright Policy
+                    {t(language, 'copyright.title')}
                   </Link>
-                  .
                 </p>
               </div>
             </div>

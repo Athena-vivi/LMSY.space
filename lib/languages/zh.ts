@@ -467,6 +467,22 @@ export const zh: Record<TranslationKey, string> = {
     'copyright.contactEmail': '联系邮箱：',
     'copyright.responseTime': '我们将在 48 小时内回复有效申诉，并删除或适当归属相关内容。',
 
+    // 关于页
+    'about.title': '关于',
+    'about.whatTitle': '这个网站是什么',
+    'about.whatText1':
+      'LMSY Fan Archive 是关于泰国 GL 组合 LMSY（Lookmhee Punyapat Wangpongsathaporn 与 Sonya Saranphat Pedersen）的非官方粉丝档案站。',
+    'about.whatText2':
+      '这里做的是收集与整理：照片、杂志大片、活动与记录被编成可翻阅的档案，每一条都按日期和来源登记。',
+    'about.disclaimerTitle': '非官方声明',
+    'about.disclaimerText':
+      '本网站由 Astra 维护，与 LMSY 本人、其经纪公司（CHANGE2561）以及任何官方粉丝团均无关联，也未获其授权或认可。',
+    'about.contactTitle': '版权与联系方式',
+    'about.contactText1':
+      '所有照片与内容归各自的版权所有者所有。图片尽可能标注原始来源，在此仅作档案保存与欣赏之用。',
+    'about.contactText2': '如果您是权利持有人，希望撤下某些内容或更改署名，请联系我们：',
+    'about.seeAlso': '另见：',
+
     // Site-level copy (root layout metadata, loading state)
     'site.description': '欢迎来到泰国 GL 组合 LMSY（Lookmhee & Sonya）的粉丝档案馆——《Affair》系列主演。收录人物档案、图库、作品与日程更新。',
     'site.keywords': 'LMSY, Lookmhee, Sonya, Affair, 泰国GL, 百合, 泰剧, LMSY粉丝, Affair系列',
