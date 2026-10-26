@@ -33,7 +33,7 @@ export const es: Record<TranslationKey, string> = {
     'hero.sonya': 'SONYA',
     'hero.besties': 'Un espacio dedicado a LMSY y sus Besties.',
     'splash.entering': 'Entrando en la primera órbita',
-    'splash.plaque': '{events} eventos · {images} imágenes',
+    'splash.plaque': '{events} registros · {images} imágenes',
 
     // Quote
     'quote.text': '"Hay sentimientos imposibles de ocultar, por mucho que lo intentes..."',

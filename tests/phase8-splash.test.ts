@@ -96,6 +96,27 @@ describe('one door per visit, not one door per mount', () => {
   });
 });
 
+describe('the homepage does not stack a spinner in front of the door', () => {
+  const fallback = src('app/(en)/loading.tsx');
+  const shell = src('app/[lang]/loading.tsx');
+
+  test('the homepage waits on the curtain colour, not on "Loading archive"', () => {
+    assert.ok(/stripLangPrefix\(pathname\) === '\//.test(fallback), 'the homepage is detected by its bare path');
+    assert.ok(/bg-black/.test(fallback), 'same fill as the curtain');
+    assert.ok(/site\.loading/.test(fallback), 'other routes keep the label');
+  });
+
+  test('the spinner sits behind that branch, so it never reaches the homepage', () => {
+    const branch = fallback.indexOf("stripLangPrefix(pathname) === '/'");
+    const spinner = fallback.indexOf('animate-spin');
+    assert.ok(branch > -1 && spinner > branch, 'the spinner is the fallback of the fallback');
+  });
+
+  test('the localised root reuses the same file', () => {
+    assert.ok(/export \{ default \} from '\.\.\/\(en\)\/loading'/.test(shell));
+  });
+});
+
 describe('the plaque says what is behind the door', () => {
   const curtain = src('components/loading/immersive-loading.tsx');
   const page = src('app/(en)/page.tsx');
