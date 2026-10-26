@@ -324,8 +324,18 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   // The real DB category the wizard currently works on. A theme has no category
   // of its own (it is project_kind = 'theme'), and the talks door takes its
   // category from the shelf, so both are resolved here.
+  // The live door's key is `live`, but the database category is `live_stream`
+  // (that is what the 55 seeded live events carry, and what SUBTYPES_BY_CATEGORY
+  // keys the duo/lookmhee/sonya sub-types under). Map the door key to the real
+  // category so the event picker AND new-event creation target rows that exist.
   const activeCategory =
-    doorKey === 'features' ? '' : doorKey === 'talks' ? shelf : doorKey;
+    doorKey === 'features'
+      ? ''
+      : doorKey === 'talks'
+        ? shelf
+        : doorKey === 'live'
+          ? 'live_stream'
+          : doorKey;
   const doorConfig = WIZARD_DOORS.find((d) => d.key === doorKey) ?? WIZARD_DOORS[3];
   const level: DoorLevel = doorConfig.level;
   // A topic is the one door with no category of its own: it is filed by
