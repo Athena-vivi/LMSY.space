@@ -28,6 +28,7 @@ export const en = {
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
     'hero.besties': 'A dedicated space for LMSY and their Besties.',
+    'splash.entering': 'Entering The First Orbit',
 
     // Quote
     'quote.text': '"Some feelings are impossible to hide, no matter how hard you try..."',

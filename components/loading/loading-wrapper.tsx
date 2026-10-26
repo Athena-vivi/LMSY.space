@@ -3,6 +3,7 @@
 import { AnimatePresence } from 'framer-motion';
 import { useEffect, useState, ReactNode } from 'react';
 import ImmersiveLoading from './immersive-loading';
+import { hasPlayedSplash, markSplashPlayed } from '@/lib/splash-intro';
 
 interface LoadingWrapperProps {
   children: ReactNode;
@@ -35,6 +36,15 @@ const MAX_SPLASH_MS = 1200;
  * to be found. The splash is a fixed, opaque, z-9999 layer, so painting under
  * it costs nothing visually: it covers the content while it animates, then
  * fades away and reveals a page that was there all along.
+ *
+ * It plays on entry only. Switching language on the homepage used to replay it
+ * every time, because / and /zh sit under two different root layouts and the
+ * switch is a full document load — see lib/splash-intro.ts. That is why
+ * visibility is decided by CSS rather than by state here: the state starts as
+ * visible so the server markup never changes, the pre-paint script in the root
+ * layout marks <html> when this tab has already seen the intro, and globals.css
+ * hides the overlay for that case. The element then unmounts on the same timer
+ * as always, whether it was visible or not.
  */
 export function LoadingWrapper({
   children,
@@ -45,6 +55,8 @@ export function LoadingWrapper({
   const [splashVisible, setSplashVisible] = useState(true);
 
   useEffect(() => {
+    if (!hasPlayedSplash()) markSplashPlayed();
+
     const delay = Math.min(Math.max(minDuration, 0), MAX_SPLASH_MS);
     const timer = setTimeout(() => {
       setLoading(false);

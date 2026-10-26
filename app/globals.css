@@ -406,3 +406,11 @@
   background-clip: text;
   color: transparent;
 }
+
+/* The intro splash is a once-per-tab entry moment. Switching language between
+   / and /zh is a full document load (two root layouts), so React state cannot
+   carry "already played" across it: the layout script marks <html> before
+   paint and this rule keeps the black overlay from flashing on every switch. */
+html[data-splash='seen'] .lmsy-splash {
+  display: none;
+}

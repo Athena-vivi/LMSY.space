@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/components/language-provider';
+import { t } from '@/lib/languages';
 
 interface ImmersiveLoadingProps {
   onComplete: () => void;
@@ -19,6 +21,7 @@ export default function ImmersiveLoading({
   // for the hero block. Starting from /hero-reveal.jpg and swapping to the
   // real photo mid-animation is what made two different images appear.
   const [splashImageUrl, setSplashImageUrl] = useState(initialImageUrl);
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (!loading) {
@@ -70,7 +73,7 @@ export default function ImmersiveLoading({
         filter: 'blur(20px)',
       }}
       transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
-      className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden"
+      className="lmsy-splash fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden"
     >
       {/* 核心视觉层：LMSY 字符门户 - 纯文字渐变方案 */}
       <div className="relative flex flex-col items-center">
@@ -111,7 +114,7 @@ export default function ImmersiveLoading({
           transition={{ duration: 1, delay: 1 }}
           className="text-[12px] md:text-[14px] tracking-[0.8em] font-light text-white uppercase mt-6 text-center pl-[0.8em]"
         >
-          Entering The First Orbit
+          {t(language, 'splash.entering')}
         </motion.p>
       </div>
 

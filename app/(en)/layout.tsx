@@ -7,6 +7,7 @@ import '@fontsource-variable/playfair-display';
 import '../globals.css';
 import { SiteChrome } from '@/components/site-chrome';
 import { siteMetadata } from '@/lib/site-metadata';
+import { SPLASH_INIT_SCRIPT } from '@/lib/splash-intro';
 
 const mono = GeistMono;
 
@@ -40,6 +41,7 @@ export default function RootLayout({
         style={{ backgroundColor: '#030303', color: 'rgba(255, 255, 255, 0.9)' }}
       >
         <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_INIT_SCRIPT }} />
         <SiteChrome lang="en">{children}</SiteChrome>
       </body>
     </html>

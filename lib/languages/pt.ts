@@ -32,6 +32,7 @@ export const pt: Record<TranslationKey, string> = {
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
     'hero.besties': 'Um espaço dedicado à LMSY e às suas Besties.',
+    'splash.entering': 'Entrando na primeira órbita',
 
     // Quote
     'quote.text': '"Alguns sentimentos são impossíveis de esconder, por mais que você tente..."',

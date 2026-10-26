@@ -29,6 +29,7 @@ export const th: Record<TranslationKey, string> = {
     'hero.lookmhee': 'LOOKMHEE',
     'hero.sonya': 'SONYA',
     'hero.besties': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
+    'splash.entering': 'กำลังเข้าสู่วงโคจรแรก',
 
     // Quote
     'quote.text': '"บางความรู้สึกไม่อาจซ่อนไว้ได้ ไม่ว่าคุณจะพยายามเพียงใด..."',
