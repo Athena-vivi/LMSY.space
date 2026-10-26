@@ -308,8 +308,13 @@ function TimelineItem({ event, language, isHovered, onHover, onHoverEnd, onOpenI
 
         {hasImages && (
           <>
-            {/* Thumbnail set: up to 4 square tiles, then a "+N" tile. A fixed
-                square crop keeps groups of 1 and 38 images equally scannable. */}
+            {/* Thumbnail set: up to four square tiles. A fixed square crop
+                keeps groups of 1 and 38 images equally scannable. The tile
+                that used to hold "+N" is gone: it was a dead grey square that
+                read as a broken picture, grew to a whole cell on a phone, and
+                swallowed clicks by opening the group at image one. Nothing
+                replaces it - the pictures open the group lightbox, and the
+                lightbox already carries the "view event" button. */}
             <div className="mt-3 grid grid-cols-2 gap-1.5">
               {event.images.slice(0, GROUP_THUMBNAILS).map((img, i) => {
                 const dimensions = getAssetDimensions(img);
@@ -337,11 +342,6 @@ function TimelineItem({ event, language, isHovered, onHover, onHoverEnd, onOpenI
                   </button>
                 );
               })}
-              {event.images.length > GROUP_THUMBNAILS && (
-                <div className="flex aspect-square items-center justify-center rounded-md bg-muted font-mono text-sm text-ink-2">
-                  +{event.images.length - GROUP_THUMBNAILS}
-                </div>
-              )}
             </div>
 
             <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
