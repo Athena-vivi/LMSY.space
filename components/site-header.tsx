@@ -13,6 +13,7 @@ import { useLanguage } from '@/components/language-provider';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SearchCommand } from '@/components/search-command';
 import { t, type TranslationKey } from '@/lib/languages';
+import { stripLangPrefix } from '@/lib/i18n-path';
 import { mainNavItems } from '@/lib/nav-items';
 
 /**
@@ -37,7 +38,11 @@ export function SiteHeader() {
   const { language } = useLanguage();
 
   // Homepage keeps its immersive home-header; admin has its own layout.
-  if (pathname === '/' || pathname.startsWith('/admin')) return null;
+  // The homepage check has to strip the language prefix first: /zh, /th, /es
+  // and /pt are the same homepage as / (app/[lang]/page.tsx re-exports it),
+  // and a raw `pathname === '/'` test only recognised the English one - so
+  // every prefixed homepage rendered this bar stacked on top of HomeHeader.
+  if (stripLangPrefix(pathname) === '/' || pathname.startsWith('/admin')) return null;
 
   const isActive = (href: string) =>
     href !== '#' && (pathname === href || pathname.startsWith(href + '/'));
