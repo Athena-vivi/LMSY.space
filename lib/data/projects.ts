@@ -935,7 +935,16 @@ export interface TimelineProjectRow {
   title: string;
   title_i18n: LocalizedText | null;
   category: string;
+  /**
+   * The sub-class the row is filed under. Required for the address: a hall
+   * whose second level is a sub-class (appearances / live-events / live)
+   * builds `<door>/<subtype>/<slug>`, so without this column every row would
+   * be addressed as `/unfiled/` and 404 on the page that owns it.
+   */
+  subtype: string | null;
   project_kind: string | null;
+  /** Which series a drama entry belongs to; the second key of its address. */
+  work_id: string | null;
   event_date: string | null;
   release_date: string | null;
 }
@@ -945,6 +954,12 @@ export interface TimelineProjectRow {
  * project dated 2025 can own assets dated 2026, and filtering the list by
  * year would orphan those assets. Returns null on a read failure - the
  * caller logs and answers an empty timeline, keeping the failure visible.
+ *
+ * `subtype` and `work_id` are part of the address, not decoration: entryPath()
+ * turns them into the second URL key, and a row read without them is addressed
+ * to the wrong shelf (every appearance as `/unfiled/`) or dropped entirely (a
+ * drama entry with no work_id resolves to no series). Both columns must stay
+ * in this select.
  */
 export async function listPublicTimelineProjects(
   db: AdminClient
@@ -953,7 +968,9 @@ export async function listPublicTimelineProjects(
     db
       .schema('lmsy_archive')
       .from('projects')
-      .select('id, slug, title, title_i18n, category, project_kind, event_date, release_date')
+      .select(
+        'id, slug, title, title_i18n, category, subtype, project_kind, work_id, event_date, release_date'
+      )
   );
 
   if (error) return null;

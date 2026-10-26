@@ -52,10 +52,7 @@ export default async function TimelinePage({
         <div className="relative xl:min-h-[calc(100vh-7rem)]">
           <ChronicleChrome
             eventCount={events.length}
-            imageCount={events.reduce(
-              (total, event) => total + (event.kind === 'images' ? event.images.length : 0),
-              0
-            )}
+            imageCount={events.reduce((total, event) => total + event.images.length, 0)}
             availableYears={availableYears}
             activeYear={activeYear}
           />

@@ -95,6 +95,20 @@ describe('chronicle data source', () => {
   test('image group ids are stable db-derived combinations', () => {
     assert.ok(timelineSrc.includes('`assets-${projectId}-${date}`') || timelineSrc.includes("'assets-${projectId}-${date}'") || /assets-\$\{projectId\}/.test(timelineSrc));
   });
+
+  test('the address columns are actually selected', () => {
+    // 2026-10-26: the timeline read projects without `subtype` / `work_id`, so
+    // entryPath() had no second URL key to work with. Every appearance and
+    // live-event link came out as `/.../unfiled/...` (mismatching the row's
+    // real shelf, so the detail page answered "not found"), and every
+    // single-entry drama row resolved to no series and was dropped from the
+    // timeline entirely. Both columns are part of the address, not decoration.
+    const repo = src('lib/data/projects.ts');
+    const select = repo.slice(repo.indexOf('export async function listPublicTimelineProjects'));
+    const statement = select.slice(0, select.indexOf(');'));
+    assert.ok(statement.includes('subtype'), 'subtype drives the second URL segment');
+    assert.ok(statement.includes('work_id'), 'work_id resolves a drama entry to its series');
+  });
 });
 
 // ---- Chronicle page year filter -------------------------------------------

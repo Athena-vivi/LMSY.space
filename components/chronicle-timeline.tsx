@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, ZoomIn, Calendar, Film, Images, ArrowRight } from 'lucide-react';
+import { X, ZoomIn, Calendar, Film, ArrowRight } from 'lucide-react';
 import type { ChronicleEvent, TimelineImageRef } from '@/lib/timeline';
 import { formatChronicleDate } from '@/lib/timeline';
 import { useLanguage } from '@/components/language-provider';
@@ -40,10 +40,10 @@ export function ChronicleTimeline({
 
   const openLightbox = useCallback(
     (event: ChronicleEvent, startIndex: number) => {
-      if (event.kind !== 'images' || event.images.length === 0) return;
+      if (event.images.length === 0) return;
       setLightbox({
         images: event.images,
-        projectTitle: getLocalizedText(event.projectTitleI18n, language, event.projectTitle),
+        projectTitle: getLocalizedText(event.titleI18n, language, event.title),
         href: event.href,
         date: event.date,
       });
@@ -261,10 +261,9 @@ const GROUP_THUMBNAILS = 4;
 
 function TimelineItem({ event, language, isHovered, onHover, onHoverEnd, onOpenImages }: TimelineItemProps) {
   const dateLabel = formatChronicleDate(event.date);
-  const categoryLabel =
-    event.kind === 'project'
-      ? t(language, categoryMeta(event.category).labelKey)
-      : '';
+  const categoryLabel = t(language, categoryMeta(event.category).labelKey);
+  const title = getLocalizedText(event.titleI18n, language, event.title);
+  const hasImages = event.images.length > 0;
 
   return (
     <motion.div
@@ -274,110 +273,86 @@ function TimelineItem({ event, language, isHovered, onHover, onHoverEnd, onOpenI
       onMouseLeave={onHoverEnd}
       className="relative w-full"
     >
-      {event.kind === 'project' ? (
-        /* ---------- Project event: links to its canonical detail page ---------- */
-        <Link
-          href={event.href}
-          className={`block overflow-hidden rounded-lg border bg-card p-4 transition-all duration-300 ${
-            isHovered
-              ? '-translate-y-0.5 border-lmsy-blue/50 shadow-xl'
-              : 'border-border shadow-lg hover:shadow-xl'
-          }`}
-        >
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-lmsy-blue/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-lmsy-blue">
-              <Film className="h-3 w-3" />
-              {t(language, 'chronicle.eventProject')}
-            </span>
-            <time dateTime={event.date} className="font-mono text-xs text-ink-2">
-              {dateLabel}
-            </time>
-          </div>
+      {/* One card per happening. A record and the pictures filed under it on
+          the same day used to arrive here as two unrelated cards; the pictures
+          are now part of the card that carries the title and the date. */}
+      <div
+        className={`overflow-hidden rounded-lg border bg-card p-4 transition-all duration-300 ${
+          isHovered
+            ? '-translate-y-0.5 border-lmsy-blue/50 shadow-xl'
+            : 'border-border shadow-lg hover:shadow-xl'
+        }`}
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-lmsy-blue/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-lmsy-blue">
+            <Film className="h-3 w-3" />
+            {t(language, 'chronicle.eventProject')}
+          </span>
+          <time dateTime={event.date} className="font-mono text-xs text-ink-2">
+            {dateLabel}
+          </time>
+        </div>
+
+        <Link href={event.href} className="block">
           <h3
             className={`font-serif text-base font-semibold transition-colors duration-300 ${
               isHovered ? 'text-lmsy-blue' : 'text-foreground'
             }`}
           >
-            {getLocalizedText(event.titleI18n, language, event.title)}
+            {title}
           </h3>
-          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
-            {categoryLabel}
-          </p>
         </Link>
-      ) : (
-        /* ---------- Image-group event: opens the group lightbox ---------- */
-        <div
-          className={`cursor-pointer overflow-hidden rounded-lg border bg-card transition-all duration-300 ${
-            isHovered
-              ? '-translate-y-0.5 border-lmsy-yellow/50 shadow-xl'
-              : 'border-border shadow-lg hover:shadow-xl'
-          }`}
-          onClick={() => onOpenImages(0)}
-        >
-          <div className="mb-3 flex items-center justify-between gap-3 px-4 pt-4">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-lmsy-yellow/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-lmsy-yellow">
-              <Images className="h-3 w-3" />
-              {t(language, 'chronicle.eventImages')}
-            </span>
-            <time dateTime={event.date} className="font-mono text-xs text-ink-2">
-              {dateLabel}
-            </time>
-          </div>
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
+          {categoryLabel}
+        </p>
 
-          {/* Thumbnail set: up to 4 square tiles, then a "+N" tile. A fixed
-              square crop keeps groups of 1 and 38 images equally scannable. */}
-          <div className="grid grid-cols-2 gap-1.5 p-4 pt-3">
-            {event.images.slice(0, GROUP_THUMBNAILS).map((img, i) => {
-              const dimensions = getAssetDimensions(img);
-              const captionText = getLocalizedText(img.caption_i18n, language, img.caption);
-              return (
-                <div
-                  key={img.id}
-                  className="group/thumb relative aspect-square overflow-hidden rounded-md bg-black/40"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenImages(i);
-                  }}
-                >
-                  <Image
-                    src={getImageUrl(img.image_url) || img.image_url}
-                    alt={captionText || event.projectTitle}
-                    width={dimensions?.width ?? 600}
-                    height={dimensions?.height ?? 600}
-                    sizes="(max-width: 768px) 45vw, 220px"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover/thumb:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover/thumb:opacity-100">
-                    <ZoomIn className="h-5 w-5 text-white" strokeWidth={1.5} />
-                  </div>
+        {hasImages && (
+          <>
+            {/* Thumbnail set: up to 4 square tiles, then a "+N" tile. A fixed
+                square crop keeps groups of 1 and 38 images equally scannable. */}
+            <div className="mt-3 grid grid-cols-2 gap-1.5">
+              {event.images.slice(0, GROUP_THUMBNAILS).map((img, i) => {
+                const dimensions = getAssetDimensions(img);
+                const captionText = getLocalizedText(img.caption_i18n, language, img.caption);
+                return (
+                  <button
+                    type="button"
+                    key={img.id}
+                    className="group/thumb relative aspect-square overflow-hidden rounded-md bg-black/40"
+                    onClick={() => onOpenImages(i)}
+                    aria-label={captionText || title}
+                  >
+                    <Image
+                      src={getImageUrl(img.image_url) || img.image_url}
+                      alt={captionText || title}
+                      width={dimensions?.width ?? 600}
+                      height={dimensions?.height ?? 600}
+                      sizes="(max-width: 768px) 45vw, 220px"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover/thumb:scale-105"
+                      loading="lazy"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover/thumb:opacity-100">
+                      <ZoomIn className="h-5 w-5 text-white" strokeWidth={1.5} />
+                    </span>
+                  </button>
+                );
+              })}
+              {event.images.length > GROUP_THUMBNAILS && (
+                <div className="flex aspect-square items-center justify-center rounded-md bg-muted font-mono text-sm text-ink-2">
+                  +{event.images.length - GROUP_THUMBNAILS}
                 </div>
-              );
-            })}
-            {event.images.length > GROUP_THUMBNAILS && (
-              <div className="flex aspect-square items-center justify-center rounded-md bg-muted font-mono text-sm text-ink-2">
-                +{event.images.length - GROUP_THUMBNAILS}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="px-4 pb-4">
-            <h3
-              className={`font-serif text-base font-semibold transition-colors duration-300 ${
-                isHovered ? 'text-lmsy-yellow' : 'text-foreground'
-              }`}
-            >
-              {getLocalizedText(event.projectTitleI18n, language, event.projectTitle)}
-            </h3>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2">
               {event.images.length}{' '}
               {event.images.length === 1
                 ? t(language, 'common.imagesOne')
                 : t(language, 'common.imagesMany')}
             </p>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </motion.div>
   );
 }

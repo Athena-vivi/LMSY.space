@@ -66,28 +66,32 @@ export interface TimelineImageRef {
   height?: number | null;
 }
 
-export type ChronicleEvent =
-  | {
-      kind: 'project';
-      id: string;
-      /** Raw ISO date (YYYY-MM-DD) from projects.release_date. */
-      date: string;
-      title: string;
-      titleI18n: LocalizedText;
-      category: string;
-      href: string;
-    }
-  | {
-      kind: 'images';
-      id: string;
-      /** Raw ISO date (YYYY-MM-DD) from gallery_assets.event_date. */
-      date: string;
-      projectId: string;
-      projectTitle: string;
-      projectTitleI18n: LocalizedText;
-      href: string;
-      images: TimelineImageRef[];
-    };
+/**
+ * One card on the timeline = one happening.
+ *
+ * A project and the pictures filed under it on the same day are the same
+ * happening, so they are one event, not two. Before 2026-10-26 they were two
+ * cards: a text card from projects.event_date and an image card from
+ * gallery_assets.event_date, which read as two unrelated records about the
+ * same night (worse, the alternating column layout put them on opposite sides
+ * of the centre line). The images now hang off the event they belong to.
+ *
+ * `images` is empty for an event whose pictures are filed under another date
+ * (a release announced in December, shot in November) - then the text card and
+ * the picture card are honestly two different days and stay apart.
+ */
+export interface ChronicleEvent {
+  /** Stable, derived from the database: `project-<id>` or `assets-<projectId>-<date>`. */
+  id: string;
+  /** Raw ISO date (YYYY-MM-DD). */
+  date: string;
+  projectId: string;
+  title: string;
+  titleI18n: LocalizedText;
+  category: string;
+  href: string;
+  images: TimelineImageRef[];
+}
 
 /**
  * Public projects, fetched once per request.
@@ -203,12 +207,16 @@ export async function getChronicleEvents(year?: string): Promise<ChronicleEvent[
   const rows = await loadPublicProjects();
   if (rows.length === 0) return [];
 
-  const events: ChronicleEvent[] = [];
   const { loadSeriesSlugMap } = await import('@/lib/series-slugs');
   const { entryPath } = await import('@/lib/entry-path');
   const seriesSlugs = await loadSeriesSlugMap();
 
   const inYear = (date: string) => !year || date.slice(0, 4) === year;
+
+  // One slot per (project, day). The project's own date opens the slot; the
+  // picture group with the same key fills its images in, one entry survives.
+  const byKey = new Map<string, ChronicleEvent>();
+  const keyOf = (projectId: string, date: string) => `${projectId}|${date}`;
 
   for (const p of rows) {
     // A theme project carries no single event date by definition ("Back View"
@@ -225,19 +233,21 @@ export async function getChronicleEvents(year?: string): Promise<ChronicleEvent[
     if (!inYear(date)) continue;
     const href = entryPath(p as never, seriesSlugs);
     if (!href) continue; // nowhere to send the visitor
-    events.push({
-      kind: 'project',
+    byKey.set(keyOf(p.id, date), {
       id: `project-${p.id}`,
       date,
+      projectId: p.id,
       title: p.title,
       titleI18n: normalizeLocalizedText(p.title_i18n, p.title),
       category: p.category,
       href,
+      images: [],
     });
   }
 
   // 2. Image groups for those projects (assets are always project-linked:
-  //    verified 0 rows with NULL project_id).
+  //    verified 0 rows with NULL project_id). Each group joins the slot its
+  //    own (project, event_date) opens - the project card keeps its pictures.
   const assets = await loadAssetsForYear(
     rows.map((r) => r.id),
     year
@@ -259,7 +269,7 @@ export async function getChronicleEvents(year?: string): Promise<ChronicleEvent[
   const groups = new Map<string, TimelineImageRef[]>();
 
   for (const a of assets) {
-    const key = `${a.project_id}|${a.event_date}`;
+    const key = keyOf(a.project_id, a.event_date);
     const bucket = groups.get(key) || [];
     bucket.push({
       id: a.id,
@@ -275,24 +285,35 @@ export async function getChronicleEvents(year?: string): Promise<ChronicleEvent[
     const [projectId, date] = key.split('|');
     const project = projectById.get(projectId);
     if (!project) continue;
+
+    // Same day as the project's own record: the pictures belong to that card.
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.images = images;
+      continue;
+    }
+
+    // Pictures dated apart from the project's record - a separate day, so a
+    // separate card. A theme project (no date of its own) lands here too.
     const href = entryPath(project as never, seriesSlugs);
     if (!href) continue; // nowhere to send the visitor
-    events.push({
-      kind: 'images',
+    byKey.set(key, {
       id: `assets-${projectId}-${date}`,
       date,
       projectId,
-      projectTitle: project.title,
-      projectTitleI18n: normalizeLocalizedText(project.title_i18n, project.title),
+      title: project.title,
+      titleI18n: normalizeLocalizedText(project.title_i18n, project.title),
+      category: project.category,
       href,
       images,
     });
   }
 
-  // Newest first; on the same date a project entry leads its image set.
-  return events.sort((a, b) => {
+  // Newest first; within one day the slot with pictures leads, so a day that
+  // holds both a record and a picture set opens on the pictures.
+  return Array.from(byKey.values()).sort((a, b) => {
     if (a.date !== b.date) return b.date.localeCompare(a.date);
-    if (a.kind !== b.kind) return a.kind === 'project' ? -1 : 1;
+    if (a.images.length !== b.images.length) return b.images.length - a.images.length;
     return a.id.localeCompare(b.id);
   });
 }
