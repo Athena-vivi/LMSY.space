@@ -1,17 +1,28 @@
 /**
  * The intro splash is an entry moment, not a page transition.
  *
- * Switching language between / and /zh is a FULL document load, not a client
- * transition: the two live under different root layouts (app/(en)/ and
- * app/[lang]/), and React remounts from scratch. Any in-memory flag is lost,
- * so "already played" has to survive a reload - sessionStorage, one value per
- * tab.
+ * Two separate questions have to be answered here, and they used to be answered
+ * by one shared flag - which is why the door kept opening again on every return
+ * to the homepage:
  *
- * The read has to happen before the browser paints, otherwise the black
- * overlay appears for a frame and then vanishes on every language switch. A
- * blocking inline script in each root layout sets the attribute on <html>,
- * and globals.css hides the overlay when it is there. React keeps rendering
- * the splash in both cases, so server and client markup still match.
+ *   1. "Is this a document load that has never seen the door?" - the answer has
+ *      to be readable BEFORE the first paint, otherwise the black overlay
+ *      flashes on every language switch. That is what the inline script in each
+ *      root layout is for: it reads storage and marks <html>, and globals.css
+ *      hides the overlay for that attribute.
+ *
+ *   2. "Has the door already opened in THIS document?" - a client-side return to
+ *      the homepage (from /timeline, from a door page) re-mounts the wrapper
+ *      without reloading the document. The <html> attribute was never set,
+ *      because at first load there was nothing in storage yet, so the overlay
+ *      rendered again and the whole intro replayed. The component therefore
+ *      hides its own curtain in a layout effect when this tab has already
+ *      played - before paint, so nothing flashes.
+ *
+ * Storage is the shared answer to (1) and (2): written when the hold ends, read
+ * before paint on the next document load, read again on every remount.
+ * sessionStorage means "this tab", i.e. one door per visit - closing the tab and
+ * coming back opens it again, reloading the page does not.
  */
 export const SPLASH_STORAGE_KEY = 'lmsy-splash-seen';
 
@@ -28,12 +39,14 @@ export function hasPlayedSplash(): boolean {
 }
 
 /**
- * Remembers that the intro played. Private-mode storage failures are ignored.
+ * Remembers that the door has opened in this tab. Private-mode storage failures
+ * are ignored: the intro then plays again on the next document load, but the
+ * in-document check still prevents a replay on client-side navigation.
  *
  * Deliberately does NOT set the <html> attribute: the attribute is what hides
- * the overlay, and setting it here would kill the splash mid-animation on the
- * very visit that is supposed to show it. It only matters at the next document
- * load, where the inline script reads storage and sets it before paint.
+ * the overlay before paint, and setting it here would kill the curtain
+ * mid-fade. It only matters at the next document load, where the inline script
+ * reads storage and sets it.
  */
 export function markSplashPlayed(): void {
   try {

@@ -1,37 +1,50 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type Ref } from 'react';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 
 interface ImmersiveLoadingProps {
-  onComplete: () => void;
-  loading: boolean;
   /** Server-provided splash photo. Empty means the curator has not set one. */
   initialImageUrl?: string;
+  /**
+   * The two numbers on the door plaque. Both 0 (a failed read, or genuinely
+   * nothing published yet) falls back to the plain line, so the door never
+   * claims "0 events".
+   */
+  archiveCounts?: { events: number; images: number };
+  /** Lets the wrapper hide the curtain before paint on a client-side return. */
+  curtainRef?: Ref<HTMLDivElement>;
 }
 
+/** 1240 -> "1,240". Locale-independent on purpose: the value is server-rendered. */
+function groupThousands(value: number): string {
+  return String(Math.max(0, Math.trunc(value))).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * The door itself.
+ *
+ * The wordmark is the curator's design and is not to be touched: a 1.5s
+ * blur-in, a hairline that takes 2.5s to draw itself, then the plaque settling
+ * at 2.0s. That is a 2.5s piece of choreography, so the wrapper holds the
+ * curtain for 2.6s before the exit starts - cutting it at half a second sliced
+ * the wordmark mid-fade and meant the plaque never appeared at all.
+ *
+ * The exit (1.2s) matches SPLASH_EXIT_MS in the wrapper, and the homepage
+ * content rises underneath it as the curtain goes transparent.
+ */
 export default function ImmersiveLoading({
-  onComplete,
-  loading,
   initialImageUrl = '',
+  archiveCounts,
+  curtainRef,
 }: ImmersiveLoadingProps) {
   // Nothing local: the splash is painted with whatever photo the curator set
   // for the hero block. Starting from /hero-reveal.jpg and swapping to the
   // real photo mid-animation is what made two different images appear.
   const [splashImageUrl, setSplashImageUrl] = useState(initialImageUrl);
   const { language } = useLanguage();
-
-  useEffect(() => {
-    if (!loading) {
-      // Start exit sequence
-      const exitTimer = setTimeout(() => {
-        onComplete();
-      }, 2800);
-      return () => clearTimeout(exitTimer);
-    }
-  }, [loading, onComplete]);
 
   useEffect(() => {
     // The server already handed us the photo; asking again would only risk
@@ -64,15 +77,24 @@ export default function ImmersiveLoading({
     };
   }, [initialImageUrl]);
 
+  const counted = (archiveCounts?.events ?? 0) > 0;
+  const plaque = counted
+    ? t(language, 'splash.plaque', {
+        events: groupThousands(archiveCounts?.events ?? 0),
+        images: groupThousands(archiveCounts?.images ?? 0),
+      })
+    : t(language, 'splash.entering');
+
   return (
     <motion.div
+      ref={curtainRef}
       initial={{ opacity: 1 }}
       exit={{
         opacity: 0,
         scale: 1.1,
         filter: 'blur(20px)',
       }}
-      transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
       className="lmsy-splash fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden"
     >
       {/* 核心视觉层：LMSY 字符门户 - 纯文字渐变方案 */}
@@ -107,14 +129,14 @@ export default function ImmersiveLoading({
           className="h-[1px] bg-gradient-to-r from-transparent via-lmsy-yellow/40 to-transparent mt-4"
         />
 
-        {/* 副标题：星轨间距排版 */}
+        {/* 门牌：这里是什么、从什么时候开始、已经收了多少东西。 */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 0.5, y: 0 }}
           transition={{ duration: 1, delay: 1 }}
-          className="text-[12px] md:text-[14px] tracking-[0.8em] font-light text-white uppercase mt-6 text-center pl-[0.8em]"
+          className="text-[11px] md:text-[13px] tracking-[0.3em] font-light text-white uppercase mt-6 text-center pl-[0.3em] tabular-nums"
         >
-          {t(language, 'splash.entering')}
+          {plaque}
         </motion.p>
       </div>
 

@@ -30,6 +30,7 @@ export const th: Record<TranslationKey, string> = {
     'hero.sonya': 'SONYA',
     'hero.besties': 'พื้นที่พิเศษสำหรับ LMSY และ Besties ของพวกเธอ',
     'splash.entering': 'กำลังเข้าสู่วงโคจรแรก',
+    'splash.plaque': 'เก็บไว้แล้ว {events} กิจกรรม · {images} ภาพ',
 
     // Quote
     'quote.text': '"บางความรู้สึกไม่อาจซ่อนไว้ได้ ไม่ว่าคุณจะพยายามเพียงใด..."',

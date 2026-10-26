@@ -30,6 +30,7 @@ export const zh: Record<TranslationKey, string> = {
     'hero.sonya': 'SONYA',
     'hero.besties': '属于 LMSY 和她们的 Besties 专属空间。',
     'splash.entering': '正在进入第一轨道',
+    'splash.plaque': '已收录 {events} 场活动 · {images} 张影像',
 
     // Quote
     'quote.text': '"有些情感是无法隐藏的，无论你多么努力..."',

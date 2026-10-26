@@ -7,6 +7,7 @@ import { MuseumPreface } from '@/components/museum-preface';
 import { HomeHeader } from '@/components/home-header';
 import { LoadingWrapper } from '@/components/loading/loading-wrapper';
 import { getHomepageHeroMedia } from '@/lib/homepage-hero';
+import { getPublicArchiveCounts } from '@/lib/data/archive-counts';
 import { pageLanguageAlternates } from '@/lib/seo';
 
 /**
@@ -43,10 +44,15 @@ export function generateMetadata() {
  * database through /api/home/summary or /api/home/portals.
  */
 export default async function HomePage() {
-  const { splashImageUrl, heroImageUrl } = await getHomepageHeroMedia();
+  const [{ splashImageUrl, heroImageUrl }, archiveCounts] = await Promise.all([
+    getHomepageHeroMedia(),
+    // The door plaque's two numbers. Same visibility rule as the doors, and it
+    // never throws - a failed count falls back to the plain line.
+    getPublicArchiveCounts(),
+  ]);
 
   return (
-    <LoadingWrapper splashImageUrl={splashImageUrl}>
+    <LoadingWrapper splashImageUrl={splashImageUrl} archiveCounts={archiveCounts}>
       <div className="relative">
         <HomeHeader />
 

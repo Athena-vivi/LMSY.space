@@ -29,6 +29,7 @@ export const en = {
     'hero.sonya': 'SONYA',
     'hero.besties': 'A dedicated space for LMSY and their Besties.',
     'splash.entering': 'Entering The First Orbit',
+    'splash.plaque': '{events} events · {images} images',
 
     // Quote
     'quote.text': '"Some feelings are impossible to hide, no matter how hard you try..."',
