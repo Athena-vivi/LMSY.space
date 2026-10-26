@@ -56,6 +56,8 @@ export function AllAssetsView({
     excerpt_en: '',
     excerpt_zh: '',
     excerpt_th: '',
+    catalog_id: '',
+    event_date: '',
   });
   const editingAssetImageUrl = editingAsset ? getCdnUrl(editingAsset.image_url) : null;
 
@@ -232,6 +234,8 @@ export function AllAssetsView({
       excerpt_en: excerptI18n.en || '',
       excerpt_zh: excerptI18n.zh || '',
       excerpt_th: excerptI18n.th || '',
+      catalog_id: asset.catalog_id || '',
+      event_date: asset.event_date || '',
     });
   };
 
@@ -262,11 +266,24 @@ export function AllAssetsView({
         },
       };
 
+      // Only send the two identity fields when they actually changed: an
+      // unchanged catalog id must not trigger a move, and an empty date means
+      // "not decided yet", which the endpoint stores as null.
+      const nextCatalogId = assetForm.catalog_id.trim();
+      const nextEventDate = assetForm.event_date.trim();
+      const identity: Record<string, unknown> = {};
+      if (nextCatalogId !== (editingAsset.catalog_id || '')) {
+        identity.catalog_id = nextCatalogId;
+      }
+      if (nextEventDate !== (editingAsset.event_date || '')) {
+        identity.event_date = nextEventDate;
+      }
+
       const response = await fetch('/api/admin/gallery', {
         method: 'PATCH',
         headers,
         credentials: 'include',
-        body: JSON.stringify({ id: editingAsset.id, ...nextCopy }),
+        body: JSON.stringify({ id: editingAsset.id, ...nextCopy, ...identity }),
       });
 
       const result = await response.json();
@@ -274,12 +291,17 @@ export function AllAssetsView({
         throw new Error(result.error || 'Failed to update asset');
       }
 
-      // Patch the row in place so the grid keeps its place and page.
-      assets.updateRow(editingAsset.id, nextCopy);
+      // Patch the row in place so the grid keeps its place and page. A rename
+      // also moves the file, so the row takes the image_url the route returned.
+      assets.updateRow(editingAsset.id, {
+        ...nextCopy,
+        ...identity,
+        ...(result.data?.image_url ? { image_url: result.data.image_url } : {}),
+      });
       setEditingAsset(null);
     } catch (err) {
       console.error('[ASSET_EDIT] Error:', err);
-      alert('Failed to save asset translations');
+      alert(err instanceof Error ? err.message : 'Failed to save asset');
     } finally {
       setSavingAsset(false);
     }
@@ -691,9 +713,9 @@ export function AllAssetsView({
               <div className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
                 <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
                   <div>
-                    <h2 className="text-lg font-serif text-ink">Edit Asset Copy</h2>
+                    <h2 className="text-lg font-serif text-ink">Edit Asset</h2>
                     <p className="text-[10px] font-mono tracking-wider text-ink-2">
-                      TITLE / CAPTION / EXCERPT · EN / ZH / TH
+                      CATALOG / DATE · TITLE / CAPTION / EXCERPT · EN / ZH / TH
                     </p>
                   </div>
                   <button
@@ -723,8 +745,50 @@ export function AllAssetsView({
                           </div>
                         )}
                       </div>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-mono uppercase tracking-[0.24em] text-ink-2">
+                            catalog_id
+                          </label>
+                          <input
+                            type="text"
+                            value={assetForm.catalog_id}
+                            onChange={(e) => setAssetForm(prev => ({ ...prev, catalog_id: e.target.value }))}
+                            spellCheck={false}
+                            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 font-mono text-xs text-ink outline-none transition focus:border-lmsy-yellow/35"
+                          />
+                          <p className="text-[10px] leading-relaxed text-ink-2/70">
+                            Renaming moves the file to the new path. Leave it empty only if you
+                            clear the number on purpose.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-mono uppercase tracking-[0.24em] text-ink-2">
+                            event_date
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="date"
+                              value={assetForm.event_date}
+                              onChange={(e) => setAssetForm(prev => ({ ...prev, event_date: e.target.value }))}
+                              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 font-mono text-xs text-ink outline-none transition focus:border-lmsy-yellow/35"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setAssetForm(prev => ({ ...prev, event_date: '' }))}
+                              className="shrink-0 rounded-xl border border-white/10 px-3 text-[10px] font-mono uppercase tracking-wider text-ink-2 transition hover:border-white/25"
+                            >
+                              clear
+                            </button>
+                          </div>
+                          <p className="text-[10px] leading-relaxed text-ink-2/70">
+                            Empty means the day is not decided yet - fill it in whenever you know.
+                          </p>
+                        </div>
+                      </div>
+
                       <div className="space-y-2 text-[11px] font-mono tracking-wider text-ink-2">
-                        <div>CATALOG {editingAsset.catalog_id || 'UNSET'}</div>
                         <div>TAG {editingAsset.tag || 'UNSET'}</div>
                         <div>PROJECT {editingAsset.project_id || 'UNLINKED'}</div>
                       </div>
@@ -800,7 +864,7 @@ export function AllAssetsView({
                         className="inline-flex items-center gap-2 rounded-xl border border-lmsy-yellow/30 bg-lmsy-yellow/12 px-4 py-2 text-xs font-mono tracking-wider text-lmsy-yellow/85 transition hover:bg-lmsy-yellow/18 disabled:opacity-60"
                       >
                         {savingAsset ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        SAVE_ASSET_COPY
+                        SAVE_ASSET
                       </button>
                     </div>
                   </div>

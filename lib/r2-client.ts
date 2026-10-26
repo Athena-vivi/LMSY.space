@@ -1,4 +1,11 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  HeadObjectCommand,
+  CopyObjectCommand,
+} from '@aws-sdk/client-s3';
 
 // 🔒 SECURITY: This file must only be used on the server side
 // Environment variables without NEXT_PUBLIC_ prefix are never available in the browser
@@ -118,6 +125,64 @@ export async function deleteFromR2(path: string): Promise<boolean> {
     console.error('R2 delete error:', error instanceof Error ? error.message : 'Unknown error');
     return false;
   }
+}
+
+/**
+ * True when an object already exists at this key.
+ *
+ * Used before a rename so a destination that is already occupied is reported
+ * as a conflict instead of silently overwriting another asset's file.
+ */
+export async function r2ObjectExists(key: string): Promise<boolean> {
+  const result = await getR2ObjectMetadata(key);
+  return result.success;
+}
+
+/**
+ * Copy an object inside the bucket, server-side (no download / re-upload).
+ *
+ * R2 supports CopyObject for objects up to 5 GB; the archive's pictures are
+ * webp files of a few hundred KB, so a single call is always enough.
+ */
+export async function copyR2Object(fromKey: string, toKey: string): Promise<boolean> {
+  try {
+    const command = new CopyObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: toKey,
+      // CopySource is "<bucket>/<key>" and the key part must be URL-encoded.
+      CopySource: `${R2_BUCKET_NAME}/${encodeURIComponent(fromKey)}`,
+    });
+
+    await getR2Client().send(command);
+    return true;
+  } catch (error) {
+    console.error('R2 copy error:', error instanceof Error ? error.message : 'Unknown error');
+    return false;
+  }
+}
+
+/**
+ * Move an object: copy to the new key, confirm it is readable there, then
+ * delete the old one.
+ *
+ * The destination is verified BEFORE the source is removed, so a failed copy
+ * never leaves the archive without a file. Deleting first was the obvious
+ * wrong order - it loses the picture when the copy fails.
+ *
+ * Returns 'moved' | 'same' | 'copy-failed' | 'missing-source'.
+ */
+export async function moveR2Object(
+  fromKey: string,
+  toKey: string
+): Promise<'moved' | 'same' | 'copy-failed' | 'missing-source'> {
+  if (!fromKey || !toKey || fromKey === toKey) return 'same';
+
+  if (!(await r2ObjectExists(fromKey))) return 'missing-source';
+  if (!(await copyR2Object(fromKey, toKey))) return 'copy-failed';
+  if (!(await r2ObjectExists(toKey))) return 'copy-failed';
+
+  await deleteFromR2(fromKey);
+  return 'moved';
 }
 
 /**

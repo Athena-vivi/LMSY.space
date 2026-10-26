@@ -274,16 +274,23 @@ LMSY-LIVE-TIKTOK-SY-20250412-001.webp
 
 `LMSY-BTS-<作品码>-<日期>-001`、`LMSY-EARLY-<内容码>-<日期>-001`。
 
-### 4.9 特色专题 `FEAT`（2026-10-22 定）
+### 4.9 特色专题 `FEAT`（2026-10-22 定；2026-10-26 修订：日期段改为可选）
 
-主体 = 专题码。**专题一律不写日期段**：专题是长期收藏，不是一个时间点的事件，
-同一专题往后随时可能补进几年前的旧图或几年后的新图，日期无法钉死在整套图上。
+主体 = 专题码。**事件编号一律不写日期**——专题是长期收藏，不是一个时间点的事件，
+同一专题往后随时可能补进几年前的旧图或几年后的新图。
+
+**图片编号的日期段可选**（2026-10-26 修订）。旧规是「专题一律不写日期」，这条对
+「背影」这类跨年主题成立，但对「日常」这类不成立：日常每一张图都必然属于某一天。
+所以日期不再是禁用的，而是**能钉到天就写，钉不到就整段省略**——与其他门同一条规则。
 
 ```
-LMSY-FEAT-BACKVIEW-001.webp
-LMSY-FEAT-BACKVIEW-010.webp
+LMSY-FEAT-BACKVIEW-001.webp                  跨年主题：不写日期（旧规仍有效）
+LMSY-FEAT-DAILY-20221015-001.webp            日常主题：这张图是 2022-10-15 的
+LMSY-FEAT-DAILY-20221015-002.webp            同一天的第二张
 ```
 
+- 写了日期的按**同一天**续号（`LMSY-FEAT-DAILY-20221015-001/002`）；没写日期的
+  按**整个专题**续号（`LMSY-FEAT-BACKVIEW-001/002`）。两种可以共存于一个专题。
 - 序号只增不减，新图接在最大序号后面，已有图的序号永远不动。
 - 专题以 `project_kind = 'theme'` 的项目挂在 `/features`，事件编号 = `LMSY-FEAT-<专题码>`。
 - 不要用 `EARLY` 码命名专题——专题不是「早期」，是长期主题（用户 2026-10-22 定）。
@@ -356,6 +363,7 @@ LMSY-APPEAR-AWARDS-BKK-20250515        →  LMSY-APPEAR-AWARDS-BKK-20250515-001
 LMSY-MAG-GAZE-THEDREAMUNFOLDS          →  LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001
 LMSY-MAG-OAT-LM                        →  LMSY-MAG-OAT-LM-20241211-001
 LMSY-FEAT-BACKVIEW                     →  LMSY-FEAT-BACKVIEW-001
+LMSY-FEAT-DAILY                        →  LMSY-FEAT-DAILY-20221015-001（有日期就带上）
 ```
 
 | 事件编号 | 归属 | 文件名 |
@@ -406,7 +414,7 @@ LMSY-FEAT-BACKVIEW                     →  LMSY-FEAT-BACKVIEW-001
 lmsy/<door>/<yyyy>/<文件名>
 ```
 
-无日期的编号（FEAT 专题）不带年份段：
+无日期的编号（不钉到某天的 FEAT 专题图）不带年份段：
 
 ```
 lmsy/<door>/<文件名>
@@ -417,6 +425,7 @@ lmsy/mag/2025/LMSY-MAG-GAZE-THEDREAMUNFOLDS-20250117-001.webp
 lmsy/mag/2024/LMSY-MAG-OAT-LM-20241211-001.webp
 lmsy/live/2025/LMSY-LIVE-TIKTOK-SY-20250412-001.webp
 lmsy/feat/LMSY-FEAT-BACKVIEW-001.webp
+lmsy/feat/2022/LMSY-FEAT-DAILY-20221015-001.webp
 ```
 
 路径由 `lib/catalog-id.ts` 的 `r2KeyForCatalogId()` 从文件名推出来，不单独维护。

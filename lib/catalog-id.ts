@@ -10,7 +10,8 @@
  *   LMSY-MAG-OAT-LM-20241211-012          (single-person event)
  *   LMSY-MAG-KAZZ217-YOUTHCHOICE-SY-20260731-001
  *   LMSY-DRAMA-AFFAIR-PROMO-20240815-003
- *   LMSY-FEAT-BACKVIEW-001            (special topic: no date by design)
+ *   LMSY-FEAT-BACKVIEW-001                (topic not pinned to a day)
+ *   LMSY-FEAT-DAILY-20221015-001          (topic pinned to a day)
  *
  * The first segment is the SITE (LMSY), not the person: this is a two-person
  * archive, so every id starts the same way. The person, when an event belongs
@@ -25,9 +26,11 @@
  *     right-to-left.
  *   - A missing segment is omitted entirely - never write NA / 0000 placeholders.
  *   - YYYYMMDD is 8 digits; omitted as a whole when unknown.
- *   - FEAT topics omit the date on purpose: a topic is a long-lived
- *     collection whose images join over the years, so the sequence is
- *     append-only and no date can be pinned to the set.
+ *   - FEAT topics MAY omit the date, but do not have to: a topic is a
+ *     long-lived collection whose images join over the years. A subject that
+ *     is pinned to a day (a "daily" topic) carries that day; one that is not
+ *     (a "back view" topic) leaves the segment out, which is why the date is
+ *     optional here rather than forbidden.
  *   - NNN starts at 001. There is NO -000 cover segment: a cover is a POINTER
  *     (projects.cover_url / homepage_cover_url) to an existing asset in the
  *     same batch, never a separate numbered file.
@@ -406,7 +409,7 @@ export function liveSubject(platform: string | null | undefined): string | null 
   return value || null;
 }
 
-/** FEAT subject: the topic code, and no date segment ever (spec 4.9). */
+/** FEAT subject: the topic code (spec 4.9). The date segment is optional. */
 export function featSubject(topicCode: string | null | undefined): string | null {
   const topic = (topicCode || '').trim().toUpperCase();
   return topic || null;
@@ -554,8 +557,8 @@ export function generateCatalogId(parts: CatalogIdParts): string {
 
 /**
  * R2 object key for an asset: <person>/<door>/<year>/<id>.webp
- * Date-less IDs (FEAT topics: long-lived, images join over the years) carry
- * no year segment: <person>/<door>/<id>.webp
+ * Date-less IDs (a topic that is not pinned to a day) carry no year segment:
+ * <person>/<door>/<id>.webp
  */
 export function r2KeyForCatalogId(catalogId: string): string {
   const parsed = parseCatalogId(catalogId);
@@ -685,20 +688,25 @@ export function normalizeEventNumber(head: string | null | undefined): string | 
  * already carry one.
  *
  * An asset id is "which event, then which picture in it", so the only thing
- * added to an event number is the date it lacks. EVENT / APPEAR have it inside;
- * FEAT omits the date on purpose (a topic is a long-lived set whose pictures
- * join over the years, so no single date can be pinned to it).
+ * added to an event number is the date it lacks. EVENT / APPEAR have it inside
+ * the subject already, so it is never appended twice.
+ *
+ * FEAT takes the same path as every other door now: a topic is allowed to be
+ * pinned to a day. A "daily" topic carries that day (the pictures are that
+ * day's), a "back view" topic does not - the segment is simply left out when
+ * no date is known, which keeps the old date-less ids valid.
  *
  *   LMSY-EVENT-FANMEET-WUH-20251129-LM      -> + 001
  *   LMSY-MAG-OAT-LM          + 20241211     -> + 001
  *   LMSY-FEAT-BACKVIEW                      -> + 001
+ *   LMSY-FEAT-DAILY         + 20221015      -> + 001
  */
 export function assetIdPrefixFor(
   eventNumber: string,
   doorCode: string,
   eventDate: string | null | undefined
 ): string {
-  if (doorCode === 'EVENT' || doorCode === 'APPEAR' || doorCode === 'FEAT') return eventNumber;
+  if (doorCode === 'EVENT' || doorCode === 'APPEAR') return eventNumber;
   const date = compactDate(eventDate);
   return date ? `${eventNumber}-${date}` : eventNumber;
 }
@@ -729,9 +737,9 @@ export async function allocateNextCatalogId(
   const person = options.person ?? 'LMSY';
   const subject = options.subject;
   const tableName = options.tableName ?? 'gallery_assets';
-  // A FEAT topic carries no date by design (spec 4.9), so the date can be
-  // absent here - formatting a null date threw and turned the whole preview
-  // into a 500. The date segment is simply left out when there is none.
+  // The date segment is optional (a FEAT topic may not be pinned to a day), so
+  // formatting a null date must not throw - it used to turn the whole preview
+  // into a 500. The segment is simply left out when there is no date.
   const compacted = eventDate ? formatDateToCompact(eventDate) : null;
   const withDate = (base: string) => (compacted ? `${base}-${compacted}` : base);
 

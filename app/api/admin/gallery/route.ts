@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { normalizeLocalizedText } from '@/lib/localized-content';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import { isValidCatalogId, r2KeyForCatalogId } from '@/lib/catalog-id';
+import { getCdnUrl, getRelativePath, moveR2Object, r2ObjectExists } from '@/lib/r2-client';
 import {
   listGalleryAssetsByProject,
   getProjectIdIfExists,
@@ -263,13 +265,117 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, rotation, project_id, is_cover, title, title_i18n, caption, caption_i18n, excerpt, excerpt_i18n } = body;
+    const { id, rotation, project_id, is_cover, title, title_i18n, caption, caption_i18n, excerpt, excerpt_i18n, catalog_id, event_date } = body;
 
     if (!id) {
       return NextResponse.json(
         { error: 'Missing required field: id' },
         { status: 400 }
       );
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // ---- catalog_id: renaming moves the file, so it is handled first ----
+    // The catalog id is the file's name: <PERSON>-<DOOR>-<SUBJECT>[-<DATE>]-<NNN>
+    // maps to an R2 key. Changing it therefore means moving the object, not
+    // just rewriting a column - otherwise the row would point at a key that
+    // no longer exists and every reader would 404.
+    let movedFrom: string | null = null;
+    let movedTo: string | null = null;
+
+    const nextCatalogRaw = typeof catalog_id === 'string' ? catalog_id.trim() : null;
+    const nextCatalogId = nextCatalogRaw ? nextCatalogRaw.toUpperCase() : null;
+
+    if (catalog_id !== undefined) {
+      const { data: current, error: readError } = await supabaseAdmin
+        .schema('lmsy_archive')
+        .from('gallery_assets')
+        .select('id, catalog_id, image_url')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (readError) {
+        return NextResponse.json(
+          { error: 'Failed to read asset', details: readError.message },
+          { status: 500 }
+        );
+      }
+      if (!current) {
+        return NextResponse.json({ error: 'Asset not found', id }, { status: 404 });
+      }
+
+      const previousCatalogId = (current.catalog_id as string | null) ?? null;
+
+      if (nextCatalogId !== previousCatalogId) {
+        if (nextCatalogId && !isValidCatalogId(nextCatalogId)) {
+          return NextResponse.json(
+            {
+              error: `"${nextCatalogId}" is not a valid catalog id`,
+              hint: 'Expected <PERSON>-<DOOR>-<SUBJECT>[-<YYYYMMDD>]-<NNN>, e.g. LMSY-FEAT-DAILY-20221015-001',
+            },
+            { status: 400 }
+          );
+        }
+
+        // Another row already owns this number: refuse rather than create two
+        // rows that answer to the same id.
+        if (nextCatalogId) {
+          const { data: clash, error: clashError } = await supabaseAdmin
+            .schema('lmsy_archive')
+            .from('gallery_assets')
+            .select('id')
+            .eq('catalog_id', nextCatalogId)
+            .neq('id', id)
+            .maybeSingle();
+
+          if (clashError) {
+            return NextResponse.json(
+              { error: 'Failed to check the catalog id', details: clashError.message },
+              { status: 500 }
+            );
+          }
+          if (clash) {
+            return NextResponse.json(
+              { error: `${nextCatalogId} is already used by another asset`, id: clash.id },
+              { status: 409 }
+            );
+          }
+        }
+
+        // The file follows its name. The source is the key the row actually
+        // points at (old rows predate the canonical layout), the destination
+        // is the canonical key for the new id.
+        const sourceKey = getRelativePath(String(current.image_url ?? ''));
+        const destinationKey = nextCatalogId ? r2KeyForCatalogId(nextCatalogId) : null;
+
+        if (sourceKey && destinationKey && sourceKey !== destinationKey) {
+          if (await r2ObjectExists(destinationKey)) {
+            return NextResponse.json(
+              {
+                error: `A file already exists at ${destinationKey}`,
+                hint: 'Pick a different number - the object would overwrite another picture',
+              },
+              { status: 409 }
+            );
+          }
+
+          const outcome = await moveR2Object(sourceKey, destinationKey);
+
+          if (outcome === 'missing-source') {
+            // No object to move: keep the row usable and just rename it.
+            console.warn(`[ADMIN_GALLERY_PATCH] no object at ${sourceKey}; renaming the row only`);
+          } else if (outcome === 'copy-failed') {
+            return NextResponse.json(
+              { error: `Could not move the file to ${destinationKey}; nothing was changed` },
+              { status: 500 }
+            );
+          } else if (outcome === 'moved') {
+            movedFrom = sourceKey;
+            movedTo = destinationKey;
+          }
+        }
+      }
     }
 
     const updateData: Record<string, unknown> = {};
@@ -284,6 +390,27 @@ export async function PATCH(request: NextRequest) {
     if (excerpt !== undefined) updateData.excerpt = excerpt || null;
     if (excerpt_i18n !== undefined) updateData.excerpt_i18n = excerpt_i18n || null;
 
+    if (catalog_id !== undefined) updateData.catalog_id = nextCatalogId;
+
+    // A date the curator is not sure about yet stays empty - it is filled in
+    // later from the same editor, which is why '' and null both mean "unknown"
+    // instead of failing validation.
+    if (event_date !== undefined) {
+      const raw = String(event_date ?? '').trim();
+      if (raw && !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        return NextResponse.json(
+          { error: `event_date must be YYYY-MM-DD or empty, got "${raw}"` },
+          { status: 400 }
+        );
+      }
+      updateData.event_date = raw || null;
+    }
+
+    // The row points at the new key once the object has been moved there. The
+    // column holds the full CDN URL (every other row does), not the bare key,
+    // so the moved-to key is expanded before it is written.
+    if (movedTo) updateData.image_url = getCdnUrl(movedTo);
+
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { error: 'No update fields provided' },
@@ -295,10 +422,22 @@ export async function PATCH(request: NextRequest) {
     try {
       data = await updateGalleryAsset(getSupabaseAdmin(), id, updateData);
     } catch (error) {
+      // The file was already moved. Put it back so a failed rename does not
+      // leave the archive pointing at a key the object never reached.
+      if (movedFrom && movedTo) {
+        await moveR2Object(movedTo, movedFrom);
+      }
       return NextResponse.json(
         { error: 'Failed to update asset', details: (error as Error).message },
         { status: 500 }
       );
+    }
+
+    // A rename changes the URL, so both the old and the new key must leave the
+    // CDN cache: the old one still answers with the picture it used to hold.
+    if (movedFrom && movedTo) {
+      const { purgeCdnUrls } = await import('@/lib/cloudflare-purge');
+      await purgeCdnUrls([movedFrom, movedTo]);
     }
 
     revalidateContentSurfaces();
@@ -306,6 +445,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data,
+      movedFrom,
+      movedTo,
     });
   } catch (error) {
     return NextResponse.json(
