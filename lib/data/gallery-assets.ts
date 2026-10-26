@@ -914,6 +914,46 @@ export async function listTimelineAssetsForYear(
   return { rows, truncated: true };
 }
 
+/**
+ * Every asset of the given entries, id-cursored, for the commercial door's
+ * timeline wall. Unlike listTimelineAssetsForYear it does not require
+ * event_date - a brand collaboration shows every picture it owns, dated or not.
+ * Returns null on a read failure so the page can fall back to text-only cards
+ * instead of an empty hall.
+ */
+export async function listEntryTimelineAssets(
+  db: AdminClient,
+  projectIds: string[]
+): Promise<TimelineAssetRow[] | null> {
+  if (projectIds.length === 0) return [];
+
+  const baseQuery = () =>
+    db
+      .schema('lmsy_archive')
+      .from('gallery_assets')
+      .select('id, image_url, event_date, caption, caption_i18n, catalog_id, project_id, width, height')
+      .in('project_id', projectIds);
+
+  const rows: TimelineAssetRow[] = [];
+  let cursor: string | null = null;
+
+  for (let page = 0; page < TIMELINE_ASSET_MAX_PAGES; page += 1) {
+    let query = baseQuery().order('id', { ascending: true }).limit(TIMELINE_ASSET_PAGE_SIZE);
+    if (cursor) query = query.gt('id', cursor);
+
+    const { data, error } = await query;
+    if (error) return null;
+
+    const batch = (data ?? []) as unknown as TimelineAssetRow[];
+    rows.push(...batch);
+    if (batch.length < TIMELINE_ASSET_PAGE_SIZE) return rows;
+
+    cursor = batch[batch.length - 1].id;
+  }
+
+  return rows;
+}
+
 export interface AssetEventDateBounds {
   earliest: string | null;
   latest: string | null;
