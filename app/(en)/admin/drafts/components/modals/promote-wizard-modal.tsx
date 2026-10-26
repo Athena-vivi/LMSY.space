@@ -1057,9 +1057,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                         autoFocus
                         value={newEvent.title}
                         onChange={(e) => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
-                        placeholder={t(
-                          isTopicDoor ? 'd.promote.newTopicTitle' : 'd.promote.newEventTitle'
-                        )}
+                        placeholder={t('d.promote.newEventTitle')}
                         className="w-full border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs tracking-wide text-ink outline-none placeholder:text-ink-2 focus:border-lmsy-yellow/40"
                       />
                       <div className="grid grid-cols-2 gap-2">
@@ -1149,7 +1147,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       }}
                       className="w-full border border-dashed border-white/20 px-3 py-2 text-center font-mono text-[11px] text-ink-2 transition-colors hover:border-lmsy-yellow/40 hover:text-ink"
                     >
-                      ＋ {t(isTopicDoor ? 'd.promote.newTopic' : 'd.promote.newEvent')}
+                      ＋ {t('d.promote.newEvent')}
                     </button>
                   )}
                 </div>

@@ -126,8 +126,6 @@ const DICT: Record<string, [string, string]> = {
   'd.promote.newEventTitle': ['活动名称（如：LMSY × For Dream 品牌活动）', 'Event title, e.g. LMSY x For Dream'],
   'd.promote.newEventVisible': ['创建后前台立即可见', 'Visible on the site right away'],
   'd.promote.newEventCreate': ['创建并选中', 'Create and select'],
-  'd.promote.newTopic': ['新建专题', 'New topic'],
-  'd.promote.newTopicTitle': ['专题名称（如：Back View 背影）', 'Topic title, e.g. Back View'],
   // Category + subtype labels mirror lib/languages.ts (the front-site
   // registry) so the wizard speaks the same taxonomy as the halls.
   // `features.title` is the one door label the site dictionary owns and this
@@ -169,6 +167,7 @@ const DICT: Record<string, [string, string]> = {
   'drama.group.award': ['奖项', 'Awards'],
   'd.promote.subtypeAll': ['全部子分类', 'All sub-types'],
   'd.promote.pickShelf': ['请选择分类', 'Pick a shelf'],
+  'd.promote.pickWork': ['请选择作品', 'Pick the work'],
   'd.promote.chooseSubtype': ['请选择类型', 'Choose a type'],
   'd.promote.classPlaceholder': ['输入分类名（如：演出图）', 'Class name, e.g. performance'],
   'd.promote.person': ['人物码', 'Person code'],
