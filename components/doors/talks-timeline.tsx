@@ -1,14 +1,13 @@
 'use client';
 
 import { LocalizedLink as Link } from '@/components/localized-link';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/components/language-provider';
 import { t, type TranslationKey } from '@/lib/languages';
-import { getImageUrl } from '@/lib/image-url';
 import { formatDisplayDate } from '@/lib/display-date';
 import { getLocalizedText } from '@/lib/localized-content';
 import type { DoorEntryGroup, DoorEntryRow, TalkResourceCovers } from '@/lib/door-data';
+import { ResourceBox } from './resource-box';
 import { ArrowLeft, Play, FileText, Images } from 'lucide-react';
 
 /**
@@ -224,71 +223,5 @@ function TalkNode({
   );
 }
 
-/**
- * One resource box: portrait, floating label, same shape as the live-events
- * class box so the two timelines read as siblings. External links open in a
- * new tab; everything else routes inside the archive.
- */
-function ResourceBox({
-  href,
-  external,
-  cover,
-  label,
-  hint,
-  icon,
-}: {
-  href: string;
-  external?: boolean;
-  cover: string | null;
-  label: string;
-  hint: string;
-  icon: React.ReactNode;
-}) {
-  const coverUrl = cover ? getImageUrl(cover) : null;
-  const inner = (
-    <>
-      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-        {coverUrl ? (
-          <Image
-            src={coverUrl}
-            alt={label}
-            fill
-            unoptimized
-            sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : null}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pb-2.5 pt-8">
-          <p className="flex items-center gap-1.5 truncate font-serif text-sm font-bold text-white transition-colors group-hover:text-lmsy-yellow">
-            {icon}
-            {label}
-          </p>
-          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/70">
-            {hint}
-          </p>
-        </div>
-      </div>
-    </>
-  );
-
-  if (external) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group relative block w-full overflow-hidden rounded-xl border border-border bg-card/40 transition-colors hover:border-lmsy-yellow/60"
-      >
-        {inner}
-      </a>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      className="group relative block w-full overflow-hidden rounded-xl border border-border bg-card/40 transition-colors hover:border-lmsy-blue/50"
-    >
-      {inner}
-    </Link>
-  );
-}
+// ResourceBox now lives in ./resource-box.tsx - the live door renders the
+// same Bilibili / YouTube boxes, so both timelines share one implementation.

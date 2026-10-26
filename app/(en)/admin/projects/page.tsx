@@ -326,6 +326,29 @@ export default function AdminProjectsPage() {
       label: 'category.earlyArchive',
       className: 'text-ink-2 border-white/10 bg-transparent backdrop-blur-sm',
     },
+    // Talk + live door categories. Without entries here badgeLabelKey fell
+    // through to category.earlyArchive and every talk / live row wore an
+    // "早期档案" badge.
+    interview: {
+      label: 'category.interview',
+      className: 'text-sky-300/70 border-sky-500/20 bg-sky-500/5 backdrop-blur-sm',
+    },
+    variety: {
+      label: 'category.variety',
+      className: 'text-violet-300/70 border-violet-500/20 bg-violet-500/5 backdrop-blur-sm',
+    },
+    radio: {
+      label: 'category.radio',
+      className: 'text-teal-300/70 border-teal-500/20 bg-teal-500/5 backdrop-blur-sm',
+    },
+    press: {
+      label: 'category.press',
+      className: 'text-orange-300/70 border-orange-500/20 bg-orange-500/5 backdrop-blur-sm',
+    },
+    live_stream: {
+      label: 'category.liveStream',
+      className: 'text-fuchsia-300/70 border-fuchsia-500/20 bg-fuchsia-500/5 backdrop-blur-sm',
+    },
   };
 
   /** Badge label: the registry sub-type when the door has one, else the door. */
@@ -341,6 +364,13 @@ export default function AdminProjectsPage() {
   );
 
   /** Real door names for the filter dropdown (same labels as the badges). */
+  /**
+   * Every category the projects table can hold, not just the eight doors.
+   * The talk door (interview / variety / radio / press) and the live door
+   * (live_stream) are real project categories too; leaving them out made the
+   * dropdown fall back to category.earlyArchive, so "早期档案" was printed
+   * six times - once for early_archive and once per talk/live category.
+   */
   const CATEGORY_LABEL_KEY: Record<string, string> = {
     drama_work: 'category.dramaWork',
     editorial: 'category.editorial',
@@ -350,6 +380,11 @@ export default function AdminProjectsPage() {
     behind_the_scenes: 'category.behindTheScenes',
     personal_travel: 'category.personalTravel',
     early_archive: 'category.earlyArchive',
+    interview: 'category.interview',
+    variety: 'category.variety',
+    radio: 'category.radio',
+    press: 'category.press',
+    live_stream: 'category.liveStream',
   };
 
   const filteredProjects = useMemo(() => {

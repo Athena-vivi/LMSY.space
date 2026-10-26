@@ -145,6 +145,10 @@ const DICT: Record<string, [string, string]> = {
   'category.variety': ['综艺', 'Variety'],
   'category.radio': ['电台', 'Radio'],
   'category.press': ['媒体群访', 'Press Interviews'],
+  // live_stream is the /live door's real category value (the door key is
+  // "live"). Without its own entry the projects filter fell through to the
+  // category.earlyArchive default and printed "早期档案" for every live event.
+  'category.liveStream': ['直播', 'Live Streams'],
   'subtype.concert': ['演唱会与巡演', 'Concerts & Tours'],
   'subtype.fanmeeting': ['见面会', 'Fan Meetings'],
   'subtype.fansign': ['签售会', 'Fan Signs'],
