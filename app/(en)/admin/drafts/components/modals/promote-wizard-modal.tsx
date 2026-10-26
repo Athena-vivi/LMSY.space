@@ -419,6 +419,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     switch (level) {
       case 'work': {
         const work = subjectFromProjectId(dramaSeriesRow?.catalog_id ?? null);
+        if (!work) return '';
         const part =
           DRAMA_SUBTYPE_CODES[project.subtype as keyof typeof DRAMA_SUBTYPE_CODES];
         // A premiere is one per work, so it is already unique; every other part
