@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
 import { routeLanguage } from '@/lib/i18n-path';
-import { loadSegmentEntries } from '@/lib/door-data';
-import { DoorEntriesPage } from '@/components/doors/door-views';
+import { loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
+import { LiveTimelinePage } from '@/components/doors/live-timeline';
 import { subtypeLabelKey } from '@/lib/category-registry';
 
 /**
@@ -13,6 +13,10 @@ import { subtypeLabelKey } from '@/lib/category-registry';
  * `duo` / `lookmhee` / `sonya` are the shelves of this hall; `unfiled` appears
  * only when a stream has not been filed yet. Any other segment is a 404, never
  * a filtered copy of another shelf.
+ *
+ * Rendered as a vertical timeline like the talks door (2026-10-26): one node
+ * per stream, newest first, hanging its picture classes off the line, plus a
+ * Bilibili / YouTube box for every link saved in Settings > Live Video Links.
  */
 export const revalidate = 300;
 
@@ -43,12 +47,17 @@ export default async function LiveShelfPage({ params }: PageProps) {
   const entries = await loadSegmentEntries('live_stream', subtype);
   if (!entries) notFound();
 
+  // Picture classes for the timeline boxes (a single "all photos" bucket while
+  // a stream's pictures are not filed yet).
+  const groups = await loadSegmentEntryGroups('live_stream', subtype);
+
   return (
-    <DoorEntriesPage
+    <LiveTimelinePage
       titleKey={subtypeLabelKey('live_stream', subtype)}
       doorTitleKey="live.title"
       doorHref="/live"
       entries={entries}
+      groups={groups}
     />
   );
 }
