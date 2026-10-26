@@ -468,6 +468,7 @@ export const th: Record<TranslationKey, string> = {
     'copyright.contactItem4': '• คำแถลงความเชื่อโดยสุจริต',
     'copyright.contactEmail': 'อีเมลติดต่อ:',
     'copyright.responseTime': 'เราจะตอบรับการร้องเรียนที่ถูกต้องภายใน 48 ชั่วโมง และลบหรือระบุแหล่งที่มาที่เหมาะสม',
+    'copyright.backHome': 'กลับหน้าหลัก',
 
     // หน้าเกี่ยวกับ
     'about.title': 'เกี่ยวกับ',

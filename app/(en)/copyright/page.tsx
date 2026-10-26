@@ -191,7 +191,7 @@ export default function CopyrightPage() {
                 href="/"
                 className="inline-block rounded-full border border-white/15 bg-gradient-to-r from-lmsy-yellow/15 to-lmsy-blue/15 px-8 py-3 font-serif text-white transition-all duration-300 hover:border-white/30 hover:from-lmsy-yellow/25 hover:to-lmsy-blue/25"
               >
-                Back to Home
+                {t(language, 'copyright.backHome')}
               </Link>
             </motion.div>
           </div>

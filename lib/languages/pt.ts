@@ -473,6 +473,7 @@ export const pt: Record<TranslationKey, string> = {
     'copyright.contactItem4': '• Declaração de boa-fé',
     'copyright.contactEmail': 'E-mail de contato:',
     'copyright.responseTime': 'Respondemos a reclamações válidas em até 48 horas e removemos ou atribuímos corretamente o conteúdo.',
+    'copyright.backHome': 'Voltar ao início',
 
     // Página Sobre
     'about.title': 'Sobre',

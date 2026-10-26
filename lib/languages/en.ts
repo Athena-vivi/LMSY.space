@@ -471,6 +471,7 @@ export const en = {
     'copyright.contactItem4': '• Statement of good faith belief',
     'copyright.contactEmail': 'Contact Email:',
     'copyright.responseTime': 'We will respond to valid claims within 48 hours and remove or properly attribute the content.',
+    'copyright.backHome': 'Back to Home',
 
     // About page (E-E-A-T: who runs the site, the disclaimer, the contact).
     // Was hardcoded English until 2026-10-26 and stayed English on /zh, /th,

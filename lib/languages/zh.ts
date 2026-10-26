@@ -466,6 +466,7 @@ export const zh: Record<TranslationKey, string> = {
     'copyright.contactItem4': '• 善意信念声明',
     'copyright.contactEmail': '联系邮箱：',
     'copyright.responseTime': '我们将在 48 小时内回复有效申诉，并删除或适当归属相关内容。',
+    'copyright.backHome': '返回首页',
 
     // 关于页
     'about.title': '关于',
