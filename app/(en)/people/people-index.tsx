@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import Image from 'next/image';
 import { getSupabasePublic } from '@/lib/data/client';
 import { listPublicProjectIds } from '@/lib/data/projects';

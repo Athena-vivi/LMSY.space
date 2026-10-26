@@ -47,5 +47,54 @@ export function stripLangPrefix(pathname: string): string {
  */
 export function languageHref(lang: Language, pathname: string): string {
   const bare = stripLangPrefix(pathname);
-  return lang === 'en' ? bare : `/${lang}${bare}`;
+  if (lang === 'en') return bare;
+  // '/' + '/pt' would be '/pt/', which is a different URL than the homepage
+  // prefix and costs a trailing-slash redirect on every link home.
+  return bare === '/' ? `/${lang}` : `/${lang}${bare}`;
+}
+
+/**
+ * Paths that must never take a language prefix: the admin shell is
+ * English-only, and API routes are not pages.
+ */
+function isPrefixFree(bare: string): boolean {
+  return (
+    bare === '/admin' ||
+    bare.startsWith('/admin/') ||
+    bare === '/api' ||
+    bare.startsWith('/api/')
+  );
+}
+
+const SCHEME_RE = /^[a-z][a-z0-9+.-]*:/i;
+
+/**
+ * The href a link should actually point at, for the language being read.
+ *
+ * Every in-site path is written bare ('/timeline'); the prefix is a URL
+ * concern, resolved here rather than in each component. Without this, a
+ * component hardcoding '/timeline' hands a Chinese visitor the English site -
+ * and because the two languages sit under different root layouts, that is not
+ * a soft transition but a full document load.
+ *
+ * Left alone: absolute URLs, protocol-relative (//), in-page anchors (#),
+ * mailto:/tel:, and /admin or /api. Inside /admin nothing is prefixed either,
+ * even a public path used as a breadcrumb.
+ *
+ * Idempotent: an already-prefixed path is stripped and re-prefixed for the
+ * target language.
+ */
+export function localizeHref(
+  lang: Language,
+  pathname: string | null,
+  href: string
+): string {
+  if (!href.startsWith('/') || href.startsWith('//')) return href;
+  if (SCHEME_RE.test(href)) return href;
+
+  const bare = stripLangPrefix(href);
+  if (isPrefixFree(bare)) return href;
+  if (pathname && isPrefixFree(stripLangPrefix(pathname))) return href;
+
+  return languageHref(lang, href);
 }

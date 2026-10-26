@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, FileImage, FolderKanban, LayoutGrid, Hash, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useKeyPress } from '@/lib/hooks';
 import { useLanguage } from '@/components/language-provider';
+import { localizeHref } from '@/lib/i18n-path';
 import { t } from '@/lib/languages';
 import { resolveImageUrl } from '@/lib/image-url';
 import type { SearchResult, SearchResultType } from '@/lib/search-results';
@@ -49,6 +50,7 @@ export function SearchCommand({
   const [isError, setIsError] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
@@ -64,21 +66,28 @@ export function SearchCommand({
   }, []);
 
   const navigateToResult = useCallback((href: string) => {
+    // Results carry bare paths (they are data, not URLs for one language), so
+    // the prefix is resolved here - searching from /zh must stay on /zh.
+    const target = localizeHref(language, pathname, href);
     // The gallery reads hash changes to resolve an asset that may live beyond
     // the first page. Re-dispatch when the same hash is selected twice so the
-    // current /gallery instance does not need to remount.
-    if (typeof window !== 'undefined' && href.startsWith('/gallery#') && window.location.pathname === '/gallery') {
-      const nextHash = href.slice('/gallery'.length);
+    // current gallery instance does not need to remount. Matching on the hash
+    // prefix (instead of the literal '/gallery#') keeps this working on every
+    // language, where the pathname is '/zh/gallery' rather than '/gallery'.
+    const hashAt = target.indexOf('#');
+    const targetPath = hashAt === -1 ? target : target.slice(0, hashAt);
+    if (typeof window !== 'undefined' && hashAt > -1 && window.location.pathname === targetPath) {
+      const nextHash = target.slice(hashAt);
       if (window.location.hash === nextHash) {
         window.dispatchEvent(new Event('hashchange'));
       } else {
         window.location.hash = nextHash;
       }
     } else {
-      router.push(href);
+      router.push(target);
     }
     resetAndClose();
-  }, [resetAndClose, router]);
+  }, [language, pathname, resetAndClose, router]);
 
   // Keyboard shortcuts
   useKeyPress(['Meta+k', 'Ctrl+k'], (e) => {
@@ -379,7 +388,7 @@ export function SearchCommand({
                             <button
                               key={item.label}
                               onClick={() => {
-                                router.push(item.url);
+                                router.push(localizeHref(language, pathname, item.url));
                                 resetAndClose();
                               }}
                               className="flex items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { Mail, Shield, Scale, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { ArchiveDisclaimer } from '@/components/archive-disclaimer';
 
 export default function CopyrightPage() {

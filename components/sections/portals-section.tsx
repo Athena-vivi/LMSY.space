@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { useLanguage } from '@/components/language-provider';
 import { t, type TranslationKey } from '@/lib/languages';
 import { ArrowRight } from 'lucide-react';

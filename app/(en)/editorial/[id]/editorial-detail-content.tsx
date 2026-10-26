@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { ArrowLeft } from 'lucide-react';
 import { GalleryImageWithLightbox } from './gallery-image';
 import { getImageUrl } from '@/lib/image-url';

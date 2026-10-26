@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, BookOpen, ExternalLink, Images } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { useState, useCallback, useEffect } from 'react';
 import { type GalleryItem } from '@/lib/supabase';
 import ReactMarkdown, { type Components } from 'react-markdown';

@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
@@ -44,8 +44,12 @@ export function SiteHeader() {
   // every prefixed homepage rendered this bar stacked on top of HomeHeader.
   if (stripLangPrefix(pathname) === '/' || pathname.startsWith('/admin')) return null;
 
+  // Active state compares the path with the prefix stripped. /zh/timeline and
+  // /timeline are the same entry; the raw comparison only ever matched the
+  // English one, so on every prefixed route no item was ever highlighted.
+  const barePath = stripLangPrefix(pathname);
   const isActive = (href: string) =>
-    href !== '#' && (pathname === href || pathname.startsWith(href + '/'));
+    href !== '#' && (barePath === href || barePath.startsWith(href + '/'));
 
   const renderLink = (item: (typeof mainNavItems)[number]) => (
     <Link

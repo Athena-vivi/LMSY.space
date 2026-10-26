@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { useLanguage } from '@/components/language-provider';
 import { useAuth } from '@/components/auth-provider';
 import { t } from '@/lib/languages';

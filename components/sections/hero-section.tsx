@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';

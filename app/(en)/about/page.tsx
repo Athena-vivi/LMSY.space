@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { Mail } from 'lucide-react';
 
 /**

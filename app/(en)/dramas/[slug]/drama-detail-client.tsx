@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Play } from 'lucide-react';

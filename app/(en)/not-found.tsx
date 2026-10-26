@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { Home, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';

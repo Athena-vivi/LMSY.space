@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { X, ZoomIn, Calendar, Film, ArrowRight } from 'lucide-react';
 import type { ChronicleEvent, TimelineImageRef } from '@/lib/timeline';
 import { formatChronicleDate } from '@/lib/timeline';

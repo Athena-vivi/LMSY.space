@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { MapPin, Calendar, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

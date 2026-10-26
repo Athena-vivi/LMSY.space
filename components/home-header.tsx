@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { LocalizedLink as Link } from '@/components/localized-link';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
