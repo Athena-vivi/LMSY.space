@@ -484,7 +484,7 @@ export const en = {
       'This site is a collection effort: photos, magazine editorials, events and records are organized into a browsable archive, with each entry catalogued by date and source.',
     'about.disclaimerTitle': 'Unofficial disclaimer',
     'about.disclaimerText':
-      'This site is maintained by Astra and is not affiliated with, endorsed by, or connected to LMSY, their agency (CHANGE2561), or any official fan club.',
+      'This site is maintained by Astra and is not affiliated with or connected to LMSY, their agency (CHANGE2561), or any official fan club.',
     'about.contactTitle': 'Copyright & contact',
     'about.contactText1':
       'All photographs and content belong to their respective copyright holders. Images are credited to their original sources wherever possible and are presented here for archival and appreciation purposes only.',

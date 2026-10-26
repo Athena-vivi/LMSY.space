@@ -483,7 +483,7 @@ export const pt: Record<TranslationKey, string> = {
       'Este site é um esforço de coleta: fotos, editoriais de revista, eventos e registros são organizados em um arquivo navegável, com cada entrada catalogada por data e fonte.',
     'about.disclaimerTitle': 'Aviso de não oficialidade',
     'about.disclaimerText':
-      'Este site é mantido por Astra e não é afiliado, endossado ou ligado ao LMSY, à sua agência (CHANGE2561) ou a qualquer fã-clube oficial.',
+      'Este site é mantido por Astra e não é afiliado ou ligado ao LMSY, à sua agência (CHANGE2561) ou a qualquer fã-clube oficial.',
     'about.contactTitle': 'Direitos autorais e contato',
     'about.contactText1':
       'Todas as fotografias e conteúdos pertencem aos seus respectivos detentores de direitos. As imagens são creditadas às fontes originais sempre que possível e são apresentadas aqui apenas para fins de arquivo e apreciação.',

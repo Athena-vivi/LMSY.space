@@ -476,7 +476,7 @@ export const zh: Record<TranslationKey, string> = {
       '这里做的是收集与整理：照片、杂志大片、活动与记录被编成可翻阅的档案，每一条都按日期和来源登记。',
     'about.disclaimerTitle': '非官方声明',
     'about.disclaimerText':
-      '本网站由 Astra 维护，与 LMSY 本人、其经纪公司（CHANGE2561）以及任何官方粉丝团均无关联，也未获其授权或认可。',
+      '本网站由 Astra 维护，与 LMSY 本人、其经纪公司（CHANGE2561）以及任何官方粉丝团均无关联。',
     'about.contactTitle': '版权与联系方式',
     'about.contactText1':
       '所有照片与内容归各自的版权所有者所有。图片尽可能标注原始来源，在此仅作档案保存与欣赏之用。',
