@@ -188,8 +188,6 @@ const DICT: Record<string, [string, string]> = {
   'd.promote.pickShelfFirst': ['先在上面选择货架（采访 / 综艺 / 电台）', 'Pick the shelf above first (interview / variety / radio)'],
   'd.promote.addProgram': ['新增节目', 'New programme'],
   'd.promote.pickPlatform': ['选择平台', 'Pick the platform'],
-  'd.promote.pickTopic': ['选择专题', 'Pick the topic'],
-  'd.promote.addTopic': ['新增专题', 'New topic'],
   'd.promote.subjectFromEvent': ['该事件已有编号，此处显示编号里的主体段，不可修改', 'This event already has a number; the segment shown comes from it and is not editable'],
   'd.promote.subjectPicked': ['由上面的选择自动拼出，不可手填', 'Assembled from the picks above; not typed by hand'],
   'd.promote.subjectFromTopic': ['由专题名自动生成；入库后固定不变', 'Derived from the topic title; fixed once promoted'],

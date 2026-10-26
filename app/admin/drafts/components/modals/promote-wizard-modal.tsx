@@ -327,6 +327,9 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     doorKey === 'features' ? '' : doorKey === 'talks' ? shelf : doorKey;
   const doorConfig = WIZARD_DOORS.find((d) => d.key === doorKey) ?? WIZARD_DOORS[3];
   const level: DoorLevel = doorConfig.level;
+  // A topic is the one door with no category of its own: it is filed by
+  // project_kind = 'theme', so the category-shaped gates do not apply.
+  const isTopicDoor = doorKey === 'features';
 
   // Only cities the code table knows can be picked - an unknown name would
   // silently drop the second segment.
@@ -430,7 +433,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         return magSubject(picks.publication, themeAfterSeparator(project.title)) ?? '';
       }
       case 'topic':
-        return featSubject(picks.topic) ?? '';
+        // A topic's subject IS its own name - one topic is one project, so
+        // there is no reusable vocabulary to pick from. Derived from the
+        // title exactly like a drama event's code (spec 4.9), which is what
+        // makes a new topic bind its number without a second step.
+        return featSubject(eventCodeFromTitle(project.title)) ?? '';
       case 'brand': {
         if (!picks.brand) return '';
         return brandSubject(picks.brand, eventCodeFromTitle(project.title, picks.brand)) ?? '';
@@ -683,23 +690,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
           onChange: (next) => setPicks((prev) => ({ ...prev, platform: next })),
         });
       case 'topic':
-        return (
-          <>
-            {select({
-              value: picks.topic,
-              placeholder: t('d.promote.pickTopic'),
-              options: registered('topic').map((item) => ({
-                value: item.code,
-                label: `${item.name} · ${item.code}`,
-              })),
-              onChange: (next) => setPicks((prev) => ({ ...prev, topic: next })),
-            })}
-            {addRow('topic', '', t('d.promote.addTopic'))}
-            {addingError && (
-              <p className="font-mono text-[10px] text-red-300/80">{addingError}</p>
-            )}
-          </>
-        );
+        // No picker: the subject is the topic's own name, already shown in
+        // the plate underneath. The other doors pick a brand / publication
+        // because those are shared by many events; a topic is the event.
+        return null;
       case 'work':
         // The work was already picked to narrow the event list; showing it here
         // makes it obvious where the first two segments come from.
@@ -716,12 +710,19 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   };
 
   const createEvent = async () => {
+    // A topic is filed by project_kind ('theme'), not by a category of its
+    // own, so the door/date/sub-type gates below only bind real events.
+    const isTopic = doorKey === 'features';
     // The shelf pick doubles as the category for the talks door - without it
     // there is nowhere to file the new event.
-    if (!activeCategory || !newEvent.title.trim() || !newEvent.eventDate) return;
+    if (!isTopic && !activeCategory) return;
+    if (!newEvent.title.trim()) return;
+    // A FEAT topic carries no date segment in its ids (spec 4.9), so the
+    // date stays optional here while an event still needs one.
+    if (!isTopic && !newEvent.eventDate) return;
     // A sub-type must be chosen explicitly - never fall back to the first
     // option of the list, which is how an event lands in the wrong shelf.
-    if (subtypesForCategory.length > 0 && !newEvent.subtype) return;
+    if (!isTopic && subtypesForCategory.length > 0 && !newEvent.subtype) return;
     // A drama event must hang off the picked work, or the curation tree
     // (which files events under series via work_id) would never show it.
     if (doorKey === 'drama_work' && !dramaSeriesRow) return;
@@ -733,9 +734,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newEvent.title.trim(),
-          category: activeCategory,
-          subtype: subtypesForCategory.length > 0 ? newEvent.subtype : undefined,
-          event_date: newEvent.eventDate,
+          category: isTopic ? undefined : activeCategory,
+          project_kind: isTopic ? 'theme' : undefined,
+          subtype: !isTopic && subtypesForCategory.length > 0 ? newEvent.subtype : undefined,
+          event_date: newEvent.eventDate || undefined,
           portal_visible: newEvent.portalVisible,
           work_id: doorKey === 'drama_work' ? dramaSeriesRow?.work_id ?? null : undefined,
         }),
@@ -1112,10 +1114,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           type="button"
                           onClick={() => void createEvent()}
                           disabled={
-                            !activeCategory ||
+                            (!isTopicDoor && !activeCategory) ||
                             !newEvent.title.trim() ||
-                            !newEvent.eventDate ||
-                            (subtypesForCategory.length > 0 && !newEvent.subtype) ||
+                            (!isTopicDoor && !newEvent.eventDate) ||
+                            (!isTopicDoor && subtypesForCategory.length > 0 && !newEvent.subtype) ||
                             (doorKey === 'drama_work' && !dramaSeriesRow) ||
                             creatingEventNow
                           }
@@ -1137,18 +1139,16 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       </div>
                     </div>
                   ) : (
-                    doorKey !== 'features' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCreatingEvent(true);
-                          setCreateError(null);
-                        }}
-                        className="w-full border border-dashed border-white/20 px-3 py-2 text-center font-mono text-[11px] text-ink-2 transition-colors hover:border-lmsy-yellow/40 hover:text-ink"
-                      >
-                        ＋ {t('d.promote.newEvent')}
-                      </button>
-                    )
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreatingEvent(true);
+                        setCreateError(null);
+                      }}
+                      className="w-full border border-dashed border-white/20 px-3 py-2 text-center font-mono text-[11px] text-ink-2 transition-colors hover:border-lmsy-yellow/40 hover:text-ink"
+                    >
+                      ＋ {t('d.promote.newEvent')}
+                    </button>
                   )}
                 </div>
               </div>
@@ -1317,8 +1317,15 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
                         {project.catalog_id
                           ? t('d.promote.subjectFromEvent')
-                          : t('d.promote.subjectPicked')}
+                          : level === 'topic'
+                            ? t('d.promote.subjectFromTopic')
+                            : t('d.promote.subjectPicked')}
                       </span>
+                      {level === 'topic' && !effectiveSubject && (
+                        <span className="block font-mono text-[9px] leading-relaxed text-red-300/80">
+                          {t('d.promote.topicNeedsAscii')}
+                        </span>
+                      )}
                     </label>
 
                     {level !== 'topic' && !project.event_date && (
