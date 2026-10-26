@@ -22,6 +22,25 @@ interface MuseumPrefaceLanguageContent {
 
 type MuseumPrefaceContentMap = Record<'en' | 'zh' | 'th' | 'es' | 'pt', MuseumPrefaceLanguageContent>;
 
+/**
+ * The heading carries two things at once - the site name and the orbit it is
+ * named after, e.g. "LMSY.SPACE: The First Orbit". They used to share one line
+ * with a colon doing the separating; stacked on two lines reads better, and the
+ * colon stops being needed. Split on the CJK or the Latin colon and treat what
+ * follows as the second line. If the curator never typed a separator the title
+ * stays exactly as written, on one line.
+ */
+function splitPrefaceTitle(title: string): [string, string] {
+  const match = title.match(/[:：]/);
+  if (!match || match.index === undefined) return [title, ''];
+
+  const head = title.slice(0, match.index).trim();
+  const tail = title.slice(match.index + match[0].length).trim();
+  if (!head || !tail) return [title, ''];
+
+  return [head, tail];
+}
+
 export function MuseumPreface() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
@@ -54,105 +73,88 @@ export function MuseumPreface() {
   const fallbackContent: MuseumPrefaceContentMap = {
     en: {
       title: 'LMSY.SPACE: The First Orbit',
-      subtitle: '首个轨道',
-      prefaceLabel: 'Preface / 序言',
+      subtitle: 'A Living Archive',
+      prefaceLabel: 'Preface',
       paragraphs: [
-        'In the vast universe, some encounters between stars are inevitable.',
-        'When Lookmhee and Sonya\'s trajectories converged in 2022, it created more than just a few dramas, some songs, or countless beautiful posters. Behind those interwoven light and shadows, a gravity called <span class="text-lmsy-yellow font-semibold">"bond"</span> was quietly triggered. This force transcended borders and languages, ultimately converging into this coordinate called lmsy.space.',
-        'Social media is a ceaseless meteor shower—brilliant, rushed, yet all too easily forgotten.',
-        'As the curator of this digital archive, I refuse to let those earnest gazes, beautiful moments, or brave expressions be buried by algorithms. I chose to build a lighthouse here. Here, time stands still. Every beautiful photo, every careful translation, every recorded milestone is our weapon against oblivion.',
-        'As the curator of this space, I hope you see more than just "content" here—I hope you see a <span class="text-lmsy-blue font-semibold">"perspective"</span>.',
-        'Here, yellow is not just a color—it is Lookmhee\'s warm afterglow from the depths of her soul. Blue is not just a tone—it is Sonya\'s quiet starlight behind her sensibility. I carefully weave these fragments, attempting to recreate that warm experience of shining in the darkness for you.',
+        'Some encounters remain in trending feeds, timelines, and conversations that disappear almost as quickly as they arrive. Others deserve to be kept with greater care.',
+        'LMSY.SPACE began from that feeling. What is gathered here is not only images and fragments, but also a record of companionship, attention, and resonance.',
+        'May you meet them again here, and perhaps meet once more the moments that first moved your heart.',
       ],
-      bestiesMessage: 'To all Besties:',
-      welcome: 'Welcome to this universe of love. No noisy debates, no fragmented information—only the purest records of them.',
+      bestiesMessage: 'To all Besties,',
+      welcome: 'Welcome to an archive built with affection, patience, and remembrance.',
       siteName: 'This is lmsy.space.',
       siteDesc: '',
       curatorTitle: 'CURATOR & ARCHIVIST',
-      curatorSignature: '— Astra',
-      date: '2025.12.31',
+      curatorSignature: 'Astra',
+      date: 'Since 2025',
     },
     zh: {
-      title: 'LMSY.SPACE：首个轨道',
-      subtitle: 'The First Orbit',
-      prefaceLabel: '序言 / Preface',
+      title: 'LMSY.SPACE：第一轨道',
+      subtitle: '一座仍在生长的档案馆',
+      prefaceLabel: '序言',
       paragraphs: [
-        '在浩瀚的宇宙中，有些星辰的相遇是某种必然。',
-        '当 Lookmhee 与 Sonya 的轨迹在 2022 年相逢，不仅仅是产生了几部剧作、几首单曲或无数张精美的海报。在那些交织的光影背后，一种名为<span class="text-lmsy-yellow font-semibold">"羁绊"</span>的重力被悄然触发。这股引力跨越了国界与语言，最终汇聚成了这个名为 lmsy.space 的坐标。',
-        '社交媒体是一场不停歇的流星雨，它绚烂、急促，却也极其容易被遗忘。',
-        '作为这座数字档案馆的馆长，我不愿看到那些真挚的凝视、唯美的瞬间和勇敢的表达被算法埋没。我选择在这里建造一座灯塔。在这里，时间是凝固的。每一张精美的照片、每一段精心的翻译、每一个被记录的里程碑，都是我们对抗遗忘的武器。',
-        '作为这个空间的策展人，我更希望你在这里看到的不仅仅是"物料"，也是一种<span class="text-lmsy-blue font-semibold">"视野"</span>。',
-        '在这里，黄色不只是颜色，它是 Lookmhee 灵魂深处温暖的余晖；蓝色不只是色调，它是 Sonya 感性背后沉静的星芒。我小心翼翼地编织这些碎片，试图为你重现那种在黑暗中闪闪发光的温暖体验。',
+        '有些相遇会停留在热搜、时间线和转瞬即逝的讨论里，也有些相遇，值得被更认真地保存。',
+        'LMSY.SPACE 诞生于这样的念头。这里收集的不只是图像与片段，也是一种关于陪伴、注视与共鸣的轨迹。',
+        '愿你在这里重新遇见她们，也重新遇见那些曾让你心动的瞬间。',
       ],
-      bestiesMessage: '致所有的 Besties：',
-      welcome: '欢迎来到这个爱的宇宙。这里没有嘈杂的争论，没有碎片化的信息，只有关于她们最纯粹的记录。',
+      bestiesMessage: '致所有 Besties，',
+      welcome: '欢迎来到这座以爱、耐心与记忆慢慢建立起来的 archive。',
       siteName: '这里是 lmsy.space。',
       siteDesc: '',
-      curatorTitle: 'CURATOR & ARCHIVIST',
-      curatorSignature: '—— Astra',
-      date: '2025.12.31',
+      curatorTitle: '策展与档案整理',
+      curatorSignature: 'Astra',
+      date: '始于 2025',
     },
     th: {
       title: 'LMSY.SPACE: วงโคจรแรก',
-      subtitle: 'The First Orbit',
-      prefaceLabel: 'คำนำ / Preface',
+      subtitle: 'คลังบันทึกที่ยังเติบโตอยู่',
+      prefaceLabel: 'คำนำ',
       paragraphs: [
-        'ในจักรวาลอันกว้างใหญ่ การพบกันของดาวบางดวงเป็นสิ่งที่หลีกเลี่ยงไม่ได้',
-        'เมื่อวงโคจรของ Lookmhee และ Sonya พบกันในปี 2022 มันไม่ได้สร้างเพียงละครไม่กี่เรื่อง เพลงไม่กี่เพลง หรือโปสเตอร์ที่สวยงามนับไม่ถ้วน เบื้องหลังแสงเงาที่ถูกถ่ายทอดนั้น แรงโน้มถ่วงที่เรียกว่า<span class="text-lmsy-yellow font-semibold">"ผูกพัน"</span>ถูกกระตุ้นอย่างเงียบๆ แรงนี้ข้ามพรมแดนและภาษา ในที่สุดบรรจบกันที่พิกัดนี้ lmsy.space',
-        'โซเชียลมีเดียเป็นฝนดาวตกที่ไม่หยุดยั้ง สดใส รีบเร่ง แต่ก็ถูกลืมเง่าได้ง่าย',
-        'ในฐานะผู้ดูแลหอจดหมายดิจิทัลนี้ ฉันไม่ต้องการให้สายตาที่จริงใจ ช่วงเวลาที่งดงาม หรือการแสดงออกที่กล้าหาญถูกฝังด้วยอัลกอริทึม ฉันเลือกที่จะสร้างประภาคารที่นี่ ที่นี่เวลาหยุดนิ่ง ภาพถ่ายทุกรูปที่งดงาม การแปลทุกครั้งที่ประณีต และไมล์สโตนที่บันทึกไว้ทุกชิ้นคืออาวุธของเราที่ต่อสู้การถูกลืม',
-        'ในฐานะผู้จัดแสดงของพื้นที่นี้ ฉันหวังว่าคุณจะเห็นมากกว่า "เนื้อหา" ฉันหวังว่าคุณจะเห็น<span class="text-lmsy-blue font-semibold">"มุมมอง"</span>',
-        'ที่นี่ สีเหลืองไม่ได้เป็นเพียงสี มันคือแสงยามอบอุ่นจากหัวใจลึกๆ ของ Lookmhee สีฟ้าไม่ได้เป็นเพียงโทน มันคือแสงดาวสงบของ Sonya เบื้องหลังความรู้สึก ฉันถักทอดชิ้นส่วนเหล่านี้อย่างประณีต พยายามสร้างสรรค์ประสบการณ์ความอบอุ่นที่เรืองแสงในความมืดให้คุณ',
+        'บางการพบกันอาจคงอยู่เพียงในกระแส ความเคลื่อนไหว และบทสนทนาที่เลือนหายไปอย่างรวดเร็ว แต่อีกบางการพบกันก็ควรถูกเก็บรักษาไว้ด้วยความตั้งใจมากกว่านั้น',
+        'LMSY.SPACE เริ่มต้นจากความรู้สึกเช่นนั้น สิ่งที่ถูกรวบรวมไว้ที่นี่ไม่ใช่เพียงภาพหรือเศษเสี้ยวของช่วงเวลา แต่ยังเป็นร่องรอยของการเฝ้ามอง การอยู่เคียงข้าง และความสั่นสะเทือนในใจ',
+        'ขอให้คุณได้พบพวกเธออีกครั้งที่นี่ และได้พบอีกครั้งกับช่วงเวลาที่เคยทำให้หัวใจของคุณสั่นไหว',
       ],
-      bestiesMessage: 'ถึง Besties ทุกคน:',
-      welcome: 'ยินดีต้อนรับสู่จักรวาลแห่งความรักนี้ ไม่มีการโต้เถียงที่ดัง ไม่มีข้อมูลที่แตกสลาย มีเพียงบันทึกที่บริสุทธิ์ที่สุดของพวกเธอ',
-      siteName: 'นี่คือ lmsy.space',
+      bestiesMessage: 'ถึง Besties ทุกคน,',
+      welcome: 'ยินดีต้อนรับสู่ archive ที่ค่อย ๆ ถูกสร้างขึ้นด้วยความรัก ความอดทน และความทรงจำ',
+      siteName: 'ที่นี่คือ lmsy.space',
       siteDesc: '',
-      curatorTitle: 'ผู้ดูแล & จัดเก็บ',
-      curatorSignature: '— Astra',
-      date: '2025.12.31',
+      curatorTitle: 'CURATOR & ARCHIVIST',
+      curatorSignature: 'Astra',
+      date: 'ตั้งแต่ปี 2025',
     },
     es: {
       title: 'LMSY.SPACE: La primera órbita',
-      subtitle: 'The First Orbit',
-      prefaceLabel: 'Prefacio / Preface',
+      subtitle: 'Un archivo vivo',
+      prefaceLabel: 'Prefacio',
       paragraphs: [
-        'En un universo tan vasto, hay encuentros entre estrellas que son inevitables.',
-        'Cuando las trayectorias de Lookmhee y Sonya se cruzaron en 2022, no nacieron solo unas cuantas series, un par de canciones o un sinfín de pósters preciosos. Detrás de esas luces y sombras entrelazadas se activó en silencio una gravedad llamada <span class="text-lmsy-yellow font-semibold">"lazo"</span>. Esa fuerza cruzó fronteras e idiomas hasta converger en este punto del mapa llamado lmsy.space.',
-        'Las redes sociales son una lluvia de meteoros que no se detiene: brillante, apresurada, facilísima de olvidar.',
-        'Como curadora de este archivo digital, no quiero que esas miradas sinceras, esos instantes hermosos o esas formas valientes de decir las cosas queden sepultadas por el algoritmo. Elegí construir aquí un faro. Aquí el tiempo se detiene. Cada foto cuidada, cada traducción hecha con esmero, cada hito registrado es un arma contra el olvido.',
-        'Como curadora de este espacio, me gustaría que aquí no vieras solo "contenido", sino una <span class="text-lmsy-blue font-semibold">"mirada"</span>.',
-        'Aquí el amarillo no es solo un color: es el resplandor cálido que Lookmhee lleva en lo más hondo. El azul no es solo un tono: es la luz de estrella silenciosa que Sonya guarda detrás de su sensibilidad. Voy tejiendo estos fragmentos con cuidado, intentando devolverte esa sensación cálida de brillar en la oscuridad.',
+        'Algunos encuentros se quedan en las tendencias, en las líneas de tiempo y en conversaciones que desaparecen casi tan rápido como llegan. Otros merecen guardarse con más cuidado.',
+        'LMSY.SPACE nació de esa sensación. Lo que se reúne aquí no son solo imágenes y fragmentos, sino también el registro de una compañía, de una mirada atenta y de una resonancia.',
+        'Ojalá vuelvas a encontrarlas aquí, y vuelvas a encontrar también esos momentos que un día te movieron el corazón.',
       ],
-      bestiesMessage: 'Para todas las Besties:',
-      welcome:
-        'Te damos la bienvenida a este universo de amor. Sin discusiones ruidosas, sin información partida en pedazos: solo el registro más limpio de ellas.',
-      siteName: 'Este es lmsy.space.',
+      bestiesMessage: 'Para todas las Besties,',
+      welcome: 'Bienvenida a un archivo construido con cariño, paciencia y memoria.',
+      siteName: 'Esto es lmsy.space.',
       siteDesc: '',
       curatorTitle: 'CURADORA Y ARCHIVISTA',
-      curatorSignature: '— Astra',
-      date: '2025.12.31',
+      curatorSignature: 'Astra',
+      date: 'Desde 2025',
     },
     pt: {
       title: 'LMSY.SPACE: A primeira órbita',
-      subtitle: 'The First Orbit',
-      prefaceLabel: 'Prefácio / Preface',
+      subtitle: 'Um arquivo vivo',
+      prefaceLabel: 'Prefácio',
       paragraphs: [
-        'Num universo tão vasto, alguns encontros entre estrelas são inevitáveis.',
-        'Quando as trajetórias de Lookmhee e Sonya se cruzaram em 2022, não nasceram só algumas séries, um par de músicas ou um sem-fim de pôsteres bonitos. Por trás daquela luz e sombra entrelaçadas, uma gravidade chamada <span class="text-lmsy-yellow font-semibold">"laço"</span> foi acionada em silêncio. Essa força atravessou fronteiras e idiomas até convergir neste ponto do mapa chamado lmsy.space.',
-        'As redes sociais são uma chuva de meteoros que não para: brilhante, apressada, fácil demais de esquecer.',
-        'Como curadora deste arquivo digital, não quero que aqueles olhares sinceros, aqueles instantes bonitos ou aquelas formas corajosas de dizer as coisas fiquem soterrados pelo algoritmo. Escolhi construir aqui um farol. Aqui o tempo para. Cada foto cuidada, cada tradução feita com esmero, cada marco registrado é uma arma contra o esquecimento.',
-        'Como curadora deste espaço, queria que você visse aqui não só "conteúdo", mas um <span class="text-lmsy-blue font-semibold">"jeito de olhar"</span>.',
-        'Aqui o amarelo não é só uma cor: é o brilho morno que a Lookmhee carrega lá no fundo. O azul não é só um tom: é a luz de estrela silenciosa que a Sonya guarda por trás da sensibilidade dela. Vou tecendo esses fragmentos com cuidado, tentando te devolver aquela sensação morna de brilhar no escuro.',
+        'Alguns encontros ficam nas trends, nas linhas do tempo e em conversas que desaparecem quase tão rápido quanto chegam. Outros merecem ser guardados com mais cuidado.',
+        'O LMSY.SPACE nasceu desse sentimento. O que se reúne aqui não são apenas imagens e fragmentos, mas também o registro de uma companhia, de um olhar atento e de uma ressonância.',
+        'Que você reencontre elas aqui, e reencontre também aqueles momentos que um dia mexeram com o seu coração.',
       ],
-      bestiesMessage: 'Para todas as Besties:',
-      welcome:
-        'Boas-vindas a este universo de amor. Sem discussões barulhentas, sem informação picada em pedaços: só o registro mais limpo delas.',
+      bestiesMessage: 'Para todas as Besties,',
+      welcome: 'Boas-vindas a um arquivo construído com afeto, paciência e memória.',
       siteName: 'Este é o lmsy.space.',
       siteDesc: '',
       curatorTitle: 'CURADORA E ARQUIVISTA',
-      curatorSignature: '— Astra',
-      date: '2025.12.31',
+      curatorSignature: 'Astra',
+      date: 'Desde 2025',
     },
   };
 
@@ -187,6 +189,7 @@ export function MuseumPreface() {
   }, []);
 
   const currentContent = content[language as keyof typeof content] || content.en;
+  const [titleLine, orbitLine] = splitPrefaceTitle(currentContent.title);
 
   return (
     <section
@@ -203,11 +206,16 @@ export function MuseumPreface() {
           initial="hidden"
           animate={isInView ? 'visible' : 'hidden'}
         >
-          {/* Title */}
+          {/* Title - site name, then the orbit on its own line, then the tagline */}
           <motion.div variants={itemVariants} className="text-center mb-16">
             <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-ink mb-3">
-              {currentContent.title}
+              {titleLine}
             </h2>
+            {orbitLine && (
+              <p className="font-serif text-xl md:text-2xl text-ink-2 tracking-[0.2em] mb-3">
+                {orbitLine}
+              </p>
+            )}
             <p className="text-sm md:text-base text-ink-2 tracking-[0.3em] uppercase font-light">
               {currentContent.subtitle}
             </p>
