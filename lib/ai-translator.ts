@@ -392,32 +392,3 @@ export async function translateDraftItem(
   };
 }
 
-/**
- * 测试翻译功能
- */
-export async function testTranslation(): Promise<{
-  success: boolean;
-  result?: TranslationResult;
-  error?: string;
-}> {
-  try {
-    const result = await translateText({
-      text: 'Lookmhee and Sonya at the event today',
-      targetLanguages: ['en', 'zh', 'th'],
-      context: {
-        sourcePlatform: 'twitter',
-        contentType: 'title',
-      },
-    });
-
-    return {
-      success: result.success,
-      result,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}

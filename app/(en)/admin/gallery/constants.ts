@@ -56,10 +56,3 @@ export const VAULT_HEADER_TITLES: Record<VaultTabId, { title: string; subtitle: 
 // year, so the newest year always has a slot instead of falling off the end.
 export const YEARS: string[] = milestoneYears();
 
-// Category tag options for gallery items
-export const CATEGORY_TAGS = [
-  { value: '', label: 'ALL_CATEGORIES' },
-  { value: 'official_stills', label: 'OFFICIAL_STILLS' },
-  { value: 'bts', label: 'BEHIND_THE_SCENES' },
-  { value: 'press_events', label: 'PRESS_EVENTS' },
-] as const;

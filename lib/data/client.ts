@@ -67,8 +67,5 @@ export function getSupabasePublic(): AdminClient {
   }) as unknown as AdminClient;
 }
 
-/** The public (anon) client type - same structural shape as AdminClient. */
-export type PublicClient = AdminClient;
-
 /** Any server-side database client a repository may take. */
 export type DbClient = AdminClient;

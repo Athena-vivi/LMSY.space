@@ -235,11 +235,6 @@ export async function loadGroupCategories(
   });
 }
 
-/** True when the door has categories as its second level (/talks). */
-export function doorGroupsCategories(door: string): boolean {
-  return doorCategories(door).length > 0;
-}
-
 /** Every visible entry of a hall, newest first. One level down from the door. */
 export async function loadDoorEntries(category: ProjectCategory): Promise<DoorEntryRow[]> {
   return loadRows([category]);

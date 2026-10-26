@@ -195,26 +195,6 @@ export const DRAMA_SUBTYPE_CODES = {
 } as const;
 
 /**
- * SUBJECT of a drama event: `<WORK>-<PART>[-<EVENT CODE>]`.
- *
- * A part that holds exactly one entry per work (premiere) needs no event code;
- * everything else does, or two entries would claim the same number. Returns
- * null for an unknown subtype so the caller asks instead of inventing a code.
- */
-export function dramaSubject(
-  workCode: string | null | undefined,
-  subtype: string | null | undefined,
-  eventCode?: string | null
-): string | null {
-  const work = (workCode || '').trim().toUpperCase();
-  if (!work) return null;
-  const part = DRAMA_SUBTYPE_CODES[(subtype || '') as keyof typeof DRAMA_SUBTYPE_CODES];
-  const tail = (eventCode || '').trim().toUpperCase();
-  if (!tail) return null;
-  return part ? `${work}-${part}-${tail}` : `${work}-${tail}`;
-}
-
-/**
  * Halls whose SUBJECT is decided by two picks. A hall that is not in this
  * table still types its subject by hand - the doors are being moved over one
  * at a time, and a value here is what makes the wizard read-only.
@@ -272,18 +252,6 @@ export function pickedSubject(
 /** True when this hall's subject comes from picks rather than typing. */
 export function hasPickedSubject(category: string | null | undefined): boolean {
   return Boolean(category && PICKED_SUBJECT_HALLS[category]);
-}
-
-/**
- * Kept as an alias so existing call sites keep compiling. Prefer
- * pickedSubject(category, subtype, city) - it covers every hall that has a
- * subject rule, not just the live-event one.
- */
-export function liveEventSubject(
-  subtype: string | null | undefined,
-  city: string | null | undefined
-): string | null {
-  return pickedSubject('live_event', subtype, city);
 }
 
 // ---------------------------------------------------------------------------
@@ -784,43 +752,13 @@ export async function generateMagazinePageCatalogId(
   });
 }
 
-/** Allocate an ID for a non-magazine asset. Sequence starts at 001. */
-export async function generateNextGalleryCatalogId(
-  supabase: CatalogIdClient,
-  eventDate: string,
-  options: { person?: PersonCode; subject?: string; door?: DoorCode } = {}
-): Promise<string> {
-  return allocateNextCatalogId(supabase, options.door ?? 'BTS', eventDate, {
-    person: options.person,
-    subject: options.subject,
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Legacy (old format, recognised but never produced)
 // ---------------------------------------------------------------------------
 
-export interface LegacyParsedCatalogId {
-  prefix: string;
-  type: string;
-  year: number;
-  sequence: number;
-}
-
 /** Old shape LMSY-<CATEGORY>-<YYYYMMDD>-<NNN> (and the even older 4-digit year form). */
 export function isLegacyCatalogId(catalogId: string): boolean {
   return /^LMSY-[A-Z]+-\d{8}-\d{3}$/.test(catalogId) || /^LMSY-[A-Z]+-\d{4}-\d{3}$/.test(catalogId);
-}
-
-export function parseLegacyCatalogId(catalogId: string): LegacyParsedCatalogId | null {
-  const match = /^LMSY-([A-Z]+)-(\d{4})-(\d{3})$/.exec(catalogId);
-  if (!match) return null;
-  return {
-    prefix: 'LMSY',
-    type: match[1],
-    year: parseInt(match[2], 10),
-    sequence: parseInt(match[3], 10),
-  };
 }
 
 // ---------------------------------------------------------------------------

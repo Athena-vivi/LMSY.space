@@ -335,26 +335,3 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
   );
 }
 
-// Trigger button component
-export function BulkUploadButton({ onClick, count }: { onClick: () => void; count?: number }) {
-  return (
-    <motion.button
-      onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-mono transition-all duration-200"
-      style={{
-        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(56, 189, 248, 0.1))',
-        border: '1px solid rgba(251, 191, 36, 0.2)',
-      }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <UploadIcon className="h-4 w-4 text-lmsy-yellow/80" strokeWidth={1.5} />
-      <span className="text-ink-2">Bulk Upload</span>
-      {count !== undefined && count > 0 && (
-        <span className="px-1.5 py-0.5 bg-lmsy-blue/20 border border-lmsy-blue/30 rounded text-xs text-lmsy-blue">
-          {count}
-        </span>
-      )}
-    </motion.button>
-  );
-}

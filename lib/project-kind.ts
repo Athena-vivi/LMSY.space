@@ -43,11 +43,6 @@ export function isThemeProject(project: { project_kind?: unknown } | null | unde
   return resolveProjectKind(project?.project_kind) === 'theme';
 }
 
-/** A series is a container for entries, never an entry of its own. */
-export function isSeriesProject(project: { project_kind?: unknown } | null | undefined): boolean {
-  return resolveProjectKind(project?.project_kind) === 'series';
-}
-
 /** A theme project has no single event date, so the timeline must skip it. */
 export function hasProjectPointOnTimeline(project: { project_kind?: unknown } | null | undefined): boolean {
   const kind = resolveProjectKind(project?.project_kind);

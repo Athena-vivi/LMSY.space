@@ -38,10 +38,3 @@ export function isAdmin(email: string | null | undefined): boolean {
   return email.trim().toLowerCase() === adminEmail;
 }
 
-/**
- * Check if the current environment has an admin email configured.
- * @returns true if ADMIN_EMAIL (or the NEXT_PUBLIC_ADMIN_EMAIL fallback) is set
- */
-export function hasAdminConfigured(): boolean {
-  return getAdminEmail() !== null;
-}

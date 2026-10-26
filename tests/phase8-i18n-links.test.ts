@@ -86,7 +86,6 @@ describe('every public surface links through LocalizedLink', () => {
     'components/doors/talks-timeline.tsx',
     'components/doors/live-timeline.tsx',
     'components/sections/hero-section.tsx',
-    'components/sections/chronicle-section.tsx',
     'components/sections/people-section.tsx',
     'components/sections/portals-section.tsx',
     'components/sections/soul-resonance-section.tsx',

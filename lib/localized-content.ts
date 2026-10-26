@@ -10,10 +10,6 @@ export interface LocalizedText {
   pt?: string | null;
 }
 
-export function emptyLocalizedText(): LocalizedText {
-  return { en: '', zh: '', th: '', es: '', pt: '' };
-}
-
 export function normalizeLocalizedText(value: unknown, fallback = ''): LocalizedText {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {

@@ -1,15 +1,16 @@
 /**
- * Phase-6 batch 3 tests: the two deterministic fixes.
+ * Phase-6 batch 3 tests: editorial artifact counting.
  *
- * T2 - the homepage longform block must not render its quote card when the
- *      featured project has no text (and must still use the site-level
- *      fallback when there is no featured project at all).
  * T3 - editorial artifact counting must compare cover and pages by image
  *      identity, not by raw string equality, because the same file is stored
  *      both as a relative R2 path and as its absolute CDN URL.
  *
- * The counting and resolution rules live in pure modules so they are tested
- * directly; the markup consequences are asserted against the source.
+ * T2 (the homepage longform quote card) and the module behind it,
+ * lib/featured-excerpt.ts, were removed on 2026-10-27: the longform section
+ * they served had no callers left, and neither did the resolver.
+ *
+ * The counting rules live in a pure module so they are tested directly; the
+ * markup consequences are asserted against the source.
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,7 +22,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = (p: string) => readFileSync(path.join(ROOT, p), 'utf-8');
 
 import { countIssueArtifacts, imageIdentity } from '../lib/editorial-meta.ts';
-import { resolveFeaturedExcerpt } from '../lib/featured-excerpt.ts';
 
 const CDN = 'https://cdn.lmsy.space';
 
@@ -135,132 +135,8 @@ describe('artifact counting uses that identity', () => {
   });
 });
 
-describe('featured excerpt resolution refuses to invent content', () => {
-  const base = {
-    language: 'en' as const,
-    homepageExcerptI18n: null,
-    descriptionI18n: null,
-    homepageExcerpt: null,
-    description: null,
-  };
-
-  test('no featured project still uses the site-level fallback', () => {
-    assert.equal(
-      resolveFeaturedExcerpt({
-        ...base,
-        hasFeaturedProject: false,
-        siteFallback: 'Site quote',
-      }),
-      'Site quote'
-    );
-  });
-
-  test('no featured project and no site copy resolves to nothing', () => {
-    assert.equal(
-      resolveFeaturedExcerpt({ ...base, hasFeaturedProject: false, siteFallback: '  ' }),
-      ''
-    );
-    assert.equal(
-      resolveFeaturedExcerpt({ ...base, hasFeaturedProject: false, siteFallback: null }),
-      ''
-    );
-  });
-
-  test('featured project with all four fields empty resolves to nothing', () => {
-    // The production case: GAZE is featured, every excerpt field is NULL.
-    assert.equal(resolveFeaturedExcerpt({ ...base, hasFeaturedProject: true }), '');
-  });
-
-  test('an all-empty i18n object does not stop the chain', () => {
-    assert.equal(
-      resolveFeaturedExcerpt({
-        ...base,
-        hasFeaturedProject: true,
-        homepageExcerptI18n: { en: '', zh: '', th: '' },
-        description: 'Real description from the project row',
-      }),
-      'Real description from the project row'
-    );
-  });
-
-  test('whitespace-only copy counts as no copy', () => {
-    assert.equal(
-      resolveFeaturedExcerpt({
-        ...base,
-        hasFeaturedProject: true,
-        homepageExcerpt: '   \n\t ',
-        description: '   ',
-      }),
-      ''
-    );
-  });
-
-  test('a real excerpt wins over the description', () => {
-    assert.equal(
-      resolveFeaturedExcerpt({
-        ...base,
-        hasFeaturedProject: true,
-        homepageExcerpt: 'Curator line',
-        description: 'Longer description',
-      }),
-      'Curator line'
-    );
-  });
-
-  test('localized text is preferred and trimmed', () => {
-    assert.equal(
-      resolveFeaturedExcerpt({
-        ...base,
-        hasFeaturedProject: true,
-        language: 'zh',
-        homepageExcerptI18n: { en: 'English line', zh: '  中文策展语  ', th: '' },
-        homepageExcerpt: 'Fallback line',
-      }),
-      '中文策展语'
-    );
-  });
-
-  test('a missing translation falls back to english, then to the row value', () => {
-    assert.equal(
-      resolveFeaturedExcerpt({
-        ...base,
-        hasFeaturedProject: true,
-        language: 'th',
-        homepageExcerptI18n: { en: 'English line', zh: '', th: '' },
-      }),
-      'English line'
-    );
-    assert.equal(
-      resolveFeaturedExcerpt({
-        ...base,
-        hasFeaturedProject: true,
-        language: 'th',
-        description: 'Row level text',
-      }),
-      'Row level text'
-    );
-  });
-});
 
 describe('the two fixes are wired into the surfaces', () => {
-  test('longform block gates the quote card and its attribution', () => {
-    const section = src('components/sections/longform-section.tsx');
-    assert.ok(section.includes('resolveFeaturedExcerpt({'));
-    assert.ok(section.includes('const showExcerpt = featuredExcerpt.length > 0;'));
-    assert.equal(
-      (section.match(/\{showExcerpt && \(/g) || []).length,
-      2,
-      'quote card and source line are both conditional'
-    );
-    assert.ok(!section.includes('getLocalizedText(\n        featuredEditorial.homepage_excerpt_i18n'));
-  });
-
-  test('longform block keeps the title, image and link unconditional', () => {
-    const section = src('components/sections/longform-section.tsx');
-    assert.ok(section.includes('href={featuredHref}'));
-    assert.ok(section.includes('src={featuredImageUrl}'));
-    assert.ok(section.includes('{featuredTitle}'));
-  });
 
   test('the API counts artifacts the same way as the detail page', () => {
     const api = src('app/api/editorial/route.ts');

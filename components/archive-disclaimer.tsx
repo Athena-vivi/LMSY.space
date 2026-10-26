@@ -80,16 +80,3 @@ export function ArchiveDisclaimer({ variant = 'default' }: { variant?: 'default'
   );
 }
 
-/**
- * Compact version for inline use
- */
-export function ArchiveDisclaimerCompact() {
-  return <ArchiveDisclaimer variant="compact" />;
-}
-
-/**
- * Minimal version for tight spaces
- */
-export function ArchiveDisclaimerMinimal() {
-  return <ArchiveDisclaimer variant="minimal" />;
-}

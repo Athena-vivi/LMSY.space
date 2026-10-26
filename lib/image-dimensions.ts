@@ -49,12 +49,6 @@ export function getImageDimensions(
   return swapped ? { width: dim.h, height: dim.w } : { width: dim.w, height: dim.h };
 }
 
-/** Aspect ratio (w/h) for an image, falling back to the archive median. */
-export function getImageAspectRatio(imageUrl: string | null | undefined, rotation = 0): number {
-  const dim = getImageDimensions(imageUrl, rotation);
-  return dim ? dim.width / dim.height : FALLBACK_ASPECT_RATIO;
-}
-
 /**
  * Intrinsic size for an asset row. Newly promoted assets (self-serve wizard)
  * carry their width/height inline in gallery_assets, which is authoritative;

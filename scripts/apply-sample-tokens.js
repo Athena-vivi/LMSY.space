@@ -10,8 +10,6 @@ const FILES = [
   "components/site-footer.tsx",
   "components/sections/hero-section.tsx",
   "components/sections/portals-section.tsx",
-  "components/sections/longform-section.tsx",
-  "components/sections/chronicle-section.tsx",
   "components/museum-preface.tsx",
   "app/gallery/page.tsx",
   "app/gallery/lightbox.tsx",

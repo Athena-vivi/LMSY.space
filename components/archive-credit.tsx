@@ -141,9 +141,3 @@ export function ArchiveCreditCompact({ category }: { category: string }) {
   return <ArchiveCredit category={category} variant="compact" />;
 }
 
-/**
- * Minimal version for tight spaces
- */
-export function ArchiveCreditMinimal({ category }: { category: string }) {
-  return <ArchiveCredit category={category} variant="minimal" />;
-}

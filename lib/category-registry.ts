@@ -214,11 +214,6 @@ export const HOME_CATEGORIES: CategoryDefinition[] = CATEGORY_DEFINITIONS.filter
   (definition) => definition.homeEntry
 );
 
-/** Just their values, for "does this hall own a homepage door" checks. */
-export const HOME_CATEGORY_VALUES: ReadonlySet<string> = new Set(
-  HOME_CATEGORIES.map((definition) => definition.value)
-);
-
 /**
  * The address of one entry inside a door, outside door 1.
  *
@@ -337,15 +332,6 @@ export function subtypeSegment(value: string): string {
   return value.replace(/_/g, '-');
 }
 
-export function parseSubtypeSegment(segment: string): ProjectSubtype | null {
-  const value = segment.replace(/-/g, '_');
-  for (const definitions of Object.values(SUBTYPES_BY_CATEGORY)) {
-    const match = (definitions ?? []).find((definition) => definition.value === value);
-    if (match) return match.value;
-  }
-  return null;
-}
-
 /**
  * URL segment for rows a hall holds but has not filed under one of its own
  * sub-classes. They still need a door of their own: a row without a place to
@@ -441,22 +427,6 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
     { value: 'sonya', labelKey: 'subtype.sonya' },
   ],
 };
-
-/**
- * Tabs for a hall, keeping the curated order and dropping values no visible
- * row uses. Returns an empty array when the hall has no sub-classes or when
- * only one of them is populated - a tab row holding "All 40 / Fanmeeting 40"
- * is a filter that filters nothing.
- */
-export function subtypeTabs(
-  category: ProjectCategory | null,
-  counts: Record<string, number>
-): SubtypeDefinition[] {
-  if (!category) return [];
-  const defined = SUBTYPES_BY_CATEGORY[category] ?? [];
-  const populated = defined.filter((definition) => (counts[definition.value] ?? 0) > 0);
-  return populated.length >= 2 ? populated : [];
-}
 
 /**
  * The front door of a hall, or null when the hall has no page.

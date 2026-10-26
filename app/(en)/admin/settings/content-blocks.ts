@@ -2,17 +2,13 @@ import type {
   HeroContent,
   HeroFields,
   Lang,
-  LongformContent,
-  LongformFields,
-  MilestonesContent,
-  MilestonesFields,
   PrefaceContent,
   PrefaceFields,
 } from './types';
 import type { Language } from '@/lib/languages';
 
 /**
- * Literary homepage blocks (preface/hero/longform/milestones).
+ * Literary homepage blocks (preface and hero).
  *
  * All five languages carry copy. es/pt went in on 2026-10-26 as a first-pass
  * translation of the English block, so a Spanish or Portuguese visitor reads
@@ -23,6 +19,10 @@ import type { Language } from '@/lib/languages';
  * date), normalize* fills those two from the bundled translation rather than
  * from English — that is the whole point of having the translation, and it is
  * what the panels then show for the curator to revise.
+ *
+ * The longform and milestones blocks had a section each on the homepage; both
+ * sections lost their last caller and were removed on 2026-10-27, which is why
+ * only two families are left.
  */
 export function pickContentBlock<T>(content: Record<Lang, T>, language: Language): T {
   return content[language] ?? content.en;
@@ -44,30 +44,6 @@ export const EMPTY_PREFACE_FIELDS: PrefaceFields = {
   date: '',
 };
 
-export const EMPTY_LONGFORM_FIELDS: LongformFields = {
-  eyebrow: '',
-  fallbackTitle: '',
-  fallbackExcerpt: '',
-  source: '',
-  readMoreLabel: '',
-};
-
-export const EMPTY_MILESTONES_FIELDS: MilestonesFields = {
-  sectionTitle: '',
-  year2022: '',
-  year2023: '',
-  year2024: '',
-  year2025: '',
-  ongoing: '',
-  bottomNote: '',
-};
-
-export const EMPTY_HERO_FIELDS: HeroFields = {
-  preface: '',
-  universeTitle: '',
-  universeSubtitle: '',
-};
-
 // No bundled placeholder. Both hero surfaces read the curator's photo and
 // nothing else - a local file here is what made the page flash two images.
 export const DEFAULT_HERO_SECTION_IMAGE = '';
@@ -78,97 +54,6 @@ export const DEFAULT_PREFACE_CONTENT: PrefaceContent = {
   th: { ...EMPTY_PREFACE_FIELDS },
   es: { ...EMPTY_PREFACE_FIELDS },
   pt: { ...EMPTY_PREFACE_FIELDS },
-};
-
-export const DEFAULT_LONGFORM_CONTENT: LongformContent = {
-  en: {
-    eyebrow: 'Chronicle',
-    fallbackTitle: 'Featured Interview',
-    fallbackExcerpt:
-      '"Every role is a piece of my heart. When I portray a character, I pour my soul into making them breathe, into making them real. Lookmhee teaches me every day how to be vulnerable, and how to be brave enough to show the world who we truly are."',
-    source: 'Sonya, Vogue Thailand Interview 2024',
-    readMoreLabel: 'Read Full Story',
-  },
-  zh: {
-    eyebrow: '纪事',
-    fallbackTitle: '精选访谈',
-    fallbackExcerpt:
-      '“每个角色都是我心里的一部分。当我去塑造一个角色时，我会把自己的灵魂放进去，让她呼吸，让她真实。Lookmhee 每天都在提醒我，如何允许自己脆弱，也如何勇敢地让世界看见真正的我们。”',
-    source: 'Sonya，《Vogue Thailand》访谈 2024',
-    readMoreLabel: '阅读全文',
-  },
-  th: {
-    eyebrow: 'บันทึก',
-    fallbackTitle: 'บทสัมภาษณ์คัดสรร',
-    fallbackExcerpt:
-      '"ทุกบทบาทคือชิ้นส่วนหนึ่งของหัวใจฉัน เวลาได้ถ่ายทอดตัวละคร ฉันใส่จิตวิญญาณลงไปเพื่อให้เธอหายใจได้ เพื่อให้เธอมีชีวิตจริง Lookmhee ทำให้ฉันเรียนรู้ทุกวันว่าจะอ่อนโยนกับตัวเองอย่างไร และจะกล้าพอให้โลกได้เห็นตัวตนที่แท้จริงของเราอย่างไร"',
-    source: 'Sonya, สัมภาษณ์ Vogue Thailand 2024',
-    readMoreLabel: 'อ่านฉบับเต็ม',
-  },
-  es: {
-    eyebrow: 'Crónica',
-    fallbackTitle: 'Entrevista destacada',
-    fallbackExcerpt:
-      '«Cada papel es un pedazo de mi corazón. Cuando interpreto a un personaje, pongo el alma en hacerlo respirar, en hacerlo real. Lookmhee me enseña todos los días a mostrarme vulnerable, y a tener el valor de enseñarle al mundo quiénes somos de verdad.»',
-    source: 'Sonya, entrevista para Vogue Thailand 2024',
-    readMoreLabel: 'Leer la historia completa',
-  },
-  pt: {
-    eyebrow: 'Crônica',
-    fallbackTitle: 'Entrevista em destaque',
-    fallbackExcerpt:
-      '"Cada papel é um pedaço do meu coração. Quando interpreto uma personagem, coloco a alma em fazer ela respirar, em fazer ela existir de verdade. A Lookmhee me ensina todo dia a me mostrar vulnerável, e a ter coragem de mostrar pro mundo quem a gente é de verdade."',
-    source: 'Sonya, entrevista à Vogue Thailand 2024',
-    readMoreLabel: 'Ler a história completa',
-  },
-};
-
-export const DEFAULT_MILESTONES_CONTENT: MilestonesContent = {
-  en: {
-    sectionTitle: 'Milestones',
-    year2022: 'First Meeting',
-    year2023: 'Affair Series',
-    year2024: 'Fan Meet Tour',
-    year2025: 'New Chapter',
-    ongoing: 'Story Continues',
-    bottomNote: 'Every moment is a constellation in their universe.',
-  },
-  zh: {
-    sectionTitle: '里程碑',
-    year2022: '初次相遇',
-    year2023: 'Affair 剧集',
-    year2024: '粉丝见面巡回',
-    year2025: '全新篇章',
-    ongoing: '故事仍在继续',
-    bottomNote: '每一个瞬间，都是她们宇宙里的一颗星。',
-  },
-  th: {
-    sectionTitle: 'หมุดหมาย',
-    year2022: 'การพบกันครั้งแรก',
-    year2023: 'ซีรีส์ Affair',
-    year2024: 'แฟนมีตทัวร์',
-    year2025: 'บทใหม่',
-    ongoing: 'เรื่องราวยังดำเนินต่อ',
-    bottomNote: 'ทุกช่วงเวลาคือหมู่ดาวในจักรวาลของพวกเธอ',
-  },
-  es: {
-    sectionTitle: 'Hitos',
-    year2022: 'Primer encuentro',
-    year2023: 'Serie Affair',
-    year2024: 'Gira de fan meetings',
-    year2025: 'Nuevo capítulo',
-    ongoing: 'La historia sigue',
-    bottomNote: 'Cada instante es una constelación en su universo.',
-  },
-  pt: {
-    sectionTitle: 'Marcos',
-    year2022: 'Primeiro encontro',
-    year2023: 'Série Affair',
-    year2024: 'Turnê de fan meetings',
-    year2025: 'Novo capítulo',
-    ongoing: 'A história continua',
-    bottomNote: 'Cada momento é uma constelação no universo delas.',
-  },
 };
 
 export const DEFAULT_HERO_CONTENT: HeroContent = {
@@ -242,66 +127,6 @@ export function normalizePrefaceContent(value: unknown): PrefaceContent {
   };
 }
 
-export function normalizeLongformContent(value: unknown): LongformContent {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return DEFAULT_LONGFORM_CONTENT;
-  }
-
-  const input = value as Record<string, unknown>;
-  const normalizeLang = (langValue: unknown, fallback: LongformFields): LongformFields => {
-    const record = langValue && typeof langValue === 'object' && !Array.isArray(langValue)
-      ? langValue as Record<string, unknown>
-      : {};
-
-    return {
-      eyebrow: typeof record.eyebrow === 'string' ? record.eyebrow : fallback.eyebrow,
-      fallbackTitle: typeof record.fallbackTitle === 'string' ? record.fallbackTitle : fallback.fallbackTitle,
-      fallbackExcerpt: typeof record.fallbackExcerpt === 'string' ? record.fallbackExcerpt : fallback.fallbackExcerpt,
-      source: typeof record.source === 'string' ? record.source : fallback.source,
-      readMoreLabel: typeof record.readMoreLabel === 'string' ? record.readMoreLabel : fallback.readMoreLabel,
-    };
-  };
-
-  return {
-    en: normalizeLang(input.en, DEFAULT_LONGFORM_CONTENT.en),
-    zh: normalizeLang(input.zh, DEFAULT_LONGFORM_CONTENT.zh),
-    th: normalizeLang(input.th, DEFAULT_LONGFORM_CONTENT.th),
-    es: normalizeLang(input.es, DEFAULT_LONGFORM_CONTENT.es),
-    pt: normalizeLang(input.pt, DEFAULT_LONGFORM_CONTENT.pt),
-  };
-}
-
-export function normalizeMilestonesContent(value: unknown): MilestonesContent {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return DEFAULT_MILESTONES_CONTENT;
-  }
-
-  const input = value as Record<string, unknown>;
-  const normalizeLang = (langValue: unknown, fallback: MilestonesFields): MilestonesFields => {
-    const record = langValue && typeof langValue === 'object' && !Array.isArray(langValue)
-      ? langValue as Record<string, unknown>
-      : {};
-
-    return {
-      sectionTitle: typeof record.sectionTitle === 'string' ? record.sectionTitle : fallback.sectionTitle,
-      year2022: typeof record.year2022 === 'string' ? record.year2022 : fallback.year2022,
-      year2023: typeof record.year2023 === 'string' ? record.year2023 : fallback.year2023,
-      year2024: typeof record.year2024 === 'string' ? record.year2024 : fallback.year2024,
-      year2025: typeof record.year2025 === 'string' ? record.year2025 : fallback.year2025,
-      ongoing: typeof record.ongoing === 'string' ? record.ongoing : fallback.ongoing,
-      bottomNote: typeof record.bottomNote === 'string' ? record.bottomNote : fallback.bottomNote,
-    };
-  };
-
-  return {
-    en: normalizeLang(input.en, DEFAULT_MILESTONES_CONTENT.en),
-    zh: normalizeLang(input.zh, DEFAULT_MILESTONES_CONTENT.zh),
-    th: normalizeLang(input.th, DEFAULT_MILESTONES_CONTENT.th),
-    es: normalizeLang(input.es, DEFAULT_MILESTONES_CONTENT.es),
-    pt: normalizeLang(input.pt, DEFAULT_MILESTONES_CONTENT.pt),
-  };
-}
-
 export function normalizeHeroContent(value: unknown): HeroContent {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return DEFAULT_HERO_CONTENT;
@@ -364,44 +189,6 @@ export function toPrefacePayload(content: PrefaceContent) {
     curatorTitle: lang.curatorTitle,
     curatorSignature: lang.curatorSignature,
     date: lang.date,
-  });
-
-  return {
-    en: buildLang(content.en),
-    zh: buildLang(content.zh),
-    th: buildLang(content.th),
-    es: buildLang(content.es),
-    pt: buildLang(content.pt),
-  };
-}
-
-export function toLongformPayload(content: LongformContent) {
-  const buildLang = (lang: LongformFields) => ({
-    eyebrow: lang.eyebrow,
-    fallbackTitle: lang.fallbackTitle,
-    fallbackExcerpt: lang.fallbackExcerpt,
-    source: lang.source,
-    readMoreLabel: lang.readMoreLabel,
-  });
-
-  return {
-    en: buildLang(content.en),
-    zh: buildLang(content.zh),
-    th: buildLang(content.th),
-    es: buildLang(content.es),
-    pt: buildLang(content.pt),
-  };
-}
-
-export function toMilestonesPayload(content: MilestonesContent) {
-  const buildLang = (lang: MilestonesFields) => ({
-    sectionTitle: lang.sectionTitle,
-    year2022: lang.year2022,
-    year2023: lang.year2023,
-    year2024: lang.year2024,
-    year2025: lang.year2025,
-    ongoing: lang.ongoing,
-    bottomNote: lang.bottomNote,
   });
 
   return {

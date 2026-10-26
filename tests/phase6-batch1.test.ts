@@ -308,20 +308,6 @@ describe('new copy exists in all languages', () => {
 });
 
 describe('homepage', () => {
-  const chronicle = src('components/sections/chronicle-section.tsx');
-
-  test('milestone photos are fetched once for the whole section', () => {
-    const calls = chronicle.split("fetch('/api/milestones')").length - 1;
-    assert.equal(calls, 1, 'one request, not one per milestone card');
-  });
-
-  test('milestone CTAs are localized', () => {
-    assert.ok(chronicle.includes("t(language, 'home.storyContinues')"));
-    assert.ok(chronicle.includes("t(language, 'home.enterArchive')"));
-    assert.ok(!chronicle.includes('Enter Archive →'));
-    assert.ok(!chronicle.includes('Story Continues →'));
-  });
-
   test('portal CTA is localized', () => {
     const portals = src('components/sections/portals-section.tsx');
     assert.ok(portals.includes("t(language, 'home.explore')"));
@@ -499,7 +485,6 @@ describe('no database writes were introduced', () => {
     'app/(en)/editorial/page.tsx',
     'app/(en)/editorial/[id]/editorial-detail-content.tsx',
     'components/chronicle-timeline.tsx',
-    'components/sections/chronicle-section.tsx',
     'components/sections/portals-section.tsx',
   ];
 

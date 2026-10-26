@@ -29,13 +29,3 @@ export const mainNavItems: NavItem[] = [
   { key: 'nav.gallery', href: '/gallery' },
 ];
 
-/**
- * Kept for the outbound social group. Duality is a set of external/duplicate
- * profile links, not an archive section, so it no longer takes a seat in the
- * main bar.
- */
-export const dualitySubItems: NavItem[] = [
-  { key: 'nav.lmsy', href: '/people' },
-  { key: 'nav.lookmhee', href: '/people/lookmhee' },
-  { key: 'nav.sonya', href: '/people/sonya' },
-];
