@@ -195,7 +195,7 @@ const DICT: Record<string, [string, string]> = {
   'd.promote.pickPlatform': ['选择平台', 'Pick the platform'],
   'd.promote.subjectFromEvent': ['该事件已有编号，此处显示编号里的主体段，不可修改', 'This event already has a number; the segment shown comes from it and is not editable'],
   'd.promote.subjectPicked': ['由上面的选择自动拼出，不可手填', 'Assembled from the picks above; not typed by hand'],
-  'd.promote.subjectFromTopic': ['由专题名自动生成；入库后固定不变', 'Derived from the topic title; fixed once promoted'],
+  'd.promote.subjectCodeEditable': ['前面几段由上面的选择拼出；末段取自标题，可以改短，入库后固定不变', 'The leading segments come from the picks above; the last one comes from the title and can be shortened. Fixed once promoted'],
   'd.promote.topicNeedsAscii': ['专题名里没有 A-Z / 0-9，编码无法生成——请用英文字母命名', 'The topic title has no A-Z / 0-9, so no code can be derived - name it in Latin letters'],
   'd.promote.eventDate': ['活动日期', 'Event date'],
   'd.promote.eventDateHint': ['可以不填。不填时编号省掉日期段（如 LMSY-DRAMA-AFFAIR-PROMO-001），照片也就不带日期。', 'Optional. Left empty, the id drops the date segment (LMSY-DRAMA-AFFAIR-PROMO-001) and the pictures carry no date.'],

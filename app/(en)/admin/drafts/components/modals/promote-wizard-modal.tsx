@@ -169,6 +169,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [personCode, setPersonCode] = useState<'LMSY' | 'LM' | 'SY'>('LMSY');
   const [assetGroup, setAssetGroup] = useState('');
   const [captionPrefix, setCaptionPrefix] = useState('');
+  // The last segment of the subject, when it came out of a title. Empty means
+  // "use what the title gave"; anything typed replaces it, because only the
+  // curator knows that a long description stands for a short name.
+  const [codeDraft, setCodeDraft] = useState('');
   const [writeCover, setWriteCover] = useState(false);
 
   const [preview, setPreview] = useState<PreviewInfo | null>(null);
@@ -225,6 +229,12 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     [projects, projectId]
   );
 
+  // Another event means another code: what was typed for the previous one must
+  // not follow along and get stamped onto this one.
+  useEffect(() => {
+    setCodeDraft('');
+  }, [projectId]);
+
   useEffect(() => {
     if (!isOpen) return;
     // Reset everything on open.
@@ -233,6 +243,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     setPersonCode('LMSY');
     setAssetGroup('');
     setCaptionPrefix('');
+    setCodeDraft('');
     setWriteCover(false);
     setPreview(null);
     setErrors([]);
@@ -473,7 +484,37 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     }
   }, [project, level, dramaSeriesRow, picks, activeCategory, city]);
 
-  const effectiveSubject = derivedSubject;
+  /**
+   * Which part of the subject a curator may correct.
+   *
+   * Only the tail, and only where the tail is a code written out of a title -
+   * a drama event's event code or a topic's name. The work / part codes ahead
+   * of it are picks from a table, and the city of a live event is a pick too:
+   * editing those would break the hierarchy rather than shorten a name. A
+   * project that already carries a number is frozen - the number is in its
+   * file names already (spec 4.1).
+   */
+  const subjectShape = useMemo<{ head: string; tail: string; editable: boolean }>(() => {
+    if (!derivedSubject || project?.catalog_id) {
+      return { head: derivedSubject, tail: '', editable: false };
+    }
+    if (level !== 'work' && level !== 'topic') {
+      return { head: derivedSubject, tail: '', editable: false };
+    }
+    const parts = derivedSubject.split('-');
+    // A topic's subject is the name and nothing else, so the whole thing is
+    // the tail; a drama's last part is the event code.
+    const tail = parts[parts.length - 1] ?? '';
+    if (!tail) return { head: derivedSubject, tail: '', editable: false };
+    return { head: parts.slice(0, -1).join('-'), tail, editable: true };
+  }, [derivedSubject, level, project?.catalog_id]);
+
+  const effectiveSubject = useMemo(() => {
+    if (!subjectShape.editable) return derivedSubject;
+    const typed = codeDraft.toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(0, 24);
+    const tail = typed || subjectShape.tail;
+    return subjectShape.head ? `${subjectShape.head}-${tail}` : tail;
+  }, [derivedSubject, subjectShape, codeDraft]);
 
   // Class dropdown: the project's own preset classes first, then classes the
   // same category actually uses - always pickable, never invented ad hoc.
@@ -1329,9 +1370,41 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                         {t('d.promote.subject')}
                       </span>
                       {renderSubjectPick()}
-                      <div className="w-full border border-lmsy-yellow/30 bg-lmsy-yellow/[0.08] px-3 py-2 font-mono text-xs tracking-wide text-lmsy-yellow">
-                        {effectiveSubject || '—'}
-                      </div>
+                      {subjectShape.editable ? (
+                        <>
+                          <span className="flex items-end gap-1.5">
+                            {subjectShape.head && (
+                              <span className="shrink-0 pb-2 font-mono text-xs tracking-wide text-ink-2">
+                                {subjectShape.head}-
+                              </span>
+                            )}
+                            <input
+                              type="text"
+                              value={codeDraft}
+                              onChange={(e) => {
+                                setCodeDraft(e.target.value);
+                                setPreview(null);
+                              }}
+                              // Typing should start from the derived code, so a
+                              // shortening is a few deletions rather than the
+                              // whole name typed again.
+                              onFocus={() => {
+                                if (!codeDraft) setCodeDraft(subjectShape.tail);
+                              }}
+                              placeholder={subjectShape.tail}
+                              spellCheck={false}
+                              className="w-full min-w-0 border border-lmsy-yellow/30 bg-lmsy-yellow/[0.08] px-3 py-2 font-mono text-xs tracking-wide text-lmsy-yellow outline-none placeholder:text-lmsy-yellow/60 focus:border-lmsy-yellow"
+                            />
+                          </span>
+                          <span className="block break-all font-mono text-[9px] leading-relaxed text-lmsy-yellow/70">
+                            {effectiveSubject}
+                          </span>
+                        </>
+                      ) : (
+                        <div className="w-full border border-lmsy-yellow/30 bg-lmsy-yellow/[0.08] px-3 py-2 font-mono text-xs tracking-wide text-lmsy-yellow">
+                          {effectiveSubject || '—'}
+                        </div>
+                      )}
                       {project.catalog_id && (
                         <span className="block break-all font-mono text-[9px] leading-relaxed text-ink-2/70">
                           #{project.catalog_id}
@@ -1340,8 +1413,8 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                       <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
                         {project.catalog_id
                           ? t('d.promote.subjectFromEvent')
-                          : level === 'topic'
-                            ? t('d.promote.subjectFromTopic')
+                          : subjectShape.editable
+                            ? t('d.promote.subjectCodeEditable')
                             : t('d.promote.subjectPicked')}
                       </span>
                       {level === 'topic' && !effectiveSubject && (

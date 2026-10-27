@@ -321,8 +321,40 @@ export function themeAfterSeparator(title: string | null | undefined): string {
   return codeFromTitle(parts.slice(1).join(' ')).replace(/-/g, '');
 }
 
-/** Words that describe the kind of entry rather than which one (spec 4.1). */
-const GENERIC_EVENT_WORDS = new Set(['THE', 'A', 'AN', 'AWARD', 'AWARDS']);
+/**
+ * Words that describe the kind of entry rather than which one (spec 4.1).
+ *
+ * The first five are grammar and ceremony. The rest name the carrier - a
+ * gallery, a photo, a video - which every entry in this archive is made of, so
+ * they never tell two entries apart either. "Promotional Image Gallery" is the
+ * batch's promotion material, not its images: dropping the carriers leaves
+ * PROMOTIONAL instead of PROMOTIONALIMAGEGALLERY.
+ */
+const GENERIC_EVENT_WORDS = new Set([
+  'THE',
+  'A',
+  'AN',
+  'AWARD',
+  'AWARDS',
+  'IMAGE',
+  'IMAGES',
+  'GALLERY',
+  'PHOTO',
+  'PHOTOS',
+  'PICTURE',
+  'PICTURES',
+  'VIDEO',
+  'VIDEOS',
+]);
+
+/**
+ * How much room an event code gets. A code is read inside a file name, so it
+ * has to be recognisable at a glance; every example in the spec fits in
+ * sixteen characters (HIGHLIGHTS, FINALEPISODE, YENTERTAIN24). A title that
+ * describes instead of names is cut back to the words that fit - whole words
+ * only, because half a word reads as a typo.
+ */
+const EVENT_CODE_MAX = 16;
 
 /**
  * Event code out of a title: concatenated capitals, generic words dropped,
@@ -334,6 +366,10 @@ const GENERIC_EVENT_WORDS = new Set(['THE', 'A', 'AN', 'AWARD', 'AWARDS']);
  *
  * `prefix` is the work / brand the title usually repeats; it is removed so the
  * code does not say the same thing twice.
+ *
+ * The result is a guess, and the wizard lets a curator shorten the last
+ * segment before it is stamped - a title says what the batch is about, while
+ * the code only has to identify it.
  */
 export function eventCodeFromTitle(
   title: string | null | undefined,
@@ -343,10 +379,25 @@ export function eventCodeFromTitle(
   let rest = words.filter((word) => !GENERIC_EVENT_WORDS.has(word));
   const head = (prefix || '').replace(/-/g, '').toUpperCase();
   if (head && rest.length > 1 && rest[0] === head) rest = rest.slice(1);
-  if (rest.length > 1 && /^\d{4}$/.test(rest[rest.length - 1])) {
-    rest[rest.length - 1] = rest[rest.length - 1].slice(2);
+  const keepsYear = rest.length > 1 && /^\d{4}$/.test(rest[rest.length - 1]);
+  if (keepsYear) rest[rest.length - 1] = rest[rest.length - 1].slice(2);
+
+  // Two characters stay reserved for a trailing year: it is what tells two
+  // editions of the same award apart, so it is the last thing to give up. A
+  // single word longer than the budget is cut - there is no shorter form of it
+  // to fall back on.
+  const body = keepsYear ? rest.slice(0, -1) : rest;
+  const budget = keepsYear ? EVENT_CODE_MAX - 2 : EVENT_CODE_MAX;
+  const kept: string[] = [];
+  let width = 0;
+  for (const word of body) {
+    if (width + word.length > budget) break;
+    kept.push(word);
+    width += word.length;
   }
-  return rest.join('');
+  if (kept.length === 0 && body[0]) kept.push(body[0].slice(0, budget));
+  if (keepsYear) kept.push(rest[rest.length - 1]);
+  return kept.join('');
 }
 
 /** BRAND subject: brand + campaign (spec 4.5). Campaign may be unknown. */

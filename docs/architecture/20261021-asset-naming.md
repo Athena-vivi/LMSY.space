@@ -120,6 +120,9 @@ LMSY-DRAMA-HARMONY-MUSIC-SECRETDEAL
 LMSY-DRAMA-HOMETOWN-PROMO-FITTING
 ```
 
+- **通用词包含载体词**：`IMAGE` / `IMAGES` / `PHOTO` / `PHOTOS` / `PICTURE` / `VIDEO` / `GALLERY` 与冠词、`Awards` 同等对待。它们说的是「这是什么形态」，不是「这是哪一批」——库里每条都是图或视频。`Promotional Image Gallery` 因此是 `PROMOTIONAL`，不是 `PROMOTIONALIMAGEGALLERY`。
+- **事件码上限 16 字符**，超出按整词截断（不切半个词）；末尾两位年份优先保留，它是区分两届同名奖项的唯一字符。`FINALEPISODE`（12）、`YENTERTAIN24`（12）、`FINALSECRETDEAL`（15）都在限内。
+- **入库向导里末段可改短**：作品 + 部分是选出来的，末段是标题推出来的，标题在描述、编码只需识别。向导允许在入库前把末段改短（`PROMOSTILLS` 之类），一旦入库就固定。
 - **首映礼省事件码**：一本剧一场首映，`LMSY-DRAMA-AFFAIR-PREMIERE` 已经唯一。同一个作品真出现两场时再加城市码。
 - 泰语标题没有英文副标题的，按第九节给四位以内代号（`KAER`、`FAEN`），并在事件台账登记。
 - 事件码只增不改：它已经写进图片名。
