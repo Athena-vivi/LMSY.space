@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
-import { syncProjectCatalogDate } from '@/lib/catalog-date-sync';
+import { syncProjectCatalogCode } from '@/lib/catalog-date-sync';
 import {
   getProjectById,
   updateProject,
@@ -326,19 +326,19 @@ export async function PATCH(
 
     console.log('[PROJECTS_PATCH] ✅ Project updated:', id, '| Rows:', data.length);
 
-    // The event date moved, so the YYYYMMDD inside every catalog id has to
-    // move with it - the event number, each asset id, the file names in R2 and
-    // the urls pointing at them. Editing the date used to leave all of it
-    // frozen at the date the row was first promoted, which is how the archive
-    // ended up showing one day in the header and another in the file name.
+    // The catalog code is DERIVED from category / subtype / city / date /
+    // person, so any of them moving has to move the code with it: the event
+    // number, each asset id, the file names in R2 and the urls pointing at
+    // them. Editing a field used to leave all of it frozen at whatever the
+    // row said when it was promoted - a party moved to Shanghai still numbered
+    // BKK, a corrected date still printed the old one in every file name.
     let catalogSync = null;
-    const nextDate =
-      typeof body.event_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.event_date)
-        ? body.event_date
-        : null;
-    if (before && nextDate && before.event_date !== nextDate) {
+    const codeFields = ['event_date', 'category', 'subtype', 'city', 'person', 'project_kind'];
+    const codeDirty = codeFields.some((field) => body[field] !== undefined);
+    if (before && codeDirty) {
+      const after = { ...before, ...updateData };
       try {
-        catalogSync = await syncProjectCatalogDate(supabaseAdmin, before, nextDate);
+        catalogSync = await syncProjectCatalogCode(supabaseAdmin, before, after);
         console.log('[PROJECTS_PATCH] Catalog sync:', JSON.stringify(catalogSync));
       } catch (error) {
         // The date is saved either way; report the sync failure instead of

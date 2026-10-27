@@ -1,17 +1,23 @@
 /**
- * Keep a project's catalog code in step with its event date.
+ * Keep a project's catalog code in step with the fields it is built from.
  *
  * WHY THIS EXISTS
  * ---------------
- * The event number (projects.catalog_id) and every asset id under it carry a
- * YYYYMMDD segment: LMSY-EVENT-FANSIGN-CKG-20250426-001. The segment is
- * written once, at promote time, from the date the row had that day. Editing
- * the date later used to leave the code frozen, so the site showed one day and
- * the file name another - with no warning at all.
+ * The event number (projects.catalog_id) and every asset id under it are
+ * derived, not typed: the door from the category, the subject from the
+ * subtype and the city, a YYYYMMDD segment from the event date, and a -LM /
+ * -SY tail from the person. They are written once, at promote time, from
+ * whatever the row said that day.
  *
- * This module is the other half: given a project and its NEW event date, it
- * rewrites the date segment everywhere it appears and moves the files to
- * match, so date and code can never drift apart again.
+ * Editing any of those fields later used to leave the code frozen: a curator
+ * corrected a Bangkok award night to 2025-05-14 and the number still read
+ * 20250515; the BaBi Blushing party was moved to Shanghai and its number
+ * still said BKK. The site then showed one thing and the file names another,
+ * with no warning at all.
+ *
+ * This module is the other half: given the row BEFORE an edit and the row
+ * AFTER it, it rebuilds the event number, rewrites every asset id under it
+ * and moves the files to match, so the code can never drift again.
  *
  * WHAT IT TOUCHES (all of it, or nothing)
  *   projects.catalog_id                                 - the event number
@@ -28,7 +34,15 @@
  * is worse than an unchanged one, so the whole thing is all-or-nothing.
  */
 
-import { r2KeyForCatalogId, type CatalogIdClient } from './catalog-id.ts';
+import {
+  buildProjectCatalogId,
+  doorCodeForProject,
+  hasPickedSubject,
+  pickedSubject,
+  r2KeyForCatalogId,
+  subjectFromProjectId,
+  type CatalogIdClient,
+} from './catalog-id.ts';
 import { purgeCdnUrls } from './cloudflare-purge.ts';
 import {
   BASE_CDN_URL,
@@ -37,31 +51,35 @@ import {
   r2ObjectExists,
 } from './r2-client.ts';
 
-/** A project row as far as this module needs it. */
-export interface SyncProjectRow {
+/** The fields the catalog code is built from. */
+export interface CatalogSyncFields {
   id: string;
   catalog_id?: string | null;
   cover_url?: string | null;
   event_date?: string | null;
+  category?: string | null;
+  project_kind?: string | null;
+  subtype?: string | null;
+  city?: string | null;
+  person?: string | null;
   // Curator-picked cover maps: { className: assetCatalogId }. Both store asset
   // ids, so both have to follow a rename.
   asset_group_covers?: Record<string, unknown> | null;
   talk_resource_covers?: Record<string, unknown> | null;
 }
 
-export interface CatalogDateSyncResult {
+export interface CatalogSyncResult {
   applied: boolean;
   /** Why nothing was done. Set only when applied is false. */
   reason?: string;
   projectId: string;
-  /** YYYYMMDD the codes carried before, null when none of them had a date. */
-  oldDate: string | null;
-  /** YYYYMMDD the codes now carry. */
-  newDate: string;
-  projectCatalogId: { from: string; to: string } | null;
+  /** The event number before, null when the row had none. */
+  from: string | null;
+  /** The event number after. */
+  to: string | null;
   assets: {
     total: number;
-    /** Rows whose id carried the old date. */
+    /** Rows whose id no longer matched the event number or the date. */
     affected: number;
     /** Rows rewritten in the database. */
     updated: number;
@@ -120,6 +138,35 @@ export function dateSegmentOf(id: string | null | undefined): string | null {
   if (tailFirst) return tailFirst[1];
   const sequenceFirst = /-(\d{8})(?:-\d{3})(?:-(?:LM|SY))$/.exec(text);
   return sequenceFirst ? sequenceFirst[1] : null;
+}
+
+/**
+ * An asset id rebuilt under a new event number.
+ *
+ *   oldEventNumber LMSY-EVENT-BRANDDAY-BKK-20250628, rest '-001'
+ *   newEventNumber LMSY-EVENT-BRANDDAY-SHA-20250628
+ *   ->            LMSY-EVENT-BRANDDAY-SHA-20250628-001
+ *
+ * Doors other than EVENT / APPEAR keep the date as its own segment behind the
+ * event number (LMSY-MAG-OAT-LM-20241211-012), so the date in `rest` is
+ * rewritten too - and kept when no new date is known, because a topic that is
+ * not pinned to a day must not gain one here.
+ *
+ * Returns null when the id does not belong to this event at all; callers fall
+ * back to a date-only rewrite for those.
+ */
+export function assetIdUnder(
+  id: string,
+  oldEventNumber: string,
+  newEventNumber: string,
+  newCompactDate: string | null
+): string | null {
+  if (!id.startsWith(`${oldEventNumber}-`)) return null;
+  const rest = id.slice(oldEventNumber.length);
+  if (!newCompactDate) return newEventNumber + rest;
+  // EVENT / APPEAR carry the date inside the number, so `rest` is only the
+  // sequence and there is no date to rewrite - keep it as it is.
+  return newEventNumber + (replaceDateSegment(rest, newCompactDate) ?? rest);
 }
 
 /** True when this url is served from our own bucket. */
@@ -217,75 +264,56 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Rewrite the date segment of a project, its assets and their objects.
- *
- * Returns applied=false with a reason when there is nothing to do. Returns
- * applied=false with `conflicts` when the destination is taken - the caller is
- * expected to surface that to the curator, because the date itself has already
- * been saved by then.
+ * The event number a row should carry, built from the fields it is derived
+ * from. Null means "these fields cannot decide it" - never guess.
  */
-export async function syncProjectCatalogDate(
+function eventNumberFor(fields: CatalogSyncFields): string | null {
+  const door = doorCodeForProject(fields);
+  if (!door) return null;
+  const old = String(fields.catalog_id || '');
+  const subject = hasPickedSubject(fields.category)
+    ? pickedSubject(fields.category, fields.subtype, fields.city)
+    : subjectFromProjectId(old);
+  if (!subject) return null;
+  return buildProjectCatalogId(door, subject, fields.event_date, fields.person);
+}
+
+/**
+ * Rebuild a project's catalog code - and everything derived from it - so it
+ * matches the row's current category / subtype / city / date / person.
+ *
+ * Returns applied=false with a reason when there is nothing to do, and with
+ * `conflicts` when the destination is taken. A conflict leaves the batch
+ * untouched on purpose; the caller is expected to surface it, because the
+ * fields themselves have already been saved by then.
+ */
+export async function syncProjectCatalogCode(
   supabase: CatalogIdClient,
-  project: SyncProjectRow,
-  newEventDate: string
-): Promise<CatalogDateSyncResult> {
-  const newCompact = compactOf(newEventDate);
-  const base = {
-    projectId: project.id,
-    oldDate: null as string | null,
-    newDate: newCompact || '',
-    projectCatalogId: null as { from: string; to: string } | null,
+  before: CatalogSyncFields,
+  after: CatalogSyncFields
+): Promise<CatalogSyncResult> {
+  const oldEventNumber = before.catalog_id ? String(before.catalog_id) : null;
+  const newEventNumber = eventNumberFor(after);
+  const newCompact = compactOf(after.event_date);
+
+  const result: CatalogSyncResult = {
+    applied: false,
+    projectId: before.id,
+    from: oldEventNumber,
+    to: newEventNumber,
     assets: { total: 0, affected: 0, updated: 0, renamed: 0, failed: 0 },
-    cover: {} as { changed: boolean; from?: string; to?: string },
+    cover: { changed: false },
     purged: 0,
   };
 
-  if (!newCompact) {
-    return { ...base, applied: false, reason: 'invalid-date' };
+  if (!oldEventNumber || !newEventNumber) {
+    return { ...result, reason: oldEventNumber ? 'no-derived-number' : 'no-event-number' };
   }
 
-  const assets = await fetchAssets(supabase, project.id);
-  base.assets.total = assets.length;
+  const assets = await fetchAssets(supabase, before.id);
+  result.assets.total = assets.length;
 
-  // The date the codes actually carry - not the one the row claims. A batch
-  // can hold both (the 20260312 / 20260314 mix), so the project number leads
-  // and the first asset id follows when the number itself has no date.
-  const oldCompact =
-    dateSegmentOf(project.catalog_id) ||
-    assets.map((row) => dateSegmentOf(row.catalog_id)).find(Boolean) ||
-    null;
-  base.oldDate = oldCompact;
-
-  if (!oldCompact) {
-    return { ...base, applied: false, reason: 'no-date-segment' };
-  }
-  if (oldCompact === newCompact) {
-    return { ...base, applied: false, reason: 'already-in-sync' };
-  }
-
-  const conflicts: string[] = [];
-
-  // ---- the event number -------------------------------------------------
-  const oldProjectId = project.catalog_id ? String(project.catalog_id) : null;
-  let newProjectId: string | null = null;
-  if (oldProjectId) {
-    newProjectId = replaceDateSegment(oldProjectId, newCompact);
-    if (newProjectId && newProjectId !== oldProjectId) {
-      const { data: clash } = await supabase
-        .schema('lmsy_archive')
-        .from('projects')
-        .select('id')
-        .eq('catalog_id', newProjectId)
-        .maybeSingle();
-      if (clash && clash.id !== project.id) {
-        conflicts.push(`event number ${newProjectId} already belongs to another project`);
-      }
-    } else {
-      newProjectId = null;
-    }
-  }
-
-  // ---- the assets -------------------------------------------------------
+  // ---- plan: which ids have to change -----------------------------------
   interface Plan {
     row: { id: string; catalog_id: string | null; image_url: string | null };
     oldId: string;
@@ -297,16 +325,40 @@ export async function syncProjectCatalogDate(
   for (const row of assets) {
     const oldId = row.catalog_id ? String(row.catalog_id) : '';
     if (!oldId) continue;
-    const newId = replaceDateSegment(oldId, newCompact);
+    const newId =
+      (oldEventNumber !== newEventNumber
+        ? assetIdUnder(oldId, oldEventNumber, newEventNumber, newCompact)
+        : null) ??
+      (newCompact ? replaceDateSegment(oldId, newCompact) : null);
     if (!newId || newId === oldId) continue;
     const oldKey = row.image_url ? keyForUrl(row.image_url) : null;
     const newKey = oldKey ? nextKeyFor(oldKey, oldId, newId) : null;
     plans.push({ row, oldId, newId, oldKey, newKey });
   }
-  base.assets.affected = plans.length;
+  result.assets.affected = plans.length;
 
-  // Destination asset ids must be free. Ids of this very batch are not a
-  // clash: they are the rows we are about to rewrite.
+  const numberChanged = oldEventNumber !== newEventNumber;
+  if (!numberChanged && plans.length === 0) {
+    return { ...result, reason: 'already-in-sync' };
+  }
+
+  const conflicts: string[] = [];
+
+  // ---- the event number -------------------------------------------------
+  if (numberChanged) {
+    const { data: clash } = await supabase
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id')
+      .eq('catalog_id', newEventNumber)
+      .maybeSingle();
+    if (clash && clash.id !== before.id) {
+      conflicts.push(`event number ${newEventNumber} already belongs to another project`);
+    }
+  }
+
+  // ---- the assets -------------------------------------------------------
+  // Ids of this very batch are not a clash: they are the rows being rewritten.
   const ownIds = new Set(assets.map((row) => String(row.catalog_id || '')));
   for (const group of chunk(plans.map((plan) => plan.newId), 200)) {
     const { data: taken } = await supabase
@@ -321,40 +373,48 @@ export async function syncProjectCatalogDate(
     }
   }
 
-  // Destination object keys must be free too. An object that is already there
+  // Destination object keys must be free too. An object already sitting there
   // belongs to something else (an orphan from an earlier upload), and copying
   // over it would lose that file.
-  const keysToCheck = plans
-    .filter((plan) => plan.newKey && plan.newKey !== plan.oldKey)
-    .map((plan) => plan.newKey as string);
-  await pooled(Array.from(new Set(keysToCheck)), 6, async (key) => {
+  const keysToCheck = Array.from(
+    new Set(plans.filter((plan) => plan.newKey && plan.newKey !== plan.oldKey).map((p) => p.newKey as string))
+  );
+  await pooled(keysToCheck, 6, async (key) => {
     if (await r2ObjectExists(key)) conflicts.push(`object ${key} already exists`);
   });
 
   // ---- the project cover ------------------------------------------------
+  // Two cases: the cover points at one of this project's pictures (it is then
+  // already renamed below, only the url has to follow), or it is a poster of
+  // our own whose name carries the old code.
+  const oldCoverKey = before.cover_url ? keyForUrl(before.cover_url) : null;
+  const oldCompact = dateSegmentOf(oldEventNumber) || assets.map((r) => dateSegmentOf(r.catalog_id)).find(Boolean) || null;
   let newCoverUrl: string | null = null;
-  const oldCoverKey = project.cover_url ? keyForUrl(project.cover_url) : null;
+  let coverKeyToMove: string | null = null;
   let newCoverKey: string | null = null;
-  if (oldCoverKey && oldCoverKey.includes(oldCompact)) {
-    newCoverKey = oldCoverKey.split('/').map((seg) => seg.split(oldCompact).join(newCompact)).join('/');
-    if (newCoverKey !== oldCoverKey) {
-      if (await r2ObjectExists(newCoverKey)) {
-        conflicts.push(`object ${newCoverKey} already exists`);
-      } else {
-        newCoverUrl = `${BASE_CDN_URL}/${newCoverKey}`;
+
+  if (oldCoverKey) {
+    const base = oldCoverKey.slice(oldCoverKey.lastIndexOf('/') + 1).replace(/\.[^.]+$/, '');
+    const renamed = plans.find((plan) => plan.oldId === base);
+    if (renamed) {
+      newCoverUrl = `${BASE_CDN_URL}/${renamed.newKey}`;
+      newCoverKey = renamed.newKey;
+    } else if (oldCompact && newCompact && oldCoverKey.includes(oldCompact)) {
+      const swapped = oldCoverKey.split('/').map((seg) => seg.split(oldCompact).join(newCompact)).join('/');
+      if (swapped !== oldCoverKey) {
+        if (await r2ObjectExists(swapped)) {
+          conflicts.push(`object ${swapped} already exists`);
+        } else {
+          coverKeyToMove = oldCoverKey;
+          newCoverKey = swapped;
+          newCoverUrl = `${BASE_CDN_URL}/${swapped}`;
+        }
       }
     }
   }
 
   if (conflicts.length > 0) {
-    return {
-      ...base,
-      applied: false,
-      reason: 'conflict',
-      conflicts: Array.from(new Set(conflicts)),
-      projectCatalogId: newProjectId && oldProjectId ? { from: oldProjectId, to: newProjectId } : null,
-      cover: { changed: false, from: project.cover_url || undefined },
-    };
+    return { ...result, reason: 'conflict', conflicts: Array.from(new Set(conflicts)) };
   }
 
   // ---- move the objects -------------------------------------------------
@@ -369,19 +429,29 @@ export async function syncProjectCatalogDate(
     // 'missing-source' means the file was already gone; the row still has to
     // follow the new id, or the archive ends up with two numbering schemes.
     if (outcome === 'moved' || outcome === 'same' || outcome === 'missing-source') {
-      if (outcome === 'moved') base.assets.renamed += 1;
+      if (outcome === 'moved') result.assets.renamed += 1;
       moved.push(plan);
     } else {
       skipped.push(plan);
     }
   });
 
+  if (coverKeyToMove && newCoverKey) {
+    const outcome = await moveR2Object(coverKeyToMove, newCoverKey);
+    if (outcome === 'moved' || outcome === 'same') {
+      result.cover = { changed: true, from: before.cover_url as string, to: newCoverUrl as string };
+    } else {
+      newCoverUrl = null;
+      newCoverKey = null;
+    }
+  } else if (newCoverUrl) {
+    result.cover = { changed: true, from: before.cover_url as string, to: newCoverUrl };
+  }
+
   // ---- rewrite the rows -------------------------------------------------
   await pooled(moved, 6, async (plan) => {
-    const patch: Record<string, string> = {
-      catalog_id: plan.newId,
-      event_date: newEventDate,
-    };
+    const patch: Record<string, string> = { catalog_id: plan.newId };
+    if (after.event_date) patch.event_date = after.event_date;
     if (plan.newKey && isOurCdnUrl(plan.row.image_url)) {
       patch.image_url = `${BASE_CDN_URL}/${plan.newKey}`;
     }
@@ -391,50 +461,37 @@ export async function syncProjectCatalogDate(
       .update(patch)
       .eq('id', plan.row.id);
     if (error) {
-      console.error('[CATALOG_DATE_SYNC] asset update failed:', plan.newId, error.message);
+      console.error('[CATALOG_SYNC] asset update failed:', plan.newId, error.message);
       skipped.push(plan);
     } else {
-      base.assets.updated += 1;
+      result.assets.updated += 1;
     }
   });
-  base.assets.failed = skipped.length;
+  result.assets.failed = skipped.length;
 
   // ---- rewrite the project ---------------------------------------------
   const projectPatch: Record<string, unknown> = {};
-  if (newProjectId) {
-    projectPatch.catalog_id = newProjectId;
-    base.projectCatalogId = { from: oldProjectId as string, to: newProjectId };
-  }
-  if (newCoverUrl) {
-    projectPatch.cover_url = newCoverUrl;
-    base.cover = { changed: true, from: project.cover_url as string, to: newCoverUrl };
-  }
+  if (numberChanged) projectPatch.catalog_id = newEventNumber;
+  if (newCoverUrl) projectPatch.cover_url = newCoverUrl;
+  const table = new Map(moved.map((plan) => [plan.oldId, plan.newId]));
   const remap = (map: Record<string, unknown> | null | undefined): Record<string, unknown> | null => {
     if (!map || typeof map !== 'object') return map ?? null;
-    const table = new Map(moved.map((plan) => [plan.oldId, plan.newId]));
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(map)) {
-      const id = String(value ?? '');
-      out[key] = table.get(id) ?? value;
+      out[key] = table.get(String(value ?? '')) ?? value;
     }
     return out;
   };
-  if (project.asset_group_covers) {
-    projectPatch.asset_group_covers = remap(project.asset_group_covers);
-  }
-  if (project.talk_resource_covers) {
-    projectPatch.talk_resource_covers = remap(project.talk_resource_covers);
-  }
+  if (before.asset_group_covers) projectPatch.asset_group_covers = remap(before.asset_group_covers);
+  if (before.talk_resource_covers) projectPatch.talk_resource_covers = remap(before.talk_resource_covers);
 
   if (Object.keys(projectPatch).length > 0) {
     const { error } = await supabase
       .schema('lmsy_archive')
       .from('projects')
       .update(projectPatch)
-      .eq('id', project.id);
-    if (error) {
-      console.error('[CATALOG_DATE_SYNC] project update failed:', error.message);
-    }
+      .eq('id', before.id);
+    if (error) console.error('[CATALOG_SYNC] project update failed:', error.message);
   }
 
   // ---- drop the stale cache --------------------------------------------
@@ -445,14 +502,7 @@ export async function syncProjectCatalogDate(
   }
   if (oldCoverKey) stale.add(oldCoverKey);
   if (newCoverKey && newCoverKey !== oldCoverKey) stale.add(newCoverKey);
-  if (stale.size > 0) {
-    const result = await purgeCdnUrls(Array.from(stale));
-    base.purged = result.purged ?? 0;
-  }
+  if (stale.size > 0) result.purged = (await purgeCdnUrls(Array.from(stale))).purged ?? 0;
 
-  return {
-    ...base,
-    applied: true,
-    cover: base.cover.changed ? base.cover : { changed: false },
-  };
+  return { ...result, applied: true };
 }

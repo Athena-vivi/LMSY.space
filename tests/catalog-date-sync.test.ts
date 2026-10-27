@@ -10,7 +10,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dateSegmentOf, replaceDateSegment } from '../lib/catalog-date-sync.ts';
+import { assetIdUnder, dateSegmentOf, replaceDateSegment } from '../lib/catalog-date-sync.ts';
 
 test('an event number keeps its tail and gains the new day', () => {
   assert.equal(
@@ -63,6 +63,58 @@ test('an id without a date is left alone', () => {
   assert.equal(replaceDateSegment('LMSY-MAG-OAT-LM', '20260801'), null);
   assert.equal(dateSegmentOf('LMSY-FEAT-BACKVIEW-025'), null);
   assert.equal(dateSegmentOf(null), null);
+});
+
+test('an asset moves under the rebuilt event number', () => {
+  // The BaBi Blushing party was re-filed to Shanghai: the city code inside the
+  // number has to follow, sequence and day untouched.
+  assert.equal(
+    assetIdUnder(
+      'LMSY-EVENT-BRANDDAY-BKK-20250628-001',
+      'LMSY-EVENT-BRANDDAY-BKK-20250628',
+      'LMSY-EVENT-BRANDDAY-SHA-20250628',
+      '20250628'
+    ),
+    'LMSY-EVENT-BRANDDAY-SHA-20250628-001'
+  );
+  assert.equal(
+    assetIdUnder(
+      'LMSY-EVENT-FANMEET-WUH-20251129-LM-024',
+      'LMSY-EVENT-FANMEET-WUH-20251129-LM',
+      'LMSY-EVENT-FANMEET-WUH-20251130-LM',
+      '20251130'
+    ),
+    'LMSY-EVENT-FANMEET-WUH-20251130-LM-024'
+  );
+});
+
+test('a door whose date is its own segment keeps that segment', () => {
+  assert.equal(
+    assetIdUnder(
+      'LMSY-MAG-OAT-LM-20241211-012',
+      'LMSY-MAG-OAT-LM',
+      'LMSY-MAG-OAT-LM',
+      '20250101'
+    ),
+    'LMSY-MAG-OAT-LM-20250101-012'
+  );
+  // No new date known: a topic that is not pinned to a day must not gain one.
+  assert.equal(
+    assetIdUnder('LMSY-FEAT-BACKVIEW-025', 'LMSY-FEAT-BACKVIEW', 'LMSY-FEAT-BACKVIEW', null),
+    'LMSY-FEAT-BACKVIEW-025'
+  );
+});
+
+test('an asset that belongs to another event is not touched', () => {
+  assert.equal(
+    assetIdUnder(
+      'LMSY-EVENT-FANSIGN-CKG-20250426-001',
+      'LMSY-EVENT-BRANDDAY-BKK-20250628',
+      'LMSY-EVENT-BRANDDAY-SHA-20250628',
+      '20250628'
+    ),
+    null
+  );
 });
 
 test('the date segment is read back the same way it is written', () => {
