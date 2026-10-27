@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
 import { revalidateContentSurfaces } from '@/lib/revalidate-content';
+import { syncProjectCatalogDate } from '@/lib/catalog-date-sync';
 import {
   getProjectById,
   updateProject,
   deleteProject,
   type ProjectRow,
 } from '@/lib/data/projects';
+
+/**
+ * Renaming the objects of a large batch is not instant: a hundred pictures is
+ * a hundred copy+verify+delete round trips against R2. Sixty seconds is the
+ * ceiling a hobby plan allows and is enough for the biggest event in the
+ * archive; without it the platform cuts the request at ten seconds and leaves
+ * a batch half renamed.
+ */
+export const maxDuration = 60;
 
 /**
  * Projects Management API
@@ -272,6 +282,19 @@ export async function PATCH(
     // Update project using admin client
     const supabaseAdmin = getSupabaseAdmin();
 
+    // Read the row before it changes: the catalog sync needs the OLD event
+    // number and cover to work out what has to be renamed. A failed read is
+    // not fatal - it only means the codes cannot follow the new date.
+    let before: ProjectRow | null = null;
+    try {
+      before = await getProjectById(supabaseAdmin, id);
+    } catch (error) {
+      console.warn(
+        '[PROJECTS_PATCH] Could not read the project before update:',
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+
     // P1-3 Phase 2: the update moved to lib/data/projects.ts. It returns
     // the selected rows (deliberately never .single(), which throws
     // PGRST116 when zero rows match) and throws on a db error.
@@ -303,11 +326,41 @@ export async function PATCH(
 
     console.log('[PROJECTS_PATCH] ✅ Project updated:', id, '| Rows:', data.length);
 
+    // The event date moved, so the YYYYMMDD inside every catalog id has to
+    // move with it - the event number, each asset id, the file names in R2 and
+    // the urls pointing at them. Editing the date used to leave all of it
+    // frozen at the date the row was first promoted, which is how the archive
+    // ended up showing one day in the header and another in the file name.
+    let catalogSync = null;
+    const nextDate =
+      typeof body.event_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.event_date)
+        ? body.event_date
+        : null;
+    if (before && nextDate && before.event_date !== nextDate) {
+      try {
+        catalogSync = await syncProjectCatalogDate(supabaseAdmin, before, nextDate);
+        console.log('[PROJECTS_PATCH] Catalog sync:', JSON.stringify(catalogSync));
+      } catch (error) {
+        // The date is saved either way; report the sync failure instead of
+        // turning the whole save into a 500.
+        console.error(
+          '[PROJECTS_PATCH] ❌ Catalog sync failed:',
+          error instanceof Error ? error.message : String(error)
+        );
+        catalogSync = {
+          applied: false,
+          reason: 'error',
+          detail: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+
     revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,
       data: data[0], // Return first (and should be only) row
+      ...(catalogSync ? { catalogSync } : {}),
     });
   } catch (error) {
     console.error('[PROJECTS_PATCH] ❌ Operation exception:', error);

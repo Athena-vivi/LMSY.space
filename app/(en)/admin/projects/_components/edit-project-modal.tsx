@@ -241,6 +241,21 @@ export default function EditProjectModal({
         throw new Error(errorData.error || 'Update failed');
       }
 
+      const result = await response.json();
+
+      // The date is saved even when the codes could not follow it. Say so
+      // instead of closing quietly: a record whose number still carries the
+      // old day is exactly the drift this sync exists to prevent.
+      const sync = result?.catalogSync;
+      if (sync && sync.applied === false && (sync.reason === 'conflict' || sync.reason === 'error')) {
+        const detail = Array.isArray(sync.conflicts)
+          ? sync.conflicts.join('\n- ')
+          : sync.detail || sync.reason;
+        alert(
+          `Date saved, but the catalog code could not follow it (${sync.reason}).\n\n- ${detail}`
+        );
+      }
+
       // Success - trigger refresh
       initialDate.current = eventDate;
       onUpdate();
