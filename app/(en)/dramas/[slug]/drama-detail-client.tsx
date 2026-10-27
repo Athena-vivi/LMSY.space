@@ -21,7 +21,7 @@ import type { ProjectSubtype } from '@/lib/supabase/types';
  *
  *   tab row    switch to another series without walking back to the door
  *   hero       the cover, large, plus the one-line description
- *   groups     剧集本体 / 音乐作品 / 原著小说 / 宣传节点 / 影像物料 / 奖项
+ *   groups     剧集本体 / 首播礼 / 音乐作品 / 宣传节点 / 影像物料
  *
  * Every entry is a picture first and a line of text second: the card opens the
  * event page, and an entry with no photograph keeps the same frame holding a
@@ -218,11 +218,6 @@ function GroupSection({
   const { language } = useLanguage();
 
   const body = (() => {
-    // Footage is a group of entries like any other: a stills body, a vlog run,
-    // a reaction run. Each one opens its own page; the wall lives there.
-    if (group.key === 'award') {
-      return <AwardGrid rows={rows} seriesSlug={seriesSlug} />;
-    }
     if (rows.length === 0) {
       return <EmptyRow />;
     }
@@ -338,35 +333,3 @@ function EventCard({
   );
 }
 
-function AwardGrid({ rows, seriesSlug }: { rows: DramaEventCard[]; seriesSlug: string }) {
-  const { language } = useLanguage();
-
-  if (rows.length === 0) return <EmptyRow />;
-
-  const won = rows.filter((row) => row.result === 'won');
-  const nominated = rows.filter((row) => row.result !== 'won');
-
-  const sections: Array<{ labelKey: TranslationKey; items: DramaEventCard[] }> = [
-    { labelKey: 'drama.awardWon', items: won },
-    { labelKey: 'drama.awardNominated', items: nominated },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {sections
-        .filter((section) => section.items.length > 0)
-        .map((section) => (
-          <div key={section.labelKey}>
-            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-2">
-              {t(language, section.labelKey)}
-            </p>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:gap-6">
-              {section.items.map((row, index) => (
-                <EventCard key={row.id} row={row} seriesSlug={seriesSlug} index={index} />
-              ))}
-            </div>
-          </div>
-        ))}
-    </div>
-  );
-}

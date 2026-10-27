@@ -384,9 +384,7 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
     { value: 'series_body', labelKey: 'drama.group.seriesBody' },
     { value: 'premiere', labelKey: 'drama.group.premiere' },
     { value: 'music', labelKey: 'drama.group.music' },
-    { value: 'novel', labelKey: 'drama.group.novel' },
     { value: 'promo', labelKey: 'drama.group.promo' },
-    { value: 'award', labelKey: 'drama.group.award' },
     { value: 'footage', labelKey: 'drama.group.footage' },
   ],
   // Door 3 is the hall of rooms they stood in, and the shape of the room is

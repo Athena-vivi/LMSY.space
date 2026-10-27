@@ -162,7 +162,7 @@ L3 竖列表  每部剧详情页内纵向分组，每组下面是带日期的条
 | 事件 | 一行 project | Premiere、Hub Awards、I'm Yours |
 | 事件的内容形态 | `project_kind` + 已有字段 | `event`=图片墙、`video`=介绍+外链（`watch_url`）、有 `interview_md`=正文 |
 
-1 号门内再往下分六组（`series_body / music / novel / promo / award / footage`），这六组是**事件的 subtype**，不是剧的分类——新增一部剧不会改这张表，只是多一行 `project_kind='series'`。
+1 号门内前台展示五组（`series_body / premiere / music / promo / footage`），这五组是**事件的 subtype**，不是剧的分类——新增一部剧不会改这张表，只是多一行 `project_kind='series'`。`novel`、`award` 仍属数据库白名单 `projects_subtype_check`，但前台 1 号门不再单列展示（仍为合法 subtype，可在后台归档）。
 
 **已执行的动作（快照可回滚）**
 
