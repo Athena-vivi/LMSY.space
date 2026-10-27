@@ -34,7 +34,7 @@ describe('date-less ids', () => {
   test('a drama event number omits the date entirely', () => {
     assert.equal(buildProjectCatalogId('DRAMA', 'AFFAIR-SERIESSTILLS', null, 'LMSY'), 'LMSY-DRAMA-AFFAIR-SERIESSTILLS');
     // With a date it stays exactly as before - this is not a format change.
-    assert.equal(buildProjectCatalogId('DRAMA', 'AFFAIR-PREMIERE', '2024-08-30', 'LMSY'), 'LMSY-DRAMA-AFFAIR-PREMIERE');
+    assert.equal(buildProjectCatalogId('DRAMA', 'AFFAIR-PROMO-PREMIERE', '2024-08-30', 'LMSY'), 'LMSY-DRAMA-AFFAIR-PROMO-PREMIERE');
   });
 
   test('EVENT / APPEAR cannot build a number without a date', () => {
@@ -62,8 +62,8 @@ describe('date-less ids', () => {
       'lmsy/drama/LMSY-DRAMA-AFFAIR-SERIESSTILLS-001.webp'
     );
     assert.equal(
-      r2KeyForCatalogId('LMSY-DRAMA-AFFAIR-PREMIERE-20240830-001'),
-      'lmsy/drama/2024/LMSY-DRAMA-AFFAIR-PREMIERE-20240830-001.webp'
+      r2KeyForCatalogId('LMSY-DRAMA-AFFAIR-PROMO-PREMIERE-20240830-001'),
+      'lmsy/drama/2024/LMSY-DRAMA-AFFAIR-PROMO-PREMIERE-20240830-001.webp'
     );
   });
 });

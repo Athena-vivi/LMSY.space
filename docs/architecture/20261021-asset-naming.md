@@ -103,8 +103,7 @@ LMSY-EVENT-FANMEET-BKK-20250115-001              双人见面会，没有尾码
 | 部分（对应 subtype） | 码 | 收什么 |
 |---|---|---|
 | 剧集本体 `series_body` | （无，直接接事件码） | 正片分集、官方剧照、试播集 |
-| 首映礼 `premiere` | `PREMIERE` | 开播首映场（两人到场、有红毯） |
-| 宣传物料 `promo` | `PROMO` | 官宣、预告、定妆、票务、未剪版 |
+| 宣传物料 `promo` | `PROMO` | 官宣、预告、定妆、票务、未剪版；首映/终映也是它的事件码（见下） |
 | 音乐 `music` | `MUSIC` | OST / MV |
 | 原著小说 `novel` | `NOVEL` | 原著与改编小说 |
 | 奖项 `award` | `AWARD` | 这部剧去参评的奖项 |
@@ -123,13 +122,13 @@ LMSY-DRAMA-HOMETOWN-PROMO-FITTING
 - **通用词包含载体词**：`IMAGE` / `IMAGES` / `PHOTO` / `PHOTOS` / `PICTURE` / `VIDEO` / `GALLERY` 与冠词、`Awards` 同等对待。它们说的是「这是什么形态」，不是「这是哪一批」——库里每条都是图或视频。`Promotional Image Gallery` 因此是 `PROMOTIONAL`，不是 `PROMOTIONALIMAGEGALLERY`。
 - **事件码上限 16 字符**，超出按整词截断（不切半个词）；末尾两位年份优先保留，它是区分两届同名奖项的唯一字符。`FINALEPISODE`（12）、`YENTERTAIN24`（12）、`FINALSECRETDEAL`（15）都在限内。
 - **入库向导里末段可改短**：作品 + 部分是选出来的，末段是标题推出来的，标题在描述、编码只需识别。向导允许在入库前把末段改短（`PROMOSTILLS` 之类），一旦入库就固定。
-- **首映礼省事件码**：一本剧一场首映，`LMSY-DRAMA-AFFAIR-PREMIERE` 已经唯一。同一个作品真出现两场时再加城市码。
+- **首映礼 / 终映归 `promo` 之下**（2026-10-27 调整）：它们不再是独立部分，而是 `PROMO` 下的事件码，如 `LMSY-DRAMA-AFFAIR-PROMO-PREMIERE`、`LMSY-DRAMA-AFFAIR-PROMO-FINALEPISODE`。
 - 泰语标题没有英文副标题的，按第九节给四位以内代号（`KAER`、`FAEN`），并在事件台账登记。
 - 事件码只增不改：它已经写进图片名。
 
 ```
-LMSY-DRAMA-AFFAIR-PREMIERE-20240830-001.webp
-LMSY-DRAMA-HARMONY-FINALEPISODE-20250913-001.webp
+LMSY-DRAMA-AFFAIR-PROMO-PREMIERE-20240830-001.webp
+LMSY-DRAMA-HARMONY-PROMO-FINALEPISODE-20250913-001.webp
 LMSY-DRAMA-AFFAIR-AWARD-YENTERTAIN24-001.webp
 ```
 

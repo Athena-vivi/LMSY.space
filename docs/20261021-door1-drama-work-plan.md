@@ -158,11 +158,11 @@ L3 竖列表  每部剧详情页内纵向分组，每组下面是带日期的条
 | 层级 | 由什么表达 | 例子 |
 |---|---|---|
 | 门 | `projects.category` | `drama_work` / `public_appearance` / `live_event` |
-| 门内分类 | 1 号门用「剧行」表达（`project_kind='series'`）；其他门用 `subtype` | Affair / Harmony Secret / Hometown Romance；`awards` / `fashion` / `premiere` |
+| 门内分类 | 1 号门用「剧行」表达（`project_kind='series'`）；其他门用 `subtype` | Affair / Harmony Secret / Hometown Romance；`awards` / `fashion`（premiere 已并入 promo，作为 PROMO 下的事件码） |
 | 事件 | 一行 project | Premiere、Hub Awards、I'm Yours |
 | 事件的内容形态 | `project_kind` + 已有字段 | `event`=图片墙、`video`=介绍+外链（`watch_url`）、有 `interview_md`=正文 |
 
-1 号门内前台展示五组（`series_body / premiere / music / promo / footage`），这五组是**事件的 subtype**，不是剧的分类——新增一部剧不会改这张表，只是多一行 `project_kind='series'`。`novel`、`award` 仍属数据库白名单 `projects_subtype_check`，但前台 1 号门不再单列展示（仍为合法 subtype，可在后台归档）。
+1 号门内前台展示四组（`series_body / music / promo / footage`），这四组是**事件的 subtype**，不是剧的分类——新增一部剧不会改这张表，只是多一行 `project_kind='series'`。premiere 已并入 promo（首映/终映作为 PROMO 下的事件码，如 LMSY-DRAMA-AFFAIR-PROMO-PREMIERE）；`novel`、`award` 仍属数据库白名单 `projects_subtype_check`，但前台 1 号门不再单列展示（仍为合法 subtype，可在后台归档）。
 
 **已执行的动作（快照可回滚）**
 

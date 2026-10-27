@@ -187,7 +187,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   const [shelf, setShelf] = useState('');
   // Drama door only: which work (series row) the event belongs to. The drama
   // hall files events under works FIRST, then sub-types - same shape as the
-  // front door, so a premiere lands on the right series without hunting.
+  // front door, so an event lands on the right series without hunting.
   const [dramaSeries, setDramaSeries] = useState('');
   const [subtypeFilter, setSubtypeFilter] = useState('all');
   // The codes each door's subject is built from. Every one of them is a pick
@@ -449,10 +449,8 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
         if (!work) return '';
         const part =
           DRAMA_SUBTYPE_CODES[project.subtype as keyof typeof DRAMA_SUBTYPE_CODES];
-        // A premiere is one per work, so it is already unique; every other part
-        // holds several entries and needs the event code (spec 4.1). series_body
-        // has no part segment, so it folds straight into WORK-EVENTCODE.
-        if (project.subtype === 'premiere') return part ? `${work}-${part}` : work;
+        // part is '' for series_body (folds straight into WORK-EVENTCODE);
+        // every other part (PROMO, FOOTAGE, MUSIC, ...) appends the event code.
         const eventCode = eventCodeFromTitle(project.title, work);
         if (!eventCode) return '';
         return part ? `${work}-${part}-${eventCode}` : `${work}-${eventCode}`;

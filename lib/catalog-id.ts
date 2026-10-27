@@ -178,15 +178,16 @@ export const APPEARANCE_SUBTYPE_CODES = {
  * group, because one work has several of each (Affair has four pieces of
  * footage):
  *
- *   LMSY-DRAMA-AFFAIR-PREMIERE                    (one screening per work)
- *   LMSY-DRAMA-AFFAIR-FINALEPISODE
+ *   LMSY-DRAMA-AFFAIR-PROMO-PREMIERE              (premiere is an event under PROMO)
+ *   LMSY-DRAMA-AFFAIR-PROMO-FINALEPISODE
  *   LMSY-DRAMA-AFFAIR-FOOTAGE-HIGHLIGHTS
  */
 export const DRAMA_SUBTYPE_CODES = {
   // series_body folds straight into WORK-EVENTCODE (no SERIES segment): the
   // work already groups its entries, so a second "series" level is redundant.
+  // premiere / finale are no longer their own parts - they are event codes
+  // under `promo` (e.g. AFFAIR-PROMO-PREMIERE), 2026-10-27.
   series_body: '',
-  premiere: 'PREMIERE',
   promo: 'PROMO',
   footage: 'FOOTAGE',
   music: 'MUSIC',

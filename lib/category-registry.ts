@@ -377,12 +377,11 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
   // is not a subtype - it is project_kind = 'series', addressed by slug - so a
   // fourth series never changes this list.
   //
-  // 2026-10-23: `premiere` split off series_body (a screening is not the cut),
-  // and Series Stills moved from footage into series_body - an official still
-  // belongs to the episode, while footage now means behind-the-scenes.
+  // 2026-10-27: `premiere` folded into `promo` - 首映/终映 are now event
+  // codes under PROMO (LMSY-DRAMA-AFFAIR-PROMO-PREMIERE), not their own group;
+  // Series Stills stay in series_body (an official still belongs to the episode).
   drama_work: [
     { value: 'series_body', labelKey: 'drama.group.seriesBody' },
-    { value: 'premiere', labelKey: 'drama.group.premiere' },
     { value: 'music', labelKey: 'drama.group.music' },
     { value: 'promo', labelKey: 'drama.group.promo' },
     { value: 'footage', labelKey: 'drama.group.footage' },

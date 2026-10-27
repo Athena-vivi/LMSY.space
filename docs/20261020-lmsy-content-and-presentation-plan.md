@@ -181,7 +181,7 @@
 
 | 门 | subtype 取值 |
 |---|---|
-| 1 影视作品 | `series_body` / `premiere` / `music` / `promo` / `footage`（novel、award 仍属数据库白名单 `projects_subtype_check`，但 1 号门前台不再单列展示；剧本身不是 subtype，是 `project_kind='series'` 的一行） |
+| 1 影视作品 | `series_body` / `music` / `promo` / `footage`（premiere 已并入 promo，首映/终映作为 PROMO 下的事件码；novel、award 仍属数据库白名单 `projects_subtype_check`，但 1 号门前台不再单列展示；剧本身不是 subtype，是 `project_kind='series'` 的一行） |
 | 3 线下活动 | `concert` / `fanmeeting` / `fansign` / `brand_event` / `birthday` |
 | 4 公开活动 | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `company` |
 | 6 访谈 | `feature` / `press` / `tv_news` |
