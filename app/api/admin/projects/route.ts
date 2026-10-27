@@ -76,10 +76,19 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // A topic needs no date: FEAT ids carry no date segment.
-    if (!isTheme && !eventDate) {
+    // A date is not required everywhere. A topic has no day by design, and a
+    // work-backed entry (a drama part, a magazine issue, a talk, a stream) or
+    // a brand collaboration keeps the date out of its number, so an entry that
+    // has no single day - a set of promo pictures, say - is still a legal row.
+    // Only the two doors whose id embeds the date refuse one: their subject is
+    // type + city, which is not unique on its own.
+    const dateInNumber = category === 'live_event' || category === 'public_appearance';
+    if (!isTheme && dateInNumber && !eventDate) {
       return NextResponse.json(
-        { error: 'event_date is required for an event' },
+        {
+          error:
+            'event_date is required for this hall: live events and appearances carry the date inside the event number',
+        },
         { status: 400 }
       );
     }

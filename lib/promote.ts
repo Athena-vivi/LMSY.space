@@ -104,7 +104,8 @@ export interface PromoteResult {
     firstCatalogId: string;
     r2Key: string | null;
     doorCode: string;
-    eventDate: string;
+    /** Null for a work or a topic that is not pinned to a day. */
+    eventDate: string | null;
     subject: string;
     projectCatalogId: string | null;
   };
@@ -318,11 +319,30 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
       error: `Category "${project.category}" has no door mapping yet (phase 1 supports mapped categories)`,
     };
   }
-  // A FEAT topic is a long-lived set and carries no date by design (spec 4.9).
-  if (!project.event_date && doorCode !== 'FEAT') {
+  // A date is only needed when the id has nowhere else to get one. Two ways
+  // it does not:
+  //   - the project already carries an event number (the usual case), so no
+  //     number has to be built at all;
+  //   - the door keeps the date out of its event number (every door except
+  //     EVENT / APPEAR), so a date-less id is a legal id - the spec omits an
+  //     unknown segment instead of faking one.
+  // EVENT / APPEAR are the exception for a reason: their subject is type +
+  // city, which is not unique, so fifteen Bangkok award nights would all be
+  // `APPEAR-AWARDS-BKK` and the number could not tell them apart.
+  //
+  // A FEAT topic was the only exemption before 2026-10-27, which is why a
+  // drama work could not take a batch of promo pictures: the work has no
+  // single day, so the wizard demanded one that does not exist.
+  const existingEventNumber = normalizeEventNumber(project.catalog_id);
+  if (
+    !project.event_date &&
+    !existingEventNumber &&
+    (doorCode === 'EVENT' || doorCode === 'APPEAR')
+  ) {
     return {
       success: false,
-      error: 'Project has no event date - fill it in first (the id needs a date segment)',
+      error:
+        'This event needs a date: EVENT / APPEAR ids carry the date inside the event number, so it cannot be built without one',
     };
   }
 
@@ -334,7 +354,7 @@ export async function promoteDraftBatch(params: PromoteParams): Promise<PromoteR
   // from it by the same helper that produced it, so the order of the date and
   // the tail can never drift between the two (spec section 6).
   const eventNumber =
-    normalizeEventNumber(project.catalog_id) ||
+    existingEventNumber ||
     buildProjectCatalogId(doorCode, subject, project.event_date, personCode);
   if (!eventNumber) {
     return { success: false, error: 'Cannot build an event number: the event date is not a date' };

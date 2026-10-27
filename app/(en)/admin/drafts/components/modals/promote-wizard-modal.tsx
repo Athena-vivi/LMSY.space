@@ -341,6 +341,11 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
   // A topic is the one door with no category of its own: it is filed by
   // project_kind = 'theme', so the category-shaped gates do not apply.
   const isTopicDoor = doorKey === 'features';
+  // Live events and appearances are the only two doors whose id carries the
+  // date (their subject is type + city, which is not unique), so they are the
+  // only ones that cannot be created without one. Everything else - a drama
+  // work's promo set, a magazine issue, a stream - simply omits the segment.
+  const dateInNumber = doorKey === 'live_event' || doorKey === 'public_appearance';
 
   // Only cities the code table knows can be picked - an unknown name would
   // silently drop the second segment.
@@ -734,8 +739,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
     if (!isTopic && !activeCategory) return;
     if (!newEvent.title.trim()) return;
     // A FEAT topic carries no date segment in its ids (spec 4.9), so the
-    // date stays optional here while an event still needs one.
-    if (!isTopic && !newEvent.eventDate) return;
+    // date stays optional here - and since 2026-10-27 it is optional for
+    // every door whose number does not embed it. Only live events and
+    // appearances must date a new event.
+    if (!isTopicDoor && dateInNumber && !newEvent.eventDate) return;
     // A sub-type must be chosen explicitly - never fall back to the first
     // option of the list, which is how an event lands in the wrong shelf.
     if (!isTopic && subtypesForCategory.length > 0 && !newEvent.subtype) return;
@@ -1132,7 +1139,7 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           disabled={
                             (!isTopicDoor && !activeCategory) ||
                             !newEvent.title.trim() ||
-                            (!isTopicDoor && !newEvent.eventDate) ||
+                            (!isTopicDoor && dateInNumber && !newEvent.eventDate) ||
                             (!isTopicDoor && subtypesForCategory.length > 0 && !newEvent.subtype) ||
                             (doorKey === 'drama_work' && !dramaSeriesRow) ||
                             creatingEventNow
@@ -1366,7 +1373,10 @@ export function PromoteWizardModal({ isOpen, draftIds, onClose, onDone }: Promot
                           </button>
                         </span>
                         <span className="block font-mono text-[9px] leading-relaxed text-ink-2/70">
-                          {t('d.promote.eventDateHint')}
+                          {project.category === 'live_event' ||
+                          project.category === 'public_appearance'
+                            ? t('d.promote.eventDateRequired')
+                            : t('d.promote.eventDateHint')}
                         </span>
                       </label>
                     )}
