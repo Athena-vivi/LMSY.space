@@ -39,14 +39,6 @@ export default function AdminLoginPage() {
 
   return (
     <div className="admin-root min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
-      {/* Ambient Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Yellow glow from top-left */}
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-lmsy-yellow/10 via-transparent to-transparent rounded-full blur-3xl" />
-        {/* Blue glow from bottom-right */}
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-radial from-lmsy-blue/10 via-transparent to-transparent rounded-full blur-3xl" />
-      </div>
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

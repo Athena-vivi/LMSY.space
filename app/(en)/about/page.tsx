@@ -29,8 +29,6 @@ export default function AboutPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <section className="relative py-24 md:py-32 overflow-hidden">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-gradient-radial from-lmsy-yellow/5 via-lmsy-blue/3 to-transparent rounded-full blur-3xl pointer-events-none" />
-
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold mb-6">

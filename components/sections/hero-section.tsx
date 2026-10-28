@@ -62,13 +62,6 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Ambient Lighting Effects */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Left ambient glow - Yellow */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[50vw] h-[80vw] bg-gradient-radial from-lmsy-yellow/5 via-lmsy-yellow/0 to-transparent rounded-full blur-3xl" />
-        {/* Right ambient glow - Blue */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[50vw] h-[80vw] bg-gradient-radial from-lmsy-blue/5 via-lmsy-blue/0 to-transparent rounded-full blur-3xl" />
-      </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -127,30 +120,30 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
           {/* Right - Hero Image */}
           <Link href="/features" className="order-1 lg:order-2 relative block">
             {/*
-              No filter/blur on this wrapper. A CSS filter makes the browser
-              rasterise the whole subtree into one texture, and on mobile GPUs
-              the animated texture came back partially painted: a hard-edged
-              black block of page background sitting over the top-left of the
-              photo, right across one of their faces. Opacity and scale give
-              the same entrance without the extra layer.
+              This wrapper animates ONCE and then comes to rest. It used to
+              breathe forever (y: [20, 10, 20]), which meant an endless
+              transform on an ancestor of a clipped, rounded, shadowed photo.
+
+              That is the whole mechanism behind the grey block: a transform
+              that never stops keeps the wrapper on the GPU as one composited
+              layer, and the photo inside it stops being a normal element with
+              its own place in the paint order - it becomes pixels baked into
+              that layer's tiles. When a tile fails to rasterise there is no
+              "behind" or "in front" any more, because the halos, the overlays
+              and the photo are all the same texture; the region just comes
+              back as one flat colour, and it lands on top of the picture no
+              matter what z-index its DOM node had.
+
+              So the protection is not a z-index and not a background colour.
+              It is this: nothing above the photo animates continuously, and
+              nothing in this subtree carries a blur. At rest the transform is
+              gone, the wrapper is de-promoted, and the browser paints the card
+              as ordinary content that has no tile of its own to lose.
             */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                y: [20, 10, 20],
-              }}
-              transition={{
-                opacity: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
-                scale: { duration: 1, ease: [0.25, 0.46, 0.45, 0.94] },
-                y: {
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 1,
-                },
-              }}
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="relative"
             >
               {/* Main Photo Container */}
@@ -204,13 +197,23 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
                   />
                 )}
 
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-radial from-lmsy-blue/10 via-transparent to-transparent" />
+                {/*
+                  The vignette is the only overlay left. A second one used to
+                  sit here as `bg-gradient-radial ... from-lmsy-blue/10`, but
+                  Tailwind v4 has no `bg-gradient-radial` class (it is
+                  `bg-radial`), so it painted nothing at all.
+                */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-background/40 via-transparent to-transparent" />
 
-                {/* Editorial Badge - Shown on Hover */}
+                {/*
+                  Hover affordance, desktop only. It used to carry
+                  `backdrop-blur-sm` and sit in the DOM on phones too: a
+                  backdrop filter whose backdrop is the photograph, on the one
+                  device class that is already mispainting this subtree. It
+                  never appears without a pointer anyway.
+                */}
                 <motion.div
-                  className="absolute top-4 right-4 px-4 py-2 backdrop-blur-sm rounded-full border flex items-center gap-2"
+                  className="absolute top-4 right-4 px-4 py-2 hidden lg:flex rounded-full border items-center gap-2"
                   style={{
                     backgroundColor: 'rgba(0, 0, 0, 0.6)',
                     borderColor: 'rgba(251, 191, 36, 0.3)',
@@ -232,19 +235,19 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
               {/*
                 Ambient glow behind the card.
 
-                This used to be a solid gradient box with `blur-3xl`. A 64px
-                filter blur is not a paint the browser can skip: it rasterises
-                the box into its own texture, and that texture sat inside a
-                wrapper that is being transformed every frame by the breathing
-                animation below. On phone GPUs the texture came back as one
-                flat rectangle of its own average colour - a soft grey block
-                sitting on top of the photo and cutting both of them off at
-                the waist.
+                This used to be a solid gradient box with `blur-3xl`, sitting
+                under the photo at `-z-10`. A 64px filter blur is not a paint
+                the browser can skip: it rasterises the box into its own
+                texture. On phone GPUs that texture came back as one flat
+                rectangle of its own average colour - the soft grey block that
+                covered the top of the photograph and cut both of them off at
+                the waist, `-z-10` and all, because once the wrapper is a single
+                composited layer the z-index inside it is already baked.
 
                 A radial gradient needs no filter, no raster pass and no
-                separate layer, so there is nothing left to get flattened.
-                It is pushed to `-inset-6` as well, so the glow reads as a halo
-                around the frame instead of a wash over the picture.
+                separate layer, so there is nothing left to flatten. It also
+                sits at `-inset-6`, outside the frame, so on a healthy paint it
+                reads as a halo around the card rather than a wash over it.
               */}
               <div
                 className="absolute -inset-6 -z-10 rounded-[50%]"
