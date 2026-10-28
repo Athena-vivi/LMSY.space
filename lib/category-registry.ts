@@ -389,10 +389,22 @@ export const SUBTYPES_BY_CATEGORY: Partial<Record<ProjectCategory, SubtypeDefini
   // Door 3 is the hall of rooms they stood in, and the shape of the room is
   // what a visitor is actually picking between (2026-10-23). One `fanmeeting`
   // shelf used to hold all 42 bookings, so a fan could not tell a ticketed
-  // concert from a two-hour signing session. The split is by event form, not
-  // by scale: concert = FanCon / tour stops; fanmeeting = a meeting; fansign =
-  // a signing. Single-person rooms stay in the same shelf as the duo ones and
-  // are marked by the title, because "solo" is a headcount, not a form.
+  // concert from a two-hour signing session.
+  //
+  // The split is by what the two hours were spent on, NOT by the words the
+  // organiser put in the title (2026-10-28). Promoters sell the same product
+  // under different names from city to city: "Be My Valentine" was billed as
+  // a 1st Fan Meeting and still ran a thirteen-song set with solo stages and
+  // four costume changes, while the Macau fan meets ran four to seven songs
+  // around three games. Filing by title put the first one on the wrong shelf.
+  //   concert    - the set IS the event: a running order, solo stages, live
+  //                band or big-screen production, roughly 13-18 songs. FanCons
+  //                and tour stops belong here whatever they are called.
+  //   fanmeeting - the interaction IS the event: games, draws, hi-touch, photo
+  //                time, a handful of songs threaded between the segments.
+  //   fansign    - signing and greeting, person by person, is the event.
+  // Single-person rooms stay in the same shelf as the duo ones and are marked
+  // by the title, because "solo" is a headcount, not a form.
   live_event: [
     { value: 'concert', labelKey: 'subtype.concert' },
     { value: 'fanmeeting', labelKey: 'subtype.fanmeeting' },

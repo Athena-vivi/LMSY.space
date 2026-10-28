@@ -397,7 +397,7 @@ export const zh: Record<TranslationKey, string> = {
     // 分类内部的子类 Tab。只在 SUBTYPES_BY_CATEGORY 列出的门里出现，
     // 且至少两类有内容时才显示。
     'subtype.concert': '演唱会与巡演',
-    'subtype.fanmeeting': '见面会',
+    'subtype.fanmeeting': '粉丝见面会',
     'subtype.fansign': '签售会',
     'subtype.brand_event': '品牌活动',
     'subtype.birthday': '生日会',

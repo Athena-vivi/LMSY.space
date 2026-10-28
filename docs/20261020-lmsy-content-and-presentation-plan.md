@@ -183,6 +183,8 @@
 |---|---|
 | 1 影视作品 | `series_body` / `music` / `promo` / `footage`（premiere 已并入 promo，首映/终映作为 PROMO 下的事件码；novel、award 仍属数据库白名单 `projects_subtype_check`，但 1 号门前台不再单列展示；剧本身不是 subtype，是 `project_kind='series'` 的一行） |
 | 3 线下活动 | `concert` / `fanmeeting` / `fansign` / `brand_event` / `birthday` |
+
+3 号门的 `concert` 与 `fanmeeting` 按**活动内容**分，不按主办方起的名字：以完整曲目单、个人舞台、乐队或大屏制作为主体（约 13–18 首）的是 `concert`，FanCon、巡演各站、泰国主场大秀都算；以游戏、抽奖、合影、福利环节为主体、中间穿插几首歌（约 4–7 首）的是 `fanmeeting`；以逐人签名握手为主体的是 `fansign`。判例：`Be My Valentine` 名为 1st Fan Meeting，实为 13 首曲目 + 各自 solo 的演唱会，归 `concert`。
 | 4 公开活动 | `awards` / `fashion` / `brand_stage` / `industry` / `charity` / `company` |
 | 6 访谈 | `feature` / `press` / `tv_news` |
 

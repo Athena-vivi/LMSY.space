@@ -150,7 +150,7 @@ const DICT: Record<string, [string, string]> = {
   // category.earlyArchive default and printed "早期档案" for every live event.
   'category.liveStream': ['直播', 'Live Streams'],
   'subtype.concert': ['演唱会与巡演', 'Concerts & Tours'],
-  'subtype.fanmeeting': ['见面会', 'Fan Meetings'],
+  'subtype.fanmeeting': ['粉丝见面会', 'Fan Meetings'],
   'subtype.fansign': ['签售会', 'Fan Signs'],
   'subtype.brand_event': ['品牌活动', 'Brand Events'],
   'subtype.birthday': ['生日会', 'Birthdays'],
