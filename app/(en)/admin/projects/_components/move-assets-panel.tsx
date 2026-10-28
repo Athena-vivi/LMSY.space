@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { X, Loader2, MoveRight, Check } from 'lucide-react';
+import { X, Loader2, MoveRight, Check, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getImageUrl } from '@/lib/image-url';
 
@@ -41,8 +41,13 @@ interface ConflictRow {
  * Move pictures from the selected event into another one.
  *
  * The server re-numbers each picture under the target event and moves the file
- * to its new key, so the right-hand column only has to say where they go. A
- * drag carries one picture; the checkboxes carry a batch. Dropping a picture
+ * to its new key, so the target column only has to say where they go. That
+ * column sits on the left and is only as wide as its widest event name - there
+ * are hundreds of events but each name is short, while the pictures need every
+ * pixel left over. A search box narrows the list, because scrolling 351 rows to
+ * find one is the actual cost here.
+ *
+ * A drag carries one picture; the checkboxes carry a batch. Dropping a picture
  * that is part of the current selection moves the whole selection, which is
  * what a curator expects after ticking a few boxes.
  */
@@ -60,6 +65,7 @@ export default function MoveAssetsPanel({
   const [dragging, setDragging] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [conflicts, setConflicts] = useState<ConflictRow[]>([]);
+  const [query, setQuery] = useState('');
 
   const targets = useMemo(() => {
     const others = projects.filter((project) => project.id !== sourceProject?.id);
@@ -79,6 +85,32 @@ export default function MoveAssetsPanel({
   }, [projects, sourceProject?.id]);
 
   const target = projects.find((project) => project.id === targetId) ?? null;
+
+  /**
+   * Narrow the target list to what the curator types. Matches the title, the
+   * catalog code and the door name, so "feat", "social" and "LMSY-FEAT-DAILY"
+   * all find the same row. Empty groups drop out instead of leaving headers.
+   */
+  const visibleTargets = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return targets;
+
+    return targets
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((project) =>
+          [project.title, project.catalog_id, project.project_kind, group.category]
+            .filter(Boolean)
+            .some((value) => value!.toLowerCase().includes(needle))
+        ),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [targets, query]);
+
+  const matchCount = useMemo(
+    () => visibleTargets.reduce((total, group) => total + group.items.length, 0),
+    [visibleTargets]
+  );
 
   const toggle = (assetId: string) => {
     setSelected((prev) =>
@@ -171,13 +203,84 @@ export default function MoveAssetsPanel({
             </button>
           </div>
 
-          <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2">
-            {/* Source pictures */}
-            <div className="min-h-0 overflow-y-auto border-b p-4 md:border-b-0 md:border-r" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+          <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+            {/* Targets - width follows the widest event name, never a fixed half */}
+            <div
+              className="order-1 flex min-h-0 w-full shrink-0 flex-col border-b md:w-max md:max-w-[360px] md:min-w-[220px] md:border-b-0 md:border-r"
+              style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+            >
+              <div className="border-b px-3 py-2" style={{ borderColor: 'rgba(255, 255, 255, 0.06)' }}>
+                <div className="flex items-center gap-2 border border-white/10 bg-black/60 px-2 py-1.5">
+                  <Search className="h-3 w-3 shrink-0 text-ink-2/50" strokeWidth={2} />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="搜索事件名称或编号"
+                    className="min-w-0 flex-1 bg-transparent font-mono text-[11px] text-ink outline-none placeholder:text-ink-2/40"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      className="shrink-0 text-ink-2/50 transition-colors hover:text-ink"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 font-mono text-[9px] uppercase tracking-wider text-ink-2/50">
+                  目标事件 · 拖到某一行 · {query ? `${matchCount} 个匹配` : `${matchCount} 个`}
+                </p>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto p-2">
+                {visibleTargets.length === 0 ? (
+                  <p className="px-1 py-6 text-center font-mono text-[10px] text-ink-2/40">
+                    没有匹配的事件
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {visibleTargets.map((group) => (
+                      <div key={group.category}>
+                        <p className="mb-1 px-1 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-2/50">
+                          {group.category}
+                        </p>
+                        <div className="space-y-1">
+                          {group.items.map((project) => {
+                            const isTarget = project.id === targetId;
+                            return (
+                              <div
+                                key={project.id}
+                                onDragOver={(event) => event.preventDefault()}
+                                onDrop={(event) => handleDrop(event, project.id)}
+                                onClick={() => setTargetId(project.id)}
+                                className={`cursor-pointer border px-2 py-1.5 transition-colors ${
+                                  isTarget
+                                    ? 'border-lmsy-yellow/60 bg-lmsy-yellow/[0.08]'
+                                    : 'border-transparent hover:border-white/15 hover:bg-white/[0.03]'
+                                }`}
+                              >
+                                <p className="truncate font-mono text-[11px] text-ink">{project.title}</p>
+                                <p className="truncate font-mono text-[9px] text-ink-2/60">
+                                  {project.catalog_id || project.project_kind || '—'}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Source pictures - takes everything the list does not need */}
+            <div className="order-2 min-h-0 min-w-0 flex-1 overflow-y-auto p-4">
               <p className="mb-3 font-mono text-[10px] uppercase tracking-wider text-ink-2/70">
                 源事件 · 点选或直接拖拽
               </p>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
                 {assets.map((asset) => {
                   const imageUrl = getImageUrl(asset.image_url);
                   const isSelected = selected.includes(asset.id);
@@ -219,45 +322,6 @@ export default function MoveAssetsPanel({
                 })}
               </div>
             </div>
-
-            {/* Targets */}
-            <div className="min-h-0 overflow-y-auto p-4">
-              <p className="mb-3 font-mono text-[10px] uppercase tracking-wider text-ink-2/70">
-                目标事件 · 把图片拖到某一行
-              </p>
-              <div className="space-y-4">
-                {targets.map((group) => (
-                  <div key={group.category}>
-                    <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-2/50">
-                      {group.category}
-                    </p>
-                    <div className="space-y-1">
-                      {group.items.map((project) => {
-                        const isTarget = project.id === targetId;
-                        return (
-                          <div
-                            key={project.id}
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={(event) => handleDrop(event, project.id)}
-                            onClick={() => setTargetId(project.id)}
-                            className={`cursor-pointer border px-2 py-1.5 transition-colors ${
-                              isTarget
-                                ? 'border-lmsy-yellow/60 bg-lmsy-yellow/[0.08]'
-                                : 'border-transparent hover:border-white/15 hover:bg-white/[0.03]'
-                            }`}
-                          >
-                            <p className="truncate font-mono text-[11px] text-ink">{project.title}</p>
-                            <p className="truncate font-mono text-[9px] text-ink-2/60">
-                              {project.catalog_id || project.project_kind || '—'}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Footer */}
@@ -267,7 +331,7 @@ export default function MoveAssetsPanel({
                 ? `${conflicts.length} 张无法迁移：${conflicts[0].reason}`
                 : target
                   ? `将迁到：${target.title}`
-                  : '先点右边选一个目标事件'}
+                  : '先在左侧选一个目标事件'}
             </p>
             <button
               onClick={() => target && move(selected, target.id)}
