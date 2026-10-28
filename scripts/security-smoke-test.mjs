@@ -80,7 +80,6 @@ async function main() {
 
   console.log('[1] admin APIs reject unauthenticated callers');
   const adminRoutes = [
-    ['GET', '/api/admin/stats'],
     ['GET', '/api/admin/drafts'],
     ['GET', '/api/admin/drafts/stats'],
     ['DELETE', '/api/admin/drafts'],
@@ -95,7 +94,6 @@ async function main() {
     ['POST', '/api/admin/drafts/00000000-0000-0000-0000-000000000000/create-project'],
     ['GET', '/api/admin/gallery/milestone'],
     ['PATCH', '/api/admin/gallery/milestone'],
-    ['POST', '/api/admin/reprocess'],
     ['POST', '/api/admin/translate'],
     ['GET', '/api/admin/vault'],
     ['GET', '/api/admin/gallery'],
@@ -104,9 +102,7 @@ async function main() {
     ['GET', '/api/admin/reconcile'],
     ['POST', '/api/admin/r2/sign'],
     ['POST', '/api/admin/upload'],
-    ['GET', '/api/admin/storage'],
     ['GET', '/api/admin/messages'],
-    ['POST', '/api/admin/magazine'],
   ];
   for (const [method, path] of adminRoutes) {
     await call(method, path, { expect: 'unauthorized' });
@@ -135,7 +131,6 @@ async function main() {
 
   console.log('');
   console.log('[3] bogus bearer token is rejected');
-  await call('GET', '/api/admin/stats', { headers: { authorization: 'Bearer not-a-real-token' }, expect: 'unauthorized' });
   await call('GET', '/api/admin/drafts', { headers: { authorization: 'Bearer undefined' }, expect: 'unauthorized' });
 
   console.log('');

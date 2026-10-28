@@ -384,7 +384,6 @@ const DICT: Record<string, [string, string]> = {
   'pe.linkFailed': ['关联失败', 'Filing failed'],
 
   // --- Upload ---
-  'u.title': ['批量上传工作室', 'Upload'],
   'u.reminder': ['策展提醒：尊重每一位拍摄者的劳动。', "Curator's Reminder: Respect the shutter's effort."],
   'u.dropTitle': ['把图片拖到这里', 'Drag & Drop images here'],
   'u.dropSub': ['或点击选择文件', 'or click to browse'],

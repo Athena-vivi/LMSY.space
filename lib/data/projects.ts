@@ -1121,41 +1121,6 @@ export async function listRelatedProjects(
 // Admin reads (moved from app/api/admin/*)
 // ---------------------------------------------------------------------------
 
-export interface SyncCoverProjectRow {
-  id: string;
-  title: string;
-  cover_url: string | null;
-  release_date: string | null;
-  catalog_id: string | null;
-}
-
-/**
- * Every row the cover-sync route matches against. Throws on a read failure -
- * the route wraps the message into its own 500 details, verbatim.
- */
-export async function listSyncCoverProjects(
-  db: AdminClient
-): Promise<SyncCoverProjectRow[]> {
-  const { data, error } = await db
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('id, title, cover_url, release_date, catalog_id');
-
-  if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as SyncCoverProjectRow[];
-}
-
-/** The projects count for the admin stats badge. Swallows its error and answers 0, verbatim. */
-export async function countAllProjects(db: AdminClient): Promise<number> {
-  const { count, error } = await db
-    .schema('lmsy_archive')
-    .from('projects')
-    .select('id', { count: 'exact', head: true });
-
-  if (error) return 0;
-  return count ?? 0;
-}
-
 /** One project's category (the upload route's door code). Null when missing or unreadable, verbatim. */
 export async function getProjectCategory(
   db: AdminClient,

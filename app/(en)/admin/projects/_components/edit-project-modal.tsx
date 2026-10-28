@@ -6,7 +6,7 @@ import { X, Loader2 } from 'lucide-react';
 import { supabase, type Project } from '@/lib/supabase';
 import { type ProjectCategory, type ProjectSubtype } from '@/lib/supabase/types';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
-import CategoryDropdown from '@/app/(en)/admin/upload/_components/category-dropdown';
+import CategoryDropdown from '@/components/admin/category-dropdown';
 
 // The eight stable values from lib/category-registry.ts. The label is the
 // admin-facing shorthand, the prefix feeds catalog_id allocation.

@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Upload, Images, FolderKanban, PenTool, MessageSquare, GalleryVerticalEnd } from 'lucide-react';
+import { Images, FolderKanban, PenTool, MessageSquare, GalleryVerticalEnd } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminLang } from '@/lib/admin-i18n';
 
 const mobileNavItems = [
-  { icon: Upload, label: 'u.title', href: '/admin/upload' },
   { icon: Images, label: 'nav.vault', href: '/admin/gallery' },
   { icon: FolderKanban, label: 'nav.projects', href: '/admin/projects' },
   { icon: GalleryVerticalEnd, label: 'nav.curation', href: '/admin/curation' },
