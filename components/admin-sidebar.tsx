@@ -4,10 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
   Images,
   FolderKanban,
-  Layers,
   LogOut,
   Shield,
   X,
@@ -38,16 +36,9 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    title: 'nav.workbench',
-    items: [
-      { icon: LayoutDashboard, label: 'nav.workbench', href: '/admin' },
-    ],
-  },
-  {
     title: 'nav.contentFlow',
     items: [
       { icon: Inbox, label: 'nav.drafts', href: '/admin/drafts', showBadge: true },
-      { icon: Layers, label: 'nav.batches', href: '/admin/batches' },
       { icon: Images, label: 'nav.vault', href: '/admin/gallery' },
     ],
   },

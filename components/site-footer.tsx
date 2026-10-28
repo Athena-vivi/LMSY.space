@@ -32,7 +32,7 @@ export function SiteFooter() {
       setClickCount(0);
       // Navigate based on auth status
       if (user) {
-        router.push('/admin');
+        router.push('/admin/projects');
       } else {
         router.push('/admin/login');
       }

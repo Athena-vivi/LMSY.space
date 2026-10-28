@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
 
       // Give cookies time to be set, then force redirect
       setTimeout(() => {
-        window.location.href = '/admin';
+        window.location.href = '/admin/projects';
       }, 500);
     } catch (err: any) {
       setError(err.message || t('login.failed'));

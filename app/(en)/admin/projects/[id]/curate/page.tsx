@@ -732,7 +732,7 @@ export default function CurateProjectPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center gap-6">
             {/* Back Button */}
             <Link
-              href="/admin"
+              href="/admin/projects"
               className="p-2 rounded-lg hover:bg-white/5 text-ink-2 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
