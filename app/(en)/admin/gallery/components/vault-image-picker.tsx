@@ -39,6 +39,13 @@ interface VaultImagePickerProps {
    * door or one shelf. Omit it to search every asset.
    */
   projectIds?: string[];
+  /**
+   * Offer a tag dropdown next to the search box. Only pass the list when the
+   * caller wants it: a fixed slot is usually picked by browsing tags, while a
+   * cover picker already knows its project. Omit it and the header stays as it
+   * was - search only.
+   */
+  tags?: string[];
   /** Gallery id that is currently stored for this slot, when known */
   currentImageId?: string | null;
   /** Stored URL, used for portrait slots which only keep a URL */
@@ -55,6 +62,7 @@ export function VaultImagePicker({
   title,
   subtitle,
   projectIds,
+  tags,
   currentImageId,
   currentImageUrl,
   busy = false,
@@ -64,6 +72,7 @@ export function VaultImagePicker({
 }: VaultImagePickerProps) {
   const [query, setQuery] = useState('');
   const [term, setTerm] = useState('');
+  const [tag, setTag] = useState('');
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -77,7 +86,7 @@ export function VaultImagePicker({
   }, [query]);
 
   // Rows are fetched only while the dialog is up.
-  const assets = useVaultAssets({ q: term, tag: '', projectIds, enabled: open });
+  const assets = useVaultAssets({ q: term, tag, projectIds, enabled: open });
 
   const visible = assets.rows;
   const hasMore = assets.nextCursor !== null;
@@ -133,6 +142,22 @@ export function VaultImagePicker({
                   <h2 className="mb-1 truncate font-serif text-xl text-lmsy-yellow/90">{title}</h2>
                   <p className="truncate font-mono text-xs text-ink-2">{subtitle}</p>
                 </div>
+
+                {tags && tags.length > 0 && (
+                  <select
+                    value={tag}
+                    onChange={(event) => setTag(event.target.value)}
+                    aria-label="Filter by tag"
+                    className="shrink-0 rounded border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-xs text-ink-2 outline-none focus:border-lmsy-yellow/40"
+                  >
+                    <option value="">ALL_TAGS</option>
+                    {tags.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                )}
 
                 <div className="relative w-36 shrink-0 sm:w-56">
                   <Search
