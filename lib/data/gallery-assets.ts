@@ -405,7 +405,7 @@ export interface TalkCoverAssetRow {
 /**
  * The pictures of the talk entries that pinned a resource box, so a picked
  * catalog id can be resolved to its image URL. First consumer:
- * lib/door-data.ts loadTalkResourceCovers (Bilibili / YouTube / photos /
+ * lib/door-data.ts loadResourceCovers (Bilibili / YouTube / photos /
  * transcript boxes). Answers [] on a read failure - verbatim, the caller only
  * destructured `data`.
  *

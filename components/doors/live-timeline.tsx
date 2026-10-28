@@ -9,7 +9,7 @@ import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { formatDisplayDate } from '@/lib/display-date';
 import { getLocalizedText } from '@/lib/localized-content';
-import type { DoorEntryGroup, DoorEntryRow } from '@/lib/door-data';
+import type { DoorEntryGroup, DoorEntryRow, TalkResourceCovers } from '@/lib/door-data';
 import { ResourceBox } from './resource-box';
 import { ArrowLeft, Play } from 'lucide-react';
 
@@ -30,6 +30,7 @@ export function LiveTimelinePage({
   doorHref,
   entries,
   groups,
+  resourceCovers,
 }: {
   titleKey: TranslationKey | null;
   doorTitleKey: TranslationKey;
@@ -37,6 +38,8 @@ export function LiveTimelinePage({
   entries: DoorEntryRow[];
   /** entry id -> its picture classes, from loadSegmentEntryGroups. */
   groups: Map<string, DoorEntryGroup[]>;
+  /** entry id -> curator-pinned cover per resource box (optional). */
+  resourceCovers?: Map<string, TalkResourceCovers>;
 }) {
   const { language } = useLanguage();
   const title = titleKey ? t(language, titleKey) : t(language, 'door.unfiled');
@@ -108,6 +111,7 @@ export function LiveTimelinePage({
                     entry={entry}
                     index={index}
                     entryGroups={groups.get(entry.id) ?? []}
+                    pinned={resourceCovers?.get(entry.id)}
                   />
                 ))}
               </div>
@@ -125,10 +129,12 @@ function TimelineNode({
   entry,
   index,
   entryGroups,
+  pinned,
 }: {
   entry: DoorEntryRow;
   index: number;
   entryGroups: DoorEntryGroup[];
+  pinned?: TalkResourceCovers;
 }) {
   const { language } = useLanguage();
   const title = getLocalizedText(entry.title_i18n, language, entry.title);
@@ -137,11 +143,13 @@ function TimelineNode({
     day: true,
   });
 
-  // Video links the curator pasted in Settings > Live Video Links. Same boxes
-  // as the talks door, so a live event grows them the moment a URL is saved.
-  // Thumbnail: the first picture class that has a cover, else the entry cover.
-  const videoCover =
+  // Video links the curator pasted in the videos workbench or the old Settings
+  // panel. Same boxes as the talks door, so a live event grows them the moment
+  // a URL is saved. Thumbnail: the picture pinned on the curation page for that
+  // box, else the first picture class that has a cover, else the entry cover.
+  const defaultVideoCover =
     entryGroups.find((group) => group.cover)?.cover ?? entry.cover_url ?? null;
+  const coverOf = (slot: keyof TalkResourceCovers) => pinned?.[slot] ?? defaultVideoCover;
 
   const videoBoxes: React.ReactNode[] = [];
   if (entry.video_url_bilibili) {
@@ -150,7 +158,7 @@ function TimelineNode({
         key="bilibili"
         href={entry.video_url_bilibili}
         external
-        cover={videoCover}
+        cover={coverOf('bilibili')}
         label={t(language, 'talks.bilibili')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}
@@ -163,7 +171,7 @@ function TimelineNode({
         key="youtube"
         href={entry.video_url_youtube}
         external
-        cover={videoCover}
+        cover={coverOf('youtube')}
         label={t(language, 'talks.youtube')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
 import { routeLanguage } from '@/lib/i18n-path';
-import { loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
+import { loadResourceCovers, loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
 import { LiveTimelinePage } from '@/components/doors/live-timeline';
 import { subtypeLabelKey } from '@/lib/category-registry';
 
@@ -46,6 +46,7 @@ export default async function LiveEventShelfPage({ params }: PageProps) {
   if (!entries) notFound();
 
   const groups = await loadSegmentEntryGroups('live_event', subtype);
+  const resourceCovers = await loadResourceCovers(entries);
 
   return (
     <LiveTimelinePage
@@ -54,6 +55,7 @@ export default async function LiveEventShelfPage({ params }: PageProps) {
       doorHref="/live-events"
       entries={entries}
       groups={groups}
+      resourceCovers={resourceCovers}
     />
   );
 }

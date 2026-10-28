@@ -408,7 +408,7 @@ export interface ProjectTalkCoverRow {
 /**
  * talk_resource_covers picks per entry id (the talks door's resource boxes:
  * Bilibili / YouTube / photos / transcript). Answers [] on a read failure -
- * verbatim from lib/door-data.ts loadTalkResourceCovers.
+ * verbatim from lib/door-data.ts loadResourceCovers.
  */
 export async function getProjectTalkCoverPicks(
   db: AdminClient,

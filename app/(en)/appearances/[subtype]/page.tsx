@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
 import { routeLanguage } from '@/lib/i18n-path';
-import { loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
+import { loadResourceCovers, loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
 import { LiveTimelinePage } from '@/components/doors/live-timeline';
 import { subtypeLabelKey } from '@/lib/category-registry';
 
@@ -43,6 +43,7 @@ export default async function AppearanceShelfPage({ params }: PageProps) {
   if (!entries) notFound();
 
   const groups = await loadSegmentEntryGroups('public_appearance', subtype);
+  const resourceCovers = await loadResourceCovers(entries);
 
   return (
     <LiveTimelinePage
@@ -51,6 +52,7 @@ export default async function AppearanceShelfPage({ params }: PageProps) {
       doorHref="/appearances"
       entries={entries}
       groups={groups}
+      resourceCovers={resourceCovers}
     />
   );
 }

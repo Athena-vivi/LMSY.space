@@ -386,18 +386,21 @@ export function resolveResourceCovers(
 }
 
 /**
- * Resolved resource-box covers for every talk entry of one category, in one
- * pair of queries - the talks timeline pins each box (Bilibili / YouTube /
- * photos / transcript) to a curator-picked picture via
- * projects.talk_resource_covers ({ slot: assetCatalogId }). An entry with no
- * picks maps to an empty object; the timeline then falls back to its
- * first-picture default per box.
+ * Resolved resource-box covers for a set of entries, in one pair of queries.
+ *
+ * A box (Bilibili / YouTube / photos / transcript) can be pinned to one of the
+ * entry's own pictures via projects.talk_resource_covers ({ slot:
+ * assetCatalogId }). An entry with no picks maps to an empty object; each
+ * timeline then falls back to its own default per box.
+ *
+ * Takes the entries rather than a category because both shapes of shelf need
+ * it: the talks door's shelves are whole categories, the live and appearance
+ * shelves are one sub-class - and both have already loaded their entries.
  */
-export async function loadTalkResourceCovers(
-  category: ProjectCategory
+export async function loadResourceCovers(
+  entries: readonly DoorEntryRow[]
 ): Promise<Map<string, TalkResourceCovers>> {
   const map = new Map<string, TalkResourceCovers>();
-  const entries = await loadRows([category]);
   if (entries.length === 0) return map;
 
   const ids = entries.map((entry) => entry.id);

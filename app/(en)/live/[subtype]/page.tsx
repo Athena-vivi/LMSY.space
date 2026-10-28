@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { pageMetadata } from '@/lib/seo';
 import { getTranslation } from '@/lib/languages';
 import { routeLanguage } from '@/lib/i18n-path';
-import { loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
+import { loadResourceCovers, loadSegmentEntries, loadSegmentEntryGroups } from '@/lib/door-data';
 import { LiveTimelinePage } from '@/components/doors/live-timeline';
 import { subtypeLabelKey } from '@/lib/category-registry';
 
@@ -50,6 +50,7 @@ export default async function LiveShelfPage({ params }: PageProps) {
   // Picture classes for the timeline boxes (a single "all photos" bucket while
   // a stream's pictures are not filed yet).
   const groups = await loadSegmentEntryGroups('live_stream', subtype);
+  const resourceCovers = await loadResourceCovers(entries);
 
   return (
     <LiveTimelinePage
@@ -58,6 +59,7 @@ export default async function LiveShelfPage({ params }: PageProps) {
       doorHref="/live"
       entries={entries}
       groups={groups}
+      resourceCovers={resourceCovers}
     />
   );
 }
