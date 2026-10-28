@@ -66,8 +66,20 @@ export default function CurationPage() {
   const [groupCovers, setGroupCovers] = useState<{
     loading: boolean;
     covers: Record<string, string>;
-    groups: Array<{ key: string; assets: GalleryItem[] }>;
+    groups: Array<{
+      key: string;
+      assets: Array<GalleryItem & { asset_group?: string | null; catalog_id?: string | null }>;
+    }>;
   } | null>(null);
+
+  // Class editing. A class is not a row of its own - its name is the text in
+  // gallery_assets.asset_group - so "drag a picture to another class" writes
+  // one column on one row and "rename a class" rewrites that value everywhere.
+  const [dragAssetId, setDragAssetId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [renamingKey, setRenamingKey] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [groupBusy, setGroupBusy] = useState(false);
 
   // Talk resource-box covers (Bilibili / YouTube / photos / transcript): the
   // four timeline boxes of a talk event, each pinned to one of its pictures.
@@ -245,17 +257,24 @@ export default function CurationPage() {
           gal?.data ?? [];
         const byGroup = new Map<string, typeof assets>();
         for (const asset of assets) {
-          const key = asset.asset_group ?? '';
           // Class covers are addressed by catalog_id; legacy rows without one
-          // cannot be picked.
-          if (!key || !asset.catalog_id) continue;
+          // cannot be picked as a cover, so they stay out of the grid.
+          if (!asset.catalog_id) continue;
+          // '' is the unfiled bucket: the column is NULL and the door reader
+          // shows it as one extra box ("all photos"). It used to be dropped
+          // here, which is why pictures that had never been filed were
+          // invisible on this page while the public timeline still showed them.
+          const key = asset.asset_group ?? '';
           const list = byGroup.get(key) ?? [];
           list.push(asset);
           byGroup.set(key, list);
         }
         const keys = [
           ...assetGroups.filter((key) => byGroup.has(key)),
-          ...[...byGroup.keys()].filter((key) => !assetGroups.includes(key)),
+          ...[...byGroup.keys()].filter((key) => key !== '' && !assetGroups.includes(key)),
+          // Unfiled last: the named classes are what a curator works with,
+          // the leftovers are the queue.
+          ...(byGroup.has('') ? [''] : []),
         ];
         setGroupCovers({
           loading: false,
@@ -294,6 +313,127 @@ export default function CurationPage() {
       'PATCH',
       `/api/admin/projects/${event.id}`
     );
+  };
+
+  const flash = (message: string, ms = 2400) => {
+    setNote(message);
+    setTimeout(() => setNote(null), ms);
+  };
+
+  /**
+   * Drop a picture onto another class.
+   *
+   * Only gallery_assets.asset_group changes. The catalog_id, the R2 key, the
+   * date and the cover slots all stay exactly as they are - the class is a
+   * label on the row, it is not part of the picture's identity.
+   *
+   * An emptied class stays on screen as a "0 图" row so a mis-drop can be
+   * dragged straight back; it disappears on the next load, because the public
+   * reader only ever shows classes that have pictures.
+   */
+  const moveAssetToGroup = async (assetId: string, groupKey: string) => {
+    if (!groupCovers || groupBusy) return;
+    const from = groupCovers.groups.find((group) => group.assets.some((asset) => asset.id === assetId));
+    if (!from || from.key === groupKey) return;
+    const asset = from.assets.find((item) => item.id === assetId);
+    if (!asset) return;
+
+    const previous = groupCovers;
+    const nextGroups = groupCovers.groups.map((group) => {
+      if (group.key === from.key) {
+        return { ...group, assets: group.assets.filter((item) => item.id !== assetId) };
+      }
+      if (group.key === groupKey) {
+        return {
+          ...group,
+          assets: [...group.assets, { ...asset, asset_group: groupKey || null }],
+        };
+      }
+      return group;
+    });
+    setGroupCovers({ ...groupCovers, groups: nextGroups });
+    setGroupBusy(true);
+
+    try {
+      const response = await fetch('/api/admin/gallery/asset-group', {
+        method: 'POST',
+        headers: await authHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ action: 'move', ids: [assetId], group: groupKey || null }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      flash(`已移到「${groupKey || '未分类'}」`);
+    } catch (err) {
+      console.error('[CURATION] move class failed', err);
+      setGroupCovers(previous);
+      flash('移动失败', 3200);
+    } finally {
+      setGroupBusy(false);
+      setDragAssetId(null);
+      setDropTarget(null);
+    }
+  };
+
+  /**
+   * Rename a class inside this event.
+   *
+   * asset_group is free text, so 「机场图」 on another event is that event's
+   * own class and stays as it is. Only this event's pictures move, plus its
+   * declared order and picked cover, which are keyed by the name.
+   */
+  const renameGroup = async (from: string, rawTo: string) => {
+    if (!groupCovers || groupBusy || !event) return;
+    const to = rawTo.trim();
+    if (!to || to === from) {
+      setRenamingKey(null);
+      return;
+    }
+
+    const previous = groupCovers;
+    setGroupBusy(true);
+    try {
+      const response = await fetch('/api/admin/gallery/asset-group', {
+        method: 'POST',
+        headers: await authHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ action: 'rename', projectId: event.id, from, to }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        flash(payload?.error ?? '改名失败', 3600);
+        setRenamingKey(null);
+        return;
+      }
+
+      const nextGroups = groupCovers.groups.map((group) =>
+        group.key === from
+          ? {
+              ...group,
+              assets: group.assets.map((asset) => ({ ...asset, asset_group: to })),
+            }
+          : group
+      );
+      const nextCovers = { ...groupCovers.covers };
+      if (from in nextCovers) {
+        nextCovers[to] = nextCovers[from];
+        delete nextCovers[from];
+      }
+      // Re-read the tree afterwards: the left column's counts changed with it.
+      setGroupCovers({ ...groupCovers, groups: nextGroups, covers: nextCovers });
+      setRenamingKey(null);
+      flash(
+        payload?.renamed ? `已改名为「${to}」· 这场 ${payload.renamed} 张图` : `已改名为「${to}」`,
+        3000
+      );
+      await load();
+    } catch (err) {
+      console.error('[CURATION] rename class failed', err);
+      setGroupCovers(previous);
+      flash('改名失败', 3200);
+    } finally {
+      setGroupBusy(false);
+    }
   };
 
   // Pin one of the event's pictures to a talk resource box. Clicking the
@@ -666,44 +806,134 @@ export default function CurationPage() {
                       <Loader2 className="h-4 w-4 animate-spin text-ink-2" />
                     ) : (
                       <div className="space-y-3">
-                        {groupCovers.groups.map((group) => (
-                          <div key={group.key}>
-                            <p className="mb-1 font-mono text-[11px] text-ink-2">
-                              {group.key} · {group.assets.length} 图
-                            </p>
-                            <div className="flex gap-1.5 overflow-x-auto pb-1">
-                              {group.assets.map((asset) => {
-                                const active =
-                                  groupCovers.covers[group.key] === asset.catalog_id;
-                                return (
+                        {groupCovers.groups.map((group) => {
+                          const isUnfiled = group.key === '';
+                          const label = isUnfiled ? '未分类' : group.key;
+                          const isDropTarget = dropTarget === group.key;
+                          return (
+                            <div
+                              key={isUnfiled ? '__unfiled' : group.key}
+                              onDragOver={(event) => {
+                                if (!dragAssetId) return;
+                                event.preventDefault();
+                                event.dataTransfer.dropEffect = 'move';
+                                if (dropTarget !== group.key) setDropTarget(group.key);
+                              }}
+                              onDragLeave={(event) => {
+                                // Ignore the flicker from moving between the
+                                // children of the same drop zone.
+                                if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                                  return;
+                                }
+                                setDropTarget((current) => (current === group.key ? null : current));
+                              }}
+                              onDrop={(event) => {
+                                event.preventDefault();
+                                const id = event.dataTransfer.getData('text/plain') || dragAssetId;
+                                setDropTarget(null);
+                                if (id) void moveAssetToGroup(id, group.key);
+                              }}
+                              className={`rounded transition-colors ${
+                                isDropTarget
+                                  ? 'bg-lmsy-yellow/[0.07] ring-1 ring-lmsy-yellow/40'
+                                  : ''
+                              }`}
+                            >
+                              <div className="mb-1 flex items-center gap-1.5 font-mono text-[11px] text-ink-2">
+                                {renamingKey === group.key ? (
+                                  <input
+                                    autoFocus
+                                    value={renameDraft}
+                                    onChange={(event) => setRenameDraft(event.target.value)}
+                                    onBlur={() => void renameGroup(group.key, renameDraft)}
+                                    onKeyDown={(event) => {
+                                      if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        void renameGroup(group.key, renameDraft);
+                                      } else if (event.key === 'Escape') {
+                                        event.preventDefault();
+                                        setRenamingKey(null);
+                                      }
+                                    }}
+                                    className="w-36 rounded border border-lmsy-yellow/50 bg-black/60 px-1.5 py-0.5 font-mono text-[11px] text-ink outline-none"
+                                  />
+                                ) : (
                                   <button
-                                    key={asset.id}
                                     type="button"
-                                    onClick={() => void pickGroupCover(group.key, asset.catalog_id!)}
-                                    disabled={busy}
-                                    title={asset.catalog_id ?? ''}
-                                    className={`relative h-16 w-14 shrink-0 overflow-hidden rounded border transition-colors ${
-                                      active
-                                        ? 'border-lmsy-yellow ring-1 ring-lmsy-yellow/60'
-                                        : 'border-white/10 hover:border-white/40'
-                                    } ${busy ? 'opacity-50' : ''}`}
+                                    onDoubleClick={() => {
+                                      if (isUnfiled) return;
+                                      setRenamingKey(group.key);
+                                      setRenameDraft(group.key);
+                                    }}
+                                    disabled={groupBusy}
+                                    title={
+                                      isUnfiled
+                                        ? '未分类：前台的「全部图片」盒子就是它'
+                                        : '双击改名，只改这一场的分类名'
+                                    }
+                                    className={`max-w-[190px] truncate rounded px-1 -mx-1 text-left ${
+                                      isUnfiled
+                                        ? 'text-ink-2/60'
+                                        : 'hover:bg-white/10 hover:text-ink'
+                                    }`}
                                   >
-                                    <Image
-                                      src={getCdnUrl(asset.image_url) ?? asset.image_url}
-                                      alt={asset.catalog_id ?? group.key}
-                                      fill
-                                      unoptimized
-                                      className="object-cover"
-                                      sizes="60px"
-                                    />
+                                    {label}
                                   </button>
-                                );
-                              })}
+                                )}
+                                <span className="shrink-0">· {group.assets.length} 图</span>
+                              </div>
+                              <div className="flex min-h-[68px] gap-1.5 overflow-x-auto rounded pb-1">
+                                {group.assets.map((asset) => {
+                                  const active =
+                                    groupCovers.covers[group.key] === asset.catalog_id;
+                                  return (
+                                    <button
+                                      key={asset.id}
+                                      type="button"
+                                      draggable
+                                      onDragStart={(event) => {
+                                        event.dataTransfer.setData('text/plain', asset.id);
+                                        event.dataTransfer.effectAllowed = 'move';
+                                        setDragAssetId(asset.id);
+                                      }}
+                                      onDragEnd={() => {
+                                        setDragAssetId(null);
+                                        setDropTarget(null);
+                                      }}
+                                      onClick={() => void pickGroupCover(group.key, asset.catalog_id!)}
+                                      disabled={busy}
+                                      title={`${asset.catalog_id ?? ''}\n拖动到别的分类即可改分类，编号不变`}
+                                      className={`relative h-16 w-14 shrink-0 cursor-grab overflow-hidden rounded border transition-colors active:cursor-grabbing ${
+                                        active
+                                          ? 'border-lmsy-yellow ring-1 ring-lmsy-yellow/60'
+                                          : 'border-white/10 hover:border-white/40'
+                                      } ${busy ? 'opacity-50' : ''} ${
+                                        dragAssetId === asset.id ? 'opacity-30' : ''
+                                      }`}
+                                    >
+                                      <Image
+                                        src={getCdnUrl(asset.image_url) ?? asset.image_url}
+                                        alt={asset.catalog_id ?? label}
+                                        fill
+                                        unoptimized
+                                        className="object-cover"
+                                        sizes="60px"
+                                      />
+                                    </button>
+                                  );
+                                })}
+                                {group.assets.length === 0 && (
+                                  <span className="self-center font-mono text-[10px] text-ink-2/45">
+                                    空的，把图拖进来
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         <p className="font-mono text-[10px] leading-relaxed text-ink-2/60">
-                          黄框为当前封面；不选则默认用每组第一张。
+                          黄框为当前封面；不选则默认用每组第一张。拖动图片到别的分类即可改分类（
+                          编号、日期都不动）；双击分类名可改名，只改这一场。
                         </p>
                       </div>
                     )}
