@@ -1,0 +1,23 @@
+-- 2026-10-28
+-- Second pass over unused storage: one more column and every backup snapshot
+-- table left behind by the batch migrations of 2026-10-20 .. 2026-10-24.
+--
+-- projects.publisher_brand
+--   Nothing read it (only lib/supabase/types.ts declared it). For the 16
+--   editorial rows the value repeated the publication name that already leads
+--   the title, e.g. 'KAZZ' against 'KAZZ 217 · Youth Choice'. Three commercial
+--   rows also carried it; two of those values lived only here:
+--     'live'                      -> 'Mistine'
+--     '淳享季coffee Livestream'    -> 'Sip The Vibe'
+--   (the third, 'FoamDream', is already in its title). Re-add the column if
+--   those two brands are needed as metadata again.
+--
+-- 57 *_snap_* tables
+--   Pre-migration copies of projects / gallery_assets / drama_events, created
+--   by hand before each batch rename. No view, index or FK depended on them
+--   (checked through pg_depend). They totalled 6.3 MB.
+--
+-- Not touched: the legacy lmsy_archive.gallery table and its read_time column;
+-- that predates the restructure and is handled separately.
+
+ALTER TABLE lmsy_archive.projects DROP COLUMN IF EXISTS publisher_brand;

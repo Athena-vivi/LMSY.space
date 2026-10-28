@@ -107,7 +107,6 @@ export interface Project {
    */
   project_kind?: 'event' | 'theme' | 'series' | 'video' | null;
   location?: string | null;
-  publisher_brand?: string | null;
   search_aliases?: string[] | null;
   /** Ingestion container: never shown in the public project index. */
   is_container?: boolean | null;
