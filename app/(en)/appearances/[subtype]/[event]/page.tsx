@@ -59,6 +59,7 @@ export default async function AppearanceEntryPage({ params, searchParams }: Page
     <DoorEntryPage
       entry={found.entry}
       assets={assets}
+      resourceCovers={found.resourceCovers}
       filterLabel={group === undefined ? null : group || null}
       doorTitleKey="category.publicAppearance"
       doorHref="/appearances"

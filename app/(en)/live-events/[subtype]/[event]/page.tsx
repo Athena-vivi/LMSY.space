@@ -62,6 +62,7 @@ export default async function LiveEventEntryPage({ params, searchParams }: PageP
     <DoorEntryPage
       entry={found.entry}
       assets={assets}
+      resourceCovers={found.resourceCovers}
       filterLabel={group === undefined ? null : group || null}
       doorTitleKey="category.liveEvent"
       doorHref="/live-events"

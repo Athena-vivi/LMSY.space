@@ -277,7 +277,12 @@ export async function loadEntry(
   category: ProjectCategory,
   key: string,
   segment?: string
-): Promise<{ entry: DoorEntryRow; assets: DoorAssetRow[] } | null> {
+): Promise<{
+  entry: DoorEntryRow;
+  assets: DoorAssetRow[];
+  /** Covers a curator pinned per resource box; empty means "no pin". */
+  resourceCovers: TalkResourceCovers;
+} | null> {
   const rows = await loadRows([category]);
   const entry = rows.find((row) => (row.slug || row.id) === key);
   if (!entry) return null;
@@ -288,9 +293,16 @@ export async function loadEntry(
   }
 
   const db = getSupabasePublic();
-  const assets = await listEntryAssets(db, entry.id);
+  const [assets, picks] = await Promise.all([
+    listEntryAssets(db, entry.id),
+    getProjectTalkCoverPicks(db, [entry.id]),
+  ]);
 
-  return { entry, assets };
+  return {
+    entry,
+    assets,
+    resourceCovers: resolveResourceCovers(picks[0]?.talk_resource_covers, assets),
+  };
 }
 
 /**
@@ -321,10 +333,57 @@ export async function loadCategoryEntryGroups(
   return buildEntryGroups(entries);
 }
 
-/** The four talk resource boxes a curator can pin a picture to. */
+/**
+ * The boxes a curator can pin a picture to. Named after the talks door, where
+ * all four exist; the entry pages of the other doors render the two video
+ * boxes and read the same two slots.
+ */
 export type TalkResourceSlot = 'bilibili' | 'youtube' | 'photos' | 'transcript';
 /** entry id -> resolved image URL per resource box (only pinned slots set). */
 export type TalkResourceCovers = Partial<Record<TalkResourceSlot, string>>;
+
+/** Every slot a curator can pin. Order is the order the shelves render them. */
+export const TALK_RESOURCE_SLOTS: readonly TalkResourceSlot[] = [
+  'bilibili',
+  'youtube',
+  'photos',
+  'transcript',
+];
+
+function isResourceSlot(name: string): name is TalkResourceSlot {
+  return (TALK_RESOURCE_SLOTS as readonly string[]).includes(name);
+}
+
+/**
+ * One entry's pinned covers, resolved against its own pictures. The slots were
+ * named for the talks door's four boxes, but the pick is really "which of this
+ * entry's pictures does this box show" - the entry pages of the other doors
+ * read the same two video slots. A pick that no longer matches any picture is
+ * dropped, so the caller keeps its own default instead of showing a gap.
+ *
+ * Exported because /dramas resolves its entry through its own loader rather
+ * than loadEntry; the asset shape it holds is the same two columns.
+ */
+export function resolveResourceCovers(
+  picks: unknown,
+  assets: ReadonlyArray<{ catalog_id: string | null; image_url: string | null }>
+): TalkResourceCovers {
+  const resolved: TalkResourceCovers = {};
+  if (!picks || typeof picks !== 'object') return resolved;
+
+  const urlByCatalogId = new Map<string, string>();
+  for (const asset of assets) {
+    if (asset.catalog_id && asset.image_url) urlByCatalogId.set(asset.catalog_id, asset.image_url);
+  }
+
+  for (const [slot, value] of Object.entries(picks as Record<string, unknown>)) {
+    if (!isResourceSlot(slot) || typeof value !== 'string') continue;
+    const url = urlByCatalogId.get(value);
+    if (url) resolved[slot] = url;
+  }
+
+  return resolved;
+}
 
 /**
  * Resolved resource-box covers for every talk entry of one category, in one
@@ -356,13 +415,8 @@ export async function loadTalkResourceCovers(
     for (const [slot, value] of Object.entries(
       row.talk_resource_covers as Record<string, unknown>
     )) {
-      if (
-        slot === 'bilibili' ||
-        slot === 'youtube' ||
-        slot === 'photos' ||
-        slot === 'transcript'
-      ) {
-        if (typeof value === 'string' && value.length > 0) slotMap.set(slot, value);
+      if (isResourceSlot(slot) && typeof value === 'string' && value.length > 0) {
+        slotMap.set(slot, value);
       }
     }
     if (slotMap.size > 0) picks.set(row.id, slotMap);

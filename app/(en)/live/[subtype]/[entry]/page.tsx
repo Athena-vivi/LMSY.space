@@ -53,6 +53,7 @@ export default async function LiveEntryPage({ params }: PageProps) {
     <DoorEntryPage
       entry={found.entry}
       assets={found.assets}
+      resourceCovers={found.resourceCovers}
       doorTitleKey="live.title"
       doorHref="/live"
       shelfTitleKey={subtypeLabelKey('live_stream', subtype)}

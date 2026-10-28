@@ -13,7 +13,12 @@ import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
 import { formatDisplayDate } from '@/lib/display-date';
 import { getAssetDimensions } from '@/lib/image-dimensions';
-import type { DoorAssetRow, DoorCategoryRow, DoorEntryRow } from '@/lib/door-data';
+import type {
+  DoorAssetRow,
+  DoorCategoryRow,
+  DoorEntryRow,
+  TalkResourceCovers,
+} from '@/lib/door-data';
 
 /**
  * Views shared by the four doors that own a page (homepage entries 2-5).
@@ -151,6 +156,7 @@ export function DoorEntryPage({
   shelfHref,
   shelfAnchor,
   filterLabel,
+  resourceCovers,
 }: {
   entry: DoorEntryRow;
   assets: DoorAssetRow[];
@@ -169,6 +175,11 @@ export function DoorEntryPage({
    * class, linking back to the unfiltered entry. Null renders nothing.
    */
   filterLabel?: string | null;
+  /**
+   * Covers a curator pinned per resource box on the curation page. A pinned
+   * box shows its own picture; an unpinned one falls back to the entry cover.
+   */
+  resourceCovers?: TalkResourceCovers;
 }) {
   const { language } = useLanguage();
   const title = getLocalizedText(entry.title_i18n, language, entry.title);
@@ -181,7 +192,8 @@ export function DoorEntryPage({
 
   // Where this entry's footage lives. The archive keeps pictures; the video
   // itself stays on the platform that hosts it, so each filled link becomes
-  // one box - the same box the talks and live shelves already use.
+  // one box - the same box the talks and live shelves already use. The cover
+  // is whatever the curator pinned for that box, else the entry cover.
   const videoBoxes: React.ReactNode[] = [];
   if (entry.video_url_bilibili) {
     videoBoxes.push(
@@ -189,7 +201,7 @@ export function DoorEntryPage({
         key="bilibili"
         href={entry.video_url_bilibili}
         external
-        cover={entry.cover_url}
+        cover={resourceCovers?.bilibili ?? entry.cover_url}
         label={t(language, 'talks.bilibili')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}
@@ -202,7 +214,7 @@ export function DoorEntryPage({
         key="youtube"
         href={entry.video_url_youtube}
         external
-        cover={entry.cover_url}
+        cover={resourceCovers?.youtube ?? entry.cover_url}
         label={t(language, 'talks.youtube')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}

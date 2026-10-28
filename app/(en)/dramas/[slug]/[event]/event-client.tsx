@@ -10,6 +10,7 @@ import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getAssetDimensions } from '@/lib/image-dimensions';
 import { getLocalizedText, type LocalizedText } from '@/lib/localized-content';
+import type { TalkResourceCovers } from '@/lib/door-data';
 import { formatDisplayDate } from '@/lib/display-date';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 
@@ -70,10 +71,13 @@ export function DramaEventPageClient({
   series,
   event,
   assets,
+  resourceCovers,
 }: {
   series: DramaEventPageSeries;
   event: DramaEventPageEvent;
   assets: DramaEventPageAsset[];
+  /** Covers a curator pinned per resource box; empty means "no pin". */
+  resourceCovers?: TalkResourceCovers;
 }) {
   const { language } = useLanguage();
   const title = getLocalizedText(event.title_i18n, language, event.title);
@@ -101,7 +105,7 @@ export function DramaEventPageClient({
         key="bilibili"
         href={event.video_url_bilibili}
         external
-        cover={event.cover_url}
+        cover={resourceCovers?.bilibili ?? event.cover_url}
         label={t(language, 'talks.bilibili')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}
@@ -114,7 +118,7 @@ export function DramaEventPageClient({
         key="youtube"
         href={event.video_url_youtube}
         external
-        cover={event.cover_url}
+        cover={resourceCovers?.youtube ?? event.cover_url}
         label={t(language, 'talks.youtube')}
         hint={t(language, 'talks.watch')}
         icon={<Play className="h-3.5 w-3.5" />}

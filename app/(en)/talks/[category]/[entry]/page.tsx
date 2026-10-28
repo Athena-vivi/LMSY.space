@@ -65,6 +65,7 @@ export default async function TalksEntryPage({ params }: PageProps) {
     <DoorEntryPage
       entry={found.entry}
       assets={found.assets}
+      resourceCovers={found.resourceCovers}
       doorTitleKey="talks.title"
       doorHref="/talks"
       shelfTitleKey={definition?.labelKey ?? null}

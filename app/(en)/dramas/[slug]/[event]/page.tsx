@@ -5,8 +5,9 @@ import { isPublicProject } from '@/lib/project-visibility';
 import { pageMetadata } from '@/lib/seo';
 import { getLocalizedText } from '@/lib/localized-content';
 import { routeLanguage } from '@/lib/i18n-path';
-import { getDramaEntryByKey, getDramaEventSeries } from '@/lib/data/projects';
+import { getDramaEntryByKey, getDramaEventSeries, getProjectTalkCoverPicks } from '@/lib/data/projects';
 import { listEventPageAssets } from '@/lib/data/gallery-assets';
+import { resolveResourceCovers } from '@/lib/door-data';
 import {
   DramaEventPageClient,
   type DramaEventPageAsset,
@@ -62,9 +63,17 @@ async function resolve(slug: string, eventSlug: string) {
     media_kind: entry.project_kind === 'video' ? 'video' : 'picture',
   };
 
-  const assets = await listEventPageAssets(db, entry.id);
+  const [assets, picks] = await Promise.all([
+    listEventPageAssets(db, entry.id),
+    getProjectTalkCoverPicks(db, [entry.id]),
+  ]);
 
-  return { series, event, assets };
+  return {
+    series,
+    event,
+    assets,
+    resourceCovers: resolveResourceCovers(picks[0]?.talk_resource_covers, assets),
+  };
 }
 
 function awardResult(tags: string[] | null): string | null {
@@ -107,6 +116,7 @@ export default async function DramaEventPage({ params }: PageProps) {
       series={found.series as unknown as DramaEventPageSeries}
       event={found.event as unknown as DramaEventPageEvent}
       assets={found.assets as unknown as DramaEventPageAsset[]}
+      resourceCovers={found.resourceCovers}
     />
   );
 }

@@ -48,6 +48,7 @@ export default async function CommercialEntryPage({ params }: PageProps) {
     <DoorEntryPage
       entry={found.entry}
       assets={found.assets}
+      resourceCovers={found.resourceCovers}
       doorTitleKey="category.commercial"
       doorHref="/commercial"
       shelfTitleKey={null}

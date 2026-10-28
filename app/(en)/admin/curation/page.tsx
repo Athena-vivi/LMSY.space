@@ -81,11 +81,18 @@ export default function CurationPage() {
   const [renameDraft, setRenameDraft] = useState('');
   const [groupBusy, setGroupBusy] = useState(false);
 
-  // Talk resource-box covers (Bilibili / YouTube / photos / transcript): the
-  // four timeline boxes of a talk event, each pinned to one of its pictures.
+  // Resource-box covers (Bilibili / YouTube / photos / transcript): each box
+  // of an entry, pinned to one of that entry's pictures. A talk has all four;
+  // every other entry has the two video boxes, because the entry pages of the
+  // other doors render those two. Same column either way
+  // (projects.talk_resource_covers), the name is just older than the reach.
   const [talkCovers, setTalkCovers] = useState<{
     covers: Record<string, string>;
     assets: Array<GalleryItem & { catalog_id?: string | null }>;
+    /** [slot, label] pairs this entry actually shows. */
+    slots: Array<[string, string]>;
+    /** Talk entries also carry the pictures and transcript boxes. */
+    isTalk: boolean;
   } | null>(null);
 
   const language = lang as Language;
@@ -282,19 +289,30 @@ export default function CurationPage() {
           groups: keys.map((key) => ({ key, assets: byGroup.get(key) ?? [] })),
         });
 
-        // Talk events get the four resource-box slots instead of class rows.
-        const talkCategories = ['interview', 'variety', 'radio', 'press'];
-        if (talkCategories.includes(proj?.data?.category ?? '')) {
-          setTalkCovers({
-            covers:
-              proj?.data?.talk_resource_covers && typeof proj.data.talk_resource_covers === 'object'
-                ? proj.data.talk_resource_covers
-                : {},
-            assets: assets.filter((asset) => Boolean(asset.catalog_id)),
-          });
-        } else {
-          setTalkCovers(null);
-        }
+        // Talk entries keep the four resource boxes; every other entry gets
+        // the two video boxes its own detail page renders.
+        const isTalk = ['interview', 'variety', 'radio', 'press'].includes(
+          proj?.data?.category ?? ''
+        );
+        setTalkCovers({
+          covers:
+            proj?.data?.talk_resource_covers && typeof proj.data.talk_resource_covers === 'object'
+              ? proj.data.talk_resource_covers
+              : {},
+          assets: assets.filter((asset) => Boolean(asset.catalog_id)),
+          isTalk,
+          slots: isTalk
+            ? [
+                ['bilibili', 'Bilibili 视频'],
+                ['youtube', 'YouTube 视频'],
+                ['photos', '图片'],
+                ['transcript', '文字实录'],
+              ]
+            : [
+                ['bilibili', 'Bilibili 视频'],
+                ['youtube', 'YouTube 视频'],
+              ],
+        });
       } catch {
         if (!cancelled) setGroupCovers({ loading: false, covers: {}, groups: [] });
       }
@@ -744,21 +762,18 @@ export default function CurationPage() {
                 {selected?.kind === 'event' && talkCovers && talkCovers.assets.length > 0 && (
                   <div className="mt-5 border-t border-white/10 pt-4">
                     <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-2/70">
-                      访谈资源封面 · 点图即设
+                      {talkCovers.isTalk ? '访谈资源封面 · 点图即设' : '视频框封面 · 点图即设'}
                     </p>
                     <div className="space-y-3">
-                      {(
-                        [
-                          ['bilibili', 'Bilibili 视频'],
-                          ['youtube', 'YouTube 视频'],
-                          ['photos', '图片'],
-                          ['transcript', '文字实录'],
-                        ] as const
-                      ).map(([slot, slotLabel]) => (
+                      {talkCovers.slots.map(([slot, slotLabel]) => (
                         <div key={slot}>
                           <p className="mb-1 font-mono text-[11px] text-ink-2">
                             {slotLabel}
-                            {talkCovers.covers[slot] ? ' · 已指定' : ' · 默认第一张'}
+                            {talkCovers.covers[slot]
+                              ? ' · 已指定'
+                              : talkCovers.isTalk
+                                ? ' · 默认第一张'
+                                : ' · 默认用事件封面'}
                           </p>
                           <div className="flex gap-1.5 overflow-x-auto pb-1">
                             {talkCovers.assets.map((asset) => {
@@ -791,7 +806,10 @@ export default function CurationPage() {
                         </div>
                       ))}
                       <p className="font-mono text-[10px] leading-relaxed text-ink-2/60">
-                        黄框为当前封面；每个框不指定时用第一张，再点一次黄框图可取消指定。
+                        黄框为当前封面，再点一次可取消指定。
+                        {talkCovers.isTalk
+                          ? '不指定时用这个事件的第一张图。'
+                          : '不指定时用这个事件自己的封面。'}
                       </p>
                     </div>
                   </div>
