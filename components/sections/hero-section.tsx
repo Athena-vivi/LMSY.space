@@ -189,15 +189,15 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
 
                 {heroSrc && (
                   /*
-                    The photograph drifts, the frame stays put.
-
-                    The card is 3:4 and the photo is cropped to it, so there is
-                    no room to move without exposing an edge. `scale: 1.06`
-                    buys about 15px of bleed on every side at phone size and
-                    the drift uses 10 of it, which is the same 10px the whole
-                    card used to travel - it reads as the same slow rise and
-                    fall, just contained by the frame instead of dragging the
-                    frame along with it.
+                    The photograph drifts 10px up and down over 10s. The card is
+                    3:4 and the photo is cropped to it, so there is no room to
+                    move without exposing an edge. `scale: 1.06` buys about
+                    15px of bleed on every side at phone size and the drift uses
+                    10 of it, which is the same 10px the whole card used to
+                    travel - it reads as the same slow rise and fall, just
+                    contained by the frame instead of dragging the frame along
+                    with it. 10s a cycle rather than the old 6s: any slower and
+                    the movement stops being readable at this amplitude.
 
                     Why the wrapper and not the <Image> itself: the Image keeps
                     its own hover scale, and one transform per node means they
@@ -214,7 +214,7 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
                     transition={
                       reduceMotion
                         ? { duration: 0 }
-                        : { duration: 14, repeat: Infinity, ease: 'easeInOut' }
+                        : { duration: 10, repeat: Infinity, ease: 'easeInOut' }
                     }
                   >
                     <Image
