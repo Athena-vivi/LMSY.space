@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { LocalizedLink as Link } from '@/components/localized-link';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
@@ -17,6 +17,7 @@ import { resolveImageUrl } from '@/lib/image-url';
 
 export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string }) {
   const { language } = useLanguage();
+  const reduceMotion = useReducedMotion();
   const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);
   // The photo arrives from the server already resolved, so the first paint is
   // the real one. There is no bundled placeholder and nothing to swap in
@@ -120,25 +121,26 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
           {/* Right - Hero Image */}
           <Link href="/features" className="order-1 lg:order-2 relative block">
             {/*
-              This wrapper animates ONCE and then comes to rest. It used to
-              breathe forever (y: [20, 10, 20]), which meant an endless
-              transform on an ancestor of a clipped, rounded, shadowed photo.
+              Nothing in this subtree animates forever except two leaf nodes:
+              the photograph inside the frame and the glow behind it. Both are
+              the only things whose motion is ever sent to the GPU.
 
-              That is the whole mechanism behind the grey block: a transform
-              that never stops keeps the wrapper on the GPU as one composited
-              layer, and the photo inside it stops being a normal element with
-              its own place in the paint order - it becomes pixels baked into
-              that layer's tiles. When a tile fails to rasterise there is no
-              "behind" or "in front" any more, because the halos, the overlays
-              and the photo are all the same texture; the region just comes
-              back as one flat colour, and it lands on top of the picture no
-              matter what z-index its DOM node had.
+              This wrapper used to carry the breathing animation itself
+              (y: [20, 10, 20], endless). An endless transform on an ancestor
+              of a clipped, rounded, shadowed photo is what produced the grey
+              block: the wrapper stayed on the GPU as one composited layer,
+              the photo inside it stopped being a normal element with its own
+              place in the paint order and became pixels baked into that
+              layer's tiles. When a tile failed to rasterise there was no
+              "behind" or "in front" left, because the halos, the overlays and
+              the photo were all the same texture; the region came back as one
+              flat colour and landed on top of the picture whatever z-index
+              its DOM node had.
 
-              So the protection is not a z-index and not a background colour.
-              It is this: nothing above the photo animates continuously, and
-              nothing in this subtree carries a blur. At rest the transform is
-              gone, the wrapper is de-promoted, and the browser paints the card
-              as ordinary content that has no tile of its own to lose.
+              So the wrapper still animates once, then comes to rest and is
+              de-promoted. The motion lives one level lower, on nodes that
+              contain nothing needing extra rasterisation - a bitmap and a
+              gradient - where compositing is just a texture sample.
             */}
             <motion.div
               initial={{ opacity: 0, scale: 0.94, y: 16 }}
@@ -186,15 +188,45 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
                 )}
 
                 {heroSrc && (
-                  <Image
-                    src={heroSrc}
-                    alt="Lookmhee & Sonya"
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    priority
-                    onLoad={() => setImageLoaded(true)}
-                  />
+                  /*
+                    The photograph drifts, the frame stays put.
+
+                    The card is 3:4 and the photo is cropped to it, so there is
+                    no room to move without exposing an edge. `scale: 1.06`
+                    buys about 15px of bleed on every side at phone size and
+                    the drift uses 10 of it, which is the same 10px the whole
+                    card used to travel - it reads as the same slow rise and
+                    fall, just contained by the frame instead of dragging the
+                    frame along with it.
+
+                    Why the wrapper and not the <Image> itself: the Image keeps
+                    its own hover scale, and one transform per node means they
+                    cannot overwrite each other.
+                  */
+                  <motion.div
+                    className="absolute inset-0"
+                    initial={{ scale: 1.06, y: 0 }}
+                    animate={
+                      reduceMotion
+                        ? { scale: 1.06, y: 0 }
+                        : { scale: 1.06, y: [-10, 10, -10] }
+                    }
+                    transition={
+                      reduceMotion
+                        ? { duration: 0 }
+                        : { duration: 14, repeat: Infinity, ease: 'easeInOut' }
+                    }
+                  >
+                    <Image
+                      src={heroSrc}
+                      alt="Lookmhee & Sonya"
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      priority
+                      onLoad={() => setImageLoaded(true)}
+                    />
+                  </motion.div>
                 )}
 
                 {/*
@@ -245,16 +277,29 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
                 composited layer the z-index inside it is already baked.
 
                 A radial gradient needs no filter, no raster pass and no
-                separate layer, so there is nothing left to flatten. It also
-                sits at `-inset-6`, outside the frame, so on a healthy paint it
-                reads as a halo around the card rather than a wash over it.
+                separate layer, so there is nothing left to flatten. It sits at
+                `-inset-6`, outside the frame, so it reads as a halo around the
+                card rather than a wash over it - and its own slow breathe is
+                what keeps the composition from feeling frozen now that the
+                frame itself no longer floats.
               */}
-              <div
+              <motion.div
                 className="absolute -inset-6 -z-10 rounded-[50%]"
                 style={{
                   background:
                     'radial-gradient(closest-side, rgba(251, 191, 36, 0.16) 0%, rgba(56, 189, 248, 0.13) 55%, rgba(56, 189, 248, 0) 100%)',
                 }}
+                initial={{ opacity: 0.75, scale: 1 }}
+                animate={
+                  reduceMotion
+                    ? { opacity: 0.75, scale: 1 }
+                    : { opacity: [0.6, 1, 0.6], scale: [1, 1.04, 1] }
+                }
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { duration: 11, repeat: Infinity, ease: 'easeInOut' }
+                }
               />
             </motion.div>
           </Link>
