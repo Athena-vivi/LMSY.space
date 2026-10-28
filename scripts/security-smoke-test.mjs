@@ -100,8 +100,6 @@ async function main() {
     ['GET', '/api/admin/projects'],
     ['GET', '/api/admin/editorial'],
     ['GET', '/api/admin/reconcile'],
-    ['POST', '/api/admin/r2/sign'],
-    ['POST', '/api/admin/upload'],
     ['GET', '/api/admin/messages'],
   ];
   for (const [method, path] of adminRoutes) {

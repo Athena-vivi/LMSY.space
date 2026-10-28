@@ -6,7 +6,6 @@ import { Shield } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { AdminMobileNav } from '@/components/admin-mobile-nav';
-import { UploadProvider } from '@/components/upload';
 import { AdminLangProvider } from '@/lib/admin-i18n';
 import { cn } from '@/lib/utils';
 
@@ -54,7 +53,6 @@ export default function AdminLayout({
 
   return (
     <AdminLangProvider>
-    <UploadProvider>
       <div className="admin-root relative min-h-screen">
         {/* Desktop Sidebar */}
         <AdminSidebar isCollapsed={isCollapsed} onToggle={() => setIsCollapsed(!isCollapsed)} />
@@ -86,7 +84,6 @@ export default function AdminLayout({
         }
       `}</style>
       </div>
-    </UploadProvider>
     </AdminLangProvider>
   );
 }

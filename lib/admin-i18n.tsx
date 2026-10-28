@@ -383,23 +383,6 @@ const DICT: Record<string, [string, string]> = {
   'pe.pickFirst': ['先选择目标事件', 'Pick an entry first'],
   'pe.linkFailed': ['关联失败', 'Filing failed'],
 
-  // --- Upload ---
-  'u.reminder': ['策展提醒：尊重每一位拍摄者的劳动。', "Curator's Reminder: Respect the shutter's effort."],
-  'u.dropTitle': ['把图片拖到这里', 'Drag & Drop images here'],
-  'u.dropSub': ['或点击选择文件', 'or click to browse'],
-  'u.drop': ['拖拽图片到此处，或点击选择文件', 'Drop images here or click to choose files'],
-  'u.project': ['关联项目', 'Link project'],
-  'u.projectNone': ['不关联（进草稿箱）', 'None (goes to Draft Inbox)'],
-  'u.tags': ['标签', 'Tags'],
-  'u.eventDate': ['事件日期（可留空）', 'Event date (optional)'],
-  'u.note': ['备注', 'Note'],
-  'u.start': ['开始上传', 'Start upload'],
-  'u.uploading': ['上传中…', 'Uploading...'],
-  'u.success': ['成功', 'Success'],
-  'u.duplicate': ['重复跳过', 'Duplicate'],
-  'u.failed': ['失败', 'Failed'],
-  'u.done': ['完成', 'Done'],
-
   // --- Toast messages ---
   't.PROJECT_RECORD_UPDATED': ['项目已更新', 'Project updated'],
   't.PROJECT_DELETED_FROM_ARCHIVE': ['项目已删除', 'Project deleted'],

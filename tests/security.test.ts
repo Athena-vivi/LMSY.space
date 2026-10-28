@@ -16,14 +16,6 @@ import { timingSafeEqualString, matchesAnySecret, isStrongEnoughKey, MIN_MACHINE
 import { getAdminEmail, isAdminEmail } from '../lib/security/admin-email.ts';
 import { requireMachineKey } from '../lib/security/machine-auth.ts';
 import { consumeRateLimit, resetRateLimit, peekRateLimit, clearAllRateLimits } from '../lib/security/rate-limit.ts';
-import {
-  validateUploadFile,
-  validateObjectKey,
-  sanitizeFilename,
-  isAllowedMimeType,
-  sniffImageMime,
-  UPLOAD_POLICY,
-} from '../lib/security/upload-guard.ts';
 import { isCatalogIdConflict, isDuplicateFileHash, generateCatalogId, CATALOG_ID_MAX_ATTEMPTS } from '../lib/catalog-id.ts';
 
 // ---------------------------------------------------------------------------
@@ -264,73 +256,6 @@ describe('login rate limiting', () => {
     assert.equal(consumeRateLimit(key, { limit: 1, windowMs: 60, blockMs: 0 }).allowed, false);
     await new Promise(resolve => setTimeout(resolve, 80));
     assert.equal(consumeRateLimit(key, { limit: 1, windowMs: 60, blockMs: 0 }).allowed, true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// upload validation
-// ---------------------------------------------------------------------------
-
-describe('upload validation', () => {
-  test('rejects SVG (active content) and unknown types', () => {
-    assert.equal(isAllowedMimeType('image/svg+xml'), false);
-    assert.equal(isAllowedMimeType('application/pdf'), false);
-    assert.equal(isAllowedMimeType('image/jpeg'), true);
-    assert.equal(isAllowedMimeType('image/webp'), true);
-  });
-
-  test('sniffs real content and refuses a renamed file', async () => {
-    const pngOk = await validateUploadFile(fakeFile(PNG_HEADER, 'a.png', 'image/png'));
-    assert.equal(pngOk.ok, true);
-
-    // A text file claiming to be a PNG must be rejected by magic bytes.
-    const fake = await validateUploadFile(fakeFile([0x3c, 0x68, 0x74, 0x6d, 0x6c], 'evil.png', 'image/png'));
-    assert.equal(fake.ok, false);
-    if (!fake.ok) assert.equal(fake.status, 415);
-
-    // An SVG renamed to .jpg: declared type allowed, content rejected.
-    const svg = await validateUploadFile(fakeFile([0x3c, 0x73, 0x76, 0x67], 'x.jpg', 'image/jpeg'));
-    assert.equal(svg.ok, false);
-  });
-
-  test('accepts jpeg and gif headers', async () => {
-    assert.equal((await validateUploadFile(fakeFile(JPEG_HEADER, 'a.jpg', 'image/jpeg'))).ok, true);
-    assert.equal((await validateUploadFile(fakeFile(GIF_HEADER, 'a.gif', 'image/gif'))).ok, true);
-  });
-
-  test('rejects oversized files, empty files and missing files', async () => {
-    const big = new File([new Uint8Array(10)], 'big.png', { type: 'image/png' });
-    Object.defineProperty(big, 'size', { value: UPLOAD_POLICY.maxFileSizeBytes + 1 });
-    const tooBig = await validateUploadFile(big);
-    assert.equal(tooBig.ok, false);
-    if (!tooBig.ok) assert.equal(tooBig.status, 413);
-
-    const empty = await validateUploadFile(fakeFile([], 'e.png', 'image/png'));
-    assert.equal(empty.ok, false);
-
-    const missing = await validateUploadFile(null);
-    assert.equal(missing.ok, false);
-  });
-
-  test('sniffImageMime returns null for unknown bytes', () => {
-    assert.equal(sniffImageMime(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])), null);
-  });
-
-  test('object keys are confined to allowed prefixes and traversal is blocked', () => {
-    assert.equal(validateObjectKey('draft/telegram/2026/02/a.jpg', ['draft/']).ok, true);
-    assert.equal(validateObjectKey('magazines/2025/LMSY-MAG-20250117-001.webp', ['magazines/']).ok, true);
-    assert.equal(validateObjectKey('../../etc/passwd', ['draft/']).ok, false);
-    assert.equal(validateObjectKey('draft/../secret.txt', ['draft/']).ok, false);
-    assert.equal(validateObjectKey('/draft/a.jpg', ['draft/']).ok, false);
-    assert.equal(validateObjectKey('other/a.jpg', ['draft/']).ok, false);
-    assert.equal(validateObjectKey('', ['draft/']).ok, false);
-  });
-
-  test('filenames are sanitized', () => {
-    assert.equal(sanitizeFilename('../../evil<script>.png'), 'evil-script-.png');
-    assert.equal(sanitizeFilename('C:\\Users\\x\\photo 1.jpg'), 'photo-1.jpg');
-    assert.equal(sanitizeFilename(''), 'upload');
-    assert.equal(sanitizeFilename(null), 'upload');
   });
 });
 

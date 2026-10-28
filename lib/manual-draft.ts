@@ -1,8 +1,9 @@
 /**
  * Manual-upload draft payload builder (phase 3 ingestion contract).
  *
- * Shared by app/api/admin/upload/register and app/api/admin/upload/fallback
- * so both entries produce byte-identical draft_items rows.
+ * Used by lib/asset-move.ts when an archived picture is sent back to the
+ * draft inbox, so the row is byte-identical to what the deleted manual
+ * upload routes used to write.
  *
  * SCHEMA CONSTRAINT (verified against pg_constraint, phase 3 audit):
  * draft_items_source_platform_required demands that source_url and

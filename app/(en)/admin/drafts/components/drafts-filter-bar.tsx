@@ -2,7 +2,6 @@
  * Drafts Filter Bar Component
  *
  * Extracted from the main drafts page for better maintainability.
- * Includes the Bulk Upload trigger button.
  *
  * Usage:
  * <DraftsFilterBar
@@ -16,7 +15,6 @@
 
 import { motion } from 'framer-motion';
 import { Search, Check } from 'lucide-react';
-import { UploadTriggerButton } from '@/components/upload';
 import { useAdminLang } from '@/lib/admin-i18n';
 
 type FilterStatus = 'all' | 'draft' | 'ready' | 'failed';
@@ -160,9 +158,6 @@ export function DraftsFilterBar({
         </motion.span>
         <span>{t('d.refresh')}</span>
       </motion.button>
-
-      {/* Bulk Upload Button */}
-      <UploadTriggerButton />
     </motion.div>
   );
 }
