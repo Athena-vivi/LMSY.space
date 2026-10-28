@@ -128,7 +128,7 @@ export function SiteHeader() {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetContent side="right" className="w-auto px-6">
                 <nav className="flex flex-col space-y-4 mt-8">
                   {mainNavItems.map((item, index) => (
                     <motion.div
