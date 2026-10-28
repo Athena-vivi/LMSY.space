@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import type { Project, ProjectCategory, ProjectSubtype } from '@/lib/supabase/types';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
-import CategoryDropdown from './category-dropdown';
+import CategoryDropdown from '@/components/admin/category-dropdown';
 
 interface QuickProjectModalProps {
   isOpen: boolean;
