@@ -19,13 +19,29 @@ interface ProjectPreviewAsset {
   rotation: number | null;
 }
 
+/**
+ * The year a row belongs to, read from the same column the row itself prints
+ * (event_date first, then release_date), so the filter and the visible date
+ * can never disagree.
+ */
+function yearOf(project: Project): string {
+  return (project.event_date || project.release_date || '').slice(0, 4);
+}
+
+/**
+ * Filter value for feature topics. It is not a value of the category column:
+ * themes are project_kind='theme' and all of them sit under early_archive.
+ */
+const THEME_OPTION = 'theme';
+
 export default function AdminProjectsPage() {
   const { t, lang } = useAdminLang();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'all' | Project['category']>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  // 'all' | 'none' (rows without any date) | a four-digit year.
+  const [yearFilter, setYearFilter] = useState<string>('all');
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
     show: false,
     message: '',
@@ -413,7 +429,14 @@ export default function AdminProjectsPage() {
   };
 
   const categoryOptions = useMemo(
-    () => ['all', ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean)))],
+    () => [
+      'all',
+      ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean))),
+      // Feature topics are project_kind='theme', not a category of their own -
+      // every one of them carries category='early_archive', so without this
+      // extra option they could only be reached through 早期档案.
+      THEME_OPTION,
+    ],
     [projects]
   );
 
@@ -441,6 +464,21 @@ export default function AdminProjectsPage() {
     live_stream: 'category.liveStream',
   };
 
+  /**
+   * Years that actually occur in the archive, newest first. Only years with
+   * rows are offered, so the dropdown never lists an empty result.
+   */
+  const yearOptions = useMemo(() => {
+    const years = new Set<string>();
+    let hasUndated = false;
+    for (const project of projects) {
+      const year = yearOf(project);
+      if (year) years.add(year);
+      else hasUndated = true;
+    }
+    return { years: Array.from(years).sort((a, b) => b.localeCompare(a)), hasUndated };
+  }, [projects]);
+
   const filteredProjects = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -453,15 +491,23 @@ export default function AdminProjectsPage() {
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(normalizedQuery));
 
-      const matchesCategory = categoryFilter === 'all' || project.category === categoryFilter;
+      // 特色专题 is its own door: picking it lists only themes, and picking a
+      // real category leaves themes out, so no event sits under two doors.
+      const isTheme = project.project_kind === THEME_OPTION;
+      const matchesCategory =
+        categoryFilter === 'all'
+          ? true
+          : categoryFilter === THEME_OPTION
+            ? isTheme
+            : project.category === categoryFilter && !isTheme;
 
-      // ADR-001 D4: status comes only from the formal curation_status field.
-      const normalizedStatus = project.curation_status ?? 'draft';
-      const matchesStatus = statusFilter === 'all' || normalizedStatus === statusFilter;
+      const matchesYear =
+        yearFilter === 'all' ||
+        (yearFilter === 'none' ? yearOf(project) === '' : yearOf(project) === yearFilter);
 
-      return matchesQuery && matchesCategory && matchesStatus;
+      return matchesQuery && matchesCategory && matchesYear;
     });
-  }, [projects, searchQuery, categoryFilter, statusFilter]);
+  }, [projects, searchQuery, categoryFilter, yearFilter]);
 
   // Keep the selection valid when the list changes (delete/filter).
   useEffect(() => {
@@ -489,23 +535,6 @@ export default function AdminProjectsPage() {
             CAREER_HISTORY_MANAGEMENT_SYSTEM
           </p>
         </div>
-
-        {/* Add Project Button - Outline Style */}
-        <motion.button
-          className="flex items-center gap-3 px-4 py-2 border border-white/10 text-ink-2 text-xs font-mono hover:text-ink-2 hover:border-white/20 transition-all"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="h-4 w-4 flex items-center justify-center">
-            <Plus className="h-3 w-3" strokeWidth={2.5} style={{
-              background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(56, 189, 248, 0.9))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }} />
-          </div>
-          <span>{t('p.addNew')}</span>
-        </motion.button>
       </motion.div>
 
       {/* Content */}
@@ -575,26 +604,35 @@ export default function AdminProjectsPage() {
                   />
                   <select
                     value={categoryFilter}
-                    onChange={(event) => setCategoryFilter(event.target.value as 'all' | Project['category'])}
+                    onChange={(event) => setCategoryFilter(event.target.value)}
                     className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   >
                     {categoryOptions.map((option) => (
                       <option key={option} value={option}>
-                        {option === 'all' ? t('cat.ALL') : t(CATEGORY_LABEL_KEY[option] ?? 'category.earlyArchive')}
+                        {option === 'all'
+                          ? t('cat.ALL')
+                          : option === THEME_OPTION
+                            ? t('p.filterTheme')
+                            : t(CATEGORY_LABEL_KEY[option] ?? 'category.earlyArchive')}
                       </option>
                     ))}
                   </select>
                   <select
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value as 'all' | 'published' | 'draft' | 'archived')}
+                    value={yearFilter}
+                    onChange={(event) => setYearFilter(event.target.value)}
                     className="border bg-black px-3 py-2 font-mono text-xs tracking-wider text-ink-2 outline-none transition-colors"
                     style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
                   >
-                    <option value="all">{t('wb.filterAll')}</option>
-                    <option value="published">{t('status.published')}</option>
-                    <option value="draft">{t('status.candidate')}</option>
-                    <option value="archived">{t('status.archived')}</option>
+                    <option value="all">{t('p.filterYearAll')}</option>
+                    {yearOptions.years.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                    {yearOptions.hasUndated && (
+                      <option value="none">{t('p.filterYearNone')}</option>
+                    )}
                   </select>
                 </div>
                 <div className="text-xs font-mono tracking-wider text-ink-2">

@@ -328,6 +328,9 @@ const DICT: Record<string, [string, string]> = {
 
   // --- Projects list ---
   'p.title': ['项目管理', 'Projects'],
+  'p.filterYearAll': ['全部年份', 'All years'],
+  'p.filterYearNone': ['无日期', 'No date'],
+  'p.filterTheme': ['特色专题', 'Feature topics'],
   'p.viewAssets': ['查看图片', 'View Assets'],
   'p.viewLive': ['线上预览', 'View Live'],
   'p.merge': ['合并项目', 'Merge Project'],
