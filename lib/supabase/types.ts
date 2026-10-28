@@ -106,8 +106,6 @@ export interface Project {
    * Defaults to 'event'; see lib/project-kind.ts.
    */
   project_kind?: 'event' | 'theme' | 'series' | 'video' | null;
-  /** When the source published it (magazine issue date, original post). */
-  source_published_at?: string | null;
   location?: string | null;
   publisher_brand?: string | null;
   search_aliases?: string[] | null;
