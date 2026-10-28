@@ -96,7 +96,6 @@ export default function EditProjectModal({
   const [eventDate, setEventDate] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [curationStatus, setCurationStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   /**
    * What kind of row this is. series = a work other entries hang under (door 1
    * only); video = an entry whose payload is a link instead of a picture wall;
@@ -120,7 +119,6 @@ export default function EditProjectModal({
       setEventDate(shownDate);
       initialDate.current = shownDate;
       setTags(project.tags || []);
-      setCurationStatus(project.curation_status || 'draft');
       setProjectKind(
         PROJECT_KINDS.includes(project.project_kind as ProjectKind)
           ? (project.project_kind as ProjectKind)
@@ -208,7 +206,6 @@ export default function EditProjectModal({
         work_id: workId || null,
         project_kind: projectKind,
         tags: tags.length > 0 ? tags : null,
-        curation_status: curationStatus,
       };
 
       // Never rewrite an untouched date: rows whose event_date is empty but
@@ -446,22 +443,6 @@ export default function EditProjectModal({
                   <p className="text-[10px] font-mono text-ink-2/50">
                     {dateTarget.hint.toUpperCase()}
                   </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-mono text-ink-2 tracking-[0.2em] uppercase">
-                    CURATION_STATUS
-                  </label>
-                  <select
-                    value={curationStatus}
-                    onChange={(e) => setCurationStatus(e.target.value as 'draft' | 'published' | 'archived')}
-                    className="w-full px-3 py-2 bg-black text-ink-2 font-mono text-sm focus:outline-none border"
-                    style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                  >
-                    <option value="draft">draft</option>
-                    <option value="published">published</option>
-                    <option value="archived">archived</option>
-                  </select>
                 </div>
 
                 {/* Tags */}

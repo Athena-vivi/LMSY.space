@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Plus, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw, ImagePlus, MoveRight } from 'lucide-react';
+import { Edit2, Trash2, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw, ImagePlus, MoveRight } from 'lucide-react';
 import Image from 'next/image';
 import { supabase, type Project } from '@/lib/supabase';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
@@ -431,10 +431,18 @@ export default function AdminProjectsPage() {
   const categoryOptions = useMemo(
     () => [
       'all',
-      ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean))),
-      // Feature topics are project_kind='theme', not a category of their own -
-      // every one of them carries category='early_archive', so without this
-      // extra option they could only be reached through 早期档案.
+      // early_archive is not a door (the registry sets homeEntry:false for it).
+      // Everything it used to hold was either a feature topic - which now has
+      // its own option below - or an empty stub, so the label was only noise.
+      ...Array.from(
+        new Set(
+          projects
+            .map((project) => project.category)
+            .filter(Boolean)
+            .filter((category) => category !== 'early_archive')
+        )
+      ),
+      // Feature topics are project_kind='theme', not a category of their own.
       THEME_OPTION,
     ],
     [projects]
@@ -567,13 +575,6 @@ export default function AdminProjectsPage() {
                 <p className="text-[10px] font-mono text-ink-2 tracking-wider">
                   NO_PROJECT_ENTRIES_FOUND
                 </p>
-                <motion.button
-                  className="mt-4 flex items-center gap-2 px-4 py-2 border border-white/10 text-ink-2 text-xs font-mono hover:text-ink-2 hover:border-white/20 transition-all"
-                  whileHover={{ x: 4 }}
-                >
-                  <Plus className="h-3 w-3" strokeWidth={2} />
-                  <span>{t('p.initializeFirst')}</span>
-                </motion.button>
               </div>
             </div>
           </motion.div>
@@ -614,7 +615,9 @@ export default function AdminProjectsPage() {
                           ? t('cat.ALL')
                           : option === THEME_OPTION
                             ? t('p.filterTheme')
-                            : t(CATEGORY_LABEL_KEY[option] ?? 'category.earlyArchive')}
+                            : CATEGORY_LABEL_KEY[option]
+                              ? t(CATEGORY_LABEL_KEY[option])
+                              : option}
                       </option>
                     ))}
                   </select>
@@ -685,13 +688,6 @@ export default function AdminProjectsPage() {
                             {(project.event_date || project.release_date)!.slice(0, 10)}
                           </span>
                         ) : null}
-                        <span className="font-mono text-[10px] text-ink-2">
-                          {project.curation_status === 'published'
-                            ? t('status.published')
-                            : project.curation_status === 'archived'
-                              ? t('status.archived')
-                              : t('status.candidate')}
-                        </span>
                         {project.project_kind === 'theme' && (
                           <span className="border border-lmsy-blue/40 px-1 py-0.5 text-[9px] font-mono tracking-[0.1em] text-lmsy-blue/80">
                             {t('status.theme')}
@@ -759,13 +755,6 @@ export default function AdminProjectsPage() {
                           {(activeProject.event_date || activeProject.release_date)!.slice(0, 10)}
                         </span>
                       )}
-                      <span className="font-mono text-[10px] text-ink-2">
-                        {activeProject.curation_status === 'published'
-                          ? t('status.published')
-                          : activeProject.curation_status === 'archived'
-                            ? t('status.archived')
-                            : t('status.candidate')}
-                      </span>
                     </div>
                   </div>
 
