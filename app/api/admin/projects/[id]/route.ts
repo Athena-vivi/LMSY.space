@@ -9,6 +9,7 @@ import {
   deleteProject,
   type ProjectRow,
 } from '@/lib/data/projects';
+import { dissolveProjectToDrafts, AssetMoveError } from '@/lib/asset-move';
 
 /**
  * Renaming the objects of a large batch is not instant: a hundred pictures is
@@ -118,6 +119,38 @@ export async function DELETE(
 
     // Delete project using admin client
     const supabaseAdmin = getSupabaseAdmin();
+
+    // Deleting an event usually means "this grouping was wrong, keep the
+    // pictures". With ?returnAssetsToDrafts=true every picture is handed back
+    // to the draft box first, and the project row only goes when they all made
+    // it - see lib/asset-move.ts.
+    if (request.nextUrl.searchParams.get('returnAssetsToDrafts') === 'true') {
+      try {
+        const outcome = await dissolveProjectToDrafts(supabaseAdmin, id);
+        if (outcome.failures.length > 0) {
+          return NextResponse.json(
+            {
+              error: 'Some pictures could not be returned to the draft box; the project was kept',
+              draftsCreated: outcome.draftsCreated,
+              failures: outcome.failures,
+            },
+            { status: 409 }
+          );
+        }
+        return NextResponse.json({
+          success: true,
+          draftsCreated: outcome.draftsCreated,
+          projectDeleted: outcome.projectDeleted,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('[PROJECTS_DELETE] ❌ Dissolve failed:', message);
+        return NextResponse.json(
+          { error: error instanceof AssetMoveError ? message : 'Dissolve failed', details: message },
+          { status: 500 }
+        );
+      }
+    }
 
     // P1-3 Phase 2: the delete moved to lib/data/projects.ts; the
     // repository throws on a db error (the route logs and answers 500).

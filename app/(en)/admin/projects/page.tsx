@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Plus, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw, ImagePlus } from 'lucide-react';
+import { Edit2, Trash2, Plus, Play, Calendar, Loader2, X, Images, ExternalLink, ArrowRightLeft, SplitSquareVertical, RotateCcw, RotateCw, ImagePlus, MoveRight } from 'lucide-react';
 import Image from 'next/image';
 import { supabase, type Project } from '@/lib/supabase';
 import { SUBTYPES_BY_CATEGORY } from '@/lib/category-registry';
 import EditProjectModal from './_components/edit-project-modal';
+import MoveAssetsPanel from './_components/move-assets-panel';
 import { useAdminLang } from '@/lib/admin-i18n';
 import { getImageUrl } from '@/lib/image-url';
 
@@ -57,6 +58,14 @@ export default function AdminProjectsPage() {
   const [panelAssets, setPanelAssets] = useState<ProjectPreviewAsset[]>([]);
   const [panelAssetsLoading, setPanelAssetsLoading] = useState(false);
 
+  // Move pictures between events. The panel re-numbers and re-keys each file
+  // server-side; see lib/asset-move.ts.
+  const [movePanelOpen, setMovePanelOpen] = useState(false);
+
+  // Deleting an event usually means the grouping was wrong, not that the
+  // pictures should go. Ticked by default for that reason.
+  const [returnAssetsToDrafts, setReturnAssetsToDrafts] = useState(true);
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -72,6 +81,10 @@ export default function AdminProjectsPage() {
     if (!projectError && projectData) setProjects(projectData);
     setLoading(false);
   };
+
+  // Bumped after a move so the strip reloads even though the selection did not
+  // change.
+  const [panelRefreshKey, setPanelRefreshKey] = useState(0);
 
   // Load the picked event's own pictures whenever the selection changes.
   useEffect(() => {
@@ -96,7 +109,7 @@ export default function AdminProjectsPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedProjectId]);
+  }, [selectedProjectId, panelRefreshKey]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ show: true, message, type });
@@ -257,15 +270,21 @@ export default function AdminProjectsPage() {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
 
-      const response = await fetch(`/api/admin/projects/${deleteConfirm.projectId}`, {
+      const query = returnAssetsToDrafts ? '?returnAssetsToDrafts=true' : '';
+      const response = await fetch(`/api/admin/projects/${deleteConfirm.projectId}${query}`, {
         method: 'DELETE',
         headers,
         credentials: 'include',
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Delete failed');
+        const errorData = await response.json().catch(() => ({}));
+        const failureCount = Array.isArray(errorData.failures) ? errorData.failures.length : 0;
+        throw new Error(
+          failureCount > 0
+            ? `${failureCount} 张图没能退回草稿箱，项目已保留：${errorData.failures[0]?.reason ?? ''}`
+            : errorData.error || 'Delete failed'
+        );
       }
 
       const result = await response.json();
@@ -274,20 +293,55 @@ export default function AdminProjectsPage() {
         throw new Error('Delete operation returned unsuccessful');
       }
 
-      showToast('PROJECT_DELETED_FROM_ARCHIVE');
+      showToast(
+        returnAssetsToDrafts && result.draftsCreated
+          ? `已删除项目，${result.draftsCreated} 张图退回草稿箱`
+          : 'PROJECT_DELETED_FROM_ARCHIVE'
+      );
 
       setTimeout(() => {
         window.location.reload();
       }, 500);
     } catch (error) {
       console.error('Delete error:', error);
-      showToast('DELETE_OPERATION_FAILED', 'error');
+      showToast(error instanceof Error ? error.message : 'DELETE_OPERATION_FAILED', 'error');
       setDeletingProjectId(null);
     }
   };
 
   const cancelDelete = () => {
     setDeleteConfirm({ show: false, projectId: '', projectTitle: '' });
+  };
+
+  /**
+   * After a batch leaves this event: reload what is left, and offer to remove
+   * the event itself once it is empty. It is only an offer - deleting an event
+   * is never a side effect of moving pictures out of it.
+   */
+  const handleAssetsMoved = (info: {
+    moved: number;
+    sourceProjectId: string;
+    sourceEmptied: boolean;
+  }) => {
+    setPanelRefreshKey((key) => key + 1);
+    fetchProjects();
+
+    if (!info.sourceEmptied) return;
+
+    const emptied = projects.find((project) => project.id === info.sourceProjectId);
+    if (!emptied) return;
+
+    const confirmed = window.confirm(
+      `「${emptied.title}」已经没有图片了。要顺手把这个事件也删掉吗？\n\n选“取消”就保留这个空事件。`
+    );
+    if (!confirmed) return;
+
+    setMovePanelOpen(false);
+    setDeleteConfirm({
+      show: true,
+      projectId: emptied.id,
+      projectTitle: emptied.title,
+    });
   };
 
   // Badge colours per real door (drama_work / live_event / ...). The old map
@@ -776,6 +830,14 @@ export default function AdminProjectsPage() {
                       {t('p.split')}
                     </button>
                     <button
+                      onClick={() => setMovePanelOpen(true)}
+                      disabled={panelAssets.length === 0}
+                      className="col-span-2 flex items-center justify-center gap-2 border border-white/10 px-3 py-2 font-mono text-[11px] text-ink-2 transition-colors hover:border-white/25 hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <MoveRight className="h-3 w-3" strokeWidth={1.5} />
+                      迁移图片到其他事件
+                    </button>
+                    <button
                       onClick={() => handleDeleteClick(activeProject)}
                       disabled={deletingProjectId === activeProject.id}
                       className="col-span-2 flex items-center justify-center gap-2 border border-red-500/25 px-3 py-2 font-mono text-[11px] text-red-400/80 transition-colors hover:border-red-500/50 hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -801,6 +863,33 @@ export default function AdminProjectsPage() {
         onClose={() => setEditModalOpen(false)}
         project={selectedProject}
         onUpdate={handleUpdate}
+      />
+
+      {/* Move pictures into another event */}
+      <MoveAssetsPanel
+        open={movePanelOpen}
+        onClose={() => setMovePanelOpen(false)}
+        sourceProject={
+          activeProject
+            ? {
+                id: activeProject.id,
+                title: activeProject.title,
+                category: activeProject.category ?? null,
+                project_kind: activeProject.project_kind ?? null,
+                catalog_id: (activeProject as { catalog_id?: string | null }).catalog_id ?? null,
+              }
+            : null
+        }
+        assets={panelAssets}
+        projects={projects.map((project) => ({
+          id: project.id,
+          title: project.title,
+          category: project.category ?? null,
+          project_kind: project.project_kind ?? null,
+          catalog_id: (project as { catalog_id?: string | null }).catalog_id ?? null,
+        }))}
+        onMoved={handleAssetsMoved}
+        showToast={showToast}
       />
 
       {/* Delete Confirmation Modal */}
@@ -863,6 +952,22 @@ export default function AdminProjectsPage() {
                       ID: {deleteConfirm.projectId}
                     </p>
                   </div>
+
+                  <label className="flex cursor-pointer items-start gap-2 border border-white/10 bg-white/[0.02] px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={returnAssetsToDrafts}
+                      onChange={(event) => setReturnAssetsToDrafts(event.target.checked)}
+                      className="mt-0.5 h-3 w-3 accent-lmsy-yellow"
+                    />
+                    <span className="text-[11px] leading-relaxed text-ink-2">
+                      把图片退回草稿箱
+                      <span className="mt-0.5 block text-[10px] leading-relaxed text-ink-2/60">
+                        勾选：这个事件的图片全部回到草稿箱，之后可以重新入库到别的项目。
+                        不勾选：图片和档案一起删除。
+                      </span>
+                    </span>
+                  </label>
 
                   <p className="text-xs text-red-400/70 font-mono tracking-wide">
                     ⚠️ 此操作不可撤销。档案将从数据库中永久移除。
