@@ -80,8 +80,8 @@ node scripts/security-smoke-test.mjs --base http://localhost:3000   # 安全冒�
 
 | 文档 | 内容 |
 |---|---|
-| `docs/FULL_AUDIT_REPORT_2026-10-16.md` | **全量审计报告（现状唯一入口，含遗留事项与待决策）** |
-| `docs/REMEDIATION_PLAN.md` | **下一步整改方案（批次/依赖/验收/决策点，v1.1 已经独立评审）** |
+| `docs/20261020-lmsy-content-and-presentation-plan.md` | **内容与展示定稿（分类/门/文案基准，冲突时以此为准）** |
+| `docs/architecture/` | **架构规范：命名、分类、字段字典、DB 结构（权威）** |
 | `docs/BACKUP_AND_RESTORE.md` | 备份/恢复体系与操作手册 |
 | `docs/R2_SETUP.md` | R2 桶与 CDN 配置 |
 | `docs/BATCH_UPLOAD_GUIDE.md` | 后台上传指南 |
