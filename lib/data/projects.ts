@@ -1246,3 +1246,24 @@ export async function listCurationProjects(
 
   return (data ?? []) as unknown as CurationProjectRow[];
 }
+
+/**
+ * The visitor-visible theme projects (project_kind = 'theme') for the
+ * features door in the admin curation tree. Same columns and visibility
+ * filter as listCurationProjects, so a theme lines up with the same
+ * CurationRow shape the assembler expects. Answers [] on a read failure.
+ */
+export async function listCurationThemes(db: AdminClient): Promise<CurationProjectRow[]> {
+  const { data } = await applyPublicProjectFilter(
+    db
+      .schema('lmsy_archive')
+      .from('projects')
+      .select('id, slug, title, category, subtype, project_kind, work_id, event_date, release_date, cover_url')
+      .eq('project_kind', 'theme')
+  )
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
+
+  return (data ?? []) as unknown as CurationProjectRow[];
+}

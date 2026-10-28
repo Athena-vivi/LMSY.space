@@ -160,7 +160,7 @@ export default function CurationPage() {
       subtitle: door.href,
       cover: door.cover,
       pinned: door.pinned,
-      canHoldCover: true,
+      canHoldCover: Boolean(door.coverSlot),
       galleryHref: null,
       eventCount: door.events.length + door.shelves.reduce((sum, item) => sum + item.count, 0),
       size: door.key === 'talks' || door.key === 'live_stream' ? 'aspect-[16/9]' : 'aspect-[4/5]',

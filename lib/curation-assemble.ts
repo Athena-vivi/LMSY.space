@@ -89,6 +89,8 @@ export interface CurationInput {
   assets: CurationAsset[];
   /** pinned shelf cover per path */
   shelfCovers: Map<string, string>;
+  /** project_kind = 'theme' rows for the features door (not a category) */
+  themeRows?: CurationRow[];
 }
 
 const SHELVED: Array<ProjectCategory | 'talks'> = [
@@ -122,6 +124,7 @@ export function assembleCurationTree({
   rows,
   assets,
   shelfCovers,
+  themeRows,
 }: CurationInput): CurationDoor[] {
   // One pass over the assets: count per project, the first page (the automatic
   // cover), and the pinned door covers.
@@ -287,6 +290,25 @@ export function assembleCurationTree({
     }
 
     doors.push(door);
+  }
+
+  // Features door (/features): special topics are project_kind = 'theme', not a
+  // category, so they never arrive through DOOR_CATEGORIES. Each topic is its
+  // own row and shows up as an event, so its cover is set the same way as any
+  // other event - projects.cover_url - through the existing curation picker.
+  const themeRowsForDoor = themeRows ?? [];
+  if (themeRowsForDoor.length) {
+    doors.push({
+      key: 'features',
+      href: '/features',
+      labelKey: 'features.title',
+      coverSlot: null,
+      cover: null,
+      pinned: false,
+      shelfLabel: '专题',
+      shelves: [],
+      events: [...themeRowsForDoor].sort(newestFirst).map(toEvent),
+    });
   }
 
   return doors;

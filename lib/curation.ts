@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { loadCategoryCovers, secondLevelsFor } from './cover-slots';
 import { listCurationAssets } from '@/lib/data/gallery-assets';
-import { listCurationProjects } from '@/lib/data/projects';
+import { listCurationProjects, listCurationThemes } from '@/lib/data/projects';
 import {
   assembleCurationTree,
   type CurationDoor,
@@ -45,9 +45,10 @@ const DOOR_CATEGORIES = [
 export async function loadCurationTree(): Promise<CurationDoor[]> {
   const supabaseAdmin = getSupabaseAdmin();
 
-  const [projectData, assetData] = await Promise.all([
+  const [projectData, assetData, themeData] = await Promise.all([
     listCurationProjects(supabaseAdmin, DOOR_CATEGORIES),
     listCurationAssets(supabaseAdmin),
+    listCurationThemes(supabaseAdmin),
   ]);
 
   const paths = DOOR_CATEGORIES.flatMap((category) =>
@@ -62,5 +63,6 @@ export async function loadCurationTree(): Promise<CurationDoor[]> {
     rows: projectData,
     assets: assetData,
     shelfCovers,
+    themeRows: themeData,
   });
 }
