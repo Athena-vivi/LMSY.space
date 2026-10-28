@@ -157,7 +157,9 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
               <div
                 className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl shadow-2xl group cursor-pointer border"
                 style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  // Opaque, so a tile the compositor drops shows the page's own
+                  // black instead of a lighter patch over the photo.
+                  backgroundColor: 'var(--background)',
                   borderColor: 'rgba(255, 255, 255, 0.05)',
                 }}
               >
@@ -227,20 +229,28 @@ export function HeroSection({ initialImageUrl = '' }: { initialImageUrl?: string
                 <div className="absolute inset-0 bg-gradient-to-t from-lmsy-blue/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
 
-              {/* Ambient Glow Behind */}
-              <motion.div
-                className="absolute inset-4 -z-10 rounded-full blur-3xl"
+              {/*
+                Ambient glow behind the card.
+
+                This used to be a solid gradient box with `blur-3xl`. A 64px
+                filter blur is not a paint the browser can skip: it rasterises
+                the box into its own texture, and that texture sat inside a
+                wrapper that is being transformed every frame by the breathing
+                animation below. On phone GPUs the texture came back as one
+                flat rectangle of its own average colour - a soft grey block
+                sitting on top of the photo and cutting both of them off at
+                the waist.
+
+                A radial gradient needs no filter, no raster pass and no
+                separate layer, so there is nothing left to get flattened.
+                It is pushed to `-inset-6` as well, so the glow reads as a halo
+                around the frame instead of a wash over the picture.
+              */}
+              <div
+                className="absolute -inset-6 -z-10 rounded-[50%]"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%)',
-                }}
-                animate={{
-                  scale: [1, 1.1, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
+                  background:
+                    'radial-gradient(closest-side, rgba(251, 191, 36, 0.16) 0%, rgba(56, 189, 248, 0.13) 55%, rgba(56, 189, 248, 0) 100%)',
                 }}
               />
             </motion.div>
