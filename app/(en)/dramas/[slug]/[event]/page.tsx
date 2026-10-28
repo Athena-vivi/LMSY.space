@@ -55,6 +55,9 @@ async function resolve(slug: string, eventSlug: string) {
     description: entry.description,
     description_i18n: entry.description_i18n,
     source_url: entry.watch_url,
+    video_url_bilibili: entry.video_url_bilibili,
+    video_url_youtube: entry.video_url_youtube,
+    cover_url: entry.cover_url,
     result: awardResult(entry.tags as string[] | null),
     media_kind: entry.project_kind === 'video' ? 'video' : 'picture',
   };

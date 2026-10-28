@@ -15,6 +15,7 @@ const DICT: Record<string, [string, string]> = {
   'nav.workbench': ['项目工作台', 'Workbench'],
   'nav.projects': ['项目管理', 'Projects'],
   'nav.curation': ['策展', 'Curation'],
+  'nav.videos': ['视频链接', 'Video Links'],
   'nav.drafts': ['草稿箱', 'Draft Inbox'],
   'nav.vault': ['图库资产', 'Asset Vault'],
   'nav.batches': ['批次记录', 'Batches'],
@@ -30,6 +31,23 @@ const DICT: Record<string, [string, string]> = {
   'nav.expand': ['展开侧栏', 'Expand sidebar'],
   'nav.langSwitch': ['EN', '中文'],
   'nav.settings': ['设置', 'Settings'],
+
+  // --- Video links workbench (/admin/videos) ---
+  'videos.title': ['视频链接', 'Video Links'],
+  'videos.hint': [
+    '事件不存视频文件，只存发布地址。填了地址，事件详情页会出现对应的平台框，点击在新窗口打开。',
+    'The archive holds pictures, not video files - only where the footage was published. A filled link adds that platform box to the entry page; it opens in a new tab.',
+  ],
+  'videos.filledSuffix': ['个事件已填', 'events linked'],
+  'videos.search': ['搜索标题 / 编号 / 日期', 'Search title, code or date'],
+  'videos.filterMissing': ['未填', 'Missing'],
+  'videos.filterFilled': ['已填', 'Linked'],
+  'videos.filterAll': ['全部', 'All'],
+  'videos.allCategories': ['全部分类', 'All categories'],
+  'videos.empty': ['没有符合条件的事件', 'No event matches this filter'],
+  'videos.save': ['保存', 'Save'],
+  'videos.saving': ['保存中', 'Saving'],
+  'videos.saved': ['已保存', 'Saved'],
   'nav.exitAdmin': ['退出后台', 'Exit admin'],
 
   // --- Layout / common ---

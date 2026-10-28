@@ -3,10 +3,11 @@
 import { LocalizedLink as Link } from '@/components/localized-link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink, Play } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
 import { PageIntro } from '@/components/page-intro';
 import { InterviewArticle } from '@/components/interview-article';
+import { ResourceBox } from '@/components/doors/resource-box';
 import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
@@ -178,6 +179,37 @@ export function DoorEntryPage({
   });
   const isVideo = entry.project_kind === 'video' || Boolean(entry.watch_url);
 
+  // Where this entry's footage lives. The archive keeps pictures; the video
+  // itself stays on the platform that hosts it, so each filled link becomes
+  // one box - the same box the talks and live shelves already use.
+  const videoBoxes: React.ReactNode[] = [];
+  if (entry.video_url_bilibili) {
+    videoBoxes.push(
+      <ResourceBox
+        key="bilibili"
+        href={entry.video_url_bilibili}
+        external
+        cover={entry.cover_url}
+        label={t(language, 'talks.bilibili')}
+        hint={t(language, 'talks.watch')}
+        icon={<Play className="h-3.5 w-3.5" />}
+      />
+    );
+  }
+  if (entry.video_url_youtube) {
+    videoBoxes.push(
+      <ResourceBox
+        key="youtube"
+        href={entry.video_url_youtube}
+        external
+        cover={entry.cover_url}
+        label={t(language, 'talks.youtube')}
+        hint={t(language, 'talks.watch')}
+        icon={<Play className="h-3.5 w-3.5" />}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <section className="pt-10 md:pt-14">
@@ -230,6 +262,10 @@ export function DoorEntryPage({
 
             {description ? (
               <p className="mt-5 max-w-2xl text-lg text-ink-2">{description}</p>
+            ) : null}
+
+            {videoBoxes.length > 0 ? (
+              <div className="mt-7 grid max-w-md grid-cols-2 gap-3">{videoBoxes}</div>
             ) : null}
 
             {isVideo ? (

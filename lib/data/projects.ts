@@ -546,7 +546,7 @@ export async function getDramaSeriesByKey(
 }
 
 export const DRAMA_ENTRY_COLUMNS =
-  'id, work_id, slug, title, title_i18n, event_date, description, description_i18n, watch_url, tags, portal_priority, project_kind, subtype, cover_url, created_at';
+  'id, work_id, slug, title, title_i18n, event_date, description, description_i18n, watch_url, video_url_bilibili, video_url_youtube, tags, portal_priority, project_kind, subtype, cover_url, created_at';
 
 export interface DramaEntryRow {
   id: string;
@@ -558,6 +558,9 @@ export interface DramaEntryRow {
   description: string | null;
   description_i18n: LocalizedText | null;
   watch_url: string | null;
+  /** Where the footage of this entry lives; the site keeps only the links. */
+  video_url_bilibili: string | null;
+  video_url_youtube: string | null;
   tags: string[] | null;
   portal_priority: number | null;
   project_kind: string | null;

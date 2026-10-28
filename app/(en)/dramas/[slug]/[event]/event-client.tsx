@@ -3,8 +3,9 @@
 import { LocalizedLink as Link } from '@/components/localized-link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Play } from 'lucide-react';
 import { useLanguage } from '@/components/language-provider';
+import { ResourceBox } from '@/components/doors/resource-box';
 import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getAssetDimensions } from '@/lib/image-dimensions';
@@ -42,6 +43,10 @@ export interface DramaEventPageEvent {
   description: string | null;
   description_i18n: LocalizedText | null;
   source_url: string | null;
+  /** Platform links: one box each, above the wall. Empty means no box. */
+  video_url_bilibili: string | null;
+  video_url_youtube: string | null;
+  cover_url: string | null;
   result: string | null;
   media_kind: string | null;
 }
@@ -87,6 +92,36 @@ export function DramaEventPageClient({
   // and the writing, and watching happens on the platform that hosts it.
   const isVideo = event.media_kind === 'video';
 
+  // The footage of this entry, wherever it was published. Same box the four
+  // shelves use, so a visitor meets one shape for "watch it".
+  const videoBoxes: React.ReactNode[] = [];
+  if (event.video_url_bilibili) {
+    videoBoxes.push(
+      <ResourceBox
+        key="bilibili"
+        href={event.video_url_bilibili}
+        external
+        cover={event.cover_url}
+        label={t(language, 'talks.bilibili')}
+        hint={t(language, 'talks.watch')}
+        icon={<Play className="h-3.5 w-3.5" />}
+      />
+    );
+  }
+  if (event.video_url_youtube) {
+    videoBoxes.push(
+      <ResourceBox
+        key="youtube"
+        href={event.video_url_youtube}
+        external
+        cover={event.cover_url}
+        label={t(language, 'talks.youtube')}
+        hint={t(language, 'talks.watch')}
+        icon={<Play className="h-3.5 w-3.5" />}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <section className="pt-10 md:pt-14">
@@ -126,6 +161,10 @@ export function DramaEventPageClient({
 
             {description ? (
               <p className="mt-5 max-w-2xl text-lg text-ink-2">{description}</p>
+            ) : null}
+
+            {videoBoxes.length > 0 ? (
+              <div className="mt-7 grid max-w-md grid-cols-2 gap-3">{videoBoxes}</div>
             ) : null}
 
             {isVideo ? (
