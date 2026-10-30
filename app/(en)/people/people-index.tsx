@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { getSupabasePublic } from '@/lib/data/client';
 import { listPublicProjectIds } from '@/lib/data/projects';
 import { getImageUrl } from '@/lib/image-url';
+import { MediaPlate } from '@/components/ui/media-plate';
 import { t, type Language } from '@/lib/languages';
 
 /**
@@ -69,7 +70,7 @@ export async function PeopleIndex({ language }: { language: Language }) {
                 href={`/people/${person.slug || person.id}`}
                 className="group flex items-center gap-6 rounded-2xl border border-border bg-card/30 p-6 transition-colors hover:border-lmsy-blue/40 hover:bg-card/60"
               >
-                <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+                <MediaPlate className="h-28 w-28 shrink-0 rounded-full border border-border">
                   {avatar && (
                     <Image
                       src={avatar}
@@ -80,7 +81,7 @@ export async function PeopleIndex({ language }: { language: Language }) {
                       unoptimized
                     />
                   )}
-                </div>
+                </MediaPlate>
                 <div className="min-w-0">
                   <h2 className="font-serif text-3xl font-bold text-foreground transition-colors group-hover:text-lmsy-blue">
                     {person.nickname || person.name}

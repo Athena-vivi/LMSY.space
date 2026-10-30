@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ZoomIn } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/components/language-provider';
+import { MediaPlate } from '@/components/ui/media-plate';
 import { t } from '@/lib/languages';
 import { supabase, type GalleryItem } from '@/lib/supabase';
 import {
@@ -227,9 +228,9 @@ export default function GalleryClient({
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-24">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div
+              <MediaPlate
                 key={i}
-                className="aspect-[3/4] rounded-lg bg-muted animate-pulse"
+                className="aspect-[3/4] animate-pulse rounded-lg"
                 style={{ animationDelay: `${i * 100}ms` }}
               />
             ))}

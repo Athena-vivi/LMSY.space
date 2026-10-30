@@ -3,6 +3,7 @@
 import { LocalizedLink as Link } from '@/components/localized-link';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/image-url';
+import { MediaPlate } from '@/components/ui/media-plate';
 
 /**
  * One resource box: portrait, floating label, same shape as the live-events
@@ -33,7 +34,7 @@ export function ResourceBox({
     <>
       {/* The plate is the yellow-blue wash whether or not a cover is pinned:
           an empty box reads as part of the archive, not as a broken picture. */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-lmsy-yellow/30 via-card to-lmsy-blue/35">
+      <MediaPlate className="aspect-[3/4]">
         {coverUrl ? (
           <Image
             src={coverUrl}
@@ -53,7 +54,7 @@ export function ResourceBox({
             {hint}
           </p>
         </div>
-      </div>
+      </MediaPlate>
     </>
   );
 

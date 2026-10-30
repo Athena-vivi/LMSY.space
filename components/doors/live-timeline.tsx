@@ -11,6 +11,7 @@ import { formatDisplayDate } from '@/lib/display-date';
 import { getLocalizedText } from '@/lib/localized-content';
 import type { DoorEntryGroup, DoorEntryRow, TalkResourceCovers } from '@/lib/door-data';
 import { ResourceBox } from './resource-box';
+import { MediaPlate } from '@/components/ui/media-plate';
 import { ArrowLeft, Play } from 'lucide-react';
 
 /**
@@ -242,7 +243,7 @@ function GroupBox({ entry, group }: { entry: DoorEntryRow; group: DoorEntryGroup
       {/* Portrait box: vertical pictures are the archive's dominant shape, so
           heads and feet survive. Mobile fills the available width; sm+ gets
           a fixed column from the grid above. */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+      <MediaPlate className="aspect-[3/4]">
         {cover ? (
           <Image
             src={cover}
@@ -262,7 +263,7 @@ function GroupBox({ entry, group }: { entry: DoorEntryRow; group: DoorEntryGroup
             {t(language, 'drama.eventImages', { count: group.count })}
           </p>
         </div>
-      </div>
+      </MediaPlate>
     </Link>
   );
 }

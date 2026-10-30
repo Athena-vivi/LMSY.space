@@ -8,6 +8,7 @@ import { useLanguage } from '@/components/language-provider';
 import { PageIntro } from '@/components/page-intro';
 import { InterviewArticle } from '@/components/interview-article';
 import { ResourceBox } from '@/components/doors/resource-box';
+import { MediaPlate } from '@/components/ui/media-plate';
 import { t, type TranslationKey } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
@@ -351,7 +352,7 @@ function WallImage({ asset, index }: { asset: DoorAssetRow; index: number }) {
       className="mb-4 break-inside-avoid"
     >
       <Link href={`/gallery#${asset.id}`} className="group block">
-        <div className="relative overflow-hidden rounded-xl border border-border bg-muted">
+        <MediaPlate className="rounded-xl border border-border">
           <Image
             src={imageUrl || ''}
             alt={asset.caption || `Image ${index + 1}`}
@@ -368,7 +369,7 @@ function WallImage({ asset, index }: { asset: DoorAssetRow; index: number }) {
               </span>
             </div>
           ) : null}
-        </div>
+        </MediaPlate>
         {asset.caption ? (
           <p className="mt-2 text-sm text-ink-2 line-clamp-2">{asset.caption}</p>
         ) : null}

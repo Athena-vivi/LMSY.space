@@ -6,6 +6,7 @@ import { useLanguage } from '@/components/language-provider';
 import { t } from '@/lib/languages';
 import { getImageUrl } from '@/lib/image-url';
 import { getLocalizedText } from '@/lib/localized-content';
+import { MediaPlate } from '@/components/ui/media-plate';
 import { categoryMeta } from '@/lib/category-meta';
 import { formatDisplayDate } from '@/lib/display-date';
 
@@ -56,7 +57,7 @@ export default function PersonClient({
     <div className="min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-24 md:pt-20 md:pb-32">
         <header className="flex flex-col gap-8 sm:flex-row sm:items-center mb-16">
-          <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+          <MediaPlate className="h-32 w-32 shrink-0 rounded-full border border-border">
             {avatar && (
               <Image
                 src={avatar}
@@ -68,7 +69,7 @@ export default function PersonClient({
                 priority
               />
             )}
-          </div>
+          </MediaPlate>
           <div className="min-w-0">
             <h1 className="font-serif text-4xl md:text-5xl font-bold">
               <span className="bg-gradient-to-r from-lmsy-yellow to-lmsy-blue bg-clip-text text-transparent">
