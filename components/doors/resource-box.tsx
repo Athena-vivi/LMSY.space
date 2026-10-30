@@ -31,7 +31,9 @@ export function ResourceBox({
   const coverUrl = cover ? getImageUrl(cover) : null;
   const inner = (
     <>
-      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+      {/* The plate is the yellow-blue wash whether or not a cover is pinned:
+          an empty box reads as part of the archive, not as a broken picture. */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-lmsy-yellow/30 via-card to-lmsy-blue/35">
         {coverUrl ? (
           <Image
             src={coverUrl}
