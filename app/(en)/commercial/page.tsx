@@ -17,18 +17,15 @@ export const metadata: Metadata = pageMetadata({
 });
 
 /**
- * Max thumbnails per commercial card. Mirrors ChronicleTimeline.GROUP_THUMBNAILS
- * so the two doors read identically.
- */
-const CARD_THUMBNAILS = 4;
-
-/**
  * /commercial - homepage entry 5.
  *
- * The wall now reads like the Timeline page: a two-column alternating grid
- * where each card pairs its title with up to four pictures (opened in a
- * lightbox). The chronicle's left sidebar is intentionally absent - a brand
- * collaboration hall has no year filter or meta rows of its own.
+ * The wall reads like the Timeline page: a two-column alternating grid where
+ * each card pairs its title with a few thumbnail pictures and opens the full
+ * set in a lightbox. The card thumbnail count is capped inside ChronicleTimeline
+ * (GROUP_THUMBNAILS); the lightbox shows every picture the entry owns, so a
+ * card never hides the rest behind a 4-image ceiling. The chronicle's left
+ * sidebar is intentionally absent - a brand collaboration hall has no year
+ * filter or meta rows of its own.
  */
 export default async function CommercialPage() {
   const entries = await loadDoorEntries('commercial');
@@ -59,7 +56,7 @@ export default async function CommercialPage() {
   const events: ChronicleEvent[] = entries
     .map((entry): ChronicleEvent => {
       const date = entry.event_date || entry.release_date || '';
-      const images = (byProject.get(entry.id) ?? []).slice(0, CARD_THUMBNAILS);
+      const images = byProject.get(entry.id) ?? [];
       return {
         id: `project-${entry.id}`,
         date,

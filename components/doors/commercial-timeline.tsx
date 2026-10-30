@@ -10,9 +10,9 @@ import type { ChronicleEvent } from '@/lib/timeline';
  * /commercial presented in the timeline's visual language, minus the chronicle
  * sidebar.
  *
- * The owner asked for the same two-column alternating wall the Timeline page
- * uses (each card pairs its title with up to four pictures, opened in a
- * lightbox) but without the left "编年史" chrome - the year filter and the
+ * The wall mirrors the Timeline page's two-column alternating layout (each
+ * card pairs its title with a few thumbnail pictures; the lightbox opens the
+ * full set) but without the left "编年史" chrome - the year filter and the
  * meta rows belong to the chronicle, not to a brand-collaboration hall. The
  * heading keeps a page intro so the door still has a title of its own.
  */
