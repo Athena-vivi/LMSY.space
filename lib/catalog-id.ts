@@ -735,10 +735,23 @@ export function assetIdPrefixFor(
 // Allocation
 // ---------------------------------------------------------------------------
 
+/** PostgREST's per-request row cap; a longer prefix has to be walked. */
+const PAGE = 1000;
+
 /**
  * Highest existing sequence + 1 for a given prefix, starting at 001.
  * Not atomic by itself - the unique index on gallery_assets.catalog_id is the
  * final authority; callers must treat a 23505 conflict as retryable.
+ *
+ * The sequence is the NUMERIC maximum, not the last row alphabetically. An id
+ * that carries a date segment sorts above one that does not
+ * (`...-SERIESSTILLS-20241028-009` > `...-SERIESSTILLS-010`), so asking the
+ * database for the greatest string and parsing its tail once returned a number
+ * that was already taken: every retry then asked for the same id and the whole
+ * batch failed with a duplicate key (Affair series stills, 2026-10-30). Reading
+ * every id under the prefix and keeping the largest number is immune to the
+ * mix, and it also fixes sequences past 999 (`-1000` is no longer parsed as
+ * `-000`).
  *
  * `person` is the leading segment and stays LMSY: a single-person event puts
  * its `-LM` / `-SY` inside the subject instead (see personTail), so both
@@ -769,22 +782,31 @@ export async function allocateNextCatalogId(
       ? withDate(`${person}-${doorCode}-${subject}`)
       : withDate(`${person}-${doorCode}`));
 
-  const { data, error } = await supabase
-    .schema('lmsy_archive')
-    .from(tableName)
-    .select('catalog_id')
-    .like('catalog_id', `${head}-%`)
-    .order('catalog_id', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // PostgREST answers at most 1000 rows per request and says nothing when it
+  // truncates, so the window is walked until a short page comes back.
+  let highest = 0;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .schema('lmsy_archive')
+      .from(tableName)
+      .select('catalog_id')
+      .like('catalog_id', `${head}-%`)
+      .order('catalog_id', { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error || !Array.isArray(data) || data.length === 0) break;
 
-  let nextSequence = 1;
-  if (!error && data?.catalog_id) {
-    const match = /-(\d{3})$/.exec(data.catalog_id);
-    if (match) nextSequence = parseInt(match[1], 10) + 1;
+    for (const row of data as Array<{ catalog_id: string | null }>) {
+      if (!row.catalog_id) continue;
+      const match = /-(\d+)$/.exec(row.catalog_id);
+      if (!match) continue;
+      const sequence = parseInt(match[1], 10);
+      if (Number.isFinite(sequence) && sequence > highest) highest = sequence;
+    }
+
+    if (data.length < PAGE) break;
   }
 
-  return `${head}-${String(nextSequence).padStart(3, '0')}`;
+  return `${head}-${String(highest + 1).padStart(3, '0')}`;
 }
 
 /**

@@ -34,7 +34,13 @@ test('resolveAssetTagFromDraft returns null for empty or missing tags', () => {
 // Task 3: shared catalog_id allocation (manual upload + draft promotion)
 // ---------------------------------------------------------------------------
 
-function mkSupabase(existingCatalogId: string | null) {
+/**
+ * Minimal PostgREST stand-in for the allocator: it holds a list of ids, answers
+ * the LIKE prefix filter, and honours the .range() window. Ids are returned in
+ * ascending string order, exactly as the database would.
+ */
+function mkSupabase(existing: string | string[] | null) {
+  const all = existing === null ? [] : Array.isArray(existing) ? existing : [existing];
   let likePrefix: string | null = null;
   const chain = {
     select: () => chain,
@@ -43,16 +49,12 @@ function mkSupabase(existingCatalogId: string | null) {
       return chain;
     },
     order: () => chain,
-    limit: () => chain,
-    maybeSingle: async () => {
-      // Emulate the SQL prefix filter: a row whose catalog_id does not start
-      // with the requested LMSY-<prefix>-<date> pattern is not returned.
-      const pattern = likePrefix !== null ? likePrefix.replace(/%/g, '') : null;
-      const matches = existingCatalogId && pattern !== null && existingCatalogId.startsWith(pattern);
-      return {
-        data: matches ? { catalog_id: existingCatalogId } : null,
-        error: null,
-      };
+    range: async (from: number, to: number) => {
+      const pattern = likePrefix !== null ? likePrefix.replace(/%/g, '') : '';
+      const matched = all
+        .filter((id) => id.startsWith(pattern))
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      return { data: matched.slice(from, to + 1).map((catalog_id) => ({ catalog_id })), error: null };
     },
   };
   return { schema: () => ({ from: () => chain }) };
@@ -76,6 +78,31 @@ test('allocateNextCatalogId falls back to 001 on an unparseable max row', async 
 test('allocateNextCatalogId is scoped to the category prefix', async () => {
   const id = await allocateNextCatalogId(mkSupabase('LMSY-MAG-20241023-004'), 'AD', '2024-10-23');
   assert.equal(id, 'LMSY-AD-20241023-001');
+});
+
+test('allocateNextCatalogId keeps counting when a prefix holds two id shapes', async () => {
+  // 2026-10-30: Affair series stills held `...-20241028-001..009` next to a
+  // `...-010`. The dated ids sort above the plain one, so reading the greatest
+  // string returned 009 and every retry asked for 010 - which was taken. The
+  // numeric maximum is 010, so the next free id is 011.
+  const id = await allocateNextCatalogId(
+    mkSupabase([
+      'LMSY-DRAMA-AFFAIR-SERIESSTILLS-20241028-001',
+      'LMSY-DRAMA-AFFAIR-SERIESSTILLS-20241028-009',
+      'LMSY-DRAMA-AFFAIR-SERIESSTILLS-010',
+    ]),
+    'DRAMA',
+    null,
+    { head: 'LMSY-DRAMA-AFFAIR-SERIESSTILLS' }
+  );
+  assert.equal(id, 'LMSY-DRAMA-AFFAIR-SERIESSTILLS-011');
+});
+
+test('allocateNextCatalogId reads sequences past 999 as numbers', async () => {
+  const id = await allocateNextCatalogId(mkSupabase('LMSY-DRAMA-X-SERIESSTILLS-1000'), 'DRAMA', null, {
+    head: 'LMSY-DRAMA-X-SERIESSTILLS',
+  });
+  assert.equal(id, 'LMSY-DRAMA-X-SERIESSTILLS-1001');
 });
 
 test('CATEGORY_TO_CATALOG_PREFIX maps every real category onto a legal door code', () => {
