@@ -15,8 +15,9 @@ import type { SearchResult, SearchResultType } from '@/lib/search-results';
 // Phase 5: consumes the unified search contract (see
 // docs/architecture/20261017-search-contract.md). The type badge/icon comes
 // from result.type only - never inferred from the title text. All copy goes
-// through the three-language keys (search.*), and the Schedule placeholder
-// is gone from Quick Access (the /schedule route itself stays).
+// through the three-language keys (search.*). The Schedule placeholder left
+// Quick Access long ago, and the /schedule route itself was removed on
+// 2026-10-30 - the archive has no "what's on next" surface.
 
 const TYPE_ICON: Record<SearchResultType, typeof FileImage> = {
   project: FolderKanban,

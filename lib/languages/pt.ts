@@ -17,7 +17,6 @@ export const pt: Record<TranslationKey, string> = {
     'nav.projects': 'Projetos',
     'nav.copyright': 'Copyright',
     'nav.about': 'Sobre',
-    'nav.schedule': 'Agenda',
     'nav.toggleTheme': 'Alternar tema',
     'nav.toggleMenu': 'Abrir menu',
     'nav.viewAll': 'Ver tudo',
@@ -46,7 +45,6 @@ export const pt: Record<TranslationKey, string> = {
     'updates.fanmeet': 'Fan meeting',
     'updates.gallery': 'Galeria',
     'updates.series': 'Séries',
-    'updates.schedule': 'Agenda',
     'updates.comingSoon': 'Em breve',
     'updates.jan2025': 'Jan 2025',
     'updates.dec2024': 'Dez 2024',
@@ -94,12 +92,6 @@ export const pt: Record<TranslationKey, string> = {
     'projects.filteredEmpty': 'Não há projetos nesta categoria.',
 
     // Schedule
-    'schedule.title': 'Agenda',
-    'schedule.description': 'Fique por dentro dos próximos eventos, aparições e atividades.',
-    'schedule.upcoming': 'Próximos eventos',
-    'schedule.past': 'Eventos passados',
-    'schedule.noEvents': 'Nenhum evento programado.',
-    'schedule.watchNow': 'Assistir agora',
 
     // Construction Banner
     'banner.message': 'Bem-vinda a este universo de amor ainda inacabado, querida Bestie. Este lugar se completa, aos pouquinhos.',
@@ -511,7 +503,6 @@ export const pt: Record<TranslationKey, string> = {
     'meta.live': 'As lives que Lookmhee & Sonya abriram sozinhas: sem corte, sem entrevistador, o mais perto de ouvir elas falando por conta própria.',
     'meta.liveEvents': 'Fan meetings, noites de marca e aniversários: cada lugar onde Lookmhee & Sonya estiveram, guardado em fotos.',
     'meta.people': 'As duas pessoas em volta de quem este arquivo foi feito.',
-    'meta.schedule': 'A agenda de Lookmhee & Sonya, o que vem e o que passou: eventos, transmissões e aparições.',
     'meta.talks': 'Entrevistas, programas de variedade e rádio: cada vez que alguém perguntou a Lookmhee & Sonya e publicou a resposta.',
     'meta.timeline': 'Cada registro com data do acervo, na ordem em que realmente aconteceu.',
 

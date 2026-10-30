@@ -17,7 +17,6 @@ export const es: Record<TranslationKey, string> = {
     'nav.projects': 'Proyectos',
     'nav.copyright': 'Copyright',
     'nav.about': 'Acerca de',
-    'nav.schedule': 'Agenda',
     'nav.toggleTheme': 'Cambiar tema',
     'nav.toggleMenu': 'Abrir menú',
     'nav.viewAll': 'Ver todo',
@@ -46,7 +45,6 @@ export const es: Record<TranslationKey, string> = {
     'updates.fanmeet': 'Fan meeting',
     'updates.gallery': 'Galería',
     'updates.series': 'Series',
-    'updates.schedule': 'Agenda',
     'updates.comingSoon': 'Próximamente',
     'updates.jan2025': 'Ene 2025',
     'updates.dec2024': 'Dic 2024',
@@ -94,12 +92,6 @@ export const es: Record<TranslationKey, string> = {
     'projects.filteredEmpty': 'No hay proyectos en esta categoría.',
 
     // Schedule
-    'schedule.title': 'Agenda',
-    'schedule.description': 'Entérate de los próximos eventos, apariciones y actividades.',
-    'schedule.upcoming': 'Próximos eventos',
-    'schedule.past': 'Eventos pasados',
-    'schedule.noEvents': 'No hay eventos programados.',
-    'schedule.watchNow': 'Ver ahora',
 
     // Construction Banner
     'banner.message': 'Bienvenida a este universo de amor aún incompleto, querida Bestie. Este lugar se completa, poquito a poco.',
@@ -511,7 +503,6 @@ export const es: Record<TranslationKey, string> = {
     'meta.live': 'Los directos que abrieron Lookmhee & Sonya: sin cortes, sin entrevistador, lo más cerca de oírlas hablar por su cuenta.',
     'meta.liveEvents': 'Fan meetings, noches de marca y cumpleaños: cada sala donde estuvieron Lookmhee & Sonya, guardada en fotos.',
     'meta.people': 'Las dos personas alrededor de las cuales está hecho este archivo.',
-    'meta.schedule': 'La agenda de Lookmhee & Sonya, lo que viene y lo que pasó: eventos, emisiones y apariciones.',
     'meta.talks': 'Entrevistas, programas de variedades y radio: cada vez que alguien les preguntó a Lookmhee & Sonya y publicó la respuesta.',
     'meta.timeline': 'Cada registro con fecha del archivo, ordenado por cuándo ocurrió de verdad.',
 

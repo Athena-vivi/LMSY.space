@@ -133,7 +133,6 @@ describe('shared navigation copy is not hardcoded', () => {
       'components/page-intro.tsx',
       'components/chronicle-chrome.tsx',
       'app/(en)/admin/preview/[id]/project-detail-client.tsx',
-      'app/(en)/schedule/page.tsx',
       'app/(en)/resonance/page.tsx',
       'app/(en)/whispers/page.tsx',
     ];

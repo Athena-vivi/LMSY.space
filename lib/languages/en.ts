@@ -13,7 +13,6 @@ export const en = {
     'nav.projects': 'Projects',
     'nav.copyright': 'Copyright',
     'nav.about': 'About',
-    'nav.schedule': 'Schedule',
     'nav.toggleTheme': 'Toggle theme',
     'nav.toggleMenu': 'Toggle menu',
     'nav.viewAll': 'View All',
@@ -42,7 +41,6 @@ export const en = {
     'updates.fanmeet': 'Fan Meet Event',
     'updates.gallery': 'Gallery',
     'updates.series': 'Series',
-    'updates.schedule': 'Schedule',
     'updates.comingSoon': 'Coming Soon',
     'updates.jan2025': 'Jan 2025',
     'updates.dec2024': 'Dec 2024',
@@ -90,12 +88,6 @@ export const en = {
     'projects.filteredEmpty': 'No projects in this category.',
 
     // Schedule
-    'schedule.title': 'Schedule',
-    'schedule.description': 'Stay updated with upcoming events, appearances, and activities.',
-    'schedule.upcoming': 'Upcoming Events',
-    'schedule.past': 'Past Events',
-    'schedule.noEvents': 'No upcoming events scheduled.',
-    'schedule.watchNow': 'Watch Now',
 
     // Construction Banner
     'banner.message': 'Welcome to this unfinished universe of love, dear Bestie. This place is becoming complete, little by little.',
@@ -515,7 +507,6 @@ export const en = {
     'meta.live': 'Live streams Lookmhee & Sonya opened themselves — no cuts, no interviewer, the closest thing to them talking on their own.',
     'meta.liveEvents': 'Fan meetings, brand nights and birthdays — every room Lookmhee & Sonya stood in, kept as pictures.',
     'meta.people': 'The two people this archive is built around.',
-    'meta.schedule': 'Upcoming and past schedule for Lookmhee & Sonya — events, broadcasts and appearances.',
     'meta.talks': 'Interviews, variety spots and radio — every time somebody else asked Lookmhee & Sonya, and cut the answer.',
     'meta.timeline': 'Every dated record in the archive, ordered by when it actually happened.',
 

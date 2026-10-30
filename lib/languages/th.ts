@@ -14,7 +14,6 @@ export const th: Record<TranslationKey, string> = {
     'nav.projects': 'ผลงาน',
     'nav.copyright': 'ลิขสิทธิ์',
     'nav.about': 'เกี่ยวกับ',
-    'nav.schedule': 'กำหนดการ',
     'nav.toggleTheme': 'สลับธีม',
     'nav.toggleMenu': 'สลับเมนู',
     'nav.viewAll': 'ดูทั้งหมด',
@@ -43,7 +42,6 @@ export const th: Record<TranslationKey, string> = {
     'updates.fanmeet': 'งานพบแฟนคลับ',
     'updates.gallery': 'แกลเลอรี่',
     'updates.series': 'ซีรีส์',
-    'updates.schedule': 'กำหนดการ',
     'updates.comingSoon': 'เร็วๆ นี้',
     'updates.jan2025': 'ม.ค. 2025',
     'updates.dec2024': 'ธ.ค. 2024',
@@ -91,12 +89,6 @@ export const th: Record<TranslationKey, string> = {
     'projects.filteredEmpty': 'ไม่มีผลงานในหมวดหมู่นี้',
 
     // Schedule
-    'schedule.title': 'กำหนดการ',
-    'schedule.description': 'ติดตามกิจกรรมและกำหนดการที่กำลังจะเกิดขึ้น',
-    'schedule.upcoming': 'กิจกรรมที่กำลังจะเกิดขึ้น',
-    'schedule.past': 'กิจกรรมที่ผ่านมา',
-    'schedule.noEvents': 'ไม่มีกิจกรรมที่กำหนดไว้',
-    'schedule.watchNow': 'รับชมเลย',
 
     // Construction Banner
     'banner.message': 'ยินดีต้อนรับสู่จักรวาลแห่งความรักที่ยังสร้างไม่เสร็จ เบสตี้ที่รัก ที่นี่กำลังค่อยๆ สมบูรณ์ขึ้น',
@@ -506,7 +498,6 @@ export const th: Record<TranslationKey, string> = {
     'meta.live': 'ไลฟ์ที่ Lookmhee & Sonya เปิดเอง — ไม่ตัดต่อ ไม่มีพิธีกร ใกล้ที่สุดกับการที่พวกเธอพูดเอง',
     'meta.liveEvents': 'แฟนมีต ค่ำคืนแบรนด์ และงานวันเกิด — ทุกสถานที่ที่ Lookmhee & Sonya ไปยืน เก็บเป็นภาพ',
     'meta.people': 'สองคนที่คลังนี้สร้างขึ้นมาเพื่อ',
-    'meta.schedule': 'ตารางงานของ Lookmhee & Sonya ทั้งที่กำลังจะมาถึงและที่ผ่านมา — อีเวนต์ ออกอากาศ และงานที่ไปออกรายการ',
     'meta.talks': 'บทสัมภาษณ์ วาไรตี้ และรายการวิทยุ — ทุกครั้งที่มีคนอื่นถาม Lookmhee & Sonya แล้วตัดคำตอบออกมา',
     'meta.timeline': 'ทุกบันทึกที่มีวันที่ในคลัง เรียงตามเวลาที่มันเกิดขึ้นจริง',
 

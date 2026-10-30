@@ -14,7 +14,6 @@ export const zh: Record<TranslationKey, string> = {
     'nav.projects': '作品',
     'nav.copyright': '版权',
     'nav.about': '关于',
-    'nav.schedule': '日程',
     'nav.toggleTheme': '切换主题',
     'nav.toggleMenu': '切换菜单',
     'nav.viewAll': '查看全部',
@@ -43,7 +42,6 @@ export const zh: Record<TranslationKey, string> = {
     'updates.fanmeet': '粉丝见面会',
     'updates.gallery': '相册',
     'updates.series': '剧集',
-    'updates.schedule': '日程',
     'updates.comingSoon': '即将推出',
     'updates.jan2025': '2025年1月',
     'updates.dec2024': '2024年12月',
@@ -91,12 +89,6 @@ export const zh: Record<TranslationKey, string> = {
     'projects.filteredEmpty': '该分类下暂无作品。',
 
     // Schedule
-    'schedule.title': '日程',
-    'schedule.description': '关注即将到来的活动、露面和行程。',
-    'schedule.upcoming': '即将举行的活动',
-    'schedule.past': '过往活动',
-    'schedule.noEvents': '暂无安排的活动。',
-    'schedule.watchNow': '立即观看',
 
     // Construction Banner
     'banner.message': '欢迎来到这个尚未完工的爱的宇宙，亲爱的 Bestie。这里正在一点点变得完整。',
@@ -503,7 +495,6 @@ export const zh: Record<TranslationKey, string> = {
     'meta.live': 'Lookmhee & Sonya 自己开的直播 —— 没有剪辑，没有主持人，最接近她们自己讲话的样子。',
     'meta.liveEvents': '粉丝见面会、品牌之夜与生日会 —— 她们站过的每一个现场，都以照片留存。',
     'meta.people': '这座档案馆围绕的两个人。',
-    'meta.schedule': 'Lookmhee & Sonya 的日程，将到来的与过去的 —— 活动、播出与出席。',
     'meta.talks': '访谈、综艺与电台 —— 每一次别人去问她们，再把回答剪出来。',
     'meta.timeline': '馆内每一条带日期的记录，按它真正发生的顺序排列。',
 

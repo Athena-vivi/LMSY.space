@@ -14,9 +14,12 @@
 // visitor already knows what they are looking for.
 //
 // /people, /editorial, /dramas, /live-events, /appearances, /commercial,
-// /talks, /live, /resonance and /schedule keep their routes but no longer
+// /talks, /live and /resonance keep their routes but no longer
 // occupy the bar. i18n keys are resolved via t(language, key) from
 // lib/languages.ts.
+//
+// /schedule was removed on 2026-10-30: a schedule is built to be current, and
+// this site is a collection, not a feed.
 
 export interface NavItem {
   key: string;

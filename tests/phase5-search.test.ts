@@ -424,9 +424,22 @@ describe('related routing fixes', () => {
     assert.ok(gallerySrc.includes('setPendingAnchor(decodeURIComponent'));
   });
 
-  test('schedule route itself is untouched (only the search entry was removed)', () => {
-    const scheduleSrc = src('app/(en)/schedule/page.tsx');
-    assert.ok(scheduleSrc.includes('scheduleItems'), 'page keeps its (empty) data contract');
-    assert.ok(scheduleSrc.includes("t(language, 'schedule.noEvents')"), 'honest empty state stays');
+  test('the schedule route is gone: this archive has no "what is on next" surface', () => {
+    // 2026-10-30: the page was deleted on purpose - a schedule is built to be
+    // current, and this site is a collection, not a feed. The copy went with
+    // it, so a stray key cannot resurrect the door.
+    for (const route of [
+      'app/(en)/schedule/page.tsx',
+      'app/(en)/schedule/layout.tsx',
+      'app/[lang]/schedule/page.tsx',
+    ]) {
+      assert.throws(() => src(route), `route file must not exist: ${route}`);
+    }
+    for (const lang of ['en', 'es', 'pt', 'th', 'zh']) {
+      const dict = src(`lib/languages/${lang}.ts`);
+      for (const key of ['schedule.title', 'schedule.upcoming', 'schedule.past', 'schedule.noEvents', 'meta.schedule']) {
+        assert.ok(!dict.includes(`'${key}'`), `${lang} still carries ${key}`);
+      }
+    }
   });
 });
