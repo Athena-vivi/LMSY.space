@@ -488,7 +488,7 @@ export const es: Record<TranslationKey, string> = {
     'about.seeAlso': 'Ver también: ',
 
     // Site-level copy (root layout metadata, loading state)
-    'site.description': 'Archivo de fans del dúo GL tailandés LMSY (Lookmhee & Sonya), protagonistas de la serie Affair. Perfiles, galería, proyectos y agenda al día.',
+    'site.description': 'Archivo de fans del dúo GL tailandés LMSY (Lookmhee & Sonya), protagonistas de la serie Affair. Perfiles, galería y proyectos.',
     'site.keywords': 'LMSY, Lookmhee, Sonya, Affair, GL tailandés, girls love, drama tailandés, serie Affair',
     'site.loading': 'Cargando el archivo',
     // Door meta descriptions (SEO snippets) — see en.ts for the note.

@@ -490,7 +490,7 @@ export const en = {
     'about.seeAlso': 'See also: ',
 
     // Site-level copy (root layout metadata, loading state)
-    'site.description': 'Welcome to the fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, projects, and schedule updates.',
+    'site.description': 'Welcome to the fan archive for Thai GL duo LMSY (Lookmhee & Sonya) - Stars of Affair series. Explore profiles, gallery, and projects.',
     'site.keywords': "LMSY, Lookmhee, Sonya, Affair, Thai GL, Girl's Love, Lookmhee Sonya, Affair Series, Thai Drama, GL Series",
     'site.loading': 'Loading archive',
     // Door meta descriptions (SEO snippets). One source per door: the root

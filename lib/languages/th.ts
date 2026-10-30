@@ -483,7 +483,7 @@ export const th: Record<TranslationKey, string> = {
     'about.seeAlso': 'ดูเพิ่มเติม: ',
 
     // Site-level copy (root layout metadata, loading state)
-    'site.description': 'ยินดีต้อนรับสู่คลังแฟนคลับของคู่จิ้น GL ไทย LMSY (Lookmhee & Sonya) - นักแสดงนำจากซีรีส์ Affair รวมประวัติ แกลเลอรี ผลงาน และตารางงาน',
+    'site.description': 'ยินดีต้อนรับสู่คลังแฟนคลับของคู่จิ้น GL ไทย LMSY (Lookmhee & Sonya) - นักแสดงนำจากซีรีส์ Affair รวมประวัติ แกลเลอรี และผลงาน',
     'site.keywords': 'LMSY, Lookmhee, Sonya, Affair, ซีรีส์ GL ไทย, หญิงรักหญิง, ซีรีส์ Affair',
     'site.loading': 'กำลังโหลดคลัง',
     // Door meta descriptions (SEO snippets) — see en.ts for the note.

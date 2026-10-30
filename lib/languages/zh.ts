@@ -480,7 +480,7 @@ export const zh: Record<TranslationKey, string> = {
     'about.seeAlso': '另见：',
 
     // Site-level copy (root layout metadata, loading state)
-    'site.description': '欢迎来到泰国 GL 组合 LMSY（Lookmhee & Sonya）的粉丝档案馆——《Affair》系列主演。收录人物档案、图库、作品与日程更新。',
+    'site.description': '欢迎来到泰国 GL 组合 LMSY（Lookmhee & Sonya）的粉丝档案馆——《Affair》系列主演。收录人物档案、图库与作品。',
     'site.keywords': 'LMSY, Lookmhee, Sonya, Affair, 泰国GL, 百合, 泰剧, LMSY粉丝, Affair系列',
     'site.loading': '正在载入档案',
     // Door meta descriptions (SEO snippets) — see en.ts for the note.
