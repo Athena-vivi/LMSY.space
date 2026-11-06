@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/security/api-auth';
+import { revalidateContentSurfaces } from '@/lib/revalidate-content';
 import {
   listActiveSiteContentBlocks,
   upsertSiteContentBlock,
@@ -56,6 +57,13 @@ export async function PUT(request: NextRequest) {
       is_active,
       updated_at: new Date().toISOString(),
     });
+
+    // The homepage now renders from ISR. A hero/preface save must drop its
+    // cached HTML or the first paint keeps the old photo for a full TTL.
+    // /api/site-content itself is CDN-cached with s-maxage; revalidatePath
+    // cannot purge that copy, so the client-fetched copy expires on its own
+    // 300s TTL. Failures are swallowed inside revalidateContentSurfaces().
+    revalidateContentSurfaces();
 
     return NextResponse.json({
       success: true,

@@ -11,13 +11,16 @@ import { getPublicArchiveCounts } from '@/lib/data/archive-counts';
 import { pageLanguageAlternates } from '@/lib/seo';
 
 /**
- * Reading the hero photos on the server is what keeps the page from painting
- * one image and then swapping it: the first HTML already names the curator's
- * photo, so there is no empty frame to fill. It also means the block is
- * rendered per request — a saved photo shows up on the next load, not on the
- * next deploy.
+ * Reading the hero photos on the server keeps the first HTML from painting
+ * one image and then swapping it: the curator's photo is already named in the
+ * markup, so there is no empty frame to fill.
+ *
+ * Five-minute ISR, the same interval as every content door, instead of a full
+ * SSR on each visit. Admin writes call revalidateContentSurfaces(), which now
+ * includes '/' - a saved photo still shows up on the next load, not on the
+ * next deploy, without charging a render to every visitor.
  */
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 /**
  * Self-canonical plus the full hreflang cluster. Title and description are not

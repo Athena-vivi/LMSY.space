@@ -20,7 +20,13 @@ import {
  * Everything is derived from the same public-visibility rule as the rest of
  * the site, so the homepage cannot show something the index hides.
  */
-export const revalidate = 0;
+/**
+ * Five-minute ISR, matching every content door. revalidateContentSurfaces()
+ * drops this cached copy on admin writes, so a change does not have to wait
+ * for the TTL. No manual Cache-Control in next.config.ts: the framework
+ * derives it from this export.
+ */
+export const revalidate = 300;
 
 const FEATURED_LIMIT = 8;
 const FEATURED_PER_CATEGORY = 2;

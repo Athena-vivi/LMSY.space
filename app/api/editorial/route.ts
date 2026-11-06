@@ -17,7 +17,13 @@ import { countIssueArtifacts } from '@/lib/editorial-meta';
  * (strict editorial filter + shared public visibility rule) is unchanged.
  */
 
-export const revalidate = 0;
+/**
+ * Five-minute ISR, consistent with the other public read handlers. This
+ * endpoint currently has no client consumer (the editorial door reads on the
+ * server), but it stays on the same invalidation list so a future consumer
+ * cannot silently reintroduce a per-request render.
+ */
+export const revalidate = 300;
 
 function getCdnUrl(imagePath: string | null): string | null {
   if (!imagePath) return null;

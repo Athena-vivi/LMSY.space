@@ -5,15 +5,15 @@ import { routeLanguage } from '@/lib/i18n-path';
 /**
  * /<lang> — the same homepage as /, re-exported from the root route; the
  * provider seeds the language from the URL prefix. The root page reads hero
- * media on the server per request, so the shell keeps its force-dynamic
- * segment config.
+ * media on the server, so this shell carries the same ISR segment config as
+ * the unprefixed homepage.
  *
  * Metadata here is canonical + hreflang only: the title and the site
  * description come from this segment's root layout (siteMetadata(lang)), which
  * already writes them in the language of the URL. The alternates are not
  * optional though — without them /zh reads as a duplicate of /.
  */
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,

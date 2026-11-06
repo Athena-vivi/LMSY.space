@@ -21,8 +21,9 @@ import { NextResponse, type NextRequest } from 'next/server';
  *     (requireAdmin, requireMachineKey, etc.).
  *   - No service-key usage. Uses the anon key only.
  *
- * Machine-key endpoints (webhook/ingest/cron) and static assets are excluded
- * from the matcher so public traffic never pays for session refresh.
+ * Machine-key endpoints (webhook/ingest/cron), public read APIs and public
+ * pages are outside the matcher. Only routes that actually read a server-side
+ * session pay for the token-refresh round trip.
  */
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -57,8 +58,28 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse;
 }
 
+/**
+ * Session-bound URL prefixes only (2026-11-06 Active CPU remediation).
+ *
+ * - /admin/**     admin UI; preview/[id] reads auth cookies on the server
+ * - /api/admin/** requireAdmin
+ * - /api/auth/**  login / logout / session. /api/auth/session is fetched by
+ *                 AuthProvider on every public page; its cookie adapter in
+ *                 lib/supabase/server-auth.ts is read-only, so it depends on
+ *                 this proxy to persist the rotated token.
+ *
+ * Public pages and public read APIs have no server-side session dependency.
+ * A Node.js proxy invocation is billed as Fluid Active CPU even when the page
+ * itself is served from cache, so running it on public traffic is pure cost.
+ *
+ * Maintenance: any NEW route that reads a server-side session must be added
+ * here, or that session dies after the first token expiry.
+ */
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/ingest|api/cron|api/search|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|css|js|map|txt|xml)$).*)',
+    '/admin',
+    '/admin/:path*',
+    '/api/admin/:path*',
+    '/api/auth/:path*',
   ],
 };

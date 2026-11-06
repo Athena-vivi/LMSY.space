@@ -12,7 +12,7 @@ import createMDX from '@next/mdx'
  *   - hashed build assets      -> immutable, 1 year (safe: URL content hash)
  *   - static public files      -> 7 days + stale-while-revalidate
  *   - service worker / manifest-> never cached (must always revalidate)
- *   - /api/**                  -> no-store (auth, session, mutations)
+ *   - /api/**                  -> per-route policy (see headers() below)
  *   - /admin/**                -> no-store + noindex (private UI)
  *   - everything else (HTML)   -> untouched, so Next/Vercel defaults apply
  *                                 (public pages are client-rendered shells)
@@ -27,6 +27,26 @@ import createMDX from '@next/mdx'
  */
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const NEVER = 'no-store, no-cache, must-revalidate, max-age=0';
+
+/**
+ * API paths that must never be cached: session-bearing, admin, machine-key
+ * or mutation routes. Enumerated positively rather than by a negative
+ * lookahead, so a typo cannot accidentally make /api/admin/** cacheable.
+ *
+ * Everything not listed here is either an ISR-cached public read handler
+ * (framework derives its Cache-Control) or /api/site-content below.
+ */
+const NEVER_API_SOURCES = [
+  '/api/admin/:path*',
+  '/api/auth/:path*',
+  '/api/cron/:path*',
+  '/api/ingest',
+  '/api/webhooks/:path*',
+  '/api/search',
+  '/api/milestones',
+  '/api/project-gallery',
+  '/api/whispers',
+];
 
 const STATIC_PUBLIC = [
   '/favicon.ico',
@@ -114,12 +134,38 @@ const nextConfig: NextConfig = {
         source: '/site.webmanifest',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
       },
-      {
-        // API responses are user-specific, auth-bearing or mutations: never cache.
-        source: '/api/:path*',
+      /**
+       * API caching policy (2026-11-06 Active CPU remediation).
+       *
+       * A single /api/:path* no-store rule used to cover every handler,
+       * including the public read routes that are safe to cache. It also sent
+       * Pragma: no-cache, which makes the CDN revalidate synchronously.
+       *
+       * The ISR handlers (/api/home/summary, /api/home/portals,
+       * /api/editorial) deliberately have NO rule here: Next/Vercel derives
+       * their Cache-Control from `export const revalidate`, and a manual
+       * s-maxage on those paths would fight that framework-derived header.
+       *
+       * Maintenance: a NEW API route must be added to NEVER_API_SOURCES or be
+       * given an explicit rule. Never put a catch-all after these entries -
+       * headers() resolves duplicate keys by letting the last match win.
+       */
+      ...NEVER_API_SOURCES.map((source) => ({
+        source,
         headers: [
           { key: 'Cache-Control', value: NEVER },
           { key: 'Pragma', value: 'no-cache' },
+        ],
+      })),
+      {
+        // Hero/preface content is selected by ?key=, so this GET handler must
+        // stay dynamic - a static ISR snapshot would ignore the query. The CDN
+        // cache key includes the query string, so a short s-maxage is safe.
+        // No stale-while-revalidate: an SWR window re-invokes the function in
+        // the background on every hit, which is the cost being removed here.
+        source: '/api/site-content',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=300' },
         ],
       },
       {

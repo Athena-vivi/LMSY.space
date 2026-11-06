@@ -18,6 +18,9 @@ import { revalidatePath } from 'next/cache';
  *
  * Maintenance: a NEW door or detail route under app/ must be added to the
  * lists below, or its pages stay stale for up to five minutes after a write.
+ * The homepage ('/' and the four /[lang] shells) and the two ISR-backed
+ * homepage read APIs are in the same lists for the same reason - the whole
+ * homepage is cached now, not just its doors.
  *
  * Fail-safe by design: revalidatePath throws when called outside a
  * static-generation context ("Invariant: static generation store missing"),
@@ -27,6 +30,7 @@ import { revalidatePath } from 'next/cache';
 
 /** Static door pages (no params). */
 const DOOR_PAGES = [
+  '/',
   '/dramas',
   '/live',
   '/talks',
@@ -44,6 +48,7 @@ const DOOR_PAGES = [
  * render matching the pattern - one tag per route, not one per concrete path.
  */
 const DOOR_PATTERNS: Array<{ path: string; type: 'layout' | 'page' }> = [
+  { path: '/[lang]', type: 'page' },
   { path: '/dramas/[slug]', type: 'page' },
   { path: '/dramas/[slug]/[event]', type: 'page' },
   { path: '/live/[subtype]', type: 'page' },
@@ -60,6 +65,21 @@ const DOOR_PATTERNS: Array<{ path: string; type: 'layout' | 'page' }> = [
   { path: '/people/[slug]', type: 'page' },
   { path: '/timeline/[year]', type: 'page' },
 ];
+
+/**
+ * Public read Route Handlers that now sit in the ISR route cache. They are
+ * not pages, but revalidatePath() accepts their paths, and a content write
+ * must drop these copies too or the homepage keeps its old payload for a full
+ * five-minute TTL.
+ *
+ * /api/site-content is deliberately absent: that handler reads a query key
+ * and is cached by the CDN with s-maxage, which revalidatePath() cannot purge.
+ */
+const READ_API_PAGES = [
+  '/api/home/summary',
+  '/api/home/portals',
+  '/api/editorial',
+] as const;
 
 function revalidateOne(path: string, type?: 'layout' | 'page'): void {
   try {
@@ -82,5 +102,8 @@ export function revalidateContentSurfaces(): void {
   }
   for (const { path, type } of DOOR_PATTERNS) {
     revalidateOne(path, type);
+  }
+  for (const path of READ_API_PAGES) {
+    revalidateOne(path);
   }
 }

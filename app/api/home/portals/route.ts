@@ -24,9 +24,11 @@ import { getPinnedPortalCover, getPortalCoverCandidate } from '@/lib/data/galler
  *   3. a featured asset
  *   4. any asset of that project
  *
- * revalidate = 0 so a data change shows up on the next request.
+ * Five-minute ISR plus on-demand invalidation by
+ * revalidateContentSurfaces(): a data change is visible on the next request
+ * after an admin save, without a render on every visitor.
  */
-export const revalidate = 0;
+export const revalidate = 300;
 
 interface PortalCover {
   imageUrl: string;
